@@ -1,12 +1,12 @@
 import {
   type DecisionInput,
-  assertTransition,
   decideVerification,
   isDocumentExpired,
 } from '@arkyc/core'
 import { faceMatchDriver } from '@app/services/providers'
 import { audit } from '@app/services/AuditLogger'
 import { readObject } from 'src/support/storage'
+import { transitionTo } from 'src/support/session-transition'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { DocumentCapture } from '@app/models/DocumentCapture'
 import { OcrResult } from '@app/models/OcrResult'
@@ -90,8 +90,7 @@ export async function biometricJob (payload: BiometricJobPayload): Promise<void>
     session.finalDecision = decision
     session.completedAt = new Date()
   }
-  session.status = assertTransition(session.status, decision)
-  await session.save()
+  await transitionTo(session, decision)
 
   await audit.record({
     tenantId: session.tenantId,

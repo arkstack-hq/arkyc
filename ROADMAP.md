@@ -48,7 +48,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 7   | Provider Packages (drivers)                | ✅     | ocr/liveness/face-match packages with `mock` + `external` drivers (config-selected); file storage via Arkstack `Storage` (S3/MinIO/R2/GCS) |
 | 8   | Workers & Async Pipeline                   | ✅     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter)             |
 | 9   | Reviews & Audit Logging                    | ✅     | Review queue + approve/reject/retry/assign/suspicious/note; audit trail (review + session + dashboard CRUD) + read API                     |
-| 10  | Webhooks                                   | ⬜     | Signed, retried webhook delivery per project                                                                                               |
+| 10  | Webhooks                                   | ✅     | Signed (HMAC) webhook delivery per project; endpoint CRUD + test, queue-backed delivery worker with retries/`webhook_deliveries`            |
 | 11  | TypeScript SDK                             | ⬜     | `@arkyc/sdk` server + browser launcher                                                                                                     |
 | 12  | Widget                                     | ⬜     | `@arkyc/widget` full verification flow                                                                                                     |
 | 13  | Dashboard                                  | ⬜     | Multi-tenant React Router dashboard                                                                                                        |
@@ -266,21 +266,23 @@ _Operational notes (not blocking): run the two roles as separate long-lived proc
 
 ---
 
-## Phase 10 — Webhooks (`packages/webhooks`) ⬜
+## Phase 10 — Webhooks (`packages/webhooks`) ✅
 
 **Goal:** Reliable, signed event delivery per project.
 
 **Scope**
 
-- [ ] `packages/webhooks`: `signWebhook`, `verifyWebhookSignature`, `buildWebhookPayload`. HMAC SHA-256; headers `X-Arkyc-Signature`, `X-Arkyc-Timestamp`.
-- [ ] Webhook endpoint management per project (URL, `secret_hash`, subscribed `events`, status) + test delivery.
-- [ ] Emit events: `verification.{started,document_submitted,processing,requires_review,approved,rejected,completed,expired,cancelled}`.
-- [ ] Delivery worker: `webhook_deliveries` with attempts, `response_status/body`, `next_retry_at`, exponential backoff retries.
-- [ ] Payload matches the spec example (session/tenant/project/user_reference/checks/decision_reason).
+- [x] `packages/webhooks`: `signWebhook`, `verifyWebhookSignature` (timestamp tolerance + constant-time compare), `buildWebhookPayload`. HMAC-SHA256 over `${timestamp}.${body}`; headers `X-Arkyc-Signature`, `X-Arkyc-Timestamp`.
+- [x] Webhook endpoint management per project (URL, signing secret shown once, subscribed `events`, status) + `POST .../webhooks/:id/test`. Gated `webhooks.*`.
+- [x] Emit events `verification.{started,document_submitted,processing,requires_review,approved,rejected,completed,expired,cancelled}` from a single `transitionTo` choke point (covers the service, biometric worker, and review actions).
+- [x] Delivery worker (`webhook` queue): signs + POSTs, records `webhook_deliveries` (`attempts`, `response_status`/`body`), retries with backoff + dead-letters via the Phase 8 queue.
+- [x] Payload matches the spec shape (session/tenant/project/user_reference/status/checks/decision_reason).
 
-**Deliverables:** Endpoint CRUD + test button support, delivery worker, signing utilities with verification tests.
+**Deliverables:** Endpoint CRUD + test delivery, the delivery worker, and signing utilities with verification tests.
 
-**Exit criteria:** Completing a session POSTs a correctly-signed payload to the configured endpoint; failures retry and are visible in `webhook_deliveries`.
+**Exit criteria:** Completing a session POSTs a correctly-signed payload to the configured endpoint; failures retry and are visible in `webhook_deliveries`. ✅ Covered by `packages/webhooks` tests + `tests/webhooks.test.ts` (live local receiver verifies the signature; unreachable endpoint records a failed delivery).
+
+_Note: the signing secret is stored as-is for re-signing deliveries (column named `secret_hash`); encryption-at-rest is a Phase 15 hardening item._
 
 ---
 

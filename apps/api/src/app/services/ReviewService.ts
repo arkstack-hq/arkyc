@@ -1,9 +1,9 @@
 import { RequestException } from '@arkstack/common'
-import { assertTransition } from '@arkyc/core'
 import type { DecisionReason, Metadata, VerificationDecision, VerificationStatus } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { Review } from '@app/models/Review'
 import { ReviewNote } from '@app/models/ReviewNote'
+import { transitionTo } from 'src/support/session-transition'
 import { type AuditActor, audit } from './AuditLogger'
 
 /** What a reviewer is asking the user to redo. */
@@ -36,10 +36,9 @@ export class ReviewService {
     const to: VerificationStatus = kind === 'selfie' ? 'document_submitted' : 'started'
     const previousStatus = session.status
 
-    session.status = assertTransition(session.status, to)
     session.reviewedAt = new Date()
     session.reviewedBy = actor.actorId
-    await session.save()
+    await transitionTo(session, to)
 
     await this.recordReview(session, actor, previousStatus, to, reason ?? null)
     await this.emit(session, actor, `review.retry_${kind}`, { kind, reason: reason ?? null })
@@ -90,13 +89,12 @@ export class ReviewService {
     this.assertAwaitingReview(session)
     const previousStatus = session.status
 
-    session.status = assertTransition(session.status, decision)
     session.finalDecision = decision
     session.decisionReason = reasonCode
     session.reviewedAt = new Date()
     session.reviewedBy = actor.actorId
     session.completedAt = new Date()
-    await session.save()
+    await transitionTo(session, decision)
 
     await this.recordReview(session, actor, previousStatus, decision, reason ?? null)
     await this.emit(session, actor, action, { reason: reason ?? null })

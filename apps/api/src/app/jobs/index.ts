@@ -1,14 +1,16 @@
 import { queue } from '@app/services/Queue'
 import { type OcrJobPayload, ocrJob } from './ocr'
 import { type BiometricJobPayload, biometricJob } from './biometric'
+import { type WebhookJobPayload, webhookJob } from './webhook'
 
 /** Map of queue name → job handler. */
 export const handlers: Record<string, (payload: never) => Promise<void>> = {
   ocr: ocrJob as (payload: never) => Promise<void>,
   biometric: biometricJob as (payload: never) => Promise<void>,
+  webhook: webhookJob as (payload: never) => Promise<void>,
 }
 
-export type { OcrJobPayload, BiometricJobPayload }
+export type { OcrJobPayload, BiometricJobPayload, WebhookJobPayload }
 
 /**
  * Claim and run the next job (optionally for a single queue). Returns `false`

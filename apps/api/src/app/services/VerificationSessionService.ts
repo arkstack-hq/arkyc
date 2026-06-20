@@ -1,5 +1,5 @@
 import { RequestException } from '@arkstack/common'
-import { assertTransition, isTerminalStatus, shouldExpireSession } from '@arkyc/core'
+import { isTerminalStatus, shouldExpireSession } from '@arkyc/core'
 import { createTokenPair } from '@arkyc/auth'
 import { type FileLike, Storage } from '@arkstack/filesystem'
 import type { DocumentType, Metadata, VerificationStatus } from '@arkyc/types'
@@ -7,6 +7,7 @@ import { VerificationSession } from '@app/models/VerificationSession'
 import { DocumentCapture } from '@app/models/DocumentCapture'
 import { LivenessCheck } from '@app/models/LivenessCheck'
 import { sessionObjectKey } from 'src/support/storage'
+import { transitionTo } from 'src/support/session-transition'
 import { type ProviderSignals, livenessDriver } from './providers'
 import { queue } from './Queue'
 
@@ -226,13 +227,12 @@ export class VerificationSessionService {
     )
   }
 
-  /** Apply and persist a status change, validating it against the state machine. */
+  /** Apply and persist a status change (validated) and fan out webhooks. */
   private async transition (
     session: VerificationSession,
     to: VerificationStatus,
   ): Promise<void> {
-    session.status = assertTransition(session.status, to)
-    await session.save()
+    await transitionTo(session, to)
   }
 }
 

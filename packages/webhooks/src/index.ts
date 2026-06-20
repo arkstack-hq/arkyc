@@ -1,8 +1,9 @@
 /**
  * @arkyc/webhooks
  *
- * Webhook signing, verification, and payload building.
- * Stub created in Phase 0 — real implementation lands in a later phase.
+ * Webhook signing, verification, and payload building. HMAC-SHA256 over
+ * `${timestamp}.${body}`, surfaced via the `X-Arkyc-Signature` /
+ * `X-Arkyc-Timestamp` headers. Pure + framework-agnostic.
  */
-export const PACKAGE_NAME = '@arkyc/webhooks';
-export const VERSION = '0.0.0';
+export * from './signing';
+export * from './payload';
