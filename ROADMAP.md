@@ -43,7 +43,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                    |
 | 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles      |
 | 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
-| 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key management (project members + audit emission pending) |
+| 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key + project-member management (audit emission deferred to Phase 9) |
 | 6   | Verification Session Engine (mock e2e)     | 🚧     | Public + client APIs walk a session to a decision via inline mocks (expiry/retry pending) |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
@@ -179,7 +179,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 - [x] Roles & permissions management endpoints (list/create/edit roles, assign/remove permissions, list permission catalog, system-role indicators).
 - [x] Member direct permissions: view role perms / direct perms / effective perms; assign role; add/remove direct perms.
 - [x] Projects CRUD with `environment`, `settings`, `branding`, project-level verification thresholds.
-- [ ] Project members.
+- [x] Project members.
 - [x] API keys: create (return secret once), list, revoke; store `key_prefix` + `key_hash`; track `last_used_at`.
 - [ ] All endpoints permission-gated and tenant-scoped (✅). Emit audit logs (stub sink until Phase 9, then full) — **not yet wired**.
 

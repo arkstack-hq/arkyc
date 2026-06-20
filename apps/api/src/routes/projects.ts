@@ -3,6 +3,7 @@ import { Router } from '@arkstack/driver-express'
 import type { PermissionKey } from '@arkyc/types'
 import { can, resolveTenant } from '@app/http/middlewares'
 import ProjectController from '@controllers/dashboard/ProjectController'
+import ProjectMemberController from '@controllers/dashboard/ProjectMemberController'
 import ApiKeyController from '@controllers/dashboard/ApiKeyController'
 
 const scoped = (perm: PermissionKey) => [auth, resolveTenant, can(perm)]
@@ -12,6 +13,12 @@ Router.group('/v1/dashboard/tenants/:tenantId/projects', () => {
     Router.post('/', [ProjectController, 'create'], scoped('projects.create'))
     Router.get('/:projectId', [ProjectController, 'show'], scoped('projects.view'))
     Router.patch('/:projectId', [ProjectController, 'update'], scoped('projects.update'))
+
+    // Project members (project-scoped)
+    Router.get('/:projectId/members', [ProjectMemberController, 'index'], scoped('members.view'))
+    Router.post('/:projectId/members', [ProjectMemberController, 'store'], scoped('members.update'))
+    Router.patch('/:projectId/members/:memberId', [ProjectMemberController, 'update'], scoped('members.update'))
+    Router.delete('/:projectId/members/:memberId', [ProjectMemberController, 'destroy'], scoped('members.remove'))
 
     // API keys (project-scoped)
     Router.get('/:projectId/api-keys', [ApiKeyController, 'index'], scoped('api_keys.view'))
