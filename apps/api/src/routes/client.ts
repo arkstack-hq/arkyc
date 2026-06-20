@@ -1,22 +1,15 @@
-import { HttpContext } from 'clear-router/types/express'
-import { Resource } from 'resora'
 import { Router } from '@arkstack/driver-express'
 import { clientTokenAuth } from '@app/http/middlewares'
+import ClientSessionController from '@controllers/client/ClientSessionController'
 
-// Client/Widget API (short-lived client token). The full widget flow lands in
-// Phase 6; this confirms the token resolves its verification session.
-Router.get(
-    '/v1/client/session',
-    ({ req }: HttpContext) =>
-        new Resource({
-            id: req.verificationSession?.id,
-            status: req.verificationSession?.status,
-        }).additional({
-          status: 'success',
-          message: 'OK',
-          code: 200,
-        }),
-    [clientTokenAuth],
-)
+// Client/Widget API (short-lived client token). Drives one session through
+// document capture, liveness, and completion.
+Router.group('/v1/client', () => {
+    Router.get('/session', [ClientSessionController, 'session'], [clientTokenAuth])
+    Router.post('/document/front', [ClientSessionController, 'documentFront'], [clientTokenAuth])
+    Router.post('/document/back', [ClientSessionController, 'documentBack'], [clientTokenAuth])
+    Router.post('/liveness', [ClientSessionController, 'liveness'], [clientTokenAuth])
+    Router.post('/complete', [ClientSessionController, 'complete'], [clientTokenAuth])
+})
 
 export default () => {}
