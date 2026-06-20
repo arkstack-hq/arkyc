@@ -1,8 +1,12 @@
 /**
  * @arkyc/auth
  *
- * Authentication, token, and API key helpers.
- * Stub created in Phase 0 — real implementation lands in a later phase.
+ * Framework-neutral authentication helpers built on Node's `crypto`: password
+ * hashing, opaque token generation/hashing, project API keys, and short-lived
+ * widget client tokens (Phase 1). Complements `@arkstack/auth`; no Arkstack or
+ * DB dependencies.
  */
-export const PACKAGE_NAME = '@arkyc/auth';
-export const VERSION = '0.0.0';
+export * from './password.js';
+export * from './tokens.js';
+export * from './api-key.js';
+export * from './client-token.js';

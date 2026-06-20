@@ -39,7 +39,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | #   | Phase                                      | Status | Outcome                                                       |
 | --- | ------------------------------------------ | ------ | ------------------------------------------------------------- |
 | 0   | Monorepo & Tooling Foundation              | ✅     | Workspace builds, lints, and tests green                      |
-| 1   | Shared Contracts (`types`, `core`, `auth`) | ⬜     | Domain types + decision engine unit-tested                    |
+| 1   | Shared Contracts (`types`, `core`, `auth`) | ✅     | Domain types + decision engine unit-tested                    |
 | 2   | Data Model & Migrations                    | ⬜     | All tables migrated, tenant-scoped, seeded                    |
 | 3   | Permissions & RBAC                         | ⬜     | `resolvePermissions`/`authorize` working + default roles      |
 | 4   | API Foundation & Auth                      | ⬜     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
@@ -87,18 +87,18 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ---
 
-## Phase 1 — Shared Contracts: `types`, `core`, `auth` ⬜
+## Phase 1 — Shared Contracts: `types`, `core`, `auth` ✅
 
 **Goal:** Lock the domain vocabulary and the pure logic that has no infra dependencies.
 
 **Scope**
 
-- [ ] **`packages/types`** — all shared types from the spec: `Tenant`, `TenantMember`, `Project`, `ProjectMember`, `Role`, `Permission`, `RolePermission`, `UserPermission`, `VerificationStatus`, `VerificationDecision`, `DecisionReason`, `VerificationSession`, `DocumentCapture`, `OcrResult`, `LivenessCheck`, `FaceMatchCheck`, `Review`, `WebhookEvent`, `SdkOptions`, `WidgetOptions`. Provider result shapes (OCR/liveness/face-match).
-- [ ] **`packages/core` — decision engine** — takes OCR confidence, document quality, expiry, liveness, face-match scores + thresholds → `approved | requires_review | rejected` + `DecisionReason`.
-- [ ] **`packages/core` — status transition map** — valid `VerificationStatus` transitions; reject illegal ones.
-- [ ] **`packages/core` — helpers** — session expiry checks, risk scoring helpers, result normalization, tenant/project context helpers.
-- [ ] **`packages/core` — default thresholds** (`documentQuality 0.75`, `ocrConfidence 0.8`, `liveness 0.85`, `faceMatch 0.75`).
-- [ ] **`packages/auth`** — framework-neutral helpers (lean, complements `@arkstack/auth`): password hashing, session helpers, token helpers, API key generation/hashing (`key_prefix` + `key_hash`), short-lived client token helpers.
+- [x] **`packages/types`** — all shared types from the spec: `Tenant`, `TenantMember`, `Project`, `ProjectMember`, `Role`, `Permission`, `RolePermission`, `UserPermission`, `VerificationStatus`, `VerificationDecision`, `DecisionReason`, `VerificationSession`, `DocumentCapture`, `OcrResult`, `LivenessCheck`, `FaceMatchCheck`, `Review`, `WebhookEvent`, `SdkOptions`, `WidgetOptions`. Provider result shapes (OCR/liveness/face-match).
+- [x] **`packages/core` — decision engine** — takes OCR confidence, document quality, expiry, liveness, face-match scores + thresholds → `approved | requires_review | rejected` + `DecisionReason`.
+- [x] **`packages/core` — status transition map** — valid `VerificationStatus` transitions; reject illegal ones.
+- [x] **`packages/core` — helpers** — session expiry checks, risk scoring helpers, result normalization, tenant/project context helpers.
+- [x] **`packages/core` — default thresholds** (`documentQuality 0.75`, `ocrConfidence 0.8`, `liveness 0.85`, `faceMatch 0.75`).
+- [x] **`packages/auth`** — framework-neutral helpers (lean, complements `@arkstack/auth`): password hashing, session helpers, token helpers, API key generation/hashing (`key_prefix` + `key_hash`), short-lived client token helpers.
 
 **Deliverables:** Three published-internal packages with comprehensive Vitest suites.
 

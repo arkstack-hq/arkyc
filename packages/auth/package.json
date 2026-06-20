@@ -24,5 +24,8 @@
   },
   "dependencies": {
     "@arkyc/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2"
   }
 }
