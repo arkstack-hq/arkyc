@@ -48,9 +48,8 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 7   | Provider Packages (drivers)                | ✅     | ocr/liveness/face-match packages with `mock` + `external` drivers (config-selected); file storage via Arkstack `Storage` (S3/MinIO/R2/GCS) |
 | 8   | Workers & Async Pipeline                   | ✅     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter)             |
 | 9   | Reviews & Audit Logging                    | ✅     | Review queue + approve/reject/retry/assign/suspicious/note; audit trail (review + session + dashboard CRUD) + read API                     |
-| 10  | Webhooks                                   | ✅     | Signed (HMAC) webhook delivery per project; endpoint CRUD + test, queue-backed delivery worker with retries/`webhook_deliveries`            |
-| 11  | TypeScript SDK                             | ✅     | `@arkyc/sdk` server client (sessions create/retrieve/cancel, typed errors, webhook verify) + `@arkyc/sdk/browser` widget launcher           |
-| 11  | TypeScript SDK                             | ⬜     | `@arkyc/sdk` server + browser launcher                                                                                                     |
+| 10  | Webhooks                                   | ✅     | Signed (HMAC) webhook delivery per project; endpoint CRUD + test, queue-backed delivery worker with retries/`webhook_deliveries`           |
+| 11  | TypeScript SDK                             | ✅     | `@arkyc/sdk` server client (sessions create/retrieve/cancel, typed errors, webhook verify) + `@arkyc/sdk/browser` widget launcher          |
 | 12  | Widget                                     | ⬜     | `@arkyc/widget` full verification flow                                                                                                     |
 | 13  | Dashboard                                  | ⬜     | Multi-tenant React Router dashboard                                                                                                        |
 | 14  | Playground & Docs                          | ⬜     | Example integration + documentation                                                                                                        |
