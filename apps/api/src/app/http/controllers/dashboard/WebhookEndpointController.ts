@@ -23,10 +23,6 @@ const EVENT_NAMES: WebhookEventName[] = [
 ]
 const EVENTS_RULE = `in:${EVENT_NAMES.join(',')}`
 
-/** Serialise the events array to a JSON string for the jsonb column (see create). */
-const serializeEvents = (events: unknown): WebhookEventName[] =>
-  JSON.stringify(events) as unknown as WebhookEventName[]
-
 /** Webhook endpoint management for a project. Gated by `webhooks.*`. */
 export default class WebhookEndpointController extends BaseController {
   /** List a project's webhook endpoints (secret never included). */
@@ -59,12 +55,9 @@ export default class WebhookEndpointController extends BaseController {
       projectId: project.id,
       url: data.url,
       secretHash: secret,
-      // arkormx binds a JS array as a Postgres array (rejected by the jsonb
-      // column) and doesn't run casts on create() — store a JSON string.
-      events: serializeEvents(data.events),
+      events: data.events as WebhookEventName[],
       status: 'active',
     })
-    endpoint.events = data.events as WebhookEventName[]
 
     await audit.recordForRequest(req, {
       projectId: project.id,
@@ -99,10 +92,9 @@ export default class WebhookEndpointController extends BaseController {
       projectId: project.id,
     }).firstOrFail()
     if (data.url) endpoint.url = data.url
-    if (data.events) endpoint.events = serializeEvents(data.events)
+    if (data.events) endpoint.events = data.events as WebhookEventName[]
     if (data.status) endpoint.status = data.status
     await endpoint.save()
-    if (data.events) endpoint.events = data.events as WebhookEventName[]
 
     await audit.recordForRequest(req, {
       projectId: project.id,
