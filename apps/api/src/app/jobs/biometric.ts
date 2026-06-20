@@ -5,6 +5,7 @@ import {
   isDocumentExpired,
 } from '@arkyc/core'
 import { faceMatchDriver } from '@app/services/providers'
+import { audit } from '@app/services/AuditLogger'
 import { readObject } from 'src/support/storage'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { DocumentCapture } from '@app/models/DocumentCapture'
@@ -91,4 +92,14 @@ export async function biometricJob (payload: BiometricJobPayload): Promise<void>
   }
   session.status = assertTransition(session.status, decision)
   await session.save()
+
+  await audit.record({
+    tenantId: session.tenantId,
+    projectId: session.projectId,
+    actorType: 'system',
+    action: 'session.auto_decided',
+    entityType: 'verification_session',
+    entityId: session.id,
+    metadata: { decision, reason, riskScore },
+  })
 }

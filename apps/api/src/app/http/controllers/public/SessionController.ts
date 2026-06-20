@@ -3,6 +3,7 @@ import { HttpContext } from 'clear-router/types/express'
 import { VerificationSession } from '@app/models/VerificationSession'
 import VerificationSessionResource from '@app/http/resources/VerificationSessionResource'
 import { sessionService } from '@app/services/VerificationSessionService'
+import { audit } from '@app/services/AuditLogger'
 
 /**
  * Public Project API (secret API key). Lets an integrating backend open a
@@ -24,6 +25,18 @@ export default class SessionController extends BaseController {
     const { session, clientToken } = await sessionService.create(req.projectContext!, {
       userReference: data.user_reference ?? null,
       metadata: data.metadata ?? null,
+    })
+
+    await audit.record({
+      tenantId: session.tenantId,
+      projectId: session.projectId,
+      actorId: req.projectContext!.api_key_id,
+      actorType: 'api_key',
+      action: 'session.created',
+      entityType: 'verification_session',
+      entityId: session.id,
+      ipAddress: req.ip ?? null,
+      userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
     })
 
     return new VerificationSessionResource(session)

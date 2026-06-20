@@ -47,6 +47,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced |
 | 7   | Provider Packages (drivers)                | 🚧     | ocr/liveness/face-match driver packages (`mock` real, API wired via env); file storage via Arkstack `Storage` (prod analyzer drivers stubbed) |
 | 8   | Workers & Async Pipeline                   | 🚧     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter) |
+| 9   | Reviews & Audit Logging                    | 🚧     | Review queue + approve/reject/retry/note; audit trail + read API (verification events emitted; CRUD retro-fill pending) |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
 | 8   | Workers & Async Pipeline                   | ⬜     | OCR + biometric workers process sessions to a decision        |
@@ -249,21 +250,21 @@ _Remaining: dedicated long-running deployment of the two `queue:work` roles (`oc
 
 ---
 
-## Phase 9 — Reviews & Audit Logging ⬜
+## Phase 9 — Reviews & Audit Logging 🚧
 
 **Goal:** Human-in-the-loop review + a complete audit trail.
 
 **Scope**
 
-- [ ] Review workflows: tenant/project review queues, reviewer assignment, notes.
-- [ ] Actions: approve, reject, request document retry, request selfie retry, request full retry, mark suspicious, add note — each transitions status and records a `reviews` row (`previous_status`, `new_status`, `reason`, `note`) + `review_notes`.
-- [ ] Dashboard API: `.../sessions/:id/{approve,reject,request-retry,notes}`, plus list/get sessions with filters (project, decision reason, status).
-- [ ] **Audit logging** everywhere: tenant/project/member/role/permission/api-key/session/review/status/auth/webhook events, with `actor_id`, `actor_type`, `action`, `entity_type`, `entity_id`, `metadata`, `ip_address`, `user_agent`. `GET /v1/dashboard/tenants/:id/audit-logs`.
-- [ ] Retro-fill audit emission into Phases 5–8 actions.
+- [x] Review queue: list/get tenant sessions with filters (status, decision reason, project). Reviewer notes via `ReviewNote`. _(Per-reviewer assignment needs an `assigned_to` column — not modelled yet.)_
+- [x] Actions: approve, reject, request document/selfie/full retry, add note — each transitions the session, records a `reviews` row (`previous_status`/`new_status`/`reason`) + stamps `reviewed_at`/`reviewed_by`. _(`mark suspicious` folds into a note for now.)_
+- [x] Dashboard API: `.../sessions/:id/{approve,reject,request-retry,notes}` + `GET .../sessions` (filtered) and `GET .../sessions/:id`, gated by `sessions.view` / `reviews.*`.
+- [x] **Audit logging**: `AuditLogger` service (`actor_id`/`actor_type`/`action`/`entity_type`/`entity_id`/`metadata`/`ip_address`/`user_agent`) + `GET /v1/dashboard/tenants/:id/audit-logs` (gated `audit_logs.view`, filterable). Emitted on review actions, `session.created` (api_key actor), and `session.auto_decided` (system actor).
+- [ ] Retro-fill audit emission into the Phase 5 dashboard CRUD (tenant/project/member/role/api-key) + auth/webhook events. _(Verification trail is covered; broad CRUD emission is the remaining piece.)_
 
-**Deliverables:** Reviewer endpoints + audit-log read API; every state-changing action writes an audit row.
+**Deliverables:** Reviewer endpoints + audit-log read API; verification-lifecycle actions write audit rows.
 
-**Exit criteria:** A `requires_review` session can be approved/rejected by a permitted reviewer, status + decision reason update correctly, and the action appears in audit logs.
+**Exit criteria:** A `requires_review` session can be approved/rejected by a permitted reviewer, status + decision reason update correctly, and the action appears in audit logs. ✅ Covered by `tests/reviews.test.ts`.
 
 ---
 
