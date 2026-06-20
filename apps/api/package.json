@@ -17,6 +17,15 @@
     "postinstall": "prepare"
   },
   "dependencies": {
+    "@arkyc/auth": "workspace:*",
+    "@arkyc/core": "workspace:*",
+    "@arkyc/face-match": "workspace:*",
+    "@arkyc/liveness": "workspace:*",
+    "@arkyc/ocr": "workspace:*",
+    "@arkyc/permissions": "workspace:*",
+    "@arkyc/storage": "workspace:*",
+    "@arkyc/types": "workspace:*",
+    "@arkyc/webhooks": "workspace:*",
     "@arkstack/auth": "^0.12.31",
     "@arkstack/common": "^0.12.31",
     "@arkstack/console": "^0.12.31",

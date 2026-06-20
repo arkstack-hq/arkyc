@@ -68,6 +68,33 @@ importers:
       '@arkstack/view':
         specifier: ^0.12.31
         version: 0.12.35(@arkstack/common@0.12.35(@arkstack/contract@0.12.35)(@arkstack/foundry@0.12.35)(@h3ravel/support@2.2.0(@types/node@25.9.4))(arkormx@2.9.1(@types/node@25.9.4)))(@arkstack/foundry@0.12.35)(@h3ravel/musket@2.0.0(@types/node@25.9.4))(clear-router@2.8.8(@h3ravel/support@2.2.0(@types/node@25.9.4))(express@5.2.1)(reflect-metadata@0.2.2))
+      '@arkyc/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@arkyc/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@arkyc/face-match':
+        specifier: workspace:*
+        version: link:../../packages/face-match
+      '@arkyc/liveness':
+        specifier: workspace:*
+        version: link:../../packages/liveness
+      '@arkyc/ocr':
+        specifier: workspace:*
+        version: link:../../packages/ocr
+      '@arkyc/permissions':
+        specifier: workspace:*
+        version: link:../../packages/permissions
+      '@arkyc/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
+      '@arkyc/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@arkyc/webhooks':
+        specifier: workspace:*
+        version: link:../../packages/webhooks
       '@h3ravel/musket':
         specifier: ^2.0.0
         version: 2.0.0(@types/node@25.9.4)

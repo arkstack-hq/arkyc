@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PACKAGE_NAME } from './index.js';
+import { PACKAGE_NAME } from '../src/index.js';
 
 describe('ocr-worker', () => {
   it('exposes its package name', () => {
