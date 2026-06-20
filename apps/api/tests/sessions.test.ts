@@ -5,6 +5,7 @@ import { app } from '../src/core/bootstrap'
 import { Tenant } from '../src/app/models/Tenant'
 import { Project } from '../src/app/models/Project'
 import { ApiKey } from '../src/app/models/ApiKey'
+import { VerificationSession } from '../src/app/models/VerificationSession'
 
 /** Phase 6 — verification session engine driven end-to-end via the mock providers. */
 const fx = { tenantId: '', projectId: '', apiKeySecret: '' }
@@ -123,5 +124,23 @@ describe('verification session lifecycle', () => {
 
   it('scopes session lookups to the owning project (404 otherwise)', async () => {
     await publicApi('get', 'sessions/00000000-0000-0000-0000-000000000000').expect(404)
+  })
+
+  it('lazily expires a session past its TTL', async () => {
+    const { id } = await openSession()
+    const row = await VerificationSession.where({ id }).firstOrFail()
+    row.expiresAt = new Date(Date.now() - 1000)
+    await row.save()
+
+    const show = await publicApi('get', `sessions/${id}`)
+    expect(show.body.data.status).toBe('expired')
+  })
+
+  it('enforces the liveness retry limit', async () => {
+    const { token } = await toLiveness() // attempt 1
+    expect((await clientApi('post', 'liveness', token).send({})).status).toBe(200) // 2
+    expect((await clientApi('post', 'liveness', token).send({})).status).toBe(200) // 3
+    const blocked = await clientApi('post', 'liveness', token).send({}) // 4 → over limit
+    expect(blocked.status).toBe(429)
   })
 })

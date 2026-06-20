@@ -44,6 +44,7 @@ export default class SessionController extends BaseController {
    */
   async show ({ req }: HttpContext) {
     const session = await this.scopedSession(req.projectContext!.project_id, req.params.id)
+    await sessionService.refresh(session)
 
     return new VerificationSessionResource(session)
       .additional({

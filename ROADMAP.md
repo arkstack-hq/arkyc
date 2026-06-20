@@ -44,7 +44,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles      |
 | 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
 | 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key + project-member management (audit emission deferred to Phase 9) |
-| 6   | Verification Session Engine (mock e2e)     | 🚧     | Public + client APIs walk a session to a decision via inline mocks (expiry/retry pending) |
+| 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
 | 8   | Workers & Async Pipeline                   | ⬜     | OCR + biometric workers process sessions to a decision        |
@@ -189,7 +189,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ---
 
-## Phase 6 — Verification Session Engine (mock end-to-end) 🚧
+## Phase 6 — Verification Session Engine (mock end-to-end) ✅
 
 **Goal:** Full session lifecycle driven by the public + client APIs, using mock providers inline (no workers yet).
 
@@ -200,7 +200,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 - [x] Session state machine wired to `packages/core` status transitions: `pending → started → document_submitted → liveness_submitted → processing → (approved | rejected | requires_review)`; plus `expired`, `cancelled`.
 - [x] Persist `document_captures`, `ocr_results`, `document_portraits`, `liveness_checks`, `face_match_checks` (initially via **inline mock providers**, swapped to workers in Phase 8).
 - [x] Run the decision engine; write `auto_decision`, `final_decision`, `decision_reason`, `risk_score`.
-- [ ] Session expiry + retry-limit enforcement. _(client token rejects expired sessions; active `expired` transition + retry cap still pending.)_
+- [x] Session expiry + retry-limit enforcement. _(lazy `expired` transition via `shouldExpireSession`; liveness attempts capped at 3.)_
 
 **Deliverables:** A scripted run (curl/SDK-less) that creates a session and walks it to a decision using mocks.
 

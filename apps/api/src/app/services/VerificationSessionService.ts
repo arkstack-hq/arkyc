@@ -5,6 +5,7 @@ import {
   decideVerification,
   isDocumentExpired,
   isTerminalStatus,
+  shouldExpireSession,
 } from '@arkyc/core'
 import { createTokenPair } from '@arkyc/auth'
 import type { DocumentType, Metadata, VerificationStatus } from '@arkyc/types'
@@ -25,6 +26,9 @@ import {
 
 /** A verification session's lifetime — also bounds its client token. */
 const SESSION_TTL_MS = 15 * 60 * 1000
+
+/** Maximum liveness/selfie attempts before a session is locked out. */
+const MAX_LIVENESS_ATTEMPTS = 3
 
 /** The integrating backend's resolved key context (`req.projectContext`). */
 interface ProjectScope {
@@ -63,6 +67,7 @@ export class VerificationSessionService {
 
   /** Move a freshly-opened session to `started` when the widget first loads. */
   async start (session: VerificationSession): Promise<VerificationSession> {
+    await this.refresh(session)
     if (session.status === 'pending') {
       await this.transition(session, 'started')
     }
@@ -82,7 +87,7 @@ export class VerificationSessionService {
       signals?: MockSignals
     },
   ): Promise<DocumentCapture> {
-    this.assertMutable(session)
+    await this.ensureMutable(session)
 
     const capture =
       (await DocumentCapture.where({ sessionId: session.id }).first()) ??
@@ -138,11 +143,18 @@ export class VerificationSessionService {
     session: VerificationSession,
     input: { signals?: MockSignals },
   ): Promise<LivenessCheck> {
-    this.assertMutable(session)
+    await this.ensureMutable(session)
     RequestException.abortIf(
       session.status === 'pending' || session.status === 'started',
       'Submit a document before the liveness check',
       409,
+    )
+
+    const attempts = await LivenessCheck.where({ sessionId: session.id }).count()
+    RequestException.abortIf(
+      attempts >= MAX_LIVENESS_ATTEMPTS,
+      `Maximum of ${MAX_LIVENESS_ATTEMPTS} liveness attempts reached`,
+      429,
     )
 
     const result = mockLiveness(input.signals)
@@ -173,7 +185,7 @@ export class VerificationSessionService {
     session: VerificationSession,
     input: { signals?: MockSignals },
   ): Promise<VerificationSession> {
-    this.assertMutable(session)
+    await this.ensureMutable(session)
 
     const capture = await DocumentCapture.where({ sessionId: session.id }).first()
     const ocr = await OcrResult.where({ sessionId: session.id }).first()
@@ -237,13 +249,25 @@ export class VerificationSessionService {
 
   /** Cancel a non-terminal session. */
   async cancel (session: VerificationSession): Promise<VerificationSession> {
-    this.assertMutable(session)
+    await this.ensureMutable(session)
     await this.transition(session, 'cancelled')
     return session
   }
 
-  /** Guard: reject mutations on a session that has already reached an end state. */
-  private assertMutable (session: VerificationSession): void {
+  /**
+   * Lazily transition a past-its-TTL session to `expired` (no throw). Lets a
+   * reader (e.g. the public `show`) observe expiry without a background job.
+   */
+  async refresh (session: VerificationSession): Promise<VerificationSession> {
+    if (shouldExpireSession(session.status, session.expiresAt, new Date())) {
+      await this.transition(session, 'expired')
+    }
+    return session
+  }
+
+  /** Lazily expire, then reject mutations on a session that has ended. */
+  private async ensureMutable (session: VerificationSession): Promise<void> {
+    await this.refresh(session)
     RequestException.abortIf(
       isTerminalStatus(session.status),
       `Session is ${session.status} and can no longer be modified`,

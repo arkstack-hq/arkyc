@@ -1,12 +1,13 @@
-import { RequestException } from '@arkstack/common'
-import { HttpContext } from 'clear-router/types/express'
+import { RequestException, perPage } from '@arkstack/common'
+
 import { BaseController } from '@controllers/BaseController'
+import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
 import { ProjectMember } from '@app/models/ProjectMember'
-import { Role } from '@app/models/Role'
-import { TenantMember } from '@app/models/TenantMember'
 import ProjectMemberCollection from '@app/http/resources/ProjectMemberCollection'
 import ProjectMemberResource from '@app/http/resources/ProjectMemberResource'
+import { Role } from '@app/models/Role'
+import { TenantMember } from '@app/models/TenantMember'
 
 /**
  * Manage which tenant members belong to a project and in what role. All actions
@@ -23,7 +24,7 @@ export default class ProjectMemberController extends BaseController {
     const project = await this.scopedProject(req)
     const members = await ProjectMember.where({ projectId: project.id })
       .with(['user', 'role'])
-      .get()
+      .paginate(perPage(req.query))
 
     return new ProjectMemberCollection(members).additional({
       status: 'success',
