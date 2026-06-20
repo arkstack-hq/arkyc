@@ -103,7 +103,6 @@ export class VerificationSessionService {
       }))
 
     const imagePath = objectPath(session, `documents/${side}.jpg`)
-    const imageBytes = input.image?.buffer ?? EMPTY_IMAGE
     await Storage.disk().put(imagePath, input.image ?? EMPTY_IMAGE, { visibility: 'private' })
 
     if (input.country !== undefined) capture.country = input.country
@@ -119,7 +118,7 @@ export class VerificationSessionService {
     // The front side carries the readable data — run OCR + portrait off it.
     if (side === 'front') {
       const ocr = await ocrDriver.extract({
-        image: imageBytes,
+        image: input.image?.buffer ?? EMPTY_IMAGE,
         documentType: input.documentType ?? null,
         country: input.country ?? null,
         hints: { confidence: input.signals?.ocrConfidence, expired: input.signals?.expired },

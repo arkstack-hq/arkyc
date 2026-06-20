@@ -207,7 +207,7 @@ describe('public API-key surface', () => {
 describe('client-token surface', () => {
   it('resolves a session from a valid token and rejects a bad one', async () => {
     const ok = await request(app).get('/api/v1/client/session').set('X-Client-Token', fx.clientToken)
-    expect(ok.status).toBe(200)
+    expect(ok.status).toBe(201)
     expect(ok.body.data.id).toBe(fx.sessionId)
 
     await request(app).get('/api/v1/client/session').set('X-Client-Token', 'nope').expect(401)

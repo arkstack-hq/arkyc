@@ -4,7 +4,6 @@ import type { DocumentType } from '@arkyc/types'
 import type { FileLike } from '@arkstack/filesystem'
 import { HttpContext } from 'clear-router/types/express'
 import type { ProviderSignals } from '@app/services/providers'
-import type { VerificationSession } from '@app/models/VerificationSession'
 import { sessionService } from '@app/services/VerificationSessionService'
 
 const DOCUMENT_TYPES = 'passport,id_card,drivers_license,residence_permit'
@@ -25,7 +24,12 @@ export default class ClientSessionController extends BaseController {
   async session ({ req }: HttpContext) {
     const session = await sessionService.start(req.verificationSession!)
 
-    return this.ok(session, 'OK')
+    return new ClientSessionResource(session)
+      .additional({
+        status: 'success',
+        message: 'OK',
+        code: 201,
+      }).response().setStatusCode(201)
   }
 
   /** Submit the document front image (runs OCR + portrait extraction). */
@@ -46,7 +50,12 @@ export default class ClientSessionController extends BaseController {
       signals: this.signals(data),
     })
 
-    return this.ok(req.verificationSession!, 'Document front received')
+    return new ClientSessionResource(req.verificationSession!)
+      .additional({
+        status: 'success',
+        message: 'Document front received',
+        code: 201,
+      }).response().setStatusCode(201)
   }
 
   /** Submit the document back image. */
@@ -63,7 +72,12 @@ export default class ClientSessionController extends BaseController {
       image: data.image as FileLike | undefined,
     })
 
-    return this.ok(req.verificationSession!, 'Document back received')
+    return new ClientSessionResource(req.verificationSession!)
+      .additional({
+        status: 'success',
+        message: 'Document back received',
+        code: 201,
+      }).response().setStatusCode(201)
   }
 
   /** Submit the liveness/selfie check. */
@@ -80,7 +94,12 @@ export default class ClientSessionController extends BaseController {
       signals: this.signals(data),
     })
 
-    return this.ok(req.verificationSession!, 'Liveness check received')
+    return new ClientSessionResource(req.verificationSession!)
+      .additional({
+        status: 'success',
+        message: 'Liveness check received',
+        code: 201,
+      }).response().setStatusCode(201)
   }
 
   /** Finalise the session — runs the decision engine and lands a verdict. */
@@ -94,7 +113,12 @@ export default class ClientSessionController extends BaseController {
       signals: this.signals(data),
     })
 
-    return this.ok(session, 'Verification complete')
+    return new ClientSessionResource(session)
+      .additional({
+        status: 'success',
+        message: 'Verification complete',
+        code: 202,
+      }).response().setStatusCode(202)
   }
 
   /** Map validated body fields to provider signal hints. */
@@ -109,14 +133,5 @@ export default class ClientSessionController extends BaseController {
       faceSimilarity: data.face_similarity as number | undefined,
       faceMatchPassed: data.face_match_passed as boolean | undefined,
     }
-  }
-
-  private ok (session: VerificationSession, message: string) {
-    return new ClientSessionResource(session)
-      .additional({
-        status: 'success',
-        message,
-        code: 200,
-      })
   }
 }

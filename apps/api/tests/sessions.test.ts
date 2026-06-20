@@ -1,12 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import request from 'parasito'
-import { generateApiKey } from '@arkyc/auth'
-import { app } from '../src/core/bootstrap'
-import { Tenant } from '../src/app/models/Tenant'
-import { Project } from '../src/app/models/Project'
+
 import { ApiKey } from '../src/app/models/ApiKey'
-import { VerificationSession } from '../src/app/models/VerificationSession'
+import { Project } from '../src/app/models/Project'
 import { Storage } from '@arkstack/filesystem'
+import { Tenant } from '../src/app/models/Tenant'
+import { VerificationSession } from '../src/app/models/VerificationSession'
+import { app } from '../src/core/bootstrap'
+import { generateApiKey } from '@arkyc/auth'
+import request from 'parasito'
 
 /** Phase 6 — verification session engine driven end-to-end via the mock providers. */
 const fx = { tenantId: '', projectId: '', apiKeySecret: '' }
@@ -21,6 +22,7 @@ const clientApi = (method: 'get' | 'post', path: string, token: string) =>
 async function openSession (): Promise<{ id: string; token: string }> {
   const res = await publicApi('post', 'sessions').send({ user_reference: 'user-123' })
   expect(res.status).toBe(201)
+
   return { id: res.body.data.id, token: res.body.client_token }
 }
 
@@ -30,6 +32,7 @@ async function toLiveness (signals: Record<string, unknown> = {}): Promise<{ id:
   await clientApi('get', 'session', token)
   await clientApi('post', 'document/front', token).send({ document_type: 'passport', ...signals })
   await clientApi('post', 'liveness', token).send(signals)
+
   return { id, token }
 }
 
@@ -75,7 +78,7 @@ describe('verification session lifecycle', () => {
   it('walks a clean session to approved', async () => {
     const { id, token } = await toLiveness()
     const complete = await clientApi('post', 'complete', token).send({})
-    expect(complete.status).toBe(200)
+    expect(complete.status).toBe(202)
     expect(complete.body.data.status).toBe('approved')
 
     const show = await publicApi('get', `sessions/${id}`)
@@ -160,8 +163,8 @@ describe('verification session lifecycle', () => {
 
   it('enforces the liveness retry limit', async () => {
     const { token } = await toLiveness() // attempt 1
-    expect((await clientApi('post', 'liveness', token).send({})).status).toBe(200) // 2
-    expect((await clientApi('post', 'liveness', token).send({})).status).toBe(200) // 3
+    expect((await clientApi('post', 'liveness', token).send({})).status).toBe(201) // 2
+    expect((await clientApi('post', 'liveness', token).send({})).status).toBe(201) // 3
     const blocked = await clientApi('post', 'liveness', token).send({}) // 4 → over limit
     expect(blocked.status).toBe(429)
   })

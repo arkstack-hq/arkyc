@@ -17,58 +17,53 @@ function toArray<T> (collection: Iterable<T> | null | undefined): T[] {
     return collection ? Array.from(collection) : []
 }
 
+/** A lazily-typed eager-loaded relation (model instance or related collection). */
+type Loaded = { getAttribute (key: string): unknown } | null | undefined
+
 /**
  * Arkormˣ-backed implementation of the `@arkyc/permissions` resolver port.
  *
- * The permission table is tiny (the catalogue), so role/direct grants are
- * resolved with a couple of bulk queries and an id→name map rather than a join
- * per grant — keeping resolution to O(1) queries and avoiding N+1.
+ * Resolution leans on relationship eager-loaders: a member is loaded with its
+ * `role.permissions` (or a user permission with its `permission`) in one query,
+ * so the permission names come straight off the loaded relations — no id→name
+ * round-trip, no N+1.
  */
 export class ArkormPermissionStore implements PermissionResolverStore, PermissionSyncStore {
     async tenantRolePermissions (ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
-        const member = await TenantMember.where({
-            userId: ctx.userId,
-            tenantId: ctx.tenantId,
-        }).first()
-        if (!member) return []
+        const member = await TenantMember.where({ userId: ctx.userId, tenantId: ctx.tenantId })
+            .with('role.permissions')
+            .first()
 
-        return this.permissionsForRole(member.roleId)
+        return this.roleNames(member?.getAttribute('role') as Loaded)
     }
 
     async projectRolePermissions (ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
         if (!ctx.projectId) return []
-        const member = await ProjectMember.where({
-            userId: ctx.userId,
-            projectId: ctx.projectId,
-        }).first()
-        if (!member) return []
+        const member = await ProjectMember.where({ userId: ctx.userId, projectId: ctx.projectId })
+            .with('role.permissions')
+            .first()
 
-        return this.permissionsForRole(member.roleId)
+        return this.roleNames(member?.getAttribute('role') as Loaded)
     }
 
     async directPermissions (ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
         const grants = toArray(
-            await UserPermission.where({ userId: ctx.userId, tenantId: ctx.tenantId }).get(),
-        )
-        const relevant = grants.filter(
-            (g) => g.projectId == null || g.projectId === ctx.projectId,
+            await UserPermission.where({ userId: ctx.userId, tenantId: ctx.tenantId })
+                .with('permission')
+                .get(),
         )
 
-        return this.namesFor(relevant.map((g) => g.permissionId))
+        return grants
+            .filter((g) => g.projectId == null || g.projectId === ctx.projectId)
+            .map((g) => (g.getAttribute('permission') as Loaded)?.getAttribute('name') as PermissionKey)
+            .filter(Boolean)
     }
 
-    private async permissionsForRole (roleId: string): Promise<PermissionKey[]> {
-        const permissionIds = toArray(await RolePermission.where({ roleId }).pluck('permissionId'))
-
-        return this.namesFor(permissionIds)
-    }
-
-    private async namesFor (permissionIds: string[]): Promise<PermissionKey[]> {
-        if (permissionIds.length === 0) return []
-
-        // Pluck just the names of the wanted permissions — no full models, no
-        // table scan.
-        return toArray(await Permission.query().whereIn('id', permissionIds).pluck('name'))
+    /** Permission names off a role's eager-loaded `permissions` relation. */
+    private roleNames (role: Loaded): PermissionKey[] {
+        return toArray(role?.getAttribute('permissions') as Iterable<Loaded>)
+            .map((p) => p?.getAttribute('name') as PermissionKey)
+            .filter(Boolean)
     }
 
     // ── PermissionSyncStore ───────────────────────────────────────────────────
