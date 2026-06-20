@@ -47,8 +47,8 @@ export default class MemberController extends BaseController {
       role_id: ['required', 'string'],
     })
 
-    const role = await Role.where({ id: data.role_id }).firstOrFail()
-    RequestException.abortIf(role.tenantId !== req.tenant!.id, 'role_id is not a role of this tenant', 422)
+    const role = await Role.where({ id: data.role_id, tenantId: req.tenant!.id }).first()
+    RequestException.assertFound(role, 'role_id is not a role of this tenant', 422)
 
     const { token, tokenHash } = createTokenPair()
     const invitation = await TenantInvitation.create({
@@ -124,8 +124,8 @@ export default class MemberController extends BaseController {
     const member = await TenantMember.where({ id: req.params.memberId, tenantId: req.tenant!.id }).firstOrFail()
     const data = await this.validate({ role_id: ['required', 'string'] })
 
-    const role = await Role.where({ id: data.role_id }).firstOrFail()
-    RequestException.abortIf(role.tenantId !== req.tenant!.id, 'role_id is not a role of this tenant', 422)
+    const role = await Role.where({ id: data.role_id, tenantId: req.tenant!.id }).first()
+    RequestException.assertFound(role, 'role_id is not a role of this tenant', 422)
 
     member.roleId = role.id
     await member.save()
@@ -145,8 +145,9 @@ export default class MemberController extends BaseController {
    */
   async addPermission ({ req }: HttpContext) {
     const member = await TenantMember.where({ id: req.params.memberId, tenantId: req.tenant!.id }).firstOrFail()
-    const data = await this.validate({ permission: ['required', 'string'] })
+    const data = await this.validate({ permission: ['required', 'string', 'exists:permissions,name'] })
 
+    // `exists` already 422s on an unknown permission; fetch it for its id.
     const perm = await Permission.where({ name: data.permission }).firstOrFail()
 
     await UserPermission.query().firstOrCreate(

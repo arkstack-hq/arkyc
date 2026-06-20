@@ -149,4 +149,24 @@ describe('members & permissions', () => {
         const after = await authed('get', `/tenants/${ctx.tenantId}/members/${memberId}/permissions`)
         expect(after.body.data.direct_permissions).toContain('sessions.export')
     })
+
+    it('rejects granting an unknown permission (exists rule)', async () => {
+        const members = await authed('get', `/tenants/${ctx.tenantId}/members`)
+        const memberId = members.body.data[0].id
+
+        const res = await authed('post', `/tenants/${ctx.tenantId}/members/${memberId}/permissions`).send({
+            permission: 'not.a.real.permission',
+        })
+        expect(res.status).toBe(422)
+    })
+
+    it('rejects assigning a role from another tenant', async () => {
+        const members = await authed('get', `/tenants/${ctx.tenantId}/members`)
+        const memberId = members.body.data[0].id
+
+        const res = await authed('patch', `/tenants/${ctx.tenantId}/members/${memberId}`).send({
+            role_id: '00000000-0000-0000-0000-000000000000',
+        })
+        expect(res.status).toBe(422)
+    })
 })

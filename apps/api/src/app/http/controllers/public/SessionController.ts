@@ -1,5 +1,5 @@
-import { HttpContext } from 'clear-router/types/express'
 import { BaseController } from '@controllers/BaseController'
+import { HttpContext } from 'clear-router/types/express'
 import { VerificationSession } from '@app/models/VerificationSession'
 import VerificationSessionResource from '@app/http/resources/VerificationSessionResource'
 import { sessionService } from '@app/services/VerificationSessionService'
@@ -43,7 +43,10 @@ export default class SessionController extends BaseController {
    * @returns A VerificationSessionResource.
    */
   async show ({ req }: HttpContext) {
-    const session = await this.scopedSession(req.projectContext!.project_id, req.params.id)
+    const session = await VerificationSession.where({
+      id: String(req.params.id),
+      projectId: req.projectContext!.project_id
+    }).firstOrFail()
     await sessionService.refresh(session)
 
     return new VerificationSessionResource(session)
@@ -60,7 +63,10 @@ export default class SessionController extends BaseController {
    * @returns The cancelled VerificationSessionResource.
    */
   async cancel ({ req }: HttpContext) {
-    const session = await this.scopedSession(req.projectContext!.project_id, req.params.id)
+    const session = await VerificationSession.where({
+      id: String(req.params.id),
+      projectId: req.projectContext!.project_id
+    }).firstOrFail()
     await sessionService.cancel(session)
 
     return new VerificationSessionResource(session)
@@ -69,10 +75,5 @@ export default class SessionController extends BaseController {
         message: 'Verification session cancelled',
         code: 200,
       })
-  }
-
-  /** Resolve a session by id, scoped to the authenticated project (404 otherwise). */
-  private scopedSession (projectId: string, id: string | string[] | undefined) {
-    return VerificationSession.where({ id: Array.isArray(id) ? id[0] : id, projectId }).firstOrFail()
   }
 }
