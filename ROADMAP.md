@@ -20,44 +20,40 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ## Tech Stack Recap
 
-| Layer             | Choice                                                           |
-| ----------------- | ---------------------------------------------------------------- |
-| Backend framework | Arkstack (Express driver, full template)                         |
-| ORM / migrations  | Arkormˣ                                                          |
-| Database          | PostgreSQL                                                       |
+| Layer             | Choice                                                                   |
+| ----------------- | ------------------------------------------------------------------------ |
+| Backend framework | Arkstack (Express driver, full template)                                 |
+| ORM / migrations  | Arkormˣ                                                                  |
+| Database          | PostgreSQL                                                               |
 | Async work        | Postgres-backed job queue + `ark queue:work` (`ocr` / `biometric` roles) |
-| Storage           | S3-compatible (local driver for dev)                             |
-| Dashboard         | React + React Router + shadcn/ui + Tailwind                      |
-| SDK               | TypeScript (browser + server)                                    |
-| Widget            | Framework-agnostic embeddable (overlay / inline / hosted)        |
-| Monorepo          | pnpm workspaces (recursive `pnpm -r` scripts)                    |
+| Storage           | S3-compatible (local driver for dev)                                     |
+| Dashboard         | React + React Router + shadcn/ui + Tailwind                              |
+| SDK               | TypeScript (browser + server)                                            |
+| Widget            | Framework-agnostic embeddable (overlay / inline / hosted)                |
+| Monorepo          | pnpm workspaces (recursive `pnpm -r` scripts)                            |
 
 ---
 
 ## Phase Overview
 
-| #   | Phase                                      | Status | Outcome                                                       |
-| --- | ------------------------------------------ | ------ | ------------------------------------------------------------- |
-| 0   | Monorepo & Tooling Foundation              | ✅     | Workspace builds, lints, and tests green                      |
-| 1   | Shared Contracts (`types`, `core`, `auth`) | ✅     | Domain types + decision engine unit-tested                    |
-| 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                    |
-| 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles      |
-| 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
-| 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key + project-member management (audit emission deferred to Phase 9) |
-| 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced |
+| #   | Phase                                      | Status | Outcome                                                                                                                                    |
+| --- | ------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0   | Monorepo & Tooling Foundation              | ✅     | Workspace builds, lints, and tests green                                                                                                   |
+| 1   | Shared Contracts (`types`, `core`, `auth`) | ✅     | Domain types + decision engine unit-tested                                                                                                 |
+| 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                                                                                                 |
+| 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles                                                                                   |
+| 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes                                                                              |
+| 5   | Tenants, Projects & API Keys               | ✅     | Tenant/project/role/member/key + project-member management; audit emission wired (Phase 9)                                                 |
+| 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced                                          |
 | 7   | Provider Packages (drivers)                | ✅     | ocr/liveness/face-match packages with `mock` + `external` drivers (config-selected); file storage via Arkstack `Storage` (S3/MinIO/R2/GCS) |
-| 8   | Workers & Async Pipeline                   | ✅     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter) |
-| 9   | Reviews & Audit Logging                    | ✅     | Review queue + approve/reject/retry/assign/suspicious/note; audit trail (review + session + dashboard CRUD) + read API |
-| 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
-| 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
-| 8   | Workers & Async Pipeline                   | ⬜     | OCR + biometric workers process sessions to a decision        |
-| 9   | Reviews & Audit Logging                    | ⬜     | Manual review workflows + full audit trail                    |
-| 10  | Webhooks                                   | ⬜     | Signed, retried webhook delivery per project                  |
-| 11  | TypeScript SDK                             | ⬜     | `@arkyc/sdk` server + browser launcher                        |
-| 12  | Widget                                     | ⬜     | `@arkyc/widget` full verification flow                        |
-| 13  | Dashboard                                  | ⬜     | Multi-tenant React Router dashboard                           |
-| 14  | Playground & Docs                          | ⬜     | Example integration + documentation                           |
-| 15  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                      |
+| 8   | Workers & Async Pipeline                   | ✅     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter)             |
+| 9   | Reviews & Audit Logging                    | ✅     | Review queue + approve/reject/retry/assign/suspicious/note; audit trail (review + session + dashboard CRUD) + read API                     |
+| 10  | Webhooks                                   | ⬜     | Signed, retried webhook delivery per project                                                                                               |
+| 11  | TypeScript SDK                             | ⬜     | `@arkyc/sdk` server + browser launcher                                                                                                     |
+| 12  | Widget                                     | ⬜     | `@arkyc/widget` full verification flow                                                                                                     |
+| 13  | Dashboard                                  | ⬜     | Multi-tenant React Router dashboard                                                                                                        |
+| 14  | Playground & Docs                          | ⬜     | Example integration + documentation                                                                                                        |
+| 15  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                   |
 
 ---
 
@@ -170,7 +166,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ---
 
-## Phase 5 — Tenants, Projects, Members & API Keys 🚧
+## Phase 5 — Tenants, Projects, Members & API Keys ✅
 
 **Goal:** Full multi-tenant management through the Dashboard API.
 
@@ -183,7 +179,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 - [x] Projects CRUD with `environment`, `settings`, `branding`, project-level verification thresholds.
 - [x] Project members.
 - [x] API keys: create (return secret once), list, revoke; store `key_prefix` + `key_hash`; track `last_used_at`.
-- [ ] All endpoints permission-gated and tenant-scoped (✅). Emit audit logs (stub sink until Phase 9, then full) — **not yet wired**.
+- [x] All endpoints permission-gated and tenant-scoped; audit logs emitted on every mutation (wired in Phase 9).
 
 **Deliverables:** All `/v1/dashboard/...` tenant/project/member/role/key routes from the spec.
 
