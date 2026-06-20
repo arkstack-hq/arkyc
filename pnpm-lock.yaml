@@ -262,33 +262,6 @@ importers:
         specifier: workspace:*
         version: link:../types
 
-  workers/biometric-worker:
-    dependencies:
-      '@arkyc/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@arkyc/face-match':
-        specifier: workspace:*
-        version: link:../../packages/face-match
-      '@arkyc/liveness':
-        specifier: workspace:*
-        version: link:../../packages/liveness
-      '@arkyc/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-
-  workers/ocr-worker:
-    dependencies:
-      '@arkyc/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@arkyc/ocr':
-        specifier: workspace:*
-        version: link:../../packages/ocr
-      '@arkyc/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-
 packages:
 
   '@arkormx/plugin-clear-router@0.1.45':

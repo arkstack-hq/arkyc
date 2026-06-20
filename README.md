@@ -27,9 +27,8 @@ packages/
   sdk/          @arkyc/sdk — server + browser
   widget/       @arkyc/widget — embeddable verification flow
 
-workers/
-  ocr-worker/        Async OCR + portrait extraction
-  biometric-worker/  Async liveness + face-match + decisioning
+apps/api async work runs via the durable job queue and the `ark queue:work`
+command (`ocr` + `biometric` roles) — see Phase 8 in ROADMAP.md.
 
 docs/           Documentation
 ```

@@ -25,7 +25,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | Backend framework | Arkstack (Express driver, full template)                         |
 | ORM / migrations  | Arkormˣ                                                          |
 | Database          | PostgreSQL                                                       |
-| Async work        | Queue workers (`workers/ocr-worker`, `workers/biometric-worker`) |
+| Async work        | Postgres-backed job queue + `ark queue:work` (`ocr` / `biometric` roles) |
 | Storage           | S3-compatible (local driver for dev)                             |
 | Dashboard         | React + React Router + shadcn/ui + Tailwind                      |
 | SDK               | TypeScript (browser + server)                                    |
@@ -71,8 +71,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 - [x] Scaffold the full directory tree:
   ```
   apps/{api,dashboard,playground}
-  packages/{auth,core,types,sdk,widget,ocr,liveness,face-match,storage,webhooks,permissions}
-  workers/{ocr-worker,biometric-worker}
+  packages/{auth,core,types,sdk,widget,ocr,liveness,face-match,webhooks,permissions}
   docs/
   ```
 - [x] Shared config: ESLint, Prettier, Vitest, `tsdown`/`tsc` build for packages.
@@ -242,11 +241,11 @@ _Remaining: real `tesseract`/`internal` model integrations + `s3-compatible`/`cl
 - [x] API enqueues jobs instead of running providers inline; `complete` moves the session to `processing` until a worker lands the decision.
 - [x] Idempotency (handlers no-op on re-delivery), retries with quadratic backoff, dead-letter after max attempts, and a visibility-timeout reaper for crashed workers (at-least-once).
 
-**Deliverables:** `ark queue:work [queue] [--once]` runnable worker command (Arkstack console; shares the app's models/DB — `workers/*` scaffolds left for a future split); queue wiring; the session flow now completes asynchronously.
+**Deliverables:** `ark queue:work [queue] [--once]` runnable worker command (Arkstack console; shares the app's models/DB). Run `ark queue:work ocr` and `ark queue:work biometric` as separate processes for the two roles. The empty `workers/*` scaffold packages were retired in favour of the in-app command. The session flow now completes asynchronously.
 
 **Exit criteria:** Submitting documents/selfie enqueues work; sessions reach a decision via the worker; a reserved job from a crashed worker is reclaimed after the visibility timeout (no corruption). ✅ Covered by `tests/queue.test.ts` (claim/retry/backoff/dead-letter) + `tests/sessions.test.ts` (async walk to decision via `drain()`).
 
-_Remaining: dedicated long-running deployment of the two worker roles (currently one `queue:work` command); optional Redis/BullMQ backend._
+_Remaining: dedicated long-running deployment of the two `queue:work` roles (`ocr`, `biometric`); optional Redis/BullMQ backend._
 
 ---
 

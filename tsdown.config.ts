@@ -8,7 +8,7 @@ import { defineConfig } from 'tsdown';
  * Arkstack app and builds via `ark build`, so it is intentionally excluded.
  */
 export default defineConfig({
-  workspace: ['packages/*', 'workers/*', 'apps/dashboard', 'apps/playground'],
+  workspace: ['packages/*', 'apps/dashboard', 'apps/playground'],
   entry: ['src/index.ts'],
   format: 'esm',
   dts: true,
