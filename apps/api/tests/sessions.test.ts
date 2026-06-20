@@ -137,16 +137,18 @@ describe('verification session lifecycle', () => {
     expect(show.body.data.status).toBe('expired')
   })
 
-  it('stores an uploaded document via Arkstack Storage', async () => {
+  it('stores a multipart-uploaded document via Arkstack Storage', async () => {
     const { id, token } = await openSession()
     await clientApi('get', 'session', token)
 
-    const image = Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString('base64')
-    await clientApi('post', 'document/front', token).send({ image })
+    const bytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46]) // JPEG header
+    const form = new FormData()
+    form.append('image', new Blob([bytes], { type: 'image/jpeg' }), 'front.jpg')
+    await clientApi('post', 'document/front', token).send(form)
 
     const key = `tenants/${fx.tenantId}/projects/${fx.projectId}/sessions/${id}/documents/front.jpg`
     expect(await Storage.disk().exists(key)).toBe(true)
-    expect(Buffer.from(await Storage.disk().getBytes(key)).toString('base64')).toBe(image)
+    expect(Buffer.from(await Storage.disk().getBytes(key)).equals(bytes)).toBe(true)
   })
 
   it('rejects an invalid document_type', async () => {

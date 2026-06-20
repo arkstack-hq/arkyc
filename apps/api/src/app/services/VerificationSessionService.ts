@@ -8,7 +8,7 @@ import {
   shouldExpireSession,
 } from '@arkyc/core'
 import { createTokenPair } from '@arkyc/auth'
-import { Storage } from '@arkstack/filesystem'
+import { type FileLike, Storage } from '@arkstack/filesystem'
 import type { DocumentType, Metadata, VerificationStatus } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { DocumentCapture } from '@app/models/DocumentCapture'
@@ -88,7 +88,7 @@ export class VerificationSessionService {
     input: {
       country?: string | null
       documentType?: DocumentType | null
-      image?: Uint8Array
+      image?: FileLike
       signals?: ProviderSignals
     },
   ): Promise<DocumentCapture> {
@@ -103,8 +103,8 @@ export class VerificationSessionService {
       }))
 
     const imagePath = objectPath(session, `documents/${side}.jpg`)
-    const imageBytes = input.image ?? EMPTY_IMAGE
-    await Storage.disk().put(imagePath, imageBytes, { contentType: 'image/jpeg', visibility: 'private' })
+    const imageBytes = input.image?.buffer ?? EMPTY_IMAGE
+    await Storage.disk().put(imagePath, input.image ?? EMPTY_IMAGE, { visibility: 'private' })
 
     if (input.country !== undefined) capture.country = input.country
     if (input.documentType !== undefined) capture.documentType = input.documentType
@@ -136,7 +136,7 @@ export class VerificationSessionService {
 
       // The extracted portrait is persisted to storage for the face-match step.
       const portraitPath = objectPath(session, 'documents/portrait.jpg')
-      await Storage.disk().put(portraitPath, imageBytes, { contentType: 'image/jpeg', visibility: 'private' })
+      await Storage.disk().put(portraitPath, input.image ?? EMPTY_IMAGE, { visibility: 'private' })
       await DocumentPortrait.create({
         tenantId: session.tenantId,
         projectId: session.projectId,
@@ -157,7 +157,7 @@ export class VerificationSessionService {
   /** Persist a liveness/selfie check and advance to `liveness_submitted`. */
   async submitLiveness (
     session: VerificationSession,
-    input: { selfie?: Uint8Array; signals?: ProviderSignals },
+    input: { selfie?: FileLike; signals?: ProviderSignals },
   ): Promise<LivenessCheck> {
     await this.ensureMutable(session)
     RequestException.abortIf(
@@ -174,8 +174,8 @@ export class VerificationSessionService {
     )
 
     const selfiePath = objectPath(session, 'liveness/selfie.jpg')
-    const selfieBytes = input.selfie ?? EMPTY_IMAGE
-    await Storage.disk().put(selfiePath, selfieBytes, { contentType: 'image/jpeg', visibility: 'private' })
+    const selfieBytes = input.selfie?.buffer ?? EMPTY_IMAGE
+    await Storage.disk().put(selfiePath, input.selfie ?? EMPTY_IMAGE, { visibility: 'private' })
 
     const result = await livenessDriver.check({
       selfie: selfieBytes,
