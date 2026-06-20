@@ -45,6 +45,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
 | 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key + project-member management (audit emission deferred to Phase 9) |
 | 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced |
+| 7   | Provider Packages (drivers)                | 🚧     | storage/ocr/liveness/face-match driver packages; `mock`+`local` real, API wired via env (prod drivers stubbed) |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
 | 8   | Workers & Async Pipeline                   | ⬜     | OCR + biometric workers process sessions to a decision        |
@@ -208,17 +209,19 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ---
 
-## Phase 7 — Provider Packages (drivers) ⬜
+## Phase 7 — Provider Packages (drivers) 🚧
 
 **Goal:** Replace inline mocks with real driver-based provider packages.
 
 **Scope**
 
-- [ ] **`packages/storage`** — `putObject`, `getSignedUrl`, `deleteObject`, `objectExists`. Drivers: `local`, `s3-compatible`, `cloudflare-r2`. Tenant/project-scoped paths: `tenants/{t}/projects/{p}/sessions/{s}/documents/front.jpg`. Private by default; signed URLs.
-- [ ] **`packages/ocr`** — drivers `mock`, `tesseract`, `external`. Returns `{ fields, confidence, raw }`.
-- [ ] **`packages/liveness`** — drivers `mock`, `internal`, `external`. Returns `{ passed, score, spoofSignals, raw }`.
-- [ ] **`packages/face-match`** — drivers `mock`, `internal`, `external`. Returns `{ passed, similarityScore, confidence, raw }`.
-- [ ] Common driver-registry pattern (config selects active driver per env/project).
+- [x] **`packages/storage`** — `putObject`, `getObject`, `getSignedUrl`, `deleteObject`, `objectExists`. Drivers: `local` (fs + HMAC-signed URLs, real), `s3-compatible`/`cloudflare-r2` (registered stubs pending deployment). Tenant/project-scoped paths; private by default; signed URLs.
+- [x] **`packages/ocr`** — drivers `mock` (real), `tesseract` (stub), `external` (HTTP). Returns `{ fields, confidence, raw }`.
+- [x] **`packages/liveness`** — drivers `mock` (real), `internal` (stub), `external` (HTTP). Returns `{ passed, score, spoofSignals, raw }`.
+- [x] **`packages/face-match`** — drivers `mock` (real), `internal` (stub), `external` (HTTP). Returns `{ passed, similarityScore, confidence, raw }`.
+- [x] Common driver-registry pattern (`create*Driver(config)` selects active driver; `apps/api` wires them from env, default `mock`/`local`).
+
+_Remaining: real `tesseract`/`internal` model integrations + `s3-compatible`/`cloudflare-r2` clients (deferred to deployment)._
 
 **Deliverables:** Four provider packages with a uniform driver interface + `mock` driver parity with Phase 6 behavior.
 

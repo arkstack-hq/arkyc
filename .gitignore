@@ -33,3 +33,6 @@ pnpm-debug.log*
 # Local storage / uploads (storage `local` driver)
 storage/
 tmp/
+
+# Local storage driver artifacts
+.storage/

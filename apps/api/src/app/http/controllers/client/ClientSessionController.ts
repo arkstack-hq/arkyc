@@ -1,7 +1,7 @@
 import { HttpContext } from 'clear-router/types/express'
 import { BaseController } from '@controllers/BaseController'
 import type { DocumentType } from '@arkyc/types'
-import type { MockSignals } from '@app/services/providers/mock-providers'
+import type { ProviderSignals } from '@app/services/providers'
 import type { VerificationSession } from '@app/models/VerificationSession'
 import ClientSessionResource from '@app/http/resources/ClientSessionResource'
 import { sessionService } from '@app/services/VerificationSessionService'
@@ -11,9 +11,10 @@ import { sessionService } from '@app/services/VerificationSessionService'
  * document capture, liveness, and completion. `req.verificationSession` is
  * resolved by `clientTokenAuth`.
  *
- * The optional mock-signal hints in request bodies (`quality_score`,
- * `liveness_score`, `face_similarity`, …) are a Phase 6 affordance for steering
- * the inline mock providers; real captures replace them in Phase 7.
+ * Image bytes are accepted as an optional base64 `image` (document) / `selfie`
+ * (liveness) body field and routed to the storage driver. The optional signal
+ * hints (`quality_score`, `liveness_score`, `face_similarity`, …) steer the
+ * `mock` provider drivers and are ignored by real drivers.
  */
 export default class ClientSessionController extends BaseController {
   /** Return the current session, marking it `started` on first load. */
@@ -28,6 +29,7 @@ export default class ClientSessionController extends BaseController {
     await sessionService.submitDocument(req.verificationSession!, 'front', {
       country: this.body.country ?? null,
       documentType: (this.body.document_type as DocumentType) ?? null,
+      image: this.imageBytes('image'),
       signals: this.signals(),
     })
 
@@ -39,6 +41,7 @@ export default class ClientSessionController extends BaseController {
     await sessionService.submitDocument(req.verificationSession!, 'back', {
       country: this.body.country ?? null,
       documentType: (this.body.document_type as DocumentType) ?? null,
+      image: this.imageBytes('image'),
       signals: this.signals(),
     })
 
@@ -47,7 +50,10 @@ export default class ClientSessionController extends BaseController {
 
   /** Submit the liveness/selfie check. */
   async liveness ({ req }: HttpContext) {
-    await sessionService.submitLiveness(req.verificationSession!, { signals: this.signals() })
+    await sessionService.submitLiveness(req.verificationSession!, {
+      selfie: this.imageBytes('selfie'),
+      signals: this.signals(),
+    })
 
     return this.ok(req.verificationSession!, 'Liveness check received')
   }
@@ -61,8 +67,8 @@ export default class ClientSessionController extends BaseController {
     return this.ok(session, 'Verification complete')
   }
 
-  /** Pull the optional mock-provider hints from the request body. */
-  private signals (): MockSignals {
+  /** Pull the optional provider hints from the request body. */
+  private signals (): ProviderSignals {
     const b = this.body
 
     return {
@@ -75,6 +81,12 @@ export default class ClientSessionController extends BaseController {
       faceSimilarity: b.face_similarity,
       faceMatchPassed: b.face_match_passed,
     }
+  }
+
+  /** Decode an optional base64 image field from the request body. */
+  private imageBytes (field: 'image' | 'selfie'): Uint8Array | undefined {
+    const value = this.body[field]
+    return typeof value === 'string' && value.length > 0 ? Buffer.from(value, 'base64') : undefined
   }
 
   private ok (session: VerificationSession, message: string) {

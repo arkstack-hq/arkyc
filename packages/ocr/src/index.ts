@@ -1,8 +1,12 @@
 /**
  * @arkyc/ocr
  *
- * Driver-based OCR extraction.
- * Stub created in Phase 0 — real implementation lands in a later phase.
+ * Driver-based OCR extraction. Drivers (`mock`, `tesseract`, `external`) share
+ * the {@link OcrDriver} interface; {@link createOcrDriver} selects one from
+ * config so call sites stay driver-agnostic.
  */
-export const PACKAGE_NAME = '@arkyc/ocr';
-export const VERSION = '0.0.0';
+export * from './types';
+export * from './registry';
+export { MockOcrDriver } from './drivers/mock';
+export { TesseractOcrDriver } from './drivers/tesseract';
+export { ExternalOcrDriver } from './drivers/external';

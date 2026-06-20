@@ -1,8 +1,12 @@
 /**
  * @arkyc/liveness
  *
- * Driver-based passive liveness detection.
- * Stub created in Phase 0 — real implementation lands in a later phase.
+ * Driver-based passive liveness detection. Drivers (`mock`, `internal`,
+ * `external`) share the {@link LivenessDriver} interface; {@link createLivenessDriver}
+ * selects one from config so call sites stay driver-agnostic.
  */
-export const PACKAGE_NAME = '@arkyc/liveness';
-export const VERSION = '0.0.0';
+export * from './types';
+export * from './registry';
+export { MockLivenessDriver } from './drivers/mock';
+export { InternalLivenessDriver } from './drivers/internal';
+export { ExternalLivenessDriver } from './drivers/external';

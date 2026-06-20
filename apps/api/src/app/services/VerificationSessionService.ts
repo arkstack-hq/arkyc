@@ -17,18 +17,24 @@ import { LivenessCheck } from '@app/models/LivenessCheck'
 import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
 import { Project } from '@app/models/Project'
 import {
-  type MockSignals,
-  mockFaceMatch,
-  mockLiveness,
-  mockOcr,
-  mockPortrait,
-} from './providers/mock-providers'
+  type ProviderSignals,
+  faceMatchDriver,
+  livenessDriver,
+  ocrDriver,
+  storage,
+} from './providers'
 
 /** A verification session's lifetime — also bounds its client token. */
 const SESSION_TTL_MS = 15 * 60 * 1000
 
 /** Maximum liveness/selfie attempts before a session is locked out. */
 const MAX_LIVENESS_ATTEMPTS = 3
+
+/** Confidence reported for the (mock) portrait extraction off the document. */
+const PORTRAIT_DETECTION_CONFIDENCE = 0.95
+
+/** Empty payload stored when a step carries no real image bytes (mock flow). */
+const EMPTY_IMAGE = new Uint8Array(0)
 
 /** The integrating backend's resolved key context (`req.projectContext`). */
 interface ProjectScope {
@@ -40,10 +46,11 @@ const objectPath = (s: VerificationSession, leaf: string): string =>
   `tenants/${s.tenantId}/projects/${s.projectId}/sessions/${s.id}/${leaf}`
 
 /**
- * Drives the verification session lifecycle for the public + client APIs
- * (Phase 6). Each step runs inline **mock** providers (Phase 7 swaps these for
- * driver packages) and persists their output; `complete` aggregates the
- * persisted signals, runs the decision engine, and lands a final decision.
+ * Drives the verification session lifecycle for the public + client APIs. Each
+ * step stores its image via the storage driver and runs the configured provider
+ * driver (`@arkyc/ocr`, `@arkyc/liveness`, `@arkyc/face-match` — `mock` by
+ * default); `complete` aggregates the persisted signals, runs the decision
+ * engine, and lands a final decision.
  */
 export class VerificationSessionService {
   /** Create a `pending` session and mint its one-time client token. */
@@ -75,8 +82,9 @@ export class VerificationSessionService {
   }
 
   /**
-   * Persist a document side. The front capture runs mock OCR + portrait
-   * extraction and advances the session to `document_submitted`.
+   * Persist a document side. The image is stored via the storage driver; the
+   * front capture then runs OCR + portrait extraction and advances the session
+   * to `document_submitted`.
    */
   async submitDocument (
     session: VerificationSession,
@@ -84,7 +92,8 @@ export class VerificationSessionService {
     input: {
       country?: string | null
       documentType?: DocumentType | null
-      signals?: MockSignals
+      image?: Uint8Array
+      signals?: ProviderSignals
     },
   ): Promise<DocumentCapture> {
     await this.ensureMutable(session)
@@ -97,10 +106,14 @@ export class VerificationSessionService {
         sessionId: session.id,
       }))
 
+    const imagePath = objectPath(session, `documents/${side}.jpg`)
+    const imageBytes = input.image ?? EMPTY_IMAGE
+    await storage.putObject(imagePath, imageBytes, { contentType: 'image/jpeg' })
+
     if (input.country !== undefined) capture.country = input.country
     if (input.documentType !== undefined) capture.documentType = input.documentType
-    if (side === 'front') capture.frontImagePath = objectPath(session, 'documents/front.jpg')
-    else capture.backImagePath = objectPath(session, 'documents/back.jpg')
+    if (side === 'front') capture.frontImagePath = imagePath
+    else capture.backImagePath = imagePath
 
     if (side === 'front') {
       capture.qualityScore = clamp01(input.signals?.qualityScore ?? 0.9)
@@ -109,7 +122,12 @@ export class VerificationSessionService {
 
     // The front side carries the readable data — run OCR + portrait off it.
     if (side === 'front') {
-      const ocr = mockOcr(input.signals)
+      const ocr = await ocrDriver.extract({
+        image: imageBytes,
+        documentType: input.documentType ?? null,
+        country: input.country ?? null,
+        hints: { confidence: input.signals?.ocrConfidence, expired: input.signals?.expired },
+      })
       await OcrResult.create({
         tenantId: session.tenantId,
         projectId: session.projectId,
@@ -120,14 +138,16 @@ export class VerificationSessionService {
         rawResponse: ocr.raw,
       })
 
-      const portrait = mockPortrait()
+      // The extracted portrait is persisted to storage for the face-match step.
+      const portraitPath = objectPath(session, 'documents/portrait.jpg')
+      await storage.putObject(portraitPath, imageBytes, { contentType: 'image/jpeg' })
       await DocumentPortrait.create({
         tenantId: session.tenantId,
         projectId: session.projectId,
         sessionId: session.id,
         documentCaptureId: capture.id,
-        portraitImagePath: objectPath(session, 'documents/portrait.jpg'),
-        detectionConfidence: portrait.detectionConfidence,
+        portraitImagePath: portraitPath,
+        detectionConfidence: PORTRAIT_DETECTION_CONFIDENCE,
       })
 
       if (session.status === 'started') {
@@ -141,7 +161,7 @@ export class VerificationSessionService {
   /** Persist a liveness/selfie check and advance to `liveness_submitted`. */
   async submitLiveness (
     session: VerificationSession,
-    input: { signals?: MockSignals },
+    input: { selfie?: Uint8Array; signals?: ProviderSignals },
   ): Promise<LivenessCheck> {
     await this.ensureMutable(session)
     RequestException.abortIf(
@@ -157,16 +177,27 @@ export class VerificationSessionService {
       429,
     )
 
-    const result = mockLiveness(input.signals)
+    const selfiePath = objectPath(session, 'liveness/selfie.jpg')
+    const selfieBytes = input.selfie ?? EMPTY_IMAGE
+    await storage.putObject(selfiePath, selfieBytes, { contentType: 'image/jpeg' })
+
+    const result = await livenessDriver.check({
+      selfie: selfieBytes,
+      hints: {
+        score: input.signals?.livenessScore,
+        passed: input.signals?.livenessPassed,
+        multipleFaces: input.signals?.multipleFaces,
+      },
+    })
     const check = await LivenessCheck.create({
       tenantId: session.tenantId,
       projectId: session.projectId,
       sessionId: session.id,
-      selfieImagePath: objectPath(session, 'liveness/selfie.jpg'),
+      selfieImagePath: selfiePath,
       score: result.score,
       passed: result.passed,
       spoofSignals: result.spoofSignals,
-      provider: 'mock',
+      provider: livenessDriver.name,
       rawResponse: result.raw,
     })
 
@@ -183,7 +214,7 @@ export class VerificationSessionService {
    */
   async complete (
     session: VerificationSession,
-    input: { signals?: MockSignals },
+    input: { signals?: ProviderSignals },
   ): Promise<VerificationSession> {
     await this.ensureMutable(session)
 
@@ -195,7 +226,14 @@ export class VerificationSessionService {
     RequestException.assertFound(liveness, 'No liveness check has been submitted', 409)
 
     const portrait = await DocumentPortrait.where({ sessionId: session.id }).first()
-    const faceMatch = mockFaceMatch(input.signals)
+    const faceMatch = await faceMatchDriver.compare({
+      documentPortrait: await this.readObject(portrait?.portraitImagePath),
+      selfie: await this.readObject(liveness.selfieImagePath),
+      hints: {
+        similarityScore: input.signals?.faceSimilarity,
+        passed: input.signals?.faceMatchPassed,
+      },
+    })
     await FaceMatchCheck.create({
       tenantId: session.tenantId,
       projectId: session.projectId,
@@ -205,7 +243,7 @@ export class VerificationSessionService {
       similarityScore: faceMatch.similarityScore,
       confidence: faceMatch.confidence,
       passed: faceMatch.passed,
-      provider: 'mock',
+      provider: faceMatchDriver.name,
       rawResponse: faceMatch.raw,
     })
 
@@ -273,6 +311,16 @@ export class VerificationSessionService {
       `Session is ${session.status} and can no longer be modified`,
       409,
     )
+  }
+
+  /** Read stored bytes for an object, tolerating a missing path/object. */
+  private async readObject (key: string | null | undefined): Promise<Uint8Array> {
+    if (!key) return EMPTY_IMAGE
+    try {
+      return await storage.getObject(key)
+    } catch {
+      return EMPTY_IMAGE
+    }
   }
 
   /** Apply and persist a status change, validating it against the state machine. */

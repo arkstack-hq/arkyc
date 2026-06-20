@@ -1,8 +1,12 @@
 /**
  * @arkyc/face-match
  *
- * Driver-based face matching.
- * Stub created in Phase 0 — real implementation lands in a later phase.
+ * Driver-based face matching. Drivers (`mock`, `internal`, `external`) share the
+ * {@link FaceMatchDriver} interface; {@link createFaceMatchDriver} selects one
+ * from config so call sites stay driver-agnostic.
  */
-export const PACKAGE_NAME = '@arkyc/face-match';
-export const VERSION = '0.0.0';
+export * from './types';
+export * from './registry';
+export { MockFaceMatchDriver } from './drivers/mock';
+export { InternalFaceMatchDriver } from './drivers/internal';
+export { ExternalFaceMatchDriver } from './drivers/external';

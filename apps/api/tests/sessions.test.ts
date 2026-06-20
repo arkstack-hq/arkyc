@@ -6,6 +6,7 @@ import { Tenant } from '../src/app/models/Tenant'
 import { Project } from '../src/app/models/Project'
 import { ApiKey } from '../src/app/models/ApiKey'
 import { VerificationSession } from '../src/app/models/VerificationSession'
+import { storage } from '../src/app/services/providers'
 
 /** Phase 6 — verification session engine driven end-to-end via the mock providers. */
 const fx = { tenantId: '', projectId: '', apiKeySecret: '' }
@@ -134,6 +135,22 @@ describe('verification session lifecycle', () => {
 
     const show = await publicApi('get', `sessions/${id}`)
     expect(show.body.data.status).toBe('expired')
+  })
+
+  it('stores an uploaded document and can mint a signed read URL', async () => {
+    const { id, token } = await openSession()
+    await clientApi('get', 'session', token)
+
+    const image = Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString('base64')
+    await clientApi('post', 'document/front', token).send({ image })
+
+    const key = `tenants/${fx.tenantId}/projects/${fx.projectId}/sessions/${id}/documents/front.jpg`
+    expect(await storage.objectExists(key)).toBe(true)
+    expect(Buffer.from(await storage.getObject(key)).toString('base64')).toBe(image)
+
+    const url = await storage.getSignedUrl(key, { expiresIn: 60 })
+    expect(url).toContain('front.jpg')
+    expect(url).toContain('signature=')
   })
 
   it('enforces the liveness retry limit', async () => {
