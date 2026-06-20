@@ -20,10 +20,10 @@ export default class TenantController extends BaseController {
      * @returns      A TenantCollection.
      */
     async index ({ req }: HttpContext) {
-        const tenantIds = toArray(await TenantMember.where({ userId: req.user!.id }).pluck('tenantId'))
-        const tenants = tenantIds.length
-            ? await Tenant.query().whereIn('id', tenantIds).get()
-            : []
+        const memberships = await TenantMember.where({ userId: req.user!.id }).with('tenant').get()
+        const tenants = toArray(memberships)
+            .map((m) => m.getAttribute('tenant') as Tenant | null)
+            .filter((t): t is Tenant => t != null)
 
         return new TenantCollection(tenants).additional({
           status: 'success',

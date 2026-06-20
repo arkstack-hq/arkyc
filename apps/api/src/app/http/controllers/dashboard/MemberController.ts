@@ -1,4 +1,3 @@
-import { RequestException } from '@arkstack/common'
 import { BaseController } from '@controllers/BaseController'
 import EmptyResource from '@app/http/resources/EmptyResource'
 import { HttpContext } from 'clear-router/types/express'
@@ -7,6 +6,7 @@ import MemberCollection from '@app/http/resources/MemberCollection'
 import MemberPermissionsResource from '@app/http/resources/MemberPermissionsResource'
 import { Permission } from '@app/models/Permission'
 import type { QueryBuilder } from 'arkormx'
+import { RequestException } from '@arkstack/common'
 import { Role } from '@app/models/Role'
 import { TenantInvitation } from '@app/models/TenantInvitation'
 import { TenantMember } from '@app/models/TenantMember'
@@ -47,8 +47,7 @@ export default class MemberController extends BaseController {
       role_id: ['required', 'string'],
     })
 
-    const role = await Role.where({ id: data.role_id }).first()
-    RequestException.assertFound(role, 'role_id is not a role of this tenant', 422)
+    const role = await Role.where({ id: data.role_id }).firstOrFail()
     RequestException.abortIf(role.tenantId !== req.tenant!.id, 'role_id is not a role of this tenant', 422)
 
     const { token, tokenHash } = createTokenPair()
@@ -125,8 +124,7 @@ export default class MemberController extends BaseController {
     const member = await TenantMember.where({ id: req.params.memberId, tenantId: req.tenant!.id }).firstOrFail()
     const data = await this.validate({ role_id: ['required', 'string'] })
 
-    const role = await Role.where({ id: data.role_id }).first()
-    RequestException.assertFound(role, 'role_id is not a role of this tenant', 422)
+    const role = await Role.where({ id: data.role_id }).firstOrFail()
     RequestException.abortIf(role.tenantId !== req.tenant!.id, 'role_id is not a role of this tenant', 422)
 
     member.roleId = role.id
@@ -149,22 +147,12 @@ export default class MemberController extends BaseController {
     const member = await TenantMember.where({ id: req.params.memberId, tenantId: req.tenant!.id }).firstOrFail()
     const data = await this.validate({ permission: ['required', 'string'] })
 
-    const perm = await Permission.where({ name: data.permission }).first()
-    RequestException.assertFound(perm, 'Unknown permission', 422)
+    const perm = await Permission.where({ name: data.permission }).firstOrFail()
 
-    const existing = await UserPermission.where({
-      tenantId: member.tenantId,
-      userId: member.userId,
-      permissionId: perm.id,
-    }).first()
-    if (!existing) {
-      await UserPermission.create({
-        tenantId: member.tenantId,
-        projectId: null,
-        userId: member.userId,
-        permissionId: perm.id,
-      })
-    }
+    await UserPermission.query().firstOrCreate(
+      { tenantId: member.tenantId, userId: member.userId, permissionId: perm.id },
+      { projectId: null },
+    )
 
     return new EmptyResource({}).additional({
       status: 'success',
@@ -183,8 +171,7 @@ export default class MemberController extends BaseController {
     const member = await TenantMember.where({ id: req.params.memberId, tenantId: req.tenant!.id }).firstOrFail()
     const name = req.params.permission
 
-    const perm = name ? await Permission.where({ name }).first() : null
-    RequestException.assertFound(perm, 'Unknown permission', 404)
+    const perm = await Permission.where({ name }).firstOrFail()
 
     const grant = await UserPermission.where({
       tenantId: member.tenantId,

@@ -130,7 +130,6 @@ export default class ProjectMemberController extends BaseController {
 
   /** A role assigned to a project member must belong to the tenant. */
   private async assertTenantRole (tenantId: string, roleId: string): Promise<void> {
-    const role = await Role.where({ id: roleId, tenantId }).first()
-    RequestException.assertFound(role, 'role_id is not a role of this tenant', 422)
+    await Role.where({ id: roleId, tenantId }).firstOrFail()
   }
 }
