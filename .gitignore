@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Arkstack build cache
+.arkstack/
+
+# Test coverage
+coverage/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+*.swp
+.vscode/*
+!.vscode/extensions.json
+
+# Local storage / uploads (storage `local` driver)
+storage/
+tmp/

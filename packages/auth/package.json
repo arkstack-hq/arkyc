@@ -1,0 +1,28 @@
+{
+  "name": "@arkyc/auth",
+  "version": "0.0.0",
+  "description": "Authentication, token, and API key helpers",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@arkyc/types": "workspace:*"
+  }
+}

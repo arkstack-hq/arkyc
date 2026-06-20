@@ -1,0 +1,17 @@
+{
+  "name": "@arkyc/playground",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Arkyc playground — example integration app",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@arkyc/sdk": "workspace:*"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@arkyc/widget",
+  "version": "0.0.0",
+  "description": "Embeddable Arkyc verification widget",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@arkyc/types": "workspace:*"
+  }
+}
