@@ -46,6 +46,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key + project-member management (audit emission deferred to Phase 9) |
 | 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced |
 | 7   | Provider Packages (drivers)                | 🚧     | ocr/liveness/face-match driver packages (`mock` real, API wired via env); file storage via Arkstack `Storage` (prod analyzer drivers stubbed) |
+| 8   | Workers & Async Pipeline                   | 🚧     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter) |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
 | 8   | Workers & Async Pipeline                   | ⬜     | OCR + biometric workers process sessions to a decision        |
@@ -229,21 +230,23 @@ _Remaining: real `tesseract`/`internal` model integrations + `s3-compatible`/`cl
 
 ---
 
-## Phase 8 — Workers & Async Pipeline ⬜
+## Phase 8 — Workers & Async Pipeline 🚧
 
 **Goal:** Move heavy processing off the request path into queue workers.
 
 **Scope**
 
-- [ ] Queue abstraction (e.g. pg-backed or Redis/BullMQ) shared by API + workers.
-- [ ] **`workers/ocr-worker`** — consumes document-submitted jobs → runs `ocr` + portrait extraction → persists results → advances status.
-- [ ] **`workers/biometric-worker`** — consumes liveness/face-match jobs → runs `liveness` + `face-match` → persists → triggers decision engine → sets final status.
-- [ ] API enqueues jobs instead of running providers inline; `processing` status reflects in-flight work.
-- [ ] Idempotency, retries with backoff, dead-letter handling.
+- [x] Queue abstraction — durable **Postgres-backed** `jobs` table + `Queue` service (`enqueue`/`claim`/`complete`/`fail`), claimed atomically with `UPDATE … RETURNING` over `FOR UPDATE SKIP LOCKED`. Shared by API + the worker command.
+- [x] **`ocr` queue** — consumes document jobs → runs the `ocr` driver + portrait extraction → persists results (idempotent).
+- [x] **`biometric` queue** — consumes jobs → runs `face-match` + the decision engine → sets `auto_decision`/`final_decision`/`risk_score` and the final status. (Liveness stays inline — cheap check; keeps the per-session attempt limit simple.)
+- [x] API enqueues jobs instead of running providers inline; `complete` moves the session to `processing` until a worker lands the decision.
+- [x] Idempotency (handlers no-op on re-delivery), retries with quadratic backoff, dead-letter after max attempts, and a visibility-timeout reaper for crashed workers (at-least-once).
 
-**Deliverables:** Two runnable workers + queue wiring; the Phase 6 flow now completes asynchronously.
+**Deliverables:** `ark queue:work [queue] [--once]` runnable worker command (Arkstack console; shares the app's models/DB — `workers/*` scaffolds left for a future split); queue wiring; the session flow now completes asynchronously.
 
-**Exit criteria:** Submitting documents/selfie enqueues work; sessions reach a decision via workers; killing/restarting a worker mid-job doesn't corrupt state.
+**Exit criteria:** Submitting documents/selfie enqueues work; sessions reach a decision via the worker; a reserved job from a crashed worker is reclaimed after the visibility timeout (no corruption). ✅ Covered by `tests/queue.test.ts` (claim/retry/backoff/dead-letter) + `tests/sessions.test.ts` (async walk to decision via `drain()`).
+
+_Remaining: dedicated long-running deployment of the two worker roles (currently one `queue:work` command); optional Redis/BullMQ backend._
 
 ---
 

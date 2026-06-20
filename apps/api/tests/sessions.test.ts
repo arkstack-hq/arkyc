@@ -6,10 +6,11 @@ import { Storage } from '@arkstack/filesystem'
 import { Tenant } from '../src/app/models/Tenant'
 import { VerificationSession } from '../src/app/models/VerificationSession'
 import { app } from '../src/core/bootstrap'
+import { drain } from '../src/app/jobs'
 import { generateApiKey } from '@arkyc/auth'
 import request from 'parasito'
 
-/** Phase 6 — verification session engine driven end-to-end via the mock providers. */
+/** Phase 8 — verification session engine driven async via the queue + workers. */
 const fx = { tenantId: '', projectId: '', apiKeySecret: '' }
 
 const publicApi = (method: 'get' | 'post', path: string) =>
@@ -75,13 +76,17 @@ describe('verification session lifecycle', () => {
     expect(res.body.client_token).toBeTruthy()
   })
 
-  it('walks a clean session to approved', async () => {
+  it('walks a clean session to approved via the workers', async () => {
     const { id, token } = await toLiveness()
     const complete = await clientApi('post', 'complete', token).send({})
     expect(complete.status).toBe(202)
-    expect(complete.body.data.status).toBe('approved')
+    // Decision is async — completing only moves the session to `processing`.
+    expect(complete.body.data.status).toBe('processing')
+
+    await drain() // run the ocr + biometric workers
 
     const show = await publicApi('get', `sessions/${id}`)
+    expect(show.body.data.status).toBe('approved')
     expect(show.body.data.final_decision).toBe('approved')
     expect(show.body.data.decision_reason).toBe('AUTO_APPROVED')
     expect(show.body.data.completed_at).toBeTruthy()
@@ -93,25 +98,30 @@ describe('verification session lifecycle', () => {
     expect((await clientApi('get', 'session', token)).body.data.status).toBe('started')
     expect((await clientApi('post', 'document/front', token).send({})).body.data.status).toBe('document_submitted')
     expect((await clientApi('post', 'liveness', token).send({})).body.data.status).toBe('liveness_submitted')
-    expect((await clientApi('post', 'complete', token).send({})).body.data.status).toBe('approved')
+    expect((await clientApi('post', 'complete', token).send({})).body.data.status).toBe('processing')
+
+    await drain()
+    expect((await clientApi('get', 'session', token)).body.data.status).toBe('approved')
   })
 
   it('rejects an expired document', async () => {
     const { id, token } = await toLiveness({ expired: true })
-    const complete = await clientApi('post', 'complete', token).send({})
-    expect(complete.body.data.status).toBe('rejected')
+    await clientApi('post', 'complete', token).send({})
+    await drain()
 
     const show = await publicApi('get', `sessions/${id}`)
+    expect(show.body.data.status).toBe('rejected')
     expect(show.body.data.final_decision).toBe('rejected')
     expect(show.body.data.decision_reason).toBe('DOCUMENT_EXPIRED')
   })
 
   it('routes low document quality to manual review', async () => {
     const { id, token } = await toLiveness({ quality_score: 0.4 })
-    const complete = await clientApi('post', 'complete', token).send({})
-    expect(complete.body.data.status).toBe('requires_review')
+    await clientApi('post', 'complete', token).send({})
+    await drain()
 
     const show = await publicApi('get', `sessions/${id}`)
+    expect(show.body.data.status).toBe('requires_review')
     expect(show.body.data.auto_decision).toBe('requires_review')
     expect(show.body.data.final_decision).toBeNull()
     expect(show.body.data.decision_reason).toBe('LOW_DOCUMENT_QUALITY')

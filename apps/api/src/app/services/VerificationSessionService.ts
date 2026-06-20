@@ -1,32 +1,20 @@
 import { RequestException } from '@arkstack/common'
-import {
-  type DecisionInput,
-  assertTransition,
-  decideVerification,
-  isDocumentExpired,
-  isTerminalStatus,
-  shouldExpireSession,
-} from '@arkyc/core'
+import { assertTransition, isTerminalStatus, shouldExpireSession } from '@arkyc/core'
 import { createTokenPair } from '@arkyc/auth'
 import { type FileLike, Storage } from '@arkstack/filesystem'
 import type { DocumentType, Metadata, VerificationStatus } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { DocumentCapture } from '@app/models/DocumentCapture'
-import { OcrResult } from '@app/models/OcrResult'
-import { DocumentPortrait } from '@app/models/DocumentPortrait'
 import { LivenessCheck } from '@app/models/LivenessCheck'
-import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
-import { Project } from '@app/models/Project'
-import { type ProviderSignals, faceMatchDriver, livenessDriver, ocrDriver } from './providers'
+import { sessionObjectKey } from 'src/support/storage'
+import { type ProviderSignals, livenessDriver } from './providers'
+import { queue } from './Queue'
 
 /** A verification session's lifetime — also bounds its client token. */
 const SESSION_TTL_MS = 15 * 60 * 1000
 
 /** Maximum liveness/selfie attempts before a session is locked out. */
 const MAX_LIVENESS_ATTEMPTS = 3
-
-/** Confidence reported for the (mock) portrait extraction off the document. */
-const PORTRAIT_DETECTION_CONFIDENCE = 0.95
 
 /** Empty payload stored when a step carries no real image bytes (mock flow). */
 const EMPTY_IMAGE = new Uint8Array(0)
@@ -37,15 +25,17 @@ interface ProjectScope {
   project_id: string
 }
 
-const objectPath = (s: VerificationSession, leaf: string): string =>
-  `tenants/${s.tenantId}/projects/${s.projectId}/sessions/${s.id}/${leaf}`
+const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
 
 /**
- * Drives the verification session lifecycle for the public + client APIs. Each
- * step stores its image via Arkstack `Storage` and runs the configured provider
- * driver (`@arkyc/ocr`, `@arkyc/liveness`, `@arkyc/face-match` — `mock` by
- * default); `complete` aggregates the persisted signals, runs the decision
- * engine, and lands a final decision.
+ * Drives the verification session lifecycle for the public + client APIs
+ * (Phase 8 — async pipeline).
+ *
+ * Heavy work runs off the request path via the durable queue: a document submit
+ * enqueues an `ocr` job (OCR + portrait), and `complete` enqueues a `biometric`
+ * job (face match + decision), moving the session to `processing` until a worker
+ * lands the final decision. Liveness stays inline — it's a cheap check and keeps
+ * the per-session attempt limit simple.
  */
 export class VerificationSessionService {
   /** Create a `pending` session and mint its one-time client token. */
@@ -79,8 +69,8 @@ export class VerificationSessionService {
 
   /**
    * Persist a document side. The image is stored via the storage driver; the
-   * front capture then runs OCR + portrait extraction and advances the session
-   * to `document_submitted`.
+   * front capture enqueues async OCR + portrait extraction and advances the
+   * session to `document_submitted`.
    */
   async submitDocument (
     session: VerificationSession,
@@ -102,7 +92,7 @@ export class VerificationSessionService {
         sessionId: session.id,
       }))
 
-    const imagePath = objectPath(session, `documents/${side}.jpg`)
+    const imagePath = sessionObjectKey(session, `documents/${side}.jpg`)
     await Storage.disk().put(imagePath, input.image ?? EMPTY_IMAGE, { visibility: 'private' })
 
     if (input.country !== undefined) capture.country = input.country
@@ -115,34 +105,11 @@ export class VerificationSessionService {
     }
     await capture.save()
 
-    // The front side carries the readable data — run OCR + portrait off it.
+    // The front side carries the readable data — OCR + portrait run async.
     if (side === 'front') {
-      const ocr = await ocrDriver.extract({
-        image: input.image?.buffer ?? EMPTY_IMAGE,
-        documentType: input.documentType ?? null,
-        country: input.country ?? null,
-        hints: { confidence: input.signals?.ocrConfidence, expired: input.signals?.expired },
-      })
-      await OcrResult.create({
-        tenantId: session.tenantId,
-        projectId: session.projectId,
+      await queue.enqueue('ocr', {
         sessionId: session.id,
-        documentCaptureId: capture.id,
-        fields: ocr.fields,
-        confidence: ocr.confidence,
-        rawResponse: ocr.raw,
-      })
-
-      // The extracted portrait is persisted to storage for the face-match step.
-      const portraitPath = objectPath(session, 'documents/portrait.jpg')
-      await Storage.disk().put(portraitPath, input.image ?? EMPTY_IMAGE, { visibility: 'private' })
-      await DocumentPortrait.create({
-        tenantId: session.tenantId,
-        projectId: session.projectId,
-        sessionId: session.id,
-        documentCaptureId: capture.id,
-        portraitImagePath: portraitPath,
-        detectionConfidence: PORTRAIT_DETECTION_CONFIDENCE,
+        hints: { ocrConfidence: input.signals?.ocrConfidence, expired: input.signals?.expired },
       })
 
       if (session.status === 'started') {
@@ -172,12 +139,11 @@ export class VerificationSessionService {
       429,
     )
 
-    const selfiePath = objectPath(session, 'liveness/selfie.jpg')
-    const selfieBytes = input.selfie?.buffer ?? EMPTY_IMAGE
+    const selfiePath = sessionObjectKey(session, 'liveness/selfie.jpg')
     await Storage.disk().put(selfiePath, input.selfie ?? EMPTY_IMAGE, { visibility: 'private' })
 
     const result = await livenessDriver.check({
-      selfie: selfieBytes,
+      selfie: input.selfie?.buffer ?? EMPTY_IMAGE,
       hints: {
         score: input.signals?.livenessScore,
         passed: input.signals?.livenessPassed,
@@ -204,8 +170,8 @@ export class VerificationSessionService {
   }
 
   /**
-   * Run face match, aggregate all persisted signals through the decision
-   * engine, and land the session in a final decision.
+   * Finalise: require a document + liveness, move to `processing`, and enqueue
+   * the biometric job (face match + decision). A worker lands the final outcome.
    */
   async complete (
     session: VerificationSession,
@@ -214,68 +180,18 @@ export class VerificationSessionService {
     await this.ensureMutable(session)
 
     const capture = await DocumentCapture.where({ sessionId: session.id }).first()
-    const ocr = await OcrResult.where({ sessionId: session.id }).first()
     const liveness = await LivenessCheck.where({ sessionId: session.id }).first()
     RequestException.assertFound(capture, 'No document has been submitted', 409)
-    RequestException.assertFound(ocr, 'No document has been submitted', 409)
     RequestException.assertFound(liveness, 'No liveness check has been submitted', 409)
 
-    const portrait = await DocumentPortrait.where({ sessionId: session.id }).first()
-    const faceMatch = await faceMatchDriver.compare({
-      documentPortrait: await this.readObject(portrait?.portraitImagePath),
-      selfie: await this.readObject(liveness.selfieImagePath),
-      hints: {
-        similarityScore: input.signals?.faceSimilarity,
-        passed: input.signals?.faceMatchPassed,
-      },
-    })
-    await FaceMatchCheck.create({
-      tenantId: session.tenantId,
-      projectId: session.projectId,
-      sessionId: session.id,
-      idPortraitImagePath: portrait?.portraitImagePath ?? null,
-      selfieImagePath: liveness.selfieImagePath,
-      similarityScore: faceMatch.similarityScore,
-      confidence: faceMatch.confidence,
-      passed: faceMatch.passed,
-      provider: faceMatchDriver.name,
-      rawResponse: faceMatch.raw,
-    })
-
     await this.transition(session, 'processing')
-
-    const decisionInput: DecisionInput = {
-      document: {
-        qualityScore: capture.qualityScore ?? 0,
-        ocrConfidence: ocr.confidence,
-        expired: isDocumentExpired(ocr.fields.expiryDate, new Date()),
+    await queue.enqueue('biometric', {
+      sessionId: session.id,
+      hints: {
+        faceSimilarity: input.signals?.faceSimilarity,
+        faceMatchPassed: input.signals?.faceMatchPassed,
       },
-      liveness: {
-        passed: liveness.passed,
-        score: liveness.score,
-        multipleFaces: liveness.spoofSignals?.multipleFaces ?? false,
-      },
-      faceMatch: {
-        passed: faceMatch.passed,
-        similarityScore: faceMatch.similarityScore,
-      },
-    }
-
-    const project = await Project.where({ id: session.projectId }).first()
-    const { decision, reason, riskScore } = decideVerification(
-      decisionInput,
-      project?.settings?.thresholds,
-    )
-
-    session.autoDecision = decision
-    session.decisionReason = reason
-    session.riskScore = riskScore
-    // Auto outcomes are final; `requires_review` waits for a human (Phase 9).
-    if (decision === 'approved' || decision === 'rejected') {
-      session.finalDecision = decision
-      session.completedAt = new Date()
-    }
-    await this.transition(session, decision)
+    })
 
     return session
   }
@@ -310,16 +226,6 @@ export class VerificationSessionService {
     )
   }
 
-  /** Read stored bytes for an object, tolerating a missing path/object. */
-  private async readObject (key: string | null | undefined): Promise<Uint8Array> {
-    if (!key) return EMPTY_IMAGE
-    try {
-      return await Storage.disk().getBytes(key)
-    } catch {
-      return EMPTY_IMAGE
-    }
-  }
-
   /** Apply and persist a status change, validating it against the state machine. */
   private async transition (
     session: VerificationSession,
@@ -329,8 +235,6 @@ export class VerificationSessionService {
     await session.save()
   }
 }
-
-const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
 
 /** Shared singleton — the service holds no per-request state. */
 export const sessionService = new VerificationSessionService()
