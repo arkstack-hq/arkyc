@@ -10,6 +10,7 @@ import { toArray } from 'src/support/collection'
 import { Tenant } from '@app/models/Tenant'
 import { TenantMember } from '@app/models/TenantMember'
 import { Role } from '@app/models/Role'
+import { audit } from '@app/services/AuditLogger'
 
 /** Tenant management. `show`/`update` run after `resolveTenant` (req.tenant). */
 export default class TenantController extends BaseController {
@@ -65,6 +66,18 @@ export default class TenantController extends BaseController {
             joinedAt: new Date(),
         })
 
+        const actor = audit.actorFromRequest(req)
+        await audit.record({
+            tenantId: tenant.id,
+            actorId: actor.actorId,
+            actorType: actor.actorType,
+            action: 'tenant.created',
+            entityType: 'tenant',
+            entityId: tenant.id,
+            ipAddress: actor.ipAddress,
+            userAgent: actor.userAgent,
+        })
+
         return new TenantResource(tenant)
             .additional({
               status: 'success',
@@ -109,6 +122,12 @@ export default class TenantController extends BaseController {
             tenant.settings = { ...(tenant.settings ?? {}), ...data.settings }
         }
         await tenant.save()
+
+        await audit.recordForRequest(req, {
+            action: 'tenant.updated',
+            entityType: 'tenant',
+            entityId: tenant.id,
+        })
 
         return new TenantResource(tenant).additional({
           status: 'success',

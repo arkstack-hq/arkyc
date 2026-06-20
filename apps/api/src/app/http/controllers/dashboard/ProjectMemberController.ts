@@ -8,6 +8,7 @@ import ProjectMemberCollection from '@app/http/resources/ProjectMemberCollection
 import ProjectMemberResource from '@app/http/resources/ProjectMemberResource'
 import { Role } from '@app/models/Role'
 import { TenantMember } from '@app/models/TenantMember'
+import { audit } from '@app/services/AuditLogger'
 
 /**
  * Manage which tenant members belong to a project and in what role. All actions
@@ -60,6 +61,13 @@ export default class ProjectMemberController extends BaseController {
       status: 'active',
     })
 
+    await audit.recordForRequest(req, {
+      projectId: project.id,
+      action: 'project_member.added',
+      entityType: 'project_member',
+      entityId: member.id,
+    })
+
     return new ProjectMemberResource(member)
       .additional({
         status: 'success',
@@ -89,6 +97,13 @@ export default class ProjectMemberController extends BaseController {
     member.roleId = data.role_id
     await member.save()
 
+    await audit.recordForRequest(req, {
+      projectId: project.id,
+      action: 'project_member.updated',
+      entityType: 'project_member',
+      entityId: member.id,
+    })
+
     return new ProjectMemberResource(member).additional({
       status: 'success',
       message: 'Project member updated',
@@ -109,6 +124,13 @@ export default class ProjectMemberController extends BaseController {
       projectId: project.id,
     }).firstOrFail()
     await member.delete()
+
+    await audit.recordForRequest(req, {
+      projectId: project.id,
+      action: 'project_member.removed',
+      entityType: 'project_member',
+      entityId: member.id,
+    })
 
     return new ProjectMemberResource(member).additional({
       status: 'success',

@@ -37,6 +37,7 @@ export class VerificationSession extends Model {
     declare completedAt: Date | null
     declare reviewedAt: Date | null
     declare reviewedBy: string | null
+    declare assignedTo: string | null
     declare metadata: Metadata | null
     declare createdAt: Date
     declare updatedAt: Date
@@ -54,6 +55,7 @@ export class VerificationSession extends Model {
         completedAt: 'completed_at',
         reviewedAt: 'reviewed_at',
         reviewedBy: 'reviewed_by',
+        assignedTo: 'assigned_to',
         createdAt: 'created_at',
         updatedAt: 'updated_at',
     }

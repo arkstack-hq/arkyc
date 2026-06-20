@@ -46,8 +46,8 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key + project-member management (audit emission deferred to Phase 9) |
 | 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced |
 | 7   | Provider Packages (drivers)                | ✅     | ocr/liveness/face-match packages with `mock` + `external` drivers (config-selected); file storage via Arkstack `Storage` (S3/MinIO/R2/GCS) |
-| 8   | Workers & Async Pipeline                   | 🚧     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter) |
-| 9   | Reviews & Audit Logging                    | 🚧     | Review queue + approve/reject/retry/note; audit trail + read API (verification events emitted; CRUD retro-fill pending) |
+| 8   | Workers & Async Pipeline                   | ✅     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter) |
+| 9   | Reviews & Audit Logging                    | ✅     | Review queue + approve/reject/retry/assign/suspicious/note; audit trail (review + session + dashboard CRUD) + read API |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
 | 8   | Workers & Async Pipeline                   | ⬜     | OCR + biometric workers process sessions to a decision        |
@@ -232,7 +232,7 @@ _Future enhancement (not blocking): bundled in-process analyzer drivers (WASM Te
 
 ---
 
-## Phase 8 — Workers & Async Pipeline 🚧
+## Phase 8 — Workers & Async Pipeline ✅
 
 **Goal:** Move heavy processing off the request path into queue workers.
 
@@ -248,25 +248,25 @@ _Future enhancement (not blocking): bundled in-process analyzer drivers (WASM Te
 
 **Exit criteria:** Submitting documents/selfie enqueues work; sessions reach a decision via the worker; a reserved job from a crashed worker is reclaimed after the visibility timeout (no corruption). ✅ Covered by `tests/queue.test.ts` (claim/retry/backoff/dead-letter) + `tests/sessions.test.ts` (async walk to decision via `drain()`).
 
-_Remaining: dedicated long-running deployment of the two `queue:work` roles (`ocr`, `biometric`); optional Redis/BullMQ backend._
+_Operational notes (not blocking): run the two roles as separate long-lived processes (`ark queue:work ocr`, `ark queue:work biometric`); a Redis/BullMQ backend is an optional swap behind the same `Queue` interface._
 
 ---
 
-## Phase 9 — Reviews & Audit Logging 🚧
+## Phase 9 — Reviews & Audit Logging ✅
 
 **Goal:** Human-in-the-loop review + a complete audit trail.
 
 **Scope**
 
-- [x] Review queue: list/get tenant sessions with filters (status, decision reason, project). Reviewer notes via `ReviewNote`. _(Per-reviewer assignment needs an `assigned_to` column — not modelled yet.)_
-- [x] Actions: approve, reject, request document/selfie/full retry, add note — each transitions the session, records a `reviews` row (`previous_status`/`new_status`/`reason`) + stamps `reviewed_at`/`reviewed_by`. _(`mark suspicious` folds into a note for now.)_
-- [x] Dashboard API: `.../sessions/:id/{approve,reject,request-retry,notes}` + `GET .../sessions` (filtered) and `GET .../sessions/:id`, gated by `sessions.view` / `reviews.*`.
+- [x] Review queue: list/get tenant sessions with filters (status, decision reason, project). Per-reviewer assignment (`assigned_to` column + `POST .../assign`) and reviewer notes via `ReviewNote`.
+- [x] Actions: approve, reject, request document/selfie/full retry, mark suspicious, add note — each transitions the session (where applicable), records a `reviews` row (`previous_status`/`new_status`/`reason`) + stamps `reviewed_at`/`reviewed_by`.
+- [x] Dashboard API: `.../sessions/:id/{approve,reject,request-retry,assign,suspicious,notes}` + `GET .../sessions` (filtered) and `GET .../sessions/:id`, gated by `sessions.view` / `reviews.*`.
 - [x] **Audit logging**: `AuditLogger` service (`actor_id`/`actor_type`/`action`/`entity_type`/`entity_id`/`metadata`/`ip_address`/`user_agent`) + `GET /v1/dashboard/tenants/:id/audit-logs` (gated `audit_logs.view`, filterable). Emitted on review actions, `session.created` (api_key actor), and `session.auto_decided` (system actor).
-- [ ] Retro-fill audit emission into the Phase 5 dashboard CRUD (tenant/project/member/role/api-key) + auth/webhook events. _(Verification trail is covered; broad CRUD emission is the remaining piece.)_
+- [x] Retro-fill audit emission across the dashboard CRUD: tenant, project, project-member, tenant-member (invite / role / direct-permission), role, and api-key create/update/remove. _(Auth register/login isn't tenant-scoped so it's outside the tenant audit log; webhook events land with Phase 11.)_
 
-**Deliverables:** Reviewer endpoints + audit-log read API; verification-lifecycle actions write audit rows.
+**Deliverables:** Reviewer endpoints + audit-log read API; every tenant-scoped state-changing action writes an audit row.
 
-**Exit criteria:** A `requires_review` session can be approved/rejected by a permitted reviewer, status + decision reason update correctly, and the action appears in audit logs. ✅ Covered by `tests/reviews.test.ts`.
+**Exit criteria:** A `requires_review` session can be approved/rejected by a permitted reviewer, status + decision reason update correctly, and the action appears in audit logs. ✅ Covered by `tests/reviews.test.ts` (review actions, assign, mark-suspicious, CRUD audit trail).
 
 ---
 

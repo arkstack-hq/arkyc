@@ -5,6 +5,7 @@ import { Project } from '@app/models/Project'
 import ProjectCollection from '@app/http/resources/ProjectCollection'
 import ProjectResource from '@app/http/resources/ProjectResource'
 import { Str } from '@h3ravel/support'
+import { audit } from '@app/services/AuditLogger'
 
 export default class ProjectController extends BaseController {
   /**
@@ -54,6 +55,13 @@ export default class ProjectController extends BaseController {
       settings: data.settings ?? {},
       branding: data.branding ?? {},
       status: 'active',
+    })
+
+    await audit.recordForRequest(req, {
+      projectId: project.id,
+      action: 'project.created',
+      entityType: 'project',
+      entityId: project.id,
     })
 
     return new ProjectResource(project)
@@ -119,6 +127,13 @@ export default class ProjectController extends BaseController {
       }
     }
     await project.save()
+
+    await audit.recordForRequest(req, {
+      projectId: project.id,
+      action: 'project.updated',
+      entityType: 'project',
+      entityId: project.id,
+    })
 
     return new ProjectResource(project).additional({
       status: 'success',

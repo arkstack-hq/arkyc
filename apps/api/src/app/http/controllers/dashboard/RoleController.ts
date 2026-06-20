@@ -6,6 +6,7 @@ import RoleResource from '@app/http/resources/RoleResource'
 import RoleCollection from '@app/http/resources/RoleCollection'
 import { rolePermissionNames, setRolePermissions } from '@app/services/permission-queries'
 import { Role } from '@app/models/Role'
+import { audit } from '@app/services/AuditLogger'
 
 export default class RoleController extends BaseController {
     /**
@@ -54,6 +55,8 @@ export default class RoleController extends BaseController {
         })
         if (data.permissions) await setRolePermissions(role.id, data.permissions)
 
+        await audit.recordForRequest(req, { action: 'role.created', entityType: 'role', entityId: role.id })
+
         return new RoleResource(role)
             .additional({
                 status: 'success',
@@ -100,6 +103,8 @@ export default class RoleController extends BaseController {
         if (data.description !== undefined) role.description = data.description
         await role.save()
         if (data.permissions) await setRolePermissions(role.id, data.permissions)
+
+        await audit.recordForRequest(req, { action: 'role.updated', entityType: 'role', entityId: role.id })
 
         return new RoleResource(role).additional({
             status: 'success',

@@ -5,7 +5,7 @@ import { drain } from '../src/app/jobs'
 import { Tenant } from '../src/app/models/Tenant'
 
 /** Phase 9 — human review of `requires_review` sessions + the audit trail. */
-const fx = { token: '', tenantId: '', projectId: '', apiKeySecret: '' }
+const fx = { token: '', ownerId: '', tenantId: '', projectId: '', apiKeySecret: '' }
 
 const authed = (method: 'get' | 'post' | 'patch', path: string) =>
   request(app)[method](`/api/v1/dashboard${path}`).set('Authorization', `Bearer ${fx.token}`)
@@ -37,6 +37,7 @@ beforeAll(async () => {
     .post('/api/v1/auth/register')
     .send({ name: 'Rev Owner', email: `rev-${s}@test.dev`, password: 'secret123' })
   fx.token = reg.body.token
+  fx.ownerId = reg.body.data.id
 
   const tenant = await authed('post', '/tenants').send({ name: `Rev Co ${s}` })
   fx.tenantId = tenant.body.data.id
@@ -98,10 +99,38 @@ describe('review queue + actions', () => {
     expect(again.status).toBe(409)
   })
 
+  it('assigns a session to a reviewer', async () => {
+    const id = await reviewableSession()
+
+    const res = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/assign`).send({ user_id: fx.ownerId })
+    expect(res.status).toBe(200)
+    expect(res.body.data.assigned_to).toBe(fx.ownerId)
+
+    const logs = await authed('get', `/tenants/${fx.tenantId}/audit-logs?action=review.assigned`)
+    expect(logs.body.data.some((l: { entity_id: string }) => l.entity_id === id)).toBe(true)
+  })
+
+  it('flags a session as suspicious', async () => {
+    const id = await reviewableSession()
+
+    const res = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/suspicious`).send({ reason: 'face mismatch' })
+    expect(res.status).toBe(200)
+
+    const logs = await authed('get', `/tenants/${fx.tenantId}/audit-logs?action=review.suspicious`)
+    expect(logs.body.data.some((l: { entity_id: string }) => l.entity_id === id)).toBe(true)
+  })
+
   it('captures the session lifecycle in the audit log', async () => {
-    const logs = await authed('get', `/tenants/${fx.tenantId}/audit-logs`)
-    const actions = logs.body.data.map((l: { action: string }) => l.action)
-    expect(actions).toContain('session.created')
-    expect(actions).toContain('session.auto_decided')
+    for (const action of ['session.created', 'session.auto_decided']) {
+      const logs = await authed('get', `/tenants/${fx.tenantId}/audit-logs?action=${action}`)
+      expect(logs.body.data.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('captures dashboard CRUD in the audit log (retro-fill)', async () => {
+    for (const action of ['tenant.created', 'project.created', 'api_key.created']) {
+      const logs = await authed('get', `/tenants/${fx.tenantId}/audit-logs?action=${action}`)
+      expect(logs.body.data.length).toBeGreaterThan(0)
+    }
   })
 })

@@ -47,6 +47,23 @@ export class ReviewService {
     return session
   }
 
+  /** Assign the session to a reviewer (no status change). */
+  async assign (session: VerificationSession, actor: AuditActor, assigneeId: string): Promise<VerificationSession> {
+    session.assignedTo = assigneeId
+    await session.save()
+    await this.emit(session, actor, 'review.assigned', { assigneeId })
+
+    return session
+  }
+
+  /** Flag a session as suspicious — records a review row + audit, no status change. */
+  async markSuspicious (session: VerificationSession, actor: AuditActor, reason?: string): Promise<VerificationSession> {
+    await this.recordReview(session, actor, session.status, session.status, reason ?? 'suspicious')
+    await this.emit(session, actor, 'review.suspicious', { reason: reason ?? null })
+
+    return session
+  }
+
   /** Attach a reviewer note without changing the session's status. */
   async addNote (session: VerificationSession, actor: AuditActor, note: string): Promise<ReviewNote> {
     const row = await ReviewNote.create({

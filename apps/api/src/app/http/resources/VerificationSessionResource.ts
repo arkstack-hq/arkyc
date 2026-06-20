@@ -12,6 +12,7 @@ export default class VerificationSessionResource extends Resource {
       final_decision: this.finalDecision ?? null,
       decision_reason: this.decisionReason ?? null,
       risk_score: this.riskScore ?? null,
+      assigned_to: this.assignedTo ?? null,
       expires_at: this.expiresAt,
       completed_at: this.completedAt ?? null,
       created_at: this.createdAt,

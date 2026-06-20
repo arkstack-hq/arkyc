@@ -13,6 +13,7 @@ import { TenantMember } from '@app/models/TenantMember'
 import { UserPermission } from '@app/models/UserPermission'
 import { createTokenPair } from '@arkyc/auth'
 import { toArray } from 'src/support/collection'
+import { audit } from '@app/services/AuditLogger'
 
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -57,6 +58,13 @@ export default class MemberController extends BaseController {
       roleId: role.id,
       tokenHash,
       expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
+    })
+
+    await audit.recordForRequest(req, {
+      action: 'member.invited',
+      entityType: 'tenant_invitation',
+      entityId: invitation.id,
+      metadata: { email: data.email },
     })
 
     // The raw token is returned once so it can be delivered to the invitee.
@@ -130,6 +138,13 @@ export default class MemberController extends BaseController {
     member.roleId = role.id
     await member.save()
 
+    await audit.recordForRequest(req, {
+      action: 'member.role_assigned',
+      entityType: 'tenant_member',
+      entityId: member.id,
+      metadata: { roleId: role.id },
+    })
+
     return new EmptyResource({}).additional({
       status: 'success',
       message: 'Role assigned',
@@ -154,6 +169,13 @@ export default class MemberController extends BaseController {
       { tenantId: member.tenantId, userId: member.userId, permissionId: perm.id },
       { projectId: null },
     )
+
+    await audit.recordForRequest(req, {
+      action: 'member.permission_granted',
+      entityType: 'tenant_member',
+      entityId: member.id,
+      metadata: { permission: data.permission },
+    })
 
     return new EmptyResource({}).additional({
       status: 'success',
@@ -180,6 +202,13 @@ export default class MemberController extends BaseController {
       permissionId: perm.id,
     }).first()
     if (grant) await grant.delete()
+
+    await audit.recordForRequest(req, {
+      action: 'member.permission_revoked',
+      entityType: 'tenant_member',
+      entityId: member.id,
+      metadata: { permission: name },
+    })
 
     return new EmptyResource({}).additional({
       status: 'success',

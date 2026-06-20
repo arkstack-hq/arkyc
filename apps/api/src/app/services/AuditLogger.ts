@@ -46,6 +46,35 @@ export class AuditLogger {
     })
   }
 
+  /**
+   * Record an entry for a tenant-scoped dashboard request — pulls `tenantId`
+   * from `req.tenant` and the actor/IP/UA from the request.
+   */
+  async recordForRequest (
+    req: HttpContext['req'],
+    entry: {
+      projectId?: string | null
+      action: string
+      entityType: string
+      entityId?: string | null
+      metadata?: Metadata | null
+    },
+  ): Promise<void> {
+    const actor = this.actorFromRequest(req)
+    await this.record({
+      tenantId: req.tenant!.id,
+      projectId: entry.projectId ?? null,
+      actorId: actor.actorId,
+      actorType: actor.actorType,
+      action: entry.action,
+      entityType: entry.entityType,
+      entityId: entry.entityId ?? null,
+      metadata: entry.metadata ?? null,
+      ipAddress: actor.ipAddress,
+      userAgent: actor.userAgent,
+    })
+  }
+
   /** Derive the dashboard-user actor + request context from an HTTP request. */
   actorFromRequest (req: HttpContext['req']): AuditActor {
     return {

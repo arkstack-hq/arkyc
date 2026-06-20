@@ -5,6 +5,7 @@ import { BaseController } from '@controllers/BaseController'
 import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
 import { generateApiKey } from '@arkyc/auth'
+import { audit } from '@app/services/AuditLogger'
 
 export default class ApiKeyController extends BaseController {
   /**
@@ -44,6 +45,13 @@ export default class ApiKeyController extends BaseController {
       keyHash: generated.keyHash,
     })
 
+    await audit.recordForRequest(req, {
+      projectId: project.id,
+      action: 'api_key.created',
+      entityType: 'api_key',
+      entityId: key.id,
+    })
+
     return new ApiKeyResource(key)
       .additional({
         status: 'success',
@@ -70,6 +78,13 @@ export default class ApiKeyController extends BaseController {
 
     key.revokedAt = new Date()
     await key.save()
+
+    await audit.recordForRequest(req, {
+      projectId: project.id,
+      action: 'api_key.revoked',
+      entityType: 'api_key',
+      entityId: key.id,
+    })
 
     return new ApiKeyResource(key)
       .additional({

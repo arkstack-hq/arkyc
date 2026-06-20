@@ -78,6 +78,24 @@ export default class SessionReviewController extends BaseController {
     return this.session(session, 'Retry requested')
   }
 
+  /** Assign the session to a reviewer. */
+  async assign ({ req }: HttpContext) {
+    const data = await this.validate({ user_id: ['required', 'string'] })
+    const session = await this.scoped(req)
+    await reviewService.assign(session, audit.actorFromRequest(req), data.user_id)
+
+    return this.session(session, 'Session assigned')
+  }
+
+  /** Flag the session as suspicious (no status change). */
+  async markSuspicious ({ req }: HttpContext) {
+    const data = await this.validate({ reason: ['nullable', 'string'] })
+    const session = await this.scoped(req)
+    await reviewService.markSuspicious(session, audit.actorFromRequest(req), data.reason ?? undefined)
+
+    return this.session(session, 'Session flagged as suspicious')
+  }
+
   /** Attach a reviewer note (no status change). */
   async note ({ req }: HttpContext) {
     const data = await this.validate({ note: ['required', 'string'] })
