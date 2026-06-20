@@ -11,7 +11,11 @@ Router.get(
         new Resource({
             id: req.verificationSession?.id,
             status: req.verificationSession?.status,
-        }).additional({ status: 'success', message: 'OK', code: 200 }),
+        }).additional({
+          status: 'success',
+          message: 'OK',
+          code: 200,
+        }),
     [clientTokenAuth],
 )
 

@@ -1,4 +1,4 @@
-import { AppException } from '@arkstack/common'
+import { RequestException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
 import { Tenant } from '@app/models/Tenant'
 import { TenantMember } from '@app/models/TenantMember'
@@ -15,19 +15,18 @@ export class ResolveTenantMiddleware {
     async handler (req: Request, _res: Response, next: NextFunction): Promise<void> {
         try {
             const user = req.authUser
-            if (!user) throw new AppException('Unauthenticated', 401)
+            RequestException.assertFound(user, 'Unauthenticated', 401)
 
             const tenantId = param(req.params.tenantId)
             const tenant = tenantId ? await Tenant.where({ id: tenantId }).first() : null
-            if (!tenant) throw new AppException('Tenant not found', 404)
+            RequestException.assertFound(tenant, 'Tenant not found', 404)
 
             const member = await TenantMember.where({
                 userId: user.id,
                 tenantId: tenant.id,
             }).first()
-            if (!member || member.status !== 'active') {
-                throw new AppException('You are not a member of this tenant', 403)
-            }
+            RequestException.assertFound(member, 'You are not a member of this tenant', 403)
+            RequestException.abortIf(member.status !== 'active', 'You are not a member of this tenant', 403)
 
             req.tenant = tenant
             req.tenantMember = member

@@ -43,7 +43,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                    |
 | 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles      |
 | 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
-| 5   | Tenants, Projects & API Keys               | ✅     | Full tenant/project/member/key management                     |
+| 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key management (project members + audit emission pending) |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
 | 8   | Workers & Async Pipeline                   | ⬜     | OCR + biometric workers process sessions to a decision        |
@@ -167,20 +167,20 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ---
 
-## Phase 5 — Tenants, Projects, Members & API Keys ⬜
+## Phase 5 — Tenants, Projects, Members & API Keys 🚧
 
 **Goal:** Full multi-tenant management through the Dashboard API.
 
 **Scope**
 
-- [ ] Tenant CRUD + tenant switching support (slug-based), `settings` JSON.
-- [ ] Tenant members + invitations (email + `token_hash` + expiry + accept flow).
-- [ ] Roles & permissions management endpoints (list/create/edit roles, assign/remove permissions, list permission catalog, system-role indicators).
-- [ ] Member direct permissions: view role perms / direct perms / effective perms; assign role; add/remove direct perms.
-- [ ] Projects CRUD with `environment`, `settings`, `branding`, project-level verification thresholds.
+- [x] Tenant CRUD + tenant switching support (slug-based), `settings` JSON.
+- [x] Tenant members + invitations (email + `token_hash` + expiry + accept flow).
+- [x] Roles & permissions management endpoints (list/create/edit roles, assign/remove permissions, list permission catalog, system-role indicators).
+- [x] Member direct permissions: view role perms / direct perms / effective perms; assign role; add/remove direct perms.
+- [x] Projects CRUD with `environment`, `settings`, `branding`, project-level verification thresholds.
 - [ ] Project members.
-- [ ] API keys: create (return secret once), list, revoke; store `key_prefix` + `key_hash`; track `last_used_at`.
-- [ ] All endpoints permission-gated and tenant-scoped. Emit audit logs (stub sink until Phase 9, then full).
+- [x] API keys: create (return secret once), list, revoke; store `key_prefix` + `key_hash`; track `last_used_at`.
+- [ ] All endpoints permission-gated and tenant-scoped (✅). Emit audit logs (stub sink until Phase 9, then full) — **not yet wired**.
 
 **Deliverables:** All `/v1/dashboard/...` tenant/project/member/role/key routes from the spec.
 

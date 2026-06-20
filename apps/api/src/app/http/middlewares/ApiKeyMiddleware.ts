@@ -1,4 +1,4 @@
-import { AppException } from '@arkstack/common'
+import { RequestException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
 import { apiKeyPrefix, verifyApiKey } from '@arkyc/auth'
 import { ApiKey } from '@app/models/ApiKey'
@@ -22,13 +22,16 @@ export class ApiKeyMiddleware {
     async handler (req: Request, _res: Response, next: NextFunction): Promise<void> {
         try {
             const secret = readSecret(req)
-            if (!secret) throw new AppException('Missing API key', 401)
+            RequestException.assertFound(secret, 'Missing API key', 401)
 
             const key = await ApiKey.where({ keyPrefix: apiKeyPrefix(secret) }).first()
             const expired = key?.expiresAt != null && new Date(key.expiresAt).getTime() <= Date.now()
-            if (!key || key.revokedAt || expired || !verifyApiKey(secret, key.keyHash)) {
-                throw new AppException('Invalid API key', 401)
-            }
+            RequestException.assertFound(key, 'Invalid API key', 401)
+            RequestException.abortIf(
+                key.revokedAt || expired || !verifyApiKey(secret, key.keyHash),
+                'Invalid API key',
+                401,
+            )
 
             req.projectContext = {
                 tenant_id: key.tenantId,

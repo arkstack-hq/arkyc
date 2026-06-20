@@ -1,4 +1,4 @@
-import { AppException } from '@arkstack/common'
+import { RequestException } from '@arkstack/common'
 import { HttpContext } from 'clear-router/types/express'
 import { Str } from '@h3ravel/support'
 import { BaseController } from '@controllers/BaseController'
@@ -17,7 +17,11 @@ export default class RoleController extends BaseController {
     async index ({ req }: HttpContext) {
         const roles = await Role.where({ tenantId: req.tenant!.id }).get()
 
-        return new RoleCollection(roles).additional({ status: 'success', message: 'OK', code: 200 })
+        return new RoleCollection(roles).additional({
+          status: 'success',
+          message: 'OK',
+          code: 200,
+        })
     }
 
     /**
@@ -35,9 +39,11 @@ export default class RoleController extends BaseController {
         })
 
         const slug = (data.slug || Str.slug(data.name)).toLowerCase()
-        if (await Role.where({ tenantId: req.tenant!.id, slug }).first()) {
-            throw new AppException('A role with this slug already exists', 409)
-        }
+        RequestException.abortIf(
+            await Role.where({ tenantId: req.tenant!.id, slug }).first(),
+            'A role with this slug already exists',
+            409,
+        )
 
         const role = await Role.create({
             tenantId: req.tenant!.id,

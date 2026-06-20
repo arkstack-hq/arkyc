@@ -12,6 +12,10 @@ export default class PermissionController extends BaseController {
     async index () {
         const permissions = await Permission.query().orderBy({ group: 'asc' }).get()
 
-        return new PermissionCollection(permissions).additional({ status: 'success', message: 'OK', code: 200 })
+        return new PermissionCollection(permissions).additional({
+          status: 'success',
+          message: 'OK',
+          code: 200,
+        })
     }
 }

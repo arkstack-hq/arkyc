@@ -1,4 +1,4 @@
-import { AppException } from '@arkstack/common'
+import { RequestException } from '@arkstack/common'
 import { HttpContext } from 'clear-router/types/express'
 import { Str } from '@h3ravel/support'
 import { syncDefaultPermissions, syncDefaultRoles } from '@arkyc/permissions'
@@ -25,7 +25,11 @@ export default class TenantController extends BaseController {
             ? await Tenant.query().whereIn('id', tenantIds).get()
             : []
 
-        return new TenantCollection(tenants).additional({ status: 'success', message: 'OK', code: 200 })
+        return new TenantCollection(tenants).additional({
+          status: 'success',
+          message: 'OK',
+          code: 200,
+        })
     }
 
     /**
@@ -42,9 +46,11 @@ export default class TenantController extends BaseController {
         })
 
         const slug = (data.slug || Str.slug(data.name)).toLowerCase()
-        if (await Tenant.where({ slug }).first()) {
-            throw new AppException('A tenant with this slug already exists', 409)
-        }
+        RequestException.abortIf(
+            await Tenant.where({ slug }).first(),
+            'A tenant with this slug already exists',
+            409,
+        )
 
         const tenant = await Tenant.create({ name: data.name, slug, settings: {} })
 
@@ -60,7 +66,11 @@ export default class TenantController extends BaseController {
         })
 
         return new TenantResource(tenant)
-            .additional({ status: 'success', message: 'Tenant created', code: 201 })
+            .additional({
+              status: 'success',
+              message: 'Tenant created',
+              code: 201,
+            })
             .response()
             .setStatusCode(201)
     }
@@ -72,7 +82,11 @@ export default class TenantController extends BaseController {
      * @returns      A TenantResource.
      */
     async show ({ req }: HttpContext) {
-        return new TenantResource(req.tenant!).additional({ status: 'success', message: 'OK', code: 200 })
+        return new TenantResource(req.tenant!).additional({
+          status: 'success',
+          message: 'OK',
+          code: 200,
+        })
     }
 
     /**
@@ -96,6 +110,10 @@ export default class TenantController extends BaseController {
         }
         await tenant.save()
 
-        return new TenantResource(tenant).additional({ status: 'success', message: 'Tenant updated', code: 200 })
+        return new TenantResource(tenant).additional({
+          status: 'success',
+          message: 'Tenant updated',
+          code: 200,
+        })
     }
 }

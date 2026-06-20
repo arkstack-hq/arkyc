@@ -1,4 +1,4 @@
-import { AppException } from '@arkstack/common'
+import { RequestException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
 import { hashToken } from '@arkyc/auth'
 import { VerificationSession } from '@app/models/VerificationSession'
@@ -22,15 +22,17 @@ export class ClientTokenMiddleware {
     async handler (req: Request, _res: Response, next: NextFunction): Promise<void> {
         try {
             const token = readToken(req)
-            if (!token) throw new AppException('Missing client token', 401)
+            RequestException.assertFound(token, 'Missing client token', 401)
 
             const session = await VerificationSession.where({
                 clientTokenHash: hashToken(token),
             }).first()
-            if (!session) throw new AppException('Invalid client token', 401)
-            if (new Date(session.expiresAt).getTime() <= Date.now()) {
-                throw new AppException('Session expired', 401)
-            }
+            RequestException.assertFound(session, 'Invalid client token', 401)
+            RequestException.abortIf(
+                new Date(session.expiresAt).getTime() <= Date.now(),
+                'Session expired',
+                401,
+            )
 
             req.verificationSession = session
             next()

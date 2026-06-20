@@ -14,10 +14,15 @@ export default class ApiKeyController extends BaseController {
    * @returns      An ApiKeyCollection.
    */
   async index ({ req }: HttpContext) {
-    const project = await Project.where({ id: req.params.projectId, tenantId: req.tenant!.id }).firstOrFail()
-    const keys = await ApiKey.where({ projectId: project.id }).get()
+    const project = await Project.where({ id: req.params.projectId, tenantId: req.tenant!.id })
+      .with('apiKeys')
+      .firstOrFail()
 
-    return new ApiKeyCollection(keys).additional({ status: 'success', message: 'OK', code: 200 })
+    return new ApiKeyCollection(project.getAttribute('apiKeys')).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
   }
 
   /**

@@ -1,4 +1,4 @@
-import { AppException } from '@arkstack/common'
+import { RequestException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
 import { PermissionDeniedError, authorize } from '@arkyc/permissions'
 import type { PermissionKey } from '@arkyc/types'
@@ -19,17 +19,17 @@ export class AuthorizeMiddleware {
     async handler (req: Request, _res: Response, next: NextFunction): Promise<void> {
         try {
             const user = req.authUser
-            if (!user) throw new AppException('Unauthenticated', 401)
+            RequestException.assertFound(user, 'Unauthenticated', 401)
 
             const tenantId = req.tenant?.id ?? param(req.params.tenantId)
-            if (!tenantId) throw new AppException('Missing tenant scope', 400)
+            RequestException.assertFound(tenantId, 'Missing tenant scope', 400)
             const projectId = param(req.params.projectId) ?? null
 
             await authorize({ userId: user.id, tenantId, projectId }, this.permission, permissionStore)
             next()
         } catch (error) {
             if (error instanceof PermissionDeniedError) {
-                next(new AppException(error.message, 403))
+                next(new RequestException(error.message, 403))
                 
 return
             }

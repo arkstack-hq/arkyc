@@ -33,7 +33,7 @@ export class Role extends Model {
 
     /** Permissions granted to this role, resolved through the pivot table. */
     permissions () {
-        return this.belongsToMany(Permission, 'role_permissions', 'roleId', 'permissionId')
+        return this.belongsToMany(Permission, 'role_permissions', 'role_id', 'permission_id')
     }
 
     members () {

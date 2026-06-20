@@ -2,21 +2,10 @@ import type { PermissionKey } from '@arkyc/types'
 import { toArray } from 'src/support/collection'
 import { Permission } from '@app/models/Permission'
 import { RolePermission } from '@app/models/RolePermission'
-import { UserPermission } from '@app/models/UserPermission'
 
 /** Permission names granted to a role (plucked — no full models, no table scan). */
 export async function rolePermissionNames (roleId: string): Promise<string[]> {
     const ids = toArray(await RolePermission.where({ roleId }).pluck('permissionId'))
-    if (ids.length === 0) return []
-
-    return toArray(await Permission.query().whereIn('id', ids).pluck('name'))
-}
-
-/** Direct (tenant-level) permission names assigned to a user. */
-export async function directPermissionNames (userId: string, tenantId: string): Promise<string[]> {
-    const ids = toArray(
-        await UserPermission.where({ userId, tenantId }).whereNull('projectId').pluck('permissionId'),
-    )
     if (ids.length === 0) return []
 
     return toArray(await Permission.query().whereIn('id', ids).pluck('name'))
