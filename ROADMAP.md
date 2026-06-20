@@ -41,7 +41,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 0   | Monorepo & Tooling Foundation              | ✅     | Workspace builds, lints, and tests green                      |
 | 1   | Shared Contracts (`types`, `core`, `auth`) | ✅     | Domain types + decision engine unit-tested                    |
 | 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                    |
-| 3   | Permissions & RBAC                         | ⬜     | `resolvePermissions`/`authorize` working + default roles      |
+| 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles      |
 | 4   | API Foundation & Auth                      | ⬜     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
 | 5   | Tenants, Projects & API Keys               | ⬜     | Full tenant/project/member/key management                     |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
@@ -126,19 +126,19 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ---
 
-## Phase 3 — Permissions & RBAC (`packages/permissions`) ⬜
+## Phase 3 — Permissions & RBAC (`packages/permissions`) ✅
 
 **Goal:** Flexible, tenant- and project-aware access control usable by api, dashboard, and sdk.
 
 **Scope**
 
-- [ ] `definePermission()` — register permission strings + groups.
-- [ ] `syncDefaultPermissions()` — upsert the full permission catalog (tenants/members/projects/api_keys/webhooks/sessions/reviews/audit_logs/settings/billing groups).
-- [ ] `syncDefaultRoles()` — create system roles `owner`, `admin`, `reviewer`, `developer`, `readonly` with their permission sets.
-- [ ] `resolvePermissions({ userId, tenantId, projectId })` — union of: tenant role perms + project role perms + direct tenant user perms + direct project user perms, **deduplicated**.
-- [ ] `hasPermission(perms, 'sessions.view')` and `authorize(user, tenant, permission)` (throws/denies).
-- [ ] Effective set = `role_permissions + direct_user_permissions`.
-- [ ] Pure where possible; DB access behind a small repository interface so it's testable with fakes.
+- [x] `definePermission()` — register permission strings + groups (custom registry + `allKnownPermissions`).
+- [x] `syncDefaultPermissions()` — upsert the full permission catalog (tenants/members/projects/api_keys/webhooks/sessions/reviews/audit_logs/settings/billing groups).
+- [x] `syncDefaultRoles()` — create system roles `owner`, `admin`, `reviewer`, `developer`, `readonly` with their permission sets.
+- [x] `resolvePermissions({ userId, tenantId, projectId })` — union of: tenant role perms + project role perms + direct tenant user perms + direct project user perms, **deduplicated**.
+- [x] `hasPermission(perms, 'sessions.view')` (+ `hasAny`/`hasAll`/`ensurePermission`) and `authorize(ctx, permission, store)` (throws `PermissionDeniedError`).
+- [x] Effective set = `role_permissions + direct_user_permissions`.
+- [x] Pure where possible; DB access behind store ports (`PermissionResolverStore`/`PermissionSyncStore`) so it's testable with fakes. The Arkormˣ-backed store implementation lands with the API in Phase 4/5.
 
 **Deliverables:** `packages/permissions` with the six exported functions + tests for resolution precedence and dedup.
 

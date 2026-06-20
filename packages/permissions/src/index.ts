@@ -1,9 +1,16 @@
 /**
  * @arkyc/permissions
  *
- * Role-based access control for Arkyc. Phase 2 ships the static data: the
- * permission catalogue and default system-role definitions (used by seeders).
- * Phase 3 adds the resolver/authorizer/sync functions on top of this data.
+ * Role-based access control for Arkyc: the permission catalogue and default
+ * system roles (data), plus the resolver, checks, sync helpers, and a custom
+ * permission registry. DB-agnostic — database access is injected through the
+ * store ports in `./types`, so this package is reusable by the api, dashboard,
+ * and sdk.
  */
 export * from './catalogue';
 export * from './default-roles';
+export * from './types';
+export * from './resolve';
+export * from './check';
+export * from './define';
+export * from './sync';
