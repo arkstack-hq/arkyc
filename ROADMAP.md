@@ -216,15 +216,15 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 **Scope**
 
-- [x] **File storage** — use Arkstack's `Storage` (`@arkstack/filesystem`, flydrive-based: `put`/`getBytes`/`getUrl`/`getSignedUrl`/`exists`/`delete`; `local`/`s3`/`gcs`/`ftp` disks via `config/filesystem`) instead of a bespoke package. Captures are written private under tenant/project-scoped keys. _(No custom `packages/storage` — redundant with the framework.)_
+- [x] **File storage** — use Arkstack's `Storage` (`@arkstack/filesystem`, flydrive-based: `put`/`getBytes`/`getUrl`/`getSignedUrl`/`exists`/`delete`) instead of a bespoke package. Captures are written private under tenant/project-scoped keys. The framework's `s3` disk is **S3-compatible** and already covers AWS S3, **MinIO** (in docker-compose) and **Cloudflare R2** (R2 speaks the S3 API — just point `endpoint`/`bucket`/keys at it); a `gcs` disk and `local`/`ftp` round it out. Switching backends is `config/filesystem` + env, no code changes. _(No custom `packages/storage` — redundant with the framework.)_
 - [x] **`packages/ocr`** — drivers `mock` (real), `tesseract` (stub), `external` (HTTP). Returns `{ fields, confidence, raw }`.
 - [x] **`packages/liveness`** — drivers `mock` (real), `internal` (stub), `external` (HTTP). Returns `{ passed, score, spoofSignals, raw }`.
 - [x] **`packages/face-match`** — drivers `mock` (real), `internal` (stub), `external` (HTTP). Returns `{ passed, similarityScore, confidence, raw }`.
 - [x] Common driver-registry pattern (`create*Driver(config)` selects active driver; `apps/api` wires them from env, default `mock`/`local`).
 
-_Remaining: real `tesseract`/`internal` model integrations + `s3-compatible`/`cloudflare-r2` clients (deferred to deployment)._
+_Remaining: real `tesseract`/`internal` analyzer-model integrations (the `external` HTTP drivers already work against a configured endpoint). Object storage is production-ready via Arkstack's `s3`/`gcs` disks — no extra clients to build._
 
-**Deliverables:** Four provider packages with a uniform driver interface + `mock` driver parity with Phase 6 behavior.
+**Deliverables:** Three analyzer packages (ocr/liveness/face-match) with a uniform driver interface + `mock` parity with Phase 6; file storage via the framework's `Storage`.
 
 **Exit criteria:** Switching `OCR_DRIVER=mock|tesseract` (etc.) via config changes behavior with no call-site changes. Documents land in storage and are retrievable via signed URL.
 

@@ -22,7 +22,6 @@ packages/
   ocr/          Driver-based OCR (mock | tesseract | external)
   liveness/     Driver-based passive liveness (mock | internal | external)
   face-match/   Driver-based face matching (mock | internal | external)
-  storage/      Storage abstraction (local | s3-compatible | cloudflare-r2)
   webhooks/     Signing, verification, payload building
   sdk/          @arkyc/sdk — server + browser
   widget/       @arkyc/widget — embeddable verification flow
