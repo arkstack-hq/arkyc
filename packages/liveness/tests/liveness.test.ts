@@ -21,11 +21,6 @@ describe('liveness', () => {
     expect(result.spoofSignals.multipleFaces).toBe(true);
   });
 
-  it('registers internal but defers its implementation', async () => {
-    const driver = createLivenessDriver({ driver: 'internal' });
-    await expect(driver.check({ selfie })).rejects.toThrow(/not yet implemented/);
-  });
-
   it('requires an endpoint for the external driver', () => {
     expect(() => createLivenessDriver({ driver: 'external' })).toThrow(/endpoint/);
   });

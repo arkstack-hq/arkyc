@@ -20,11 +20,6 @@ describe('face-match', () => {
     expect(result.similarityScore).toBe(0.1);
   });
 
-  it('registers internal but defers its implementation', async () => {
-    const driver = createFaceMatchDriver({ driver: 'internal' });
-    await expect(driver.compare(request)).rejects.toThrow(/not yet implemented/);
-  });
-
   it('requires an endpoint for the external driver', () => {
     expect(() => createFaceMatchDriver({ driver: 'external' })).toThrow(/endpoint/);
   });

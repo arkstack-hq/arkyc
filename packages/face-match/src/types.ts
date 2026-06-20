@@ -20,7 +20,7 @@ export interface FaceMatchDriver {
 }
 
 /** Identifier for a registered face-match driver. */
-export type FaceMatchDriverName = 'mock' | 'internal' | 'external';
+export type FaceMatchDriverName = 'mock' | 'external';
 
 /** Configuration selecting + parameterising the active face-match driver. */
 export interface FaceMatchConfig {

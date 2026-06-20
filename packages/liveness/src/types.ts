@@ -20,7 +20,7 @@ export interface LivenessDriver {
 }
 
 /** Identifier for a registered liveness driver. */
-export type LivenessDriverName = 'mock' | 'internal' | 'external';
+export type LivenessDriverName = 'mock' | 'external';
 
 /** Configuration selecting + parameterising the active liveness driver. */
 export interface LivenessConfig {

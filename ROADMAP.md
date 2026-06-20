@@ -45,7 +45,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
 | 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key + project-member management (audit emission deferred to Phase 9) |
 | 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced |
-| 7   | Provider Packages (drivers)                | 🚧     | ocr/liveness/face-match driver packages (`mock` real, API wired via env); file storage via Arkstack `Storage` (prod analyzer drivers stubbed) |
+| 7   | Provider Packages (drivers)                | ✅     | ocr/liveness/face-match packages with `mock` + `external` drivers (config-selected); file storage via Arkstack `Storage` (S3/MinIO/R2/GCS) |
 | 8   | Workers & Async Pipeline                   | 🚧     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter) |
 | 9   | Reviews & Audit Logging                    | 🚧     | Review queue + approve/reject/retry/note; audit trail + read API (verification events emitted; CRUD retro-fill pending) |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
@@ -210,23 +210,25 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ---
 
-## Phase 7 — Provider Packages (drivers) 🚧
+## Phase 7 — Provider Packages (drivers) ✅
 
 **Goal:** Replace inline mocks with real driver-based provider packages.
 
 **Scope**
 
 - [x] **File storage** — use Arkstack's `Storage` (`@arkstack/filesystem`, flydrive-based: `put`/`getBytes`/`getUrl`/`getSignedUrl`/`exists`/`delete`) instead of a bespoke package. Captures are written private under tenant/project-scoped keys. The framework's `s3` disk is **S3-compatible** and already covers AWS S3, **MinIO** (in docker-compose) and **Cloudflare R2** (R2 speaks the S3 API — just point `endpoint`/`bucket`/keys at it); a `gcs` disk and `local`/`ftp` round it out. Switching backends is `config/filesystem` + env, no code changes. _(No custom `packages/storage` — redundant with the framework.)_
-- [x] **`packages/ocr`** — drivers `mock` (real), `tesseract` (stub), `external` (HTTP). Returns `{ fields, confidence, raw }`.
-- [x] **`packages/liveness`** — drivers `mock` (real), `internal` (stub), `external` (HTTP). Returns `{ passed, score, spoofSignals, raw }`.
-- [x] **`packages/face-match`** — drivers `mock` (real), `internal` (stub), `external` (HTTP). Returns `{ passed, similarityScore, confidence, raw }`.
+- [x] **`packages/ocr`** — drivers `mock` (dev/test) + `external` (HTTP). Returns `{ fields, confidence, raw }`.
+- [x] **`packages/liveness`** — drivers `mock` + `external` (HTTP). Returns `{ passed, score, spoofSignals, raw }`.
+- [x] **`packages/face-match`** — drivers `mock` + `external` (HTTP). Returns `{ passed, similarityScore, confidence, raw }`.
 - [x] Common driver-registry pattern (`create*Driver(config)` selects active driver; `apps/api` wires them from env, default `mock`/`local`).
 
-_Remaining: real `tesseract`/`internal` analyzer-model integrations (the `external` HTTP drivers already work against a configured endpoint). Object storage is production-ready via Arkstack's `s3`/`gcs` disks — no extra clients to build._
+Each analyzer ships two real drivers: `mock` (deterministic, for dev/test) and `external` (POSTs the image to a configured HTTP endpoint and maps the response) — so production providers are integrated by config alone. A self-hosted model server is just an `external` endpoint.
 
 **Deliverables:** Three analyzer packages (ocr/liveness/face-match) with a uniform driver interface + `mock` parity with Phase 6; file storage via the framework's `Storage`.
 
-**Exit criteria:** Switching `OCR_DRIVER=mock|tesseract` (etc.) via config changes behavior with no call-site changes. Documents land in storage and are retrievable via signed URL.
+**Exit criteria:** Switching a driver via config (`OCR_DRIVER=mock|external`, `STORAGE_DRIVER`/disk, …) changes behaviour with no call-site changes; documents land in storage and are retrievable via signed URL. ✅ Covered by the package suites + `tests/sessions.test.ts`.
+
+_Future enhancement (not blocking): bundled in-process analyzer drivers (WASM Tesseract, an on-box liveness/face model) as alternatives to the `external` HTTP path._
 
 ---
 

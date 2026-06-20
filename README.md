@@ -19,9 +19,9 @@ packages/
   core/         Decision engine, status transitions, scoring (pure logic)
   auth/         Password/token/API-key/client-token helpers
   permissions/  RBAC: resolve / authorize / sync default roles & permissions
-  ocr/          Driver-based OCR (mock | tesseract | external)
-  liveness/     Driver-based passive liveness (mock | internal | external)
-  face-match/   Driver-based face matching (mock | internal | external)
+  ocr/          Driver-based OCR (mock | external)
+  liveness/     Driver-based passive liveness (mock | external)
+  face-match/   Driver-based face matching (mock | external)
   webhooks/     Signing, verification, payload building
   sdk/          @arkyc/sdk — server + browser
   widget/       @arkyc/widget — embeddable verification flow

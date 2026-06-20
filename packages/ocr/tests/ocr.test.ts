@@ -20,11 +20,6 @@ describe('ocr', () => {
     expect(result.fields.expiryDate).toBe('2000-01-01');
   });
 
-  it('registers tesseract but defers its implementation', async () => {
-    const driver = createOcrDriver({ driver: 'tesseract' });
-    await expect(driver.extract({ image })).rejects.toThrow(/not yet implemented/);
-  });
-
   it('requires an endpoint for the external driver', () => {
     expect(() => createOcrDriver({ driver: 'external' })).toThrow(/endpoint/);
   });

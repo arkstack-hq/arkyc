@@ -22,7 +22,7 @@ export interface OcrDriver {
 }
 
 /** Identifier for a registered OCR driver. */
-export type OcrDriverName = 'mock' | 'tesseract' | 'external';
+export type OcrDriverName = 'mock' | 'external';
 
 /** Configuration selecting + parameterising the active OCR driver. */
 export interface OcrConfig {
