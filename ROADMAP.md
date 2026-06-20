@@ -45,7 +45,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
 | 5   | Tenants, Projects & API Keys               | 🚧     | Tenant/project/role/member/key + project-member management (audit emission deferred to Phase 9) |
 | 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced |
-| 7   | Provider Packages (drivers)                | 🚧     | storage/ocr/liveness/face-match driver packages; `mock`+`local` real, API wired via env (prod drivers stubbed) |
+| 7   | Provider Packages (drivers)                | 🚧     | ocr/liveness/face-match driver packages (`mock` real, API wired via env); file storage via Arkstack `Storage` (prod analyzer drivers stubbed) |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
 | 8   | Workers & Async Pipeline                   | ⬜     | OCR + biometric workers process sessions to a decision        |
@@ -215,7 +215,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 **Scope**
 
-- [x] **`packages/storage`** — `putObject`, `getObject`, `getSignedUrl`, `deleteObject`, `objectExists`. Drivers: `local` (fs + HMAC-signed URLs, real), `s3-compatible`/`cloudflare-r2` (registered stubs pending deployment). Tenant/project-scoped paths; private by default; signed URLs.
+- [x] **File storage** — use Arkstack's `Storage` (`@arkstack/filesystem`, flydrive-based: `put`/`getBytes`/`getUrl`/`getSignedUrl`/`exists`/`delete`; `local`/`s3`/`gcs`/`ftp` disks via `config/filesystem`) instead of a bespoke package. Captures are written private under tenant/project-scoped keys. _(No custom `packages/storage` — redundant with the framework.)_
 - [x] **`packages/ocr`** — drivers `mock` (real), `tesseract` (stub), `external` (HTTP). Returns `{ fields, confidence, raw }`.
 - [x] **`packages/liveness`** — drivers `mock` (real), `internal` (stub), `external` (HTTP). Returns `{ passed, score, spoofSignals, raw }`.
 - [x] **`packages/face-match`** — drivers `mock` (real), `internal` (stub), `external` (HTTP). Returns `{ passed, similarityScore, confidence, raw }`.

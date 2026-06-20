@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/api",
-  "description": "Arkyc API — Arkstack application (Express driver).",
+  "description": "Arkyc API \u2014 Arkstack application (Express driver).",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -23,7 +23,6 @@
     "@arkyc/liveness": "workspace:*",
     "@arkyc/ocr": "workspace:*",
     "@arkyc/permissions": "workspace:*",
-    "@arkyc/storage": "workspace:*",
     "@arkyc/types": "workspace:*",
     "@arkyc/webhooks": "workspace:*",
     "@arkstack/auth": "^0.12.31",

@@ -26,7 +26,6 @@
     "@arkyc/types": "workspace:*",
     "@arkyc/core": "workspace:*",
     "@arkyc/liveness": "workspace:*",
-    "@arkyc/face-match": "workspace:*",
-    "@arkyc/storage": "workspace:*"
+    "@arkyc/face-match": "workspace:*"
   }
 }

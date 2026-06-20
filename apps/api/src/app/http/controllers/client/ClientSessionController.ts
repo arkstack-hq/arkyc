@@ -1,10 +1,12 @@
-import { HttpContext } from 'clear-router/types/express'
 import { BaseController } from '@controllers/BaseController'
+import ClientSessionResource from '@app/http/resources/ClientSessionResource'
 import type { DocumentType } from '@arkyc/types'
+import { HttpContext } from 'clear-router/types/express'
 import type { ProviderSignals } from '@app/services/providers'
 import type { VerificationSession } from '@app/models/VerificationSession'
-import ClientSessionResource from '@app/http/resources/ClientSessionResource'
 import { sessionService } from '@app/services/VerificationSessionService'
+
+const DOCUMENT_TYPES = 'passport,id_card,drivers_license,residence_permit'
 
 /**
  * Client/Widget API (short-lived client token). Drives a single session through
@@ -12,7 +14,7 @@ import { sessionService } from '@app/services/VerificationSessionService'
  * resolved by `clientTokenAuth`.
  *
  * Image bytes are accepted as an optional base64 `image` (document) / `selfie`
- * (liveness) body field and routed to the storage driver. The optional signal
+ * (liveness) body field and stored via Arkstack `Storage`. The optional signal
  * hints (`quality_score`, `liveness_score`, `face_similarity`, …) steer the
  * `mock` provider drivers and are ignored by real drivers.
  */
@@ -26,11 +28,20 @@ export default class ClientSessionController extends BaseController {
 
   /** Submit the document front image (runs OCR + portrait extraction). */
   async documentFront ({ req }: HttpContext) {
+    const data = await this.validate({
+      country: ['nullable', 'string', 'max:3'],
+      document_type: ['nullable', 'string', `in:${DOCUMENT_TYPES}`],
+      image: ['nullable', 'string'],
+      quality_score: ['nullable', 'numeric', 'between:0,1'],
+      ocr_confidence: ['nullable', 'numeric', 'between:0,1'],
+      expired: ['nullable', 'boolean'],
+    })
+
     await sessionService.submitDocument(req.verificationSession!, 'front', {
-      country: this.body.country ?? null,
-      documentType: (this.body.document_type as DocumentType) ?? null,
-      image: this.imageBytes('image'),
-      signals: this.signals(),
+      country: data.country ?? null,
+      documentType: (data.document_type as DocumentType) ?? null,
+      image: this.decodeImage(data.image),
+      signals: this.signals(data),
     })
 
     return this.ok(req.verificationSession!, 'Document front received')
@@ -38,11 +49,16 @@ export default class ClientSessionController extends BaseController {
 
   /** Submit the document back image. */
   async documentBack ({ req }: HttpContext) {
+    const data = await this.validate({
+      country: ['nullable', 'string', 'max:3'],
+      document_type: ['nullable', 'string', `in:${DOCUMENT_TYPES}`],
+      image: ['nullable', 'string'],
+    })
+
     await sessionService.submitDocument(req.verificationSession!, 'back', {
-      country: this.body.country ?? null,
-      documentType: (this.body.document_type as DocumentType) ?? null,
-      image: this.imageBytes('image'),
-      signals: this.signals(),
+      country: data.country ?? null,
+      documentType: (data.document_type as DocumentType) ?? null,
+      image: this.decodeImage(data.image),
     })
 
     return this.ok(req.verificationSession!, 'Document back received')
@@ -50,9 +66,16 @@ export default class ClientSessionController extends BaseController {
 
   /** Submit the liveness/selfie check. */
   async liveness ({ req }: HttpContext) {
+    const data = await this.validate({
+      selfie: ['nullable', 'string'],
+      liveness_score: ['nullable', 'numeric', 'between:0,1'],
+      liveness_passed: ['nullable', 'boolean'],
+      multiple_faces: ['nullable', 'boolean'],
+    })
+
     await sessionService.submitLiveness(req.verificationSession!, {
-      selfie: this.imageBytes('selfie'),
-      signals: this.signals(),
+      selfie: this.decodeImage(data.selfie),
+      signals: this.signals(data),
     })
 
     return this.ok(req.verificationSession!, 'Liveness check received')
@@ -60,32 +83,34 @@ export default class ClientSessionController extends BaseController {
 
   /** Finalise the session — runs the decision engine and lands a verdict. */
   async complete ({ req }: HttpContext) {
+    const data = await this.validate({
+      face_similarity: ['nullable', 'numeric', 'between:0,1'],
+      face_match_passed: ['nullable', 'boolean'],
+    })
+
     const session = await sessionService.complete(req.verificationSession!, {
-      signals: this.signals(),
+      signals: this.signals(data),
     })
 
     return this.ok(session, 'Verification complete')
   }
 
-  /** Pull the optional provider hints from the request body. */
-  private signals (): ProviderSignals {
-    const b = this.body
-
+  /** Map validated body fields to provider signal hints. */
+  private signals (data: Record<string, unknown>): ProviderSignals {
     return {
-      qualityScore: b.quality_score,
-      ocrConfidence: b.ocr_confidence,
-      expired: b.expired,
-      livenessScore: b.liveness_score,
-      livenessPassed: b.liveness_passed,
-      multipleFaces: b.multiple_faces,
-      faceSimilarity: b.face_similarity,
-      faceMatchPassed: b.face_match_passed,
+      qualityScore: data.quality_score as number | undefined,
+      ocrConfidence: data.ocr_confidence as number | undefined,
+      expired: data.expired as boolean | undefined,
+      livenessScore: data.liveness_score as number | undefined,
+      livenessPassed: data.liveness_passed as boolean | undefined,
+      multipleFaces: data.multiple_faces as boolean | undefined,
+      faceSimilarity: data.face_similarity as number | undefined,
+      faceMatchPassed: data.face_match_passed as boolean | undefined,
     }
   }
 
-  /** Decode an optional base64 image field from the request body. */
-  private imageBytes (field: 'image' | 'selfie'): Uint8Array | undefined {
-    const value = this.body[field]
+  /** Decode a validated, optional base64 image field. */
+  private decodeImage (value: unknown): Uint8Array | undefined {
     return typeof value === 'string' && value.length > 0 ? Buffer.from(value, 'base64') : undefined
   }
 

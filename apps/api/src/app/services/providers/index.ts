@@ -1,15 +1,15 @@
 import { type OcrDriverName, createOcrDriver } from '@arkyc/ocr'
 import { type LivenessDriverName, createLivenessDriver } from '@arkyc/liveness'
 import { type FaceMatchDriverName, createFaceMatchDriver } from '@arkyc/face-match'
-import { type StorageConfig, type StorageDriverName, createStorageDriver } from '@arkyc/storage'
 
 /**
  * Verification provider wiring (Phase 7).
  *
- * Drivers are selected by env (`OCR_DRIVER`, `LIVENESS_DRIVER`,
- * `FACE_MATCH_DRIVER`, `STORAGE_DRIVER`) and default to the deterministic `mock`
- * / `local` drivers so dev + tests work with no configuration. Call sites depend
- * only on the driver interfaces, so switching a driver needs no code changes.
+ * Analyzer drivers are selected by env (`OCR_DRIVER`, `LIVENESS_DRIVER`,
+ * `FACE_MATCH_DRIVER`) and default to the deterministic `mock` drivers so dev +
+ * tests work with no configuration. Call sites depend only on the driver
+ * interfaces, so switching a driver needs no code changes. File storage is
+ * handled by Arkstack's `Storage` (see `config/filesystem`).
  */
 
 const env = process.env
@@ -43,30 +43,3 @@ export const faceMatchDriver = createFaceMatchDriver({
   endpoint: env.FACE_MATCH_ENDPOINT,
   apiKey: env.FACE_MATCH_API_KEY,
 })
-
-function storageConfig (): StorageConfig {
-  const driver = (env.STORAGE_DRIVER as StorageDriverName) ?? 'local'
-  if (driver === 'local') {
-    return {
-      driver,
-      local: {
-        baseDir: env.STORAGE_DIR ?? '.storage',
-        baseUrl: env.STORAGE_BASE_URL,
-        signingSecret: env.STORAGE_SIGNING_SECRET ?? env.APP_KEY ?? 'dev-signing-secret',
-      },
-    }
-  }
-
-  return {
-    driver,
-    s3: {
-      bucket: env.STORAGE_BUCKET ?? '',
-      region: env.STORAGE_REGION,
-      endpoint: env.STORAGE_ENDPOINT,
-      accessKeyId: env.STORAGE_ACCESS_KEY_ID,
-      secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY,
-    },
-  }
-}
-
-export const storage = createStorageDriver(storageConfig())

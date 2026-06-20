@@ -86,9 +86,6 @@ importers:
       '@arkyc/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions
-      '@arkyc/storage':
-        specifier: workspace:*
-        version: link:../../packages/storage
       '@arkyc/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -251,12 +248,6 @@ importers:
         specifier: workspace:*
         version: link:../types
 
-  packages/storage:
-    dependencies:
-      '@arkyc/types':
-        specifier: workspace:*
-        version: link:../types
-
   packages/types: {}
 
   packages/webhooks:
@@ -282,9 +273,6 @@ importers:
       '@arkyc/liveness':
         specifier: workspace:*
         version: link:../../packages/liveness
-      '@arkyc/storage':
-        specifier: workspace:*
-        version: link:../../packages/storage
       '@arkyc/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -297,9 +285,6 @@ importers:
       '@arkyc/ocr':
         specifier: workspace:*
         version: link:../../packages/ocr
-      '@arkyc/storage':
-        specifier: workspace:*
-        version: link:../../packages/storage
       '@arkyc/types':
         specifier: workspace:*
         version: link:../../packages/types

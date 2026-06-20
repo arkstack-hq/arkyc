@@ -6,7 +6,7 @@ import { Tenant } from '../src/app/models/Tenant'
 import { Project } from '../src/app/models/Project'
 import { ApiKey } from '../src/app/models/ApiKey'
 import { VerificationSession } from '../src/app/models/VerificationSession'
-import { storage } from '../src/app/services/providers'
+import { Storage } from '@arkstack/filesystem'
 
 /** Phase 6 — verification session engine driven end-to-end via the mock providers. */
 const fx = { tenantId: '', projectId: '', apiKeySecret: '' }
@@ -137,7 +137,7 @@ describe('verification session lifecycle', () => {
     expect(show.body.data.status).toBe('expired')
   })
 
-  it('stores an uploaded document and can mint a signed read URL', async () => {
+  it('stores an uploaded document via Arkstack Storage', async () => {
     const { id, token } = await openSession()
     await clientApi('get', 'session', token)
 
@@ -145,12 +145,15 @@ describe('verification session lifecycle', () => {
     await clientApi('post', 'document/front', token).send({ image })
 
     const key = `tenants/${fx.tenantId}/projects/${fx.projectId}/sessions/${id}/documents/front.jpg`
-    expect(await storage.objectExists(key)).toBe(true)
-    expect(Buffer.from(await storage.getObject(key)).toString('base64')).toBe(image)
+    expect(await Storage.disk().exists(key)).toBe(true)
+    expect(Buffer.from(await Storage.disk().getBytes(key)).toString('base64')).toBe(image)
+  })
 
-    const url = await storage.getSignedUrl(key, { expiresIn: 60 })
-    expect(url).toContain('front.jpg')
-    expect(url).toContain('signature=')
+  it('rejects an invalid document_type', async () => {
+    const { token } = await openSession()
+    await clientApi('get', 'session', token)
+    const res = await clientApi('post', 'document/front', token).send({ document_type: 'nonsense' })
+    expect(res.status).toBe(422)
   })
 
   it('enforces the liveness retry limit', async () => {

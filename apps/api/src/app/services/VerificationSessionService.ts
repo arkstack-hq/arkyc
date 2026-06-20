@@ -8,6 +8,7 @@ import {
   shouldExpireSession,
 } from '@arkyc/core'
 import { createTokenPair } from '@arkyc/auth'
+import { Storage } from '@arkstack/filesystem'
 import type { DocumentType, Metadata, VerificationStatus } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { DocumentCapture } from '@app/models/DocumentCapture'
@@ -16,13 +17,7 @@ import { DocumentPortrait } from '@app/models/DocumentPortrait'
 import { LivenessCheck } from '@app/models/LivenessCheck'
 import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
 import { Project } from '@app/models/Project'
-import {
-  type ProviderSignals,
-  faceMatchDriver,
-  livenessDriver,
-  ocrDriver,
-  storage,
-} from './providers'
+import { type ProviderSignals, faceMatchDriver, livenessDriver, ocrDriver } from './providers'
 
 /** A verification session's lifetime — also bounds its client token. */
 const SESSION_TTL_MS = 15 * 60 * 1000
@@ -47,7 +42,7 @@ const objectPath = (s: VerificationSession, leaf: string): string =>
 
 /**
  * Drives the verification session lifecycle for the public + client APIs. Each
- * step stores its image via the storage driver and runs the configured provider
+ * step stores its image via Arkstack `Storage` and runs the configured provider
  * driver (`@arkyc/ocr`, `@arkyc/liveness`, `@arkyc/face-match` — `mock` by
  * default); `complete` aggregates the persisted signals, runs the decision
  * engine, and lands a final decision.
@@ -78,6 +73,7 @@ export class VerificationSessionService {
     if (session.status === 'pending') {
       await this.transition(session, 'started')
     }
+
     return session
   }
 
@@ -108,7 +104,7 @@ export class VerificationSessionService {
 
     const imagePath = objectPath(session, `documents/${side}.jpg`)
     const imageBytes = input.image ?? EMPTY_IMAGE
-    await storage.putObject(imagePath, imageBytes, { contentType: 'image/jpeg' })
+    await Storage.disk().put(imagePath, imageBytes, { contentType: 'image/jpeg', visibility: 'private' })
 
     if (input.country !== undefined) capture.country = input.country
     if (input.documentType !== undefined) capture.documentType = input.documentType
@@ -140,7 +136,7 @@ export class VerificationSessionService {
 
       // The extracted portrait is persisted to storage for the face-match step.
       const portraitPath = objectPath(session, 'documents/portrait.jpg')
-      await storage.putObject(portraitPath, imageBytes, { contentType: 'image/jpeg' })
+      await Storage.disk().put(portraitPath, imageBytes, { contentType: 'image/jpeg', visibility: 'private' })
       await DocumentPortrait.create({
         tenantId: session.tenantId,
         projectId: session.projectId,
@@ -179,7 +175,7 @@ export class VerificationSessionService {
 
     const selfiePath = objectPath(session, 'liveness/selfie.jpg')
     const selfieBytes = input.selfie ?? EMPTY_IMAGE
-    await storage.putObject(selfiePath, selfieBytes, { contentType: 'image/jpeg' })
+    await Storage.disk().put(selfiePath, selfieBytes, { contentType: 'image/jpeg', visibility: 'private' })
 
     const result = await livenessDriver.check({
       selfie: selfieBytes,
@@ -289,6 +285,7 @@ export class VerificationSessionService {
   async cancel (session: VerificationSession): Promise<VerificationSession> {
     await this.ensureMutable(session)
     await this.transition(session, 'cancelled')
+
     return session
   }
 
@@ -300,6 +297,7 @@ export class VerificationSessionService {
     if (shouldExpireSession(session.status, session.expiresAt, new Date())) {
       await this.transition(session, 'expired')
     }
+
     return session
   }
 
@@ -317,7 +315,7 @@ export class VerificationSessionService {
   private async readObject (key: string | null | undefined): Promise<Uint8Array> {
     if (!key) return EMPTY_IMAGE
     try {
-      return await storage.getObject(key)
+      return await Storage.disk().getBytes(key)
     } catch {
       return EMPTY_IMAGE
     }

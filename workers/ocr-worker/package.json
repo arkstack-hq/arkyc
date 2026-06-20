@@ -25,7 +25,6 @@
   "dependencies": {
     "@arkyc/types": "workspace:*",
     "@arkyc/core": "workspace:*",
-    "@arkyc/ocr": "workspace:*",
-    "@arkyc/storage": "workspace:*"
+    "@arkyc/ocr": "workspace:*"
   }
 }
