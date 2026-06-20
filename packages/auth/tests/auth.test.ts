@@ -13,7 +13,7 @@ import {
   verifyApiKey,
   verifyPassword,
   verifyToken,
-} from '../src/index.js';
+} from '../src/index';
 
 describe('password hashing', () => {
   it('verifies a correct password and rejects a wrong one', async () => {

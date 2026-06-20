@@ -1,4 +1,4 @@
-import type { Entity, Id, IsoDate, ProjectScoped } from './common.js';
+import type { Entity, Id, IsoDate, ProjectScoped } from './common';
 
 /** Supported identity document categories. */
 export type DocumentType = 'passport' | 'id_card' | 'drivers_license' | 'residence_permit';

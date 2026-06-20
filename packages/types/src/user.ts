@@ -1,4 +1,4 @@
-import type { Entity, IsoDateTime } from './common.js';
+import type { Entity, IsoDateTime } from './common';
 
 /** A platform user account. Users belong to one or more tenants via membership. */
 export interface User extends Entity {

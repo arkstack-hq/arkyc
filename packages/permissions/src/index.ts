@@ -1,8 +1,9 @@
 /**
  * @arkyc/permissions
  *
- * Role-based access control resolution and enforcement.
- * Stub created in Phase 0 — real implementation lands in a later phase.
+ * Role-based access control for Arkyc. Phase 2 ships the static data: the
+ * permission catalogue and default system-role definitions (used by seeders).
+ * Phase 3 adds the resolver/authorizer/sync functions on top of this data.
  */
-export const PACKAGE_NAME = '@arkyc/permissions';
-export const VERSION = '0.0.0';
+export * from './catalogue';
+export * from './default-roles';

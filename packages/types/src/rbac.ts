@@ -1,4 +1,4 @@
-import type { Entity, Id, TenantScoped } from './common.js';
+import type { Entity, Id, TenantScoped } from './common';
 
 /**
  * The full catalogue of permission strings recognised by Arkyc.

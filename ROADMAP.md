@@ -40,7 +40,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | --- | ------------------------------------------ | ------ | ------------------------------------------------------------- |
 | 0   | Monorepo & Tooling Foundation              | ✅     | Workspace builds, lints, and tests green                      |
 | 1   | Shared Contracts (`types`, `core`, `auth`) | ✅     | Domain types + decision engine unit-tested                    |
-| 2   | Data Model & Migrations                    | ⬜     | All tables migrated, tenant-scoped, seeded                    |
+| 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                    |
 | 3   | Permissions & RBAC                         | ⬜     | `resolvePermissions`/`authorize` working + default roles      |
 | 4   | API Foundation & Auth                      | ⬜     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
 | 5   | Tenants, Projects & API Keys               | ⬜     | Full tenant/project/member/key management                     |
@@ -106,17 +106,19 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ---
 
-## Phase 2 — Data Model & Migrations (Arkormˣ) ⬜
+## Phase 2 — Data Model & Migrations (Arkormˣ) ✅
 
 **Goal:** Every entity migrated, tenant-scoped, with seed data.
 
 **Scope**
 
-- [ ] Arkormˣ models + migrations for all tables: `users`, `tenants`, `tenant_members`, `tenant_invitations`, `roles`, `permissions`, `role_permissions`, `user_permissions`, `projects`, `project_members`, `api_keys`, `verification_sessions`, `document_captures`, `ocr_results`, `document_portraits`, `liveness_checks`, `face_match_checks`, `reviews`, `review_notes`, `webhook_endpoints`, `webhook_deliveries`, `audit_logs`.
-- [ ] Enforce columns exactly as specified (e.g. `verification_sessions` has `auto_decision`, `final_decision`, `decision_reason`, `risk_score`, `client_token_hash`, `expires_at`, etc.).
-- [ ] Foreign keys + indexes on `tenant_id` / `project_id` on every scoped table.
-- [ ] Relationships defined in models (tenant → projects → sessions → captures/checks/reviews).
-- [ ] Factories + seeders: a demo tenant, projects, default roles/permissions, sample users.
+- [x] Arkormˣ models + migrations for all tables: `users`, `tenants`, `tenant_members`, `tenant_invitations`, `roles`, `permissions`, `role_permissions`, `user_permissions`, `projects`, `project_members`, `api_keys`, `verification_sessions`, `document_captures`, `ocr_results`, `document_portraits`, `liveness_checks`, `face_match_checks`, `reviews`, `review_notes`, `webhook_endpoints`, `webhook_deliveries`, `audit_logs`.
+- [x] Enforce columns exactly as specified (e.g. `verification_sessions` has `auto_decision`, `final_decision`, `decision_reason`, `risk_score`, `client_token_hash`, `expires_at`, etc.).
+- [x] Foreign keys + indexes on `tenant_id` / `project_id` on every scoped table.
+- [x] Relationships defined in models (tenant → projects → sessions → captures/checks/reviews) using Arkormˣ `hasMany`/`belongsTo`/`belongsToMany` so the app can eager-load (`.with()`) and aggregate (`withCount`).
+- [x] Factories + seeders: a demo tenant, projects, default roles/permissions, sample users.
+- [x] Permission catalogue + default system-role definitions added to `@arkyc/permissions` (data; Phase 3 adds the resolver/sync).
+- [x] Verified against Postgres: `ark migrate` (28 migrations) forward + `migrate:rollback`, and `ark seed` produces the demo workspace.
 
 **Deliverables:** `ark migrate` runs cleanly forward and back; `ark db:seed` produces a demo workspace.
 

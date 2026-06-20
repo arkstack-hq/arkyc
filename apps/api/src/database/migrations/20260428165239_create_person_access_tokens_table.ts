@@ -12,7 +12,7 @@ export default class CreatePersonAccessTokensTableMigration extends Migration {
             table.json('deviceInfo').nullable().map('device_info')
             table.date('lastUsedAt').nullable().map('last_used_at')
             table.date('expiresAt').nullable().map('expires_at')
-            table.timestamps()
+            table.timestamps('camel', 'snake')
             table.index(['userId'])
         })
     }

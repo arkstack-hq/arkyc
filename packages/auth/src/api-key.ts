@@ -1,4 +1,4 @@
-import { generateToken, safeEqualHex, sha256 } from './tokens.js';
+import { generateToken, safeEqualHex, sha256 } from './tokens';
 
 /** Environment marker embedded in an API key (`sk_live_…` / `sk_test_…`). */
 export type ApiKeyEnvironment = 'live' | 'test';

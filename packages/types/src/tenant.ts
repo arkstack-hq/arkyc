@@ -1,4 +1,4 @@
-import type { Entity, Id, IsoDateTime, Metadata, TenantScoped } from './common.js';
+import type { Entity, Id, IsoDateTime, Metadata, TenantScoped } from './common';
 
 /** Membership lifecycle states for tenant/project members. */
 export type MembershipStatus = 'active' | 'invited' | 'suspended';

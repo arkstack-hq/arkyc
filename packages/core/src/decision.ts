@@ -3,8 +3,8 @@ import type {
   VerificationDecision,
   VerificationThresholds,
 } from '@arkyc/types';
-import { computeRiskScore } from './risk.js';
-import { resolveThresholds } from './thresholds.js';
+import { computeRiskScore } from './risk';
+import { resolveThresholds } from './thresholds';
 
 /** Document signals fed to the decision engine. */
 export interface DecisionDocumentInput {

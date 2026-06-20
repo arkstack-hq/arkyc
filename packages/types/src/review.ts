@@ -1,5 +1,5 @@
-import type { Entity, Id, ProjectScoped } from './common.js';
-import type { VerificationStatus } from './verification.js';
+import type { Entity, Id, ProjectScoped } from './common';
+import type { VerificationStatus } from './verification';
 
 /** Actions a human reviewer can take on a session. */
 export type ReviewAction =

@@ -1,5 +1,5 @@
-import type { ProjectBranding } from './project.js';
-import type { VerificationDecision, VerificationStatus } from './verification.js';
+import type { ProjectBranding } from './project';
+import type { VerificationDecision, VerificationStatus } from './verification';
 
 /** How the widget mounts into the host page. */
 export type WidgetMode = 'overlay' | 'inline' | 'hosted';

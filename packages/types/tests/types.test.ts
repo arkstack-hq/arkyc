@@ -4,7 +4,7 @@ import type {
   PermissionKey,
   VerificationSession,
   VerificationStatus,
-} from '../src/index.js';
+} from '../src/index';
 
 /**
  * `@arkyc/types` is type-only, so these tests double as compile-time shape

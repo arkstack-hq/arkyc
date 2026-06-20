@@ -7,7 +7,7 @@ import {
   assertTransition,
   canTransition,
   isTerminalStatus,
-} from '../src/index.js';
+} from '../src/index';
 
 describe('status transitions', () => {
   it('allows the happy-path progression', () => {

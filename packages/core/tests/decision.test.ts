@@ -5,7 +5,7 @@ import {
   decideVerification,
   resolveThresholds,
   type DecisionInput,
-} from '../src/index.js';
+} from '../src/index';
 
 /** A session where every signal comfortably clears its threshold. */
 function goodInput(): DecisionInput {

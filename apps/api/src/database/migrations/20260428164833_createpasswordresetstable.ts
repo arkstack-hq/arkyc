@@ -7,7 +7,7 @@ export default class CreatePasswordResetsTableMigration extends Migration {
             table.string('email').nullable().index()
             table.string('phone').nullable().index()
             table.string('token')
-            table.timestamps()
+            table.timestamps('camel', 'snake')
         })
     }
 

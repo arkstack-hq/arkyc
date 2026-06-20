@@ -1,4 +1,4 @@
-import type { Id, IsoDateTime, Metadata } from './common.js';
+import type { Id, IsoDateTime, Metadata } from './common';
 
 /** Who performed an audited action. */
 export type ActorType = 'user' | 'api_key' | 'system';

@@ -1,4 +1,4 @@
-import { createTokenPair, verifyToken } from './tokens.js';
+import { createTokenPair, verifyToken } from './tokens';
 
 import type { IsoDateTime } from '@arkyc/types';
 

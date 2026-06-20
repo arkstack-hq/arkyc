@@ -13,7 +13,7 @@ import {
   shouldExpireSession,
   TenantScopeError,
   type SessionSignals,
-} from '../src/index.js';
+} from '../src/index';
 
 const NOW = '2026-06-20T00:00:00.000Z';
 

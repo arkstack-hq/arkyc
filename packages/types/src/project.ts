@@ -1,5 +1,5 @@
-import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped, TenantScoped } from './common.js';
-import type { MembershipStatus } from './tenant.js';
+import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped, TenantScoped } from './common';
+import type { MembershipStatus } from './tenant';
 
 /** Deployment environment for a project. */
 export type ProjectEnvironment = 'production' | 'staging' | 'development';

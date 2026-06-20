@@ -1,5 +1,5 @@
-import type { Entity, Id, IsoDateTime, ProjectScoped } from './common.js';
-import type { DecisionReason, VerificationStatus } from './verification.js';
+import type { Entity, Id, IsoDateTime, ProjectScoped } from './common';
+import type { DecisionReason, VerificationStatus } from './verification';
 
 /** The set of webhook event names Arkyc can deliver. */
 export type WebhookEventName =

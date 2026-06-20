@@ -1,4 +1,4 @@
-import type { DecisionInput } from './decision.js';
+import type { DecisionInput } from './decision';
 
 /** Clamp a number into the [0, 1] range. */
 export function clamp01(value: number): number {

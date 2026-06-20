@@ -7,7 +7,7 @@ export default class CreateUsersTableMigration extends Migration {
             table.string('name')
             table.string('email').unique().index()
             table.string('password')
-            table.timestamps()
+            table.timestamps('camel', 'snake')
         })
     }
 

@@ -1,4 +1,4 @@
-import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped } from './common.js';
+import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped } from './common';
 
 /** The lifecycle state of a verification session. */
 export type VerificationStatus =

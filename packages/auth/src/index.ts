@@ -6,7 +6,7 @@
  * widget client tokens (Phase 1). Complements `@arkstack/auth`; no Arkstack or
  * DB dependencies.
  */
-export * from './password.js';
-export * from './tokens.js';
-export * from './api-key.js';
-export * from './client-token.js';
+export * from './password';
+export * from './tokens';
+export * from './api-key';
+export * from './client-token';

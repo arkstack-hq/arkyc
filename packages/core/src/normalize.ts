@@ -5,8 +5,8 @@ import type {
   OcrResultData,
   WebhookChecks,
 } from '@arkyc/types';
-import type { DecisionInput } from './decision.js';
-import { isDocumentExpired } from './session.js';
+import type { DecisionInput } from './decision';
+import { isDocumentExpired } from './session';
 
 /** The raw provider outputs gathered for a session, plus the document quality. */
 export interface SessionSignals {

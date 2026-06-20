@@ -6,7 +6,7 @@ export default class CreateSessionsTableMigration extends Migration {
             table.string('id').primary()
             table.text('payload')
             table.date('expiresAt').nullable().map('expires_at')
-            table.timestamps()
+            table.timestamps('camel', 'snake')
         })
     }
 

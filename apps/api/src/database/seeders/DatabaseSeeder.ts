@@ -1,10 +1,13 @@
 import { Seeder } from '@arkstack/database'
-import { UserSeeder } from './UserSeeder'
+import { PermissionSeeder } from './PermissionSeeder'
+import { DemoTenantSeeder } from './DemoTenantSeeder'
 
 export class DatabaseSeeder extends Seeder {
     public async run (): Promise<void> {
         this.call([
-            UserSeeder
+            // Global permission catalogue first; the demo tenant grants from it.
+            PermissionSeeder,
+            DemoTenantSeeder,
         ])
     }
 }

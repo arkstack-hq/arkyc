@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PACKAGE_NAME } from '../src/index.js';
+import { PACKAGE_NAME } from '../src/index';
 
 describe('liveness', () => {
   it('exposes its package name', () => {

@@ -13,7 +13,7 @@ export default class CreateUserTwoFactorsTableMigration extends Migration {
             table.string('smsCodePurpose').nullable().map('sms_code_purpose')
             table.date('enabledAt').nullable().map('enabled_at')
             table.json('recoveryCodeHashes').nullable().map('recovery_code_hashes')
-            table.timestamps()
+            table.timestamps('camel', 'snake')
             table.index(['userId'])
         })
     }

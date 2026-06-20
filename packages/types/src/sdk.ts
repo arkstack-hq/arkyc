@@ -1,5 +1,5 @@
-import type { Metadata } from './common.js';
-import type { VerificationDecision, VerificationStatus } from './verification.js';
+import type { Metadata } from './common';
+import type { VerificationDecision, VerificationStatus } from './verification';
 
 /** Options for constructing the server SDK client (`new Arkyc(...)`). */
 export interface SdkOptions {

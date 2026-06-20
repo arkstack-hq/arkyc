@@ -1,5 +1,5 @@
 import type { IsoDate, IsoDateTime, VerificationStatus } from '@arkyc/types';
-import { isTerminalStatus } from './status.js';
+import { isTerminalStatus } from './status';
 
 /** Coerce an ISO string or Date into epoch milliseconds. */
 function toMillis(value: IsoDateTime | IsoDate | Date): number {

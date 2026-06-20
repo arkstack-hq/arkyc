@@ -13,7 +13,7 @@ export default class CreateUserNotificationsTableMigration extends Migration {
             table.string('actionLink').nullable().map('action_link')
             table.json('meta').nullable()
             table.date('readAt').nullable().map('read_at')
-            table.timestamps()
+            table.timestamps('camel', 'snake')
             table.index(['userId'])
         })
     }

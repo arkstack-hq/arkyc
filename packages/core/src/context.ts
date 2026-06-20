@@ -6,7 +6,9 @@ export interface TenantProjectContext {
   projectId: Id;
 }
 
-/** Thrown when an entity is accessed outside its tenant/project scope. */
+/**
+ * Thrown when an entity is accessed outside its tenant/project scope.
+ */
 export class TenantScopeError extends Error {
   constructor(message = 'Entity is outside the active tenant scope') {
     super(message);
@@ -14,16 +16,26 @@ export class TenantScopeError extends Error {
   }
 }
 
-/** Whether `entity` belongs to the given tenant. */
-export function belongsToTenant(entity: TenantScoped, tenantId: Id): boolean {
+/**
+ * Whether `entity` belongs to the given tenant.
+ *
+ * @param entity
+ * @param tenantId
+ * @returns
+ */
+export function belongsToTenant (entity: TenantScoped, tenantId: Id): boolean {
   return entity.tenant_id === tenantId;
 }
 
 /**
  * Assert that `entity` belongs to `tenantId`, throwing {@link TenantScopeError}
  * otherwise. Returns the entity (narrowed) for inline use.
+ *
+ * @param entity
+ * @param tenantId
+ * @returns
  */
-export function assertTenantScope<T extends TenantScoped>(entity: T, tenantId: Id): T {
+export function assertTenantScope<T extends TenantScoped> (entity: T, tenantId: Id): T {
   if (!belongsToTenant(entity, tenantId)) {
     throw new TenantScopeError();
   }
@@ -34,8 +46,13 @@ export function assertTenantScope<T extends TenantScoped>(entity: T, tenantId: I
  * Build the canonical, tenant/project-scoped storage key for a session object.
  *
  * e.g. `tenants/t1/projects/p1/sessions/s1/documents/front.jpg`
+ *
+ * @param ctx
+ * @param sessionId
+ * @param parts
+ * @returns
  */
-export function buildSessionStoragePath(
+export function buildSessionStoragePath (
   ctx: TenantProjectContext,
   sessionId: Id,
   ...parts: string[]
