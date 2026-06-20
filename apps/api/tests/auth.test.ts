@@ -110,7 +110,7 @@ afterAll(async () => {
 async function login (email: string, password: string): Promise<string> {
   const res = await request(app).post('/api/v1/auth/login').send({ email, password })
 
-  return res.body?.data?.token
+  return res.body?.token
 }
 
 describe('health', () => {
@@ -126,16 +126,16 @@ describe('dashboard auth (Arkstack built-in)', () => {
       .post('/api/v1/auth/register')
       .send({ name: 'New', email, password: PASSWORD })
     expect(res.status).toBe(201)
-    expect(res.body.data.user.email).toBe(email)
-    expect(res.body.data.token).toBeTruthy()
+    expect(res.body.data.email).toBe(email)
+    expect(res.body.token).toBeTruthy()
     expect(JSON.stringify(res.body)).not.toContain('password')
   })
 
-  it('rejects duplicate registration', async () => {
+  it('rejects duplicate registration (kanun unique rule)', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send({ name: 'Dup', email: fx.ownerEmail, password: PASSWORD })
-    expect(res.status).toBe(409)
+    expect(res.status).toBe(422)
   })
 
   it('logs in with valid credentials and rejects invalid ones', async () => {
@@ -143,12 +143,12 @@ describe('dashboard auth (Arkstack built-in)', () => {
       .post('/api/v1/auth/login')
       .send({ email: fx.loginEmail, password: PASSWORD })
     expect(ok.status).toBe(200)
-    expect(ok.body.data.token).toBeTruthy()
+    expect(ok.body.token).toBeTruthy()
 
     const bad = await request(app)
       .post('/api/v1/auth/login')
       .send({ email: fx.loginEmail, password: 'wrong' })
-    expect(bad.status).toBe(401)
+    expect(bad.status).toBe(422)
   })
 
   it('returns the current user with a token, 401 without', async () => {
@@ -156,7 +156,7 @@ describe('dashboard auth (Arkstack built-in)', () => {
       .get('/api/v1/auth/me')
       .set('Authorization', `Bearer ${fx.ownerToken}`)
     expect(me.status).toBe(200)
-    expect(me.body.data.user.email).toBe(fx.ownerEmail)
+    expect(me.body.data.email).toBe(fx.ownerEmail)
 
     await request(app).get('/api/v1/auth/me').expect(401)
   })
@@ -165,15 +165,15 @@ describe('dashboard auth (Arkstack built-in)', () => {
 describe('tenant scope + permissions', () => {
   it('allows a member with the permission (owner has tenants.view)', async () => {
     const res = await request(app)
-      .get(`/api/v1/dashboard/tenants/${fx.tenantId}/overview`)
+      .get(`/api/v1/dashboard/tenants/${fx.tenantId}`)
       .set('Authorization', `Bearer ${fx.ownerToken}`)
     expect(res.status).toBe(200)
-    expect(res.body.data.tenant.id).toBe(fx.tenantId)
+    expect(res.body.data.id).toBe(fx.tenantId)
   })
 
   it('denies a member lacking the permission (reviewer has no tenants.view)', async () => {
     const res = await request(app)
-      .get(`/api/v1/dashboard/tenants/${fx.tenantId}/overview`)
+      .get(`/api/v1/dashboard/tenants/${fx.tenantId}`)
       .set('Authorization', `Bearer ${fx.reviewerToken}`)
     expect(res.status).toBe(403)
     expect(res.body.message).toContain('Permission denied')
@@ -186,8 +186,8 @@ describe('tenant scope + permissions', () => {
       .post('/api/v1/auth/register')
       .send({ name: 'Out', email, password: PASSWORD })
     const res = await request(app)
-      .get(`/api/v1/dashboard/tenants/${fx.tenantId}/overview`)
-      .set('Authorization', `Bearer ${reg.body.data.token}`)
+      .get(`/api/v1/dashboard/tenants/${fx.tenantId}`)
+      .set('Authorization', `Bearer ${reg.body.token}`)
     expect(res.status).toBe(403)
   })
 })

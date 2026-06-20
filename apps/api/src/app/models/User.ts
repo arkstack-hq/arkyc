@@ -14,6 +14,7 @@ export class User extends BaseUser {
     declare name: string
     declare avatarUrl: string | null
     declare lastLoginAt: Date | null
+    declare emailVerifiedAt: Date | null
     declare createdAt: Date
     declare updatedAt: Date
 
@@ -22,6 +23,7 @@ export class User extends BaseUser {
     protected static override columns = {
         avatarUrl: 'avatar_url',
         lastLoginAt: 'last_login_at',
+        emailVerifiedAt: 'email_verified_at',
         createdAt: 'created_at',
         updatedAt: 'updated_at',
     }

@@ -1,17 +1,16 @@
+import { AppException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
 import { apiKeyPrefix, verifyApiKey } from '@arkyc/auth'
-
 import { ApiKey } from '@app/models/ApiKey'
-import { failure } from 'src/support/responses'
 
 function readSecret (req: Request): string | null {
-  const auth = req.headers.authorization
-  const bearer = Array.isArray(auth) ? auth[0] : auth
-  if (bearer?.startsWith('Bearer ')) return bearer.substring(7)
-  const header = req.headers['x-api-key']
-  const value = Array.isArray(header) ? header[0] : header
+    const auth = req.headers.authorization
+    const bearer = Array.isArray(auth) ? auth[0] : auth
+    if (bearer?.startsWith('Bearer ')) return bearer.substring(7)
+    const header = req.headers['x-api-key']
+    const value = Array.isArray(header) ? header[0] : header
 
-  return value || null
+    return value || null
 }
 
 /**
@@ -20,38 +19,32 @@ function readSecret (req: Request): string | null {
  * project from the key and attaches `req.projectContext`.
  */
 export class ApiKeyMiddleware {
-  async handler (req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const secret = readSecret(req)
-      if (!secret) {
-        failure(res, 401, 'Missing API key')
+    async handler (req: Request, _res: Response, next: NextFunction): Promise<void> {
+        try {
+            const secret = readSecret(req)
+            if (!secret) throw new AppException('Missing API key', 401)
 
-        return
-      }
+            const key = await ApiKey.where({ keyPrefix: apiKeyPrefix(secret) }).first()
+            const expired = key?.expiresAt != null && new Date(key.expiresAt).getTime() <= Date.now()
+            if (!key || key.revokedAt || expired || !verifyApiKey(secret, key.keyHash)) {
+                throw new AppException('Invalid API key', 401)
+            }
 
-      const key = await ApiKey.where({ keyPrefix: apiKeyPrefix(secret) }).first()
-      const expired = key?.expiresAt != null && new Date(key.expiresAt).getTime() <= Date.now()
-      if (!key || key.revokedAt || expired || !verifyApiKey(secret, key.keyHash)) {
-        failure(res, 401, 'Invalid API key')
+            req.projectContext = {
+                tenant_id: key.tenantId,
+                project_id: key.projectId,
+                api_key_id: key.id,
+            }
 
-        return
-      }
+            key.lastUsedAt = new Date()
+            await key.save()
 
-      req.projectContext = {
-        tenant_id: key.tenantId,
-        project_id: key.projectId,
-        api_key_id: key.id,
-      }
-
-      key.lastUsedAt = new Date()
-      await key.save()
-
-      next()
-    } catch (error) {
-      next(error)
+            next()
+        } catch (error) {
+            next(error)
+        }
     }
-  }
 }
 
 export const apiKeyAuth = (req: Request, res: Response, next: NextFunction): Promise<void> =>
-  new ApiKeyMiddleware().handler(req, res, next)
+    new ApiKeyMiddleware().handler(req, res, next)

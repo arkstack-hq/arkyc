@@ -43,7 +43,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                    |
 | 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles      |
 | 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
-| 5   | Tenants, Projects & API Keys               | ⬜     | Full tenant/project/member/key management                     |
+| 5   | Tenants, Projects & API Keys               | ✅     | Full tenant/project/member/key management                     |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
 | 8   | Workers & Async Pipeline                   | ⬜     | OCR + biometric workers process sessions to a decision        |

@@ -1,7 +1,10 @@
+import { AppException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
-import { failure } from 'src/support/responses'
 import { Tenant } from '@app/models/Tenant'
 import { TenantMember } from '@app/models/TenantMember'
+
+const param = (v: string | string[] | undefined): string | undefined =>
+    Array.isArray(v) ? v[0] : v
 
 /**
  * Resolves the active tenant from the route (`:tenantId`) and verifies that the
@@ -9,31 +12,21 @@ import { TenantMember } from '@app/models/TenantMember'
  * middleware. Attaches `req.tenant` and `req.tenantMember`.
  */
 export class ResolveTenantMiddleware {
-    async handler (req: Request, res: Response, next: NextFunction): Promise<void> {
+    async handler (req: Request, _res: Response, next: NextFunction): Promise<void> {
         try {
             const user = req.authUser
-            if (!user) {
-                failure(res, 401, 'Unauthenticated')
-                
-return
-            }
+            if (!user) throw new AppException('Unauthenticated', 401)
 
-            const tenantId = req.params.tenantId
+            const tenantId = param(req.params.tenantId)
             const tenant = tenantId ? await Tenant.where({ id: tenantId }).first() : null
-            if (!tenant) {
-                failure(res, 404, 'Tenant not found')
-                
-return
-            }
+            if (!tenant) throw new AppException('Tenant not found', 404)
 
             const member = await TenantMember.where({
                 userId: user.id,
                 tenantId: tenant.id,
             }).first()
             if (!member || member.status !== 'active') {
-                failure(res, 403, 'You are not a member of this tenant')
-                
-return
+                throw new AppException('You are not a member of this tenant', 403)
             }
 
             req.tenant = tenant

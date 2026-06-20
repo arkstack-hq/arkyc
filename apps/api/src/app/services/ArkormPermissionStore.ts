@@ -58,17 +58,17 @@ export class ArkormPermissionStore implements PermissionResolverStore, Permissio
     }
 
     private async permissionsForRole (roleId: string): Promise<PermissionKey[]> {
-        const rows = toArray(await RolePermission.where({ roleId }).get())
+        const permissionIds = toArray(await RolePermission.where({ roleId }).pluck('permissionId'))
 
-        return this.namesFor(rows.map((r) => r.permissionId))
+        return this.namesFor(permissionIds)
     }
 
     private async namesFor (permissionIds: string[]): Promise<PermissionKey[]> {
         if (permissionIds.length === 0) return []
-        const wanted = new Set(permissionIds)
-        const all = toArray(await Permission.all())
 
-        return all.filter((p) => wanted.has(p.id)).map((p) => p.name)
+        // Pluck just the names of the wanted permissions — no full models, no
+        // table scan.
+        return toArray(await Permission.query().whereIn('id', permissionIds).pluck('name'))
     }
 
     // ── PermissionSyncStore ───────────────────────────────────────────────────

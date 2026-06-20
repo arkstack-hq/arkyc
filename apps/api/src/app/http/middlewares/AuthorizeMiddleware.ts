@@ -1,9 +1,11 @@
+import { AppException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
 import { PermissionDeniedError, authorize } from '@arkyc/permissions'
-
 import type { PermissionKey } from '@arkyc/types'
-import { failure } from 'src/support/responses'
 import { permissionStore } from '@app/services/ArkormPermissionStore'
+
+const param = (value: string | string[] | undefined): string | undefined =>
+    Array.isArray(value) ? value[0] : value
 
 /**
  * Enforces that the authenticated user holds `permission` in the active
@@ -12,43 +14,32 @@ import { permissionStore } from '@app/services/ArkormPermissionStore'
  * tenant scope).
  */
 export class AuthorizeMiddleware {
-  constructor(private readonly permission: PermissionKey) { }
+    constructor (private readonly permission: PermissionKey) {}
 
-  async handler (req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const user = req.authUser
-      if (!user) {
-        failure(res, 401, 'Unauthenticated')
+    async handler (req: Request, _res: Response, next: NextFunction): Promise<void> {
+        try {
+            const user = req.authUser
+            if (!user) throw new AppException('Unauthenticated', 401)
 
-        return
-      }
+            const tenantId = req.tenant?.id ?? param(req.params.tenantId)
+            if (!tenantId) throw new AppException('Missing tenant scope', 400)
+            const projectId = param(req.params.projectId) ?? null
 
-      const param = (value: string | string[] | undefined): string | undefined =>
-        Array.isArray(value) ? value[0] : value
-
-      const tenantId = req.tenant?.id ?? param(req.params.tenantId)
-      if (!tenantId) {
-        failure(res, 400, 'Missing tenant scope')
-
-        return
-      }
-      const projectId = param(req.params.projectId) ?? null
-
-      await authorize({ userId: user.id, tenantId, projectId }, this.permission, permissionStore)
-      next()
-    } catch (error) {
-      if (error instanceof PermissionDeniedError) {
-        failure(res, 403, error.message)
-
-        return
-      }
-      next(error)
+            await authorize({ userId: user.id, tenantId, projectId }, this.permission, permissionStore)
+            next()
+        } catch (error) {
+            if (error instanceof PermissionDeniedError) {
+                next(new AppException(error.message, 403))
+                
+return
+            }
+            next(error)
+        }
     }
-  }
 }
 
 /** Route guard factory: `can('sessions.view')`. */
 export const can =
-  (permission: PermissionKey) =>
+    (permission: PermissionKey) =>
     (req: Request, res: Response, next: NextFunction): Promise<void> =>
-      new AuthorizeMiddleware(permission).handler(req, res, next)
+        new AuthorizeMiddleware(permission).handler(req, res, next)
