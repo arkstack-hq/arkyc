@@ -10,6 +10,14 @@ const BASE_BACKOFF_MS = 1000
 /** Default delivery attempts before a job is dead-lettered. */
 const DEFAULT_MAX_ATTEMPTS = 3
 
+/**
+ * Grace, in seconds, applied to the `available_at` check when claiming. Absorbs
+ * small clock skew between the app (which stamps `available_at`) and Postgres
+ * (whose `NOW()` the claim compares against) so an immediately-enqueued job is
+ * claimable right away. Negligible for delayed jobs.
+ */
+const CLOCK_SKEW_GRACE_SEC = 2
+
 export interface EnqueueOptions {
   /** Delivery attempts before dead-lettering (default 3). */
   maxAttempts?: number
@@ -56,7 +64,7 @@ export class Queue {
         WHERE id = (
           SELECT id FROM jobs
            WHERE (
-                   (status = 'pending' AND available_at <= NOW())
+                   (status = 'pending' AND available_at <= NOW() + make_interval(secs => ?))
                 OR (status = 'reserved' AND reserved_at < NOW() - make_interval(secs => ?))
                  )
              ${queue ? 'AND queue = ?' : ''}
@@ -65,7 +73,9 @@ export class Queue {
            LIMIT 1
         )
       RETURNING id`,
-      queue ? [VISIBILITY_TIMEOUT_SEC, queue] : [VISIBILITY_TIMEOUT_SEC],
+      queue
+        ? [CLOCK_SKEW_GRACE_SEC, VISIBILITY_TIMEOUT_SEC, queue]
+        : [CLOCK_SKEW_GRACE_SEC, VISIBILITY_TIMEOUT_SEC],
     )
 
     const row = Array.from(rows)[0]

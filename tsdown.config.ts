@@ -9,7 +9,9 @@ import { defineConfig } from 'tsdown';
  */
 export default defineConfig({
   workspace: ['packages/*', 'apps/dashboard', 'apps/playground'],
-  entry: ['src/index.ts'],
+  // Glob so packages exposing extra entrypoints (e.g. @arkyc/sdk's `browser`)
+  // build them too; matches only files that exist per package.
+  entry: ['src/{index,browser}.ts'],
   format: 'esm',
   dts: true,
   clean: true,

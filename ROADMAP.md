@@ -49,6 +49,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 8   | Workers & Async Pipeline                   | ✅     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter)             |
 | 9   | Reviews & Audit Logging                    | ✅     | Review queue + approve/reject/retry/assign/suspicious/note; audit trail (review + session + dashboard CRUD) + read API                     |
 | 10  | Webhooks                                   | ✅     | Signed (HMAC) webhook delivery per project; endpoint CRUD + test, queue-backed delivery worker with retries/`webhook_deliveries`            |
+| 11  | TypeScript SDK                             | ✅     | `@arkyc/sdk` server client (sessions create/retrieve/cancel, typed errors, webhook verify) + `@arkyc/sdk/browser` widget launcher           |
 | 11  | TypeScript SDK                             | ⬜     | `@arkyc/sdk` server + browser launcher                                                                                                     |
 | 12  | Widget                                     | ⬜     | `@arkyc/widget` full verification flow                                                                                                     |
 | 13  | Dashboard                                  | ⬜     | Multi-tenant React Router dashboard                                                                                                        |
@@ -286,20 +287,22 @@ _Note: the signing secret is stored as-is for re-signing deliveries (column name
 
 ---
 
-## Phase 11 — TypeScript SDK (`@arkyc/sdk`) ⬜
+## Phase 11 — TypeScript SDK (`@arkyc/sdk`) ✅
 
 **Goal:** Clean DX for integrators, server + browser.
 
 **Scope**
 
-- [ ] **Server SDK:** `new Arkyc({ secretKey })`, `arkyc.sessions.create/retrieve/cancel`, typed responses + typed errors, webhook verification helper.
-- [ ] **Browser SDK:** `@arkyc/sdk/browser` → `ArkycWidget.open({ token, onComplete })` launcher (wraps `@arkyc/widget`).
-- [ ] Reuses `packages/types` for response/error shapes.
-- [ ] Published build (ESM + CJS + types), versioned, with README usage examples matching the spec.
+- [x] **Server SDK:** `new Arkyc({ secretKey, baseUrl?, fetch? })`, `arkyc.sessions.create/retrieve/cancel`, typed responses + typed `ArkycApiError`, `arkyc.webhooks.verify` (re-exports `@arkyc/webhooks`).
+- [x] **Browser SDK:** `@arkyc/sdk/browser` → `ArkycWidget.open({ token, onComplete, onError })` overlay-iframe launcher with `postMessage` relay (consumes the Phase 12 hosted widget).
+- [x] Reuses `packages/types` for `VerificationStatus`/`VerificationDecision`/`DecisionReason`/`Metadata`.
+- [x] Dual-entrypoint build (`.` + `./browser`) via the workspace tsdown glob; README with server/webhook/browser usage examples.
 
-**Deliverables:** `@arkyc/sdk` package with server + browser entrypoints and tests against the API.
+**Deliverables:** `@arkyc/sdk` package with server + browser entrypoints and tests.
 
-**Exit criteria:** The server SDK can create + fetch + cancel a session; webhook verification validates a real signed payload; the browser launcher opens the widget with a client token.
+**Exit criteria:** The server SDK can create + fetch + cancel a session; webhook verification validates a real signed payload; the browser launcher opens the widget with a client token. ✅ Covered by `tests/sdk.test.ts` (mock-fetch create/retrieve/cancel + typed error + real signed-payload verify) and `tests/browser.test.ts` (fake-DOM launcher).
+
+_Note: the browser launcher points at the hosted widget origin; the actual widget UI lands in Phase 12. CJS output can be added to the build if a non-ESM consumer needs it._
 
 ---
 

@@ -11,6 +11,10 @@
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.mts",
+      "import": "./dist/browser.mjs"
     }
   },
   "files": [
@@ -24,6 +28,7 @@
   },
   "dependencies": {
     "@arkyc/types": "workspace:*",
-    "@arkyc/core": "workspace:*"
+    "@arkyc/core": "workspace:*",
+    "@arkyc/webhooks": "workspace:*"
   }
 }
