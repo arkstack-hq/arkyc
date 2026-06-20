@@ -1,4 +1,5 @@
 import { Seeder } from '@arkstack/database'
+import { Hash } from '@arkstack/common'
 import { faker } from '@faker-js/faker'
 import { DEFAULT_ROLES } from '@arkyc/permissions'
 import { generateApiKey } from '@arkyc/auth'
@@ -65,9 +66,10 @@ export class DemoTenantSeeder extends Seeder {
             }
         }
 
-        const owner = await User.factory().create({
+        const owner = await User.create({
             name: 'Acme Owner',
             email: 'owner@acme.test',
+            password: await Hash.make('password'),
         })
         await TenantMember.create({
             tenantId: tenant.id,

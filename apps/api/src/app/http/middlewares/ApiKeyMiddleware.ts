@@ -1,0 +1,57 @@
+import type { NextFunction, Request, Response } from 'express'
+import { apiKeyPrefix, verifyApiKey } from '@arkyc/auth'
+
+import { ApiKey } from '@app/models/ApiKey'
+import { failure } from 'src/support/responses'
+
+function readSecret (req: Request): string | null {
+  const auth = req.headers.authorization
+  const bearer = Array.isArray(auth) ? auth[0] : auth
+  if (bearer?.startsWith('Bearer ')) return bearer.substring(7)
+  const header = req.headers['x-api-key']
+  const value = Array.isArray(header) ? header[0] : header
+
+  return value || null
+}
+
+/**
+ * Authenticates a request from an integrating backend using a project secret
+ * API key (`Authorization: Bearer sk_…` or `X-Api-Key`). Resolves the tenant +
+ * project from the key and attaches `req.projectContext`.
+ */
+export class ApiKeyMiddleware {
+  async handler (req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const secret = readSecret(req)
+      if (!secret) {
+        failure(res, 401, 'Missing API key')
+
+        return
+      }
+
+      const key = await ApiKey.where({ keyPrefix: apiKeyPrefix(secret) }).first()
+      const expired = key?.expiresAt != null && new Date(key.expiresAt).getTime() <= Date.now()
+      if (!key || key.revokedAt || expired || !verifyApiKey(secret, key.keyHash)) {
+        failure(res, 401, 'Invalid API key')
+
+        return
+      }
+
+      req.projectContext = {
+        tenant_id: key.tenantId,
+        project_id: key.projectId,
+        api_key_id: key.id,
+      }
+
+      key.lastUsedAt = new Date()
+      await key.save()
+
+      next()
+    } catch (error) {
+      next(error)
+    }
+  }
+}
+
+export const apiKeyAuth = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+  new ApiKeyMiddleware().handler(req, res, next)

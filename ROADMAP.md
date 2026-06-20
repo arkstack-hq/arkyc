@@ -42,7 +42,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 1   | Shared Contracts (`types`, `core`, `auth`) | ✅     | Domain types + decision engine unit-tested                    |
 | 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                    |
 | 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles      |
-| 4   | API Foundation & Auth                      | ⬜     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
+| 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes |
 | 5   | Tenants, Projects & API Keys               | ⬜     | Full tenant/project/member/key management                     |
 | 6   | Verification Session Engine                | ⬜     | Sessions lifecycle + public/client APIs (mock providers)      |
 | 7   | Provider Packages                          | ⬜     | `ocr`, `liveness`, `face-match`, `storage` drivers            |
@@ -146,24 +146,24 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ---
 
-## Phase 4 — API Foundation & Authentication ⬜
+## Phase 4 — API Foundation & Authentication ✅
 
 **Goal:** Arkstack API boots and authenticates dashboard users with tenant context.
 
 **Scope**
 
-- [ ] Wire the `apps/api` Arkstack app to Postgres + Arkormˣ + `config/`.
-- [ ] Establish module structure: `auth`, `tenants`, `tenant-members`, `tenant-invitations`, `roles`, `permissions`, `projects`, `project-members`, `api-keys`, `verification-sessions`, `document-captures`, `ocr`, `liveness`, `face-match`, `reviews`, `webhooks`, `audit-logs`, `storage`.
-- [ ] **Auth middleware (Dashboard API)** — user session/JWT → resolves active tenant from route (`/t/:tenantId`) + membership.
-- [ ] **Auth middleware (Public Project API)** — secret API key → resolves tenant+project from the key.
-- [ ] **Auth middleware (Client/Widget API)** — short-lived client token → resolves session.
-- [ ] `authorize` middleware factory enforcing permission strings on protected routes.
-- [ ] Dashboard auth routes: register, login, logout, current user, accept invitation.
-- [ ] Standard error envelope, request validation, request-id, structured logging.
+- [x] `apps/api` Arkstack app wired to Postgres + Arkormˣ (migrations run; routes under `/api`).
+- [x] HTTP module structure: controllers, class-based middleware, services, `support/` helpers (further domain modules land per phase).
+- [x] **Auth middleware (Dashboard API)** — built-in Arkstack `auth` (bearer JWT) → `req.authUser`; `resolveTenant` resolves the active tenant from `:tenantId` + membership.
+- [x] **Auth middleware (Public Project API)** — `apiKeyAuth`: secret API key (`Bearer sk_…`/`X-Api-Key`) → resolves tenant+project; touches `last_used_at`.
+- [x] **Auth middleware (Client/Widget API)** — `clientTokenAuth`: short-lived client token → resolves session (rejects expired).
+- [x] `can(permission)` guard factory enforcing permission strings via `@arkyc/permissions` + the Arkormˣ resolver store.
+- [x] Dashboard auth routes (Arkstack built-in auth): register, login, logout, `me`, accept invitation.
+- [x] Standard `{ status, message, data|errors }` envelope + `requestId` correlation middleware.
 
 **Deliverables:** Bootable API with health check + working auth on a protected sample route per surface.
 
-**Exit criteria:** A user can register, log in, and hit a tenant-scoped route that is denied without the right permission and allowed with it.
+**Exit criteria:** A user can register, log in, and hit a tenant-scoped route that is denied without the right permission and allowed with it. ✅ Covered by **parasito** integration tests (no live server): register/login/me, owner allowed, reviewer-role member denied (`403 Permission denied: tenants.view`), non-member denied, API-key + client-token surfaces 200/401.
 
 ---
 

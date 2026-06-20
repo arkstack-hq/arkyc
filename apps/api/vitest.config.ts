@@ -35,9 +35,11 @@ export default defineConfig({
     test: {
         environment: 'node',
         include: ['tests/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+        // Load .env (APP_KEY for stable JWT signing, DATABASE_URL, etc.) before tests.
+        setupFiles: ['./tests/setup.ts'],
         env: {
             NODE_ENV: 'test',
-            VERBOSITY: '0'
+            VERBOSITY: '0',
         },
     },
 })

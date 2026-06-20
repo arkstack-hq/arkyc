@@ -6,6 +6,7 @@ import cors from 'cors'
 import corsConfig from './cors'
 import express from 'express'
 import { useExpressUploadContext } from '@kanun-hq/plugin-file'
+import { requestId } from '@app/http/middlewares'
 
 export default (): MiddlewareConfig => {
   const cConf = corsConfig()
@@ -26,6 +27,7 @@ export default (): MiddlewareConfig => {
       formdata.any(),
     ],
     before: [
+      requestId,
       (req, res, next) => {
         Resource.setCtx({ req, res })
         GenericResource.setCtx({ req, res })
