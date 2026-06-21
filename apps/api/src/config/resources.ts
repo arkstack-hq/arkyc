@@ -15,7 +15,7 @@ export default (): ResoraConfig => {
   return {
     preferredCase: 'camel',
     responseStructure: {
-      wrap: false,
+      wrap: true,
       rootKey: 'data',
     },
     paginatedExtras: ['meta'],

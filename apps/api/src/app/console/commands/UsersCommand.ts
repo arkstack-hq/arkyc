@@ -1,17 +1,15 @@
+import * as day from 'dayjs'
+
 import { Hash, Logger } from '@arkstack/common'
 
 import { Command } from '@h3ravel/musket'
 import { PersonalAccessToken } from 'src/app/models/PersonalAccessToken'
 import { User } from 'src/app/models/User'
 import { UserTwoFactor } from 'src/app/models/UserTwoFactor'
-import * as dayjsModule from 'dayjs'
-
-// The `ark` SWC pipeline doesn't apply esModuleInterop, so a default import of
-// dayjs (a CJS module whose `module.exports` IS the factory) resolves to
-// `undefined`. Grab the callable from whichever shape is present at runtime.
-const dayjs = ((dayjsModule as { default?: unknown }).default ??
-  dayjsModule) as unknown as typeof import('dayjs')
+import { interopDefault } from '@arkstack/common'
 import { perPage } from '@arkstack/common'
+
+const dayjs = interopDefault(day)
 
 export class UsersCommand extends Command {
   signature = `users

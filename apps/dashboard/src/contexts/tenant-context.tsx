@@ -32,8 +32,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   )
 
   // Effective permissions depend on the active tenant id (reactive state).
+  // `immediate` must be true when a tenant is already resolved on mount (warm
+  // cache after login) — otherwise the watcher only fires on a later change,
+  // which never comes, and permissions stay empty until a hard refresh.
   const { data: me, loading: meLoading } = useWatcher(() => Tenants.me(tenant!.id), [tenant?.id], {
-    immediate: false,
+    immediate: !!tenant,
   })
 
   const value = useMemo<TenantState>(() => {
