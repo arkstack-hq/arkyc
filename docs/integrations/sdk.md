@@ -17,7 +17,7 @@ import { Arkyc } from '@arkyc/sdk'
 
 const arkyc = new Arkyc({
   secretKey: process.env.ARKYC_SECRET_KEY!, // sk_…
-  baseUrl: 'http://localhost:3100',         // optional; default https://api.arkyc.dev
+  baseUrl: 'http://localhost:3100', // optional; default https://api.arkyc.dev
 })
 ```
 
@@ -67,7 +67,7 @@ try {
 
 ```ts
 const ok = arkyc.webhooks.verify({
-  payload: rawBody,                 // exact request body string
+  payload: rawBody, // exact request body string
   secret: process.env.WEBHOOK_SECRET!,
   signature: req.headers['x-arkyc-signature'] as string,
   timestamp: Number(req.headers['x-arkyc-timestamp']),
@@ -83,7 +83,7 @@ const ok = arkyc.webhooks.verify({
 // 1. Backend: open a session
 app.post('/verify/start', async (req, res) => {
   const { clientToken } = await arkyc.sessions.create({ userReference: req.user.id })
-  res.json({ clientToken })          // send token to the browser
+  res.json({ clientToken }) // send token to the browser
 })
 
 // 2. Browser: launch the widget with the token (see Widget docs)

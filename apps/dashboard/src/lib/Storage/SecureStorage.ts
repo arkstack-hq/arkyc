@@ -1,9 +1,6 @@
 export class StorageService {
   async set(key: string, value: unknown) {
-    const stringValue =
-      typeof value === 'string'
-        ? value
-        : JSON.stringify(value)
+    const stringValue = typeof value === 'string' ? value : JSON.stringify(value)
 
     localStorage.setItem(key, stringValue)
   }

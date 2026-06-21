@@ -1,26 +1,32 @@
-import { RequestException } from "./RequestException";
+import { RequestException } from './RequestException'
 
 export type ApiException =
   | (RequestException & { errors?: never; flat?: never; list?: never })
-  | ValidationException;
+  | ValidationException
 
 export class ValidationException extends RequestException {
-  public flat: Record<string, string>;
-  public list: Record<string, Array<{ message?: string }>>;
-  public errors: Record<string, string[]>;
+  public flat: Record<string, string>
+  public list: Record<string, Array<{ message?: string }>>
+  public errors: Record<string, string[]>
 
   constructor(message: string, errors: Record<string, string[]>, statusCode: number = 422) {
-    super(message, statusCode);
-    this.name = 'ValidationException';
-    this.errors = errors;
+    super(message, statusCode)
+    this.name = 'ValidationException'
+    this.errors = errors
 
-    this.flat = Object.keys(errors).reduce((acc, key) => {
-      return Object.assign(acc, { [key]: errors[key]?.[0] });
-    }, {} as Record<string, string>);
+    this.flat = Object.keys(errors).reduce(
+      (acc, key) => {
+        return Object.assign(acc, { [key]: errors[key]?.[0] })
+      },
+      {} as Record<string, string>,
+    )
 
-    this.list = Object.keys(errors).reduce((acc, key) => {
-      return Object.assign(acc, { [key]: errors[key]?.map((message) => ({ message })) });
-    }, {} as Record<string, Array<{ message?: string }>>);
+    this.list = Object.keys(errors).reduce(
+      (acc, key) => {
+        return Object.assign(acc, { [key]: errors[key]?.map((message) => ({ message })) })
+      },
+      {} as Record<string, Array<{ message?: string }>>,
+    )
   }
 
   /**
@@ -32,7 +38,7 @@ export class ValidationException extends RequestException {
    * @returns
    */
   static is(error: unknown): error is ValidationException {
-    return error instanceof ValidationException;
+    return error instanceof ValidationException
   }
 
   /**
@@ -46,13 +52,16 @@ export class ValidationException extends RequestException {
    * @param handler
    * @returns
    */
-  delete(key: string, handler?: (args: { error: ValidationException }) => void): ValidationException {
-    const errors = { ...this.errors };
-    delete errors[key];
-    const error = new ValidationException(this.message, errors, this.statusCode);
+  delete(
+    key: string,
+    handler?: (args: { error: ValidationException }) => void,
+  ): ValidationException {
+    const errors = { ...this.errors }
+    delete errors[key]
+    const error = new ValidationException(this.message, errors, this.statusCode)
 
-    handler?.({ error });
-    return error;
+    handler?.({ error })
+    return error
   }
 
   /**
@@ -61,6 +70,6 @@ export class ValidationException extends RequestException {
    * @returns
    */
   reset(): ValidationException {
-    return new ValidationException(this.message, {}, this.statusCode);
+    return new ValidationException(this.message, {}, this.statusCode)
   }
 }

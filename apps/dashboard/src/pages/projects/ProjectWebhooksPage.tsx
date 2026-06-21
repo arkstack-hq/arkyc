@@ -73,9 +73,12 @@ export default function ProjectWebhooksPage() {
     update: clearCreateError,
     reset,
     onSuccess: onCreateSuccess,
-  } = useForm((f) => Webhooks.create(tenantId, projectId!, { url: f.url.trim(), events: f.events }), {
-    initialForm: { url: '', events: [] as WebhookEventName[] },
-  })
+  } = useForm(
+    (f) => Webhooks.create(tenantId, projectId!, { url: f.url.trim(), events: f.events }),
+    {
+      initialForm: { url: '', events: [] as WebhookEventName[] },
+    },
+  )
 
   onCreateSuccess(({ data }) => {
     setSecret(data.secret)

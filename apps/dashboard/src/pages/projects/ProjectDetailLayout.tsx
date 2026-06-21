@@ -15,7 +15,11 @@ export default function ProjectDetailLayout() {
   const tenantId = useTenantId()
   const { projectId } = useParams()
 
-  const { data: project, loading, error } = useRequest(Projects.get(tenantId, projectId!), {
+  const {
+    data: project,
+    loading,
+    error,
+  } = useRequest(Projects.get(tenantId, projectId!), {
     immediate: !!projectId,
   })
 

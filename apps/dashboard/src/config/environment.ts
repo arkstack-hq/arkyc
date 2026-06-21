@@ -1,51 +1,52 @@
 export type AppEnvironment = {
-  apiEnvironment: 'development' | 'production' | 'staging';
-  apiUrl: string;
-  appEnvironment: 'development' | 'production' | 'testing';
-  androidPushEnabled: boolean;
-};
+  apiEnvironment: 'development' | 'production' | 'staging'
+  apiUrl: string
+  appEnvironment: 'development' | 'production' | 'testing'
+  androidPushEnabled: boolean
+}
 
 type ApiEnv = 'development' | 'staging' | 'production'
-type EnvironmentSource = Record<string, unknown>;
+type EnvironmentSource = Record<string, unknown>
 
 const required = (source: EnvironmentSource, name: string) => {
-  const value = String(source[name] ?? '').trim();
+  const value = String(source[name] ?? '').trim()
 
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  if (!value) throw new Error(`Missing required environment variable: ${name}`)
 
-  return value;
-};
+  return value
+}
 
 const oneOf = <T extends string>(value: string, name: string, values: readonly T[]): T => {
   if (!values.includes(value as T)) {
-    throw new Error(`${name} must be one of: ${values.join(', ')}`);
+    throw new Error(`${name} must be one of: ${values.join(', ')}`)
   }
 
-  return value as T;
-};
+  return value as T
+}
 
 export function validateAppEnvironment(source: EnvironmentSource): AppEnvironment {
-  const apiEnvironment = oneOf(
-    required(source, 'VITE_API_ENV'),
-    'VITE_API_ENV',
-    ['development', 'staging', 'production'] as const,
-  );
-  const appEnvironment = oneOf(
-    required(source, 'VITE_APP_ENV'),
-    'VITE_APP_ENV',
-    ['development', 'testing', 'production'] as const,
-  );
-  const apiUrlKey = apiEnvironment === 'development'
-    ? 'VITE_DEV_API_URL'
-    : apiEnvironment === 'staging'
-      ? 'VITE_STAGING_API_URL'
-      : 'VITE_API_URL';
-  const apiUrl = required(source, apiUrlKey);
+  const apiEnvironment = oneOf(required(source, 'VITE_API_ENV'), 'VITE_API_ENV', [
+    'development',
+    'staging',
+    'production',
+  ] as const)
+  const appEnvironment = oneOf(required(source, 'VITE_APP_ENV'), 'VITE_APP_ENV', [
+    'development',
+    'testing',
+    'production',
+  ] as const)
+  const apiUrlKey =
+    apiEnvironment === 'development'
+      ? 'VITE_DEV_API_URL'
+      : apiEnvironment === 'staging'
+        ? 'VITE_STAGING_API_URL'
+        : 'VITE_API_URL'
+  const apiUrl = required(source, apiUrlKey)
 
   try {
-    new URL(apiUrl);
+    new URL(apiUrl)
   } catch {
-    throw new Error(`${apiUrlKey} must be a valid absolute URL`);
+    throw new Error(`${apiUrlKey} must be a valid absolute URL`)
   }
 
   return {
@@ -53,11 +54,11 @@ export function validateAppEnvironment(source: EnvironmentSource): AppEnvironmen
     apiUrl,
     appEnvironment,
     androidPushEnabled: String(source.VITE_ANDROID_PUSH_ENABLED ?? 'false') === 'true',
-  };
+  }
 }
 
 export function getApiUrl(defaultValue: string): string {
-  const apiEnv = import.meta.env.VITE_API_ENV as ApiEnv || 'development'
+  const apiEnv = (import.meta.env.VITE_API_ENV as ApiEnv) || 'development'
 
   const DEFAULT = import.meta.env.VITE_API_URL || defaultValue || 'http://localhost:3000/api'
 
@@ -77,7 +78,6 @@ export function getApiUrl(defaultValue: string): string {
       return import.meta.env.VITE_DEV_API_URL || DEFAULT
   }
 }
-
 
 /**
  * Read the .env file

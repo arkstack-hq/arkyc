@@ -51,11 +51,11 @@ the biometric worker, and review actions.
 
 Each delivery is a `POST` with:
 
-| Header               | Value                                            |
-| -------------------- | ------------------------------------------------ |
-| `Content-Type`       | `application/json`                               |
-| `X-Arkyc-Signature`  | HMAC-SHA256 of `${timestamp}.${rawBody}`         |
-| `X-Arkyc-Timestamp`  | Unix seconds when the delivery was signed        |
+| Header              | Value                                     |
+| ------------------- | ----------------------------------------- |
+| `Content-Type`      | `application/json`                        |
+| `X-Arkyc-Signature` | HMAC-SHA256 of `${timestamp}.${rawBody}`  |
+| `X-Arkyc-Timestamp` | Unix seconds when the delivery was signed |
 
 Verify with the SDK (constant-time compare + timestamp tolerance):
 
@@ -63,11 +63,11 @@ Verify with the SDK (constant-time compare + timestamp tolerance):
 import { WebhookSigner } from '@arkyc/sdk'
 
 const ok = WebhookSigner.verify({
-  payload: rawBody,                                  // the exact bytes received
+  payload: rawBody, // the exact bytes received
   secret: process.env.ARKYC_WEBHOOK_SECRET!,
   signature: req.headers['x-arkyc-signature'] as string,
   timestamp: Number(req.headers['x-arkyc-timestamp']),
-  toleranceSec: 300,                                 // optional, default 300
+  toleranceSec: 300, // optional, default 300
 })
 if (!ok) return res.status(400).end()
 ```

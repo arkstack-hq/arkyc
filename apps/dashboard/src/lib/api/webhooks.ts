@@ -19,17 +19,13 @@ export class Webhooks {
 
   /** Add an endpoint; the signing secret is returned once, here only. */
   static create(tenantId: string, projectId: string, input: CreateWebhookInput) {
-    return alova.Post(
-      `${p(tenantId, projectId)}/webhooks`,
-      input,
-      {
-        name: 'webhook:create',
-        transform: (raw: Envelope<WebhookEndpoint> & { secret: string }) => ({
-          ...(raw.data as WebhookEndpoint),
-          secret: raw.secret as string,
-        }),
-      },
-    )
+    return alova.Post(`${p(tenantId, projectId)}/webhooks`, input, {
+      name: 'webhook:create',
+      transform: (raw: Envelope<WebhookEndpoint> & { secret: string }) => ({
+        ...(raw.data as WebhookEndpoint),
+        secret: raw.secret as string,
+      }),
+    })
   }
 
   /** Update an endpoint's URL, events, or status. */
@@ -39,11 +35,10 @@ export class Webhooks {
     webhookId: string,
     input: Partial<CreateWebhookInput> & { status?: string },
   ) {
-    return alova.Patch(
-      `${p(tenantId, projectId)}/webhooks/${webhookId}`,
-      input,
-      { name: 'webhook:update', transform: unwrap<WebhookEndpoint> },
-    )
+    return alova.Patch(`${p(tenantId, projectId)}/webhooks/${webhookId}`, input, {
+      name: 'webhook:update',
+      transform: unwrap<WebhookEndpoint>,
+    })
   }
 
   /** Delete an endpoint. */

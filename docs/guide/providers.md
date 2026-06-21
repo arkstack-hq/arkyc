@@ -41,11 +41,11 @@ FACE_MATCH_API_KEY=...
 Each `external` endpoint receives the image bytes and must return JSON matching
 the provider's result type (`packages/{ocr,liveness,face-match}`):
 
-| Provider     | Returns                                                        |
-| ------------ | ------------------------------------------------------------- |
-| OCR          | `{ fields, confidence, raw }`                                  |
-| Liveness     | `{ passed, score, spoofSignals, raw }`                         |
-| Face match   | `{ passed, similarityScore, confidence, raw }`                |
+| Provider   | Returns                                        |
+| ---------- | ---------------------------------------------- |
+| OCR        | `{ fields, confidence, raw }`                  |
+| Liveness   | `{ passed, score, spoofSignals, raw }`         |
+| Face match | `{ passed, similarityScore, confidence, raw }` |
 
 These feed the [decision engine](./architecture#decision-engine) along with the
 project's thresholds.

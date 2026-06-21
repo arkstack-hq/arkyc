@@ -108,82 +108,82 @@ export default function ReviewsPage() {
         <EmptyState title="No sessions awaiting review" />
       ) : (
         <>
-        <Table>
-          <THead>
-            <TR>
-              <TH>User reference</TH>
-              <TH>Reason</TH>
-              <TH>Risk</TH>
-              <TH>Created</TH>
-              <TH className="text-right">Actions</TH>
-            </TR>
-          </THead>
-          <TBody>
-            {sessions.map((s) => {
-              const pending = actingId === s.id
-              return (
-                <TR key={s.id}>
-                  <TD>
-                    <Link to={sessionPath(s.id)} className="text-primary hover:underline">
-                      {s.user_reference ?? '—'}
-                    </Link>
-                  </TD>
-                  <TD>{humanize(s.decision_reason)}</TD>
-                  <TD>{s.risk_score?.toFixed(2) ?? '—'}</TD>
-                  <TD className="text-muted-foreground">{formatDateTime(s.created_at)}</TD>
-                  <TD>
-                    <div className="flex items-center justify-end gap-2">
-                      {pending ? <Spinner /> : null}
-                      {can('reviews.approve') ? (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          disabled={pending}
-                          onClick={() => runAction(s.id, 'approve')}
-                        >
-                          Approve
-                        </Button>
-                      ) : null}
-                      {can('reviews.reject') ? (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={pending}
-                          onClick={() => runAction(s.id, 'reject')}
-                        >
-                          Reject
-                        </Button>
-                      ) : null}
-                      {can('reviews.request_retry') ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={pending}
-                          onClick={() => runAction(s.id, 'retry')}
-                        >
-                          Retry
-                        </Button>
-                      ) : null}
-                      {can('reviews.note') ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={pending}
-                          onClick={() => {
-                            setNoteFor(s.id)
-                            updateNote({ body: '' })
-                          }}
-                        >
-                          Note
-                        </Button>
-                      ) : null}
-                    </div>
-                  </TD>
-                </TR>
-              )
-            })}
-          </TBody>
-        </Table>
+          <Table>
+            <THead>
+              <TR>
+                <TH>User reference</TH>
+                <TH>Reason</TH>
+                <TH>Risk</TH>
+                <TH>Created</TH>
+                <TH className="text-right">Actions</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {sessions.map((s) => {
+                const pending = actingId === s.id
+                return (
+                  <TR key={s.id}>
+                    <TD>
+                      <Link to={sessionPath(s.id)} className="text-primary hover:underline">
+                        {s.user_reference ?? '—'}
+                      </Link>
+                    </TD>
+                    <TD>{humanize(s.decision_reason)}</TD>
+                    <TD>{s.risk_score?.toFixed(2) ?? '—'}</TD>
+                    <TD className="text-muted-foreground">{formatDateTime(s.created_at)}</TD>
+                    <TD>
+                      <div className="flex items-center justify-end gap-2">
+                        {pending ? <Spinner /> : null}
+                        {can('reviews.approve') ? (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            disabled={pending}
+                            onClick={() => runAction(s.id, 'approve')}
+                          >
+                            Approve
+                          </Button>
+                        ) : null}
+                        {can('reviews.reject') ? (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={pending}
+                            onClick={() => runAction(s.id, 'reject')}
+                          >
+                            Reject
+                          </Button>
+                        ) : null}
+                        {can('reviews.request_retry') ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={pending}
+                            onClick={() => runAction(s.id, 'retry')}
+                          >
+                            Retry
+                          </Button>
+                        ) : null}
+                        {can('reviews.note') ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={pending}
+                            onClick={() => {
+                              setNoteFor(s.id)
+                              updateNote({ body: '' })
+                            }}
+                          >
+                            Note
+                          </Button>
+                        ) : null}
+                      </div>
+                    </TD>
+                  </TR>
+                )
+              })}
+            </TBody>
+          </Table>
 
           <InfiniteScroll
             onLoadMore={() => update({ page: page + 1 })}

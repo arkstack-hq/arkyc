@@ -24,7 +24,7 @@ Every response uses a consistent envelope:
   "status": "success",
   "message": "Human-readable message",
   "code": 200,
-  "data": { }
+  "data": {}
 }
 ```
 
@@ -34,7 +34,7 @@ List endpoints add a pagination `meta`:
 {
   "status": "success",
   "code": 200,
-  "data": [ ],
+  "data": [],
   "meta": { "current_page": 1, "per_page": 15, "total": 42 }
 }
 ```
@@ -58,10 +58,10 @@ Validation error.
 ## Authentication at a glance
 
 | Surface         | Header                                                   |
-| --------------- | ------------------------------------------------------- |
-| Public Project  | `Authorization: Bearer sk_…` (or `X-Api-Key: sk_…`)     |
-| Client / Widget | `X-Client-Token: <token>` (or `Authorization: Bearer …`)|
-| Dashboard       | `Authorization: Bearer <jwt>`                           |
+| --------------- | -------------------------------------------------------- |
+| Public Project  | `Authorization: Bearer sk_…` (or `X-Api-Key: sk_…`)      |
+| Client / Widget | `X-Client-Token: <token>` (or `Authorization: Bearer …`) |
+| Dashboard       | `Authorization: Bearer <jwt>`                            |
 
 List endpoints accept a `per_page` query parameter; the Public/Client surfaces
 accept `multipart/form-data` for image uploads.

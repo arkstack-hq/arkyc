@@ -30,12 +30,12 @@ docs/           This VitePress site
 
 All routes are served under a global `/api` prefix.
 
-| Surface             | Prefix              | Auth                         | Used by                     |
-| ------------------- | ------------------- | ---------------------------- | --------------------------- |
-| **Auth**            | `/v1/auth`          | none → bearer JWT            | Dashboard sign-in           |
-| **Dashboard API**   | `/v1/dashboard`     | bearer JWT + permissions     | The management dashboard    |
-| **Public Project**  | `/v1/sessions`      | project secret key (`sk_…`)  | Your backend / the SDK      |
-| **Client / Widget** | `/v1/client`        | short-lived client token     | The widget in the browser   |
+| Surface             | Prefix          | Auth                        | Used by                   |
+| ------------------- | --------------- | --------------------------- | ------------------------- |
+| **Auth**            | `/v1/auth`      | none → bearer JWT           | Dashboard sign-in         |
+| **Dashboard API**   | `/v1/dashboard` | bearer JWT + permissions    | The management dashboard  |
+| **Public Project**  | `/v1/sessions`  | project secret key (`sk_…`) | Your backend / the SDK    |
+| **Client / Widget** | `/v1/client`    | short-lived client token    | The widget in the browser |
 
 The secret key never touches the browser: your **backend** creates a session
 with the secret key and receives a one-time **client token**, which the
@@ -73,11 +73,11 @@ face match `0.75` — overridable per project.
 Heavy analysis runs off the request path on a durable, Postgres-backed job
 queue (`UPDATE … RETURNING` over `FOR UPDATE SKIP LOCKED`). Three queues:
 
-| Queue       | Trigger                          | Work                                                   |
-| ----------- | -------------------------------- | ------------------------------------------------------ |
-| `ocr`       | document front submitted         | run OCR driver + portrait extraction, persist results  |
-| `biometric` | session enters `processing`      | run face match + decision engine, land the verdict     |
-| `webhook`   | a transition emits an event      | sign + POST the delivery, record the attempt           |
+| Queue       | Trigger                     | Work                                                  |
+| ----------- | --------------------------- | ----------------------------------------------------- |
+| `ocr`       | document front submitted    | run OCR driver + portrait extraction, persist results |
+| `biometric` | session enters `processing` | run face match + decision engine, land the verdict    |
+| `webhook`   | a transition emits an event | sign + POST the delivery, record the attempt          |
 
 Run workers with `ark queue:work [queue]`. In dev the queue defaults to `sync`
 (inline), so no worker is needed.

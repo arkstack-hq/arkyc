@@ -30,12 +30,7 @@ export class UsersCommand extends Command {
       let page = 1
 
       while (!userId) {
-        const data = await this.fetchUsers(
-          page,
-          perPage(this.options()),
-          search,
-          accountType
-        )
+        const data = await this.fetchUsers(page, perPage(this.options()), search, accountType)
 
         const choices = data.data.all().map((user) => ({
           name: `${user.getAttribute('name')}`.trim(),
@@ -87,19 +82,18 @@ export class UsersCommand extends Command {
     }
 
     if (userId) {
-      const user = await User
-        .query()
-        .where({ id: userId })
-        .firstOrFail()
+      const user = await User.query().where({ id: userId }).firstOrFail()
 
       const action = await this.choice(
-        `Selected user: ${user.getAttribute('name')}. Choose an action:`, [
-        { name: 'Details', value: 'view' },
-        { name: 'Edit', value: 'edit' },
-        { name: 'Send Notification', value: 'notify' },
-        { name: 'Delete User', value: 'delete' },
-        { name: Logger.log('✖ Exit', 'red', false), value: 'exit' },
-      ])
+        `Selected user: ${user.getAttribute('name')}. Choose an action:`,
+        [
+          { name: 'Details', value: 'view' },
+          { name: 'Edit', value: 'edit' },
+          { name: 'Send Notification', value: 'notify' },
+          { name: 'Delete User', value: 'delete' },
+          { name: Logger.log('✖ Exit', 'red', false), value: 'exit' },
+        ],
+      )
 
       if (action === 'view') {
         await this.viewUser(user)
@@ -118,17 +112,23 @@ export class UsersCommand extends Command {
 
   async fetchUsers(page = 1, perPage = 20, search?: string, accountType?: string) {
     const data = await User.query()
-      .when(search, e => e.whereRaw(`
+      .when(search, (e) =>
+        e.whereRaw(
+          `
                     LOWER("firstname") LIKE ? OR
                     LOWER("lastname") LIKE ? OR
                     CONCAT_WS(' ', LOWER("firstname"), LOWER("lastname")) LIKE ?
-                `, Array(3).fill(`%${String(search).toLowerCase()}%`)))
-      .when(accountType, e => e.where({ accountType }))
+                `,
+          Array(3).fill(`%${String(search).toLowerCase()}%`),
+        ),
+      )
+      .when(accountType, (e) => e.where({ accountType }))
       .select({
         id: true,
         firstName: true,
         lastName: true,
-      }).paginate(perPage, page)
+      })
+      .paginate(perPage, page)
 
     if (data.meta.total < 1) {
       Logger.error('No users found.', true)
@@ -138,7 +138,15 @@ export class UsersCommand extends Command {
   }
 
   async editUser(user: User) {
-    const fields = ['First Name', 'Last Name', 'Date Of Birth', 'Email', 'Phone', 'Password', Logger.log('✖ Exit', 'red', false)]
+    const fields = [
+      'First Name',
+      'Last Name',
+      'Date Of Birth',
+      'Email',
+      'Phone',
+      'Password',
+      Logger.log('✖ Exit', 'red', false),
+    ]
     let field = await this.choice('Which field do you want to edit?', fields)
 
     do {
@@ -150,9 +158,10 @@ export class UsersCommand extends Command {
       const def = user.getAttribute(key) as string
 
       if (key) {
-        const val = field === 'Password'
-          ? await Hash.make(await this.secret(`Enter new value for ${field}:`, '*'))
-          : await this.ask(`Enter new value for ${field}:`, def)
+        const val =
+          field === 'Password'
+            ? await Hash.make(await this.secret(`Enter new value for ${field}:`, '*'))
+            : await this.ask(`Enter new value for ${field}:`, def)
 
         if (val) {
           await user.fill({ [key]: val }).save()
@@ -170,13 +179,8 @@ export class UsersCommand extends Command {
 
   async viewUser(user: User) {
     const [session, twoFa] = await Promise.all([
-      PersonalAccessToken.query()
-        .where({ userId: user.id })
-        .latest('lastUsedAt')
-        .first(),
-      UserTwoFactor.query()
-        .where({ userId: user.id })
-        .first(),
+      PersonalAccessToken.query().where({ userId: user.id }).latest('lastUsedAt').first(),
+      UserTwoFactor.query().where({ userId: user.id }).first(),
     ])
 
     const fields: Array<[string, string]> = [
@@ -186,18 +190,35 @@ export class UsersCommand extends Command {
       ['Phone', String(user.phone || 'N/A')],
       ['Avatar URL', String(user.getAttribute('avatarUrl') || 'N/A')],
       ['Two-Factor Method', String(twoFa?.method || 'N/A')],
-      ['Two-Factor Enabled At', twoFa?.enabledAt ? dayjs(twoFa.enabledAt).format('YYYY-MM-DD h:mm A') : 'N/A'],
+      [
+        'Two-Factor Enabled At',
+        twoFa?.enabledAt ? dayjs(twoFa.enabledAt).format('YYYY-MM-DD h:mm A') : 'N/A',
+      ],
       ['Created At', dayjs(user.createdAt).format('YYYY-MM-DD h:mm A')],
       ['Last Login', dayjs(session?.lastUsedAt ?? new Date()).format('YYYY-MM-DD h:mm A')],
     ]
 
-    console.log(fields.map(([label, value]) => Logger.log([
-      [label, ['cyan', 'bold']], [`${value}`, 'white'],
-    ], ': ', false)).join('\n'))
+    console.log(
+      fields
+        .map(([label, value]) =>
+          Logger.log(
+            [
+              [label, ['cyan', 'bold']],
+              [`${value}`, 'white'],
+            ],
+            ': ',
+            false,
+          ),
+        )
+        .join('\n'),
+    )
   }
 
   async deleteUser(user: User) {
-    const confirm = await this.confirm(`Are you sure you want to delete user ${user.name}? This action cannot be undone.`, false)
+    const confirm = await this.confirm(
+      `Are you sure you want to delete user ${user.name}? This action cannot be undone.`,
+      false,
+    )
 
     if (confirm) {
       await User.query().where({ id: user.id }).delete()

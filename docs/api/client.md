@@ -15,13 +15,13 @@ does. They're documented for custom flows.
 
 ## Endpoints
 
-| Method | Path                          | Description                                                  |
-| ------ | ----------------------------- | ----------------------------------------------------------- |
-| `GET`  | `/v1/client/session`          | Fetch the session; marks it `started` on first load.        |
-| `POST` | `/v1/client/document/front`   | Submit the document front; runs OCR + portrait extraction.  |
-| `POST` | `/v1/client/document/back`    | Submit the document back (skipped for single-sided docs).   |
-| `POST` | `/v1/client/liveness`         | Submit the selfie / passive liveness frame.                 |
-| `POST` | `/v1/client/complete`         | Finalize — run the decision engine and land the verdict.    |
+| Method | Path                        | Description                                                |
+| ------ | --------------------------- | ---------------------------------------------------------- |
+| `GET`  | `/v1/client/session`        | Fetch the session; marks it `started` on first load.       |
+| `POST` | `/v1/client/document/front` | Submit the document front; runs OCR + portrait extraction. |
+| `POST` | `/v1/client/document/back`  | Submit the document back (skipped for single-sided docs).  |
+| `POST` | `/v1/client/liveness`       | Submit the selfie / passive liveness frame.                |
+| `POST` | `/v1/client/complete`       | Finalize — run the decision engine and land the verdict.   |
 
 ## Uploads
 

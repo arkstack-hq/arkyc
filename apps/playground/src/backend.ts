@@ -47,7 +47,8 @@ export function arkycBackend(options: ArkycBackendOptions): Plugin {
   // Constructed lazily: `new Arkyc({ secretKey: '' })` throws, and the secret
   // may be absent at config-load (e.g. during `vite build`, or before `.env`).
   let client: Arkyc | null = null
-  const sdk = (): Arkyc => (client ??= new Arkyc({ secretKey: options.secretKey, baseUrl: options.apiUrl }))
+  const sdk = (): Arkyc =>
+    (client ??= new Arkyc({ secretKey: options.secretKey, baseUrl: options.apiUrl }))
 
   return {
     name: 'arkyc-playground-backend',
@@ -63,7 +64,8 @@ export function arkycBackend(options: ArkycBackendOptions): Plugin {
           if (method === 'POST' && url === '/pg/session') {
             if (!options.secretKey) {
               return sendJson(res, 500, {
-                error: 'ARKYC_SECRET_KEY is not set. Copy .env.example to .env and add a project secret key.',
+                error:
+                  'ARKYC_SECRET_KEY is not set. Copy .env.example to .env and add a project secret key.',
               })
             }
             const raw = await readBody(req)

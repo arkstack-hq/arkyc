@@ -9,12 +9,12 @@ The key resolves the tenant + project; a key can only touch its own project.
 
 ## Endpoints
 
-| Method | Path                       | Description                                          |
-| ------ | -------------------------- | --------------------------------------------------- |
-| `GET`  | `/v1/ping/project`         | Health check — confirms the key authenticates.      |
-| `POST` | `/v1/sessions`             | Create a session; returns a one-time client token.  |
-| `GET`  | `/v1/sessions/:id`         | Retrieve a session's current state.                 |
-| `POST` | `/v1/sessions/:id/cancel`  | Cancel a non-terminal session.                      |
+| Method | Path                      | Description                                        |
+| ------ | ------------------------- | -------------------------------------------------- |
+| `GET`  | `/v1/ping/project`        | Health check — confirms the key authenticates.     |
+| `POST` | `/v1/sessions`            | Create a session; returns a one-time client token. |
+| `GET`  | `/v1/sessions/:id`        | Retrieve a session's current state.                |
+| `POST` | `/v1/sessions/:id/cancel` | Cancel a non-terminal session.                     |
 
 ## Create a session
 

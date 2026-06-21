@@ -1,6 +1,6 @@
-import type { AlovaGenerics } from 'alova';
-import type { ExportedState } from 'alova/client';
-import type { ApiException } from '@/lib/Exceptions/ValidationException';
+import type { AlovaGenerics } from 'alova'
+import type { ExportedState } from 'alova/client'
+import type { ApiException } from '@/lib/Exceptions/ValidationException'
 
 // Our alova `responded.onError` (see lib/requests/axios.ts) always throws a
 // RequestException or its ValidationException subclass, never a bare Error.
@@ -14,6 +14,6 @@ import type { ApiException } from '@/lib/Exceptions/ValidationException';
 //   rename that silently breaks the merge.
 declare module 'alova/client' {
   interface UseHookExportedState<AG extends AlovaGenerics> {
-    error: ExportedState<ApiException | undefined, AG['StatesExport']>;
+    error: ExportedState<ApiException | undefined, AG['StatesExport']>
   }
 }

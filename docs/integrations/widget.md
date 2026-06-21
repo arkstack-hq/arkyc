@@ -31,15 +31,15 @@ ArkycWidget.hosted()
 
 ## Options
 
-| Option       | Type                                  | Notes                                                            |
-| ------------ | ------------------------------------- | ---------------------------------------------------------------- |
-| `token`      | `string` (required)                   | The client token from `arkyc.sessions.create`.                   |
-| `baseUrl`    | `string`                              | Client API base — must include `/api` (e.g. `/api` behind a proxy, or `https://api.example.com/api`). |
-| `branding`   | `ProjectBranding`                     | Colors, logo, radius, theme. Defaults from project config.       |
-| `onComplete` | `(result) => void`                    | `result` is `{ status, decision }`.                              |
-| `onError`    | `(error) => void`                     |                                                                  |
-| `onClose`    | `() => void`                          |                                                                  |
-| `container`  | `string \| HTMLElement` (mount only)  | Where to render inline.                                          |
+| Option       | Type                                 | Notes                                                                                                 |
+| ------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `token`      | `string` (required)                  | The client token from `arkyc.sessions.create`.                                                        |
+| `baseUrl`    | `string`                             | Client API base — must include `/api` (e.g. `/api` behind a proxy, or `https://api.example.com/api`). |
+| `branding`   | `ProjectBranding`                    | Colors, logo, radius, theme. Defaults from project config.                                            |
+| `onComplete` | `(result) => void`                   | `result` is `{ status, decision }`.                                                                   |
+| `onError`    | `(error) => void`                    |                                                                                                       |
+| `onClose`    | `() => void`                         |                                                                                                       |
+| `container`  | `string \| HTMLElement` (mount only) | Where to render inline.                                                                               |
 
 ## Example
 
@@ -50,7 +50,7 @@ const { clientToken } = await res.json()
 ArkycWidget.mount({
   token: clientToken,
   container: '#verify',
-  baseUrl: '/api',          // same-origin proxy to the Arkyc API
+  baseUrl: '/api', // same-origin proxy to the Arkyc API
   onComplete: ({ status, decision }) => {
     console.log('done', status, decision)
   },

@@ -10,11 +10,11 @@ The bundled `docker-compose.yml` provides everything for development:
 docker compose up -d
 ```
 
-| Service    | Image                | Port(s)       | Credentials                       |
-| ---------- | -------------------- | ------------- | --------------------------------- |
-| PostgreSQL | `postgres:16-alpine` | `5432`        | `arkyc` / `arkyc`, db `arkyc`     |
-| MinIO      | `minio/minio`        | `9000`/`9001` | `arkyc` / `arkyc-secret`          |
-| Redis      | `redis:7-alpine`     | `6379`        | —                                 |
+| Service    | Image                | Port(s)       | Credentials                   |
+| ---------- | -------------------- | ------------- | ----------------------------- |
+| PostgreSQL | `postgres:16-alpine` | `5432`        | `arkyc` / `arkyc`, db `arkyc` |
+| MinIO      | `minio/minio`        | `9000`/`9001` | `arkyc` / `arkyc-secret`      |
+| Redis      | `redis:7-alpine`     | `6379`        | —                             |
 
 MinIO's console is on `9001`; create the bucket referenced by `AWS_BUCKET` and
 point the `s3` disk at `http://localhost:9000`.

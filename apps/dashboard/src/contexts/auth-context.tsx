@@ -18,16 +18,17 @@ const AuthContext = createContext<AuthState | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   // `data` is alova's reactive current-user state; restore it from a persisted
   // token on mount and drive it directly (no mirroring into local state).
-  const { data: user, loading, update } = useRequest(Auth.me(), {
+  const {
+    data: user,
+    loading,
+    update,
+  } = useRequest(Auth.me(), {
     immediate: hasAuthToken(),
   })
 
   const { send: sendLogout } = useRequest(Auth.logout(), { immediate: false })
 
-  const setUser = useCallback(
-    (next: User | null) => update({ data: next ?? undefined }),
-    [update],
-  )
+  const setUser = useCallback((next: User | null) => update({ data: next ?? undefined }), [update])
 
   const logout = useCallback(async () => {
     try {

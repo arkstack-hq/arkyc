@@ -9,18 +9,18 @@ their role permissions plus any direct grants.
 
 Permissions are `group.action` strings. The full catalogue:
 
-| Group        | Permissions                                                                                      |
-| ------------ | ------------------------------------------------------------------------------------------------ |
-| `tenants`    | `tenants.view`, `tenants.update`, `tenants.delete`                                                |
-| `members`    | `members.view`, `members.invite`, `members.update`, `members.remove`                             |
-| `projects`   | `projects.view`, `projects.create`, `projects.update`, `projects.delete`                         |
-| `api_keys`   | `api_keys.view`, `api_keys.create`, `api_keys.revoke`                                             |
-| `webhooks`   | `webhooks.view`, `webhooks.create`, `webhooks.update`, `webhooks.delete`, `webhooks.test`        |
-| `sessions`   | `sessions.view`, `sessions.create`, `sessions.cancel`, `sessions.retry`, `sessions.export`       |
+| Group        | Permissions                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `tenants`    | `tenants.view`, `tenants.update`, `tenants.delete`                                                             |
+| `members`    | `members.view`, `members.invite`, `members.update`, `members.remove`                                           |
+| `projects`   | `projects.view`, `projects.create`, `projects.update`, `projects.delete`                                       |
+| `api_keys`   | `api_keys.view`, `api_keys.create`, `api_keys.revoke`                                                          |
+| `webhooks`   | `webhooks.view`, `webhooks.create`, `webhooks.update`, `webhooks.delete`, `webhooks.test`                      |
+| `sessions`   | `sessions.view`, `sessions.create`, `sessions.cancel`, `sessions.retry`, `sessions.export`                     |
 | `reviews`    | `reviews.view`, `reviews.assign`, `reviews.approve`, `reviews.reject`, `reviews.request_retry`, `reviews.note` |
-| `audit_logs` | `audit_logs.view`                                                                                |
-| `settings`   | `settings.view`, `settings.update`                                                                |
-| `billing`    | `billing.view`, `billing.update`                                                                  |
+| `audit_logs` | `audit_logs.view`                                                                                              |
+| `settings`   | `settings.view`, `settings.update`                                                                             |
+| `billing`    | `billing.view`, `billing.update`                                                                               |
 
 `PermissionSync.permissions(store)` upserts the whole catalogue idempotently
 (run on seed / boot).
@@ -29,13 +29,13 @@ Permissions are `group.action` strings. The full catalogue:
 
 Five system roles are created per tenant by `PermissionSync.roles(tenantId, store)`:
 
-| Role        | Slug        | Permissions                                                                 |
-| ----------- | ----------- | --------------------------------------------------------------------------- |
-| Owner       | `owner`     | The entire catalogue.                                                       |
-| Admin       | `admin`     | Everything **except** `tenants.delete` and `billing.update`.                |
-| Reviewer    | `reviewer`  | `sessions.view` + all `reviews.*` (view/assign/approve/reject/request_retry/note). |
-| Developer   | `developer` | Integration: `projects.view`, all `api_keys.*`, all `webhooks.*`, `sessions.view`, `sessions.create`, `audit_logs.view`, `settings.view`. |
-| Read-only   | `readonly`  | Every `*.view` permission across the catalogue.                             |
+| Role      | Slug        | Permissions                                                                                                                               |
+| --------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Owner     | `owner`     | The entire catalogue.                                                                                                                     |
+| Admin     | `admin`     | Everything **except** `tenants.delete` and `billing.update`.                                                                              |
+| Reviewer  | `reviewer`  | `sessions.view` + all `reviews.*` (view/assign/approve/reject/request_retry/note).                                                        |
+| Developer | `developer` | Integration: `projects.view`, all `api_keys.*`, all `webhooks.*`, `sessions.view`, `sessions.create`, `audit_logs.view`, `settings.view`. |
+| Read-only | `readonly`  | Every `*.view` permission across the catalogue.                                                                                           |
 
 System roles are marked `is_system` and are read-only in the dashboard. Tenants
 can also create custom roles with any permission subset.
@@ -55,7 +55,7 @@ effective = dedupe(tenantRole ∪ projectRole ∪ directTenant ∪ directProject
 ```
 
 There is **no precedence ordering and no negative permissions** — direct grants
-only *add* to role permissions; they can't revoke. Resolution is pure; the API
+only _add_ to role permissions; they can't revoke. Resolution is pure; the API
 provides an `ArkormPermissionStore` that eager-loads the joins (no N+1).
 
 ## Enforcement

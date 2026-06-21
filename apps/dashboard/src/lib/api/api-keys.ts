@@ -18,17 +18,13 @@ export class ApiKeys {
 
   /** Mint an API key; the plaintext secret is returned once, here only. */
   static create(tenantId: string, projectId: string, input: { name: string }) {
-    return alova.Post(
-      `${p(tenantId, projectId)}/api-keys`,
-      input,
-      {
-        name: 'apiKey:create',
-        transform: (raw: Envelope<ApiKey> & { secret: string }) => ({
-          ...(raw.data as ApiKey),
-          secret: raw.secret,
-        }),
-      },
-    )
+    return alova.Post(`${p(tenantId, projectId)}/api-keys`, input, {
+      name: 'apiKey:create',
+      transform: (raw: Envelope<ApiKey> & { secret: string }) => ({
+        ...(raw.data as ApiKey),
+        secret: raw.secret,
+      }),
+    })
   }
 
   /** Revoke an API key. */

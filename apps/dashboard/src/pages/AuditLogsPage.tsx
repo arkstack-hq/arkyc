@@ -14,7 +14,14 @@ export default function AuditLogsPage() {
   const [entityType, setEntityType] = useState('')
 
   // Infinite-scroll list; resets to page 1 whenever a filter changes.
-  const { data: logs, page, isLastPage, loading, error, update } = usePagination(
+  const {
+    data: logs,
+    page,
+    isLastPage,
+    loading,
+    error,
+    update,
+  } = usePagination(
     (currentPage, pageSize) =>
       AuditLogs.list(tenantId, {
         page: currentPage,

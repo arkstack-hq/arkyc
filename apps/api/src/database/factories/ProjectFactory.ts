@@ -36,7 +36,6 @@ export class ProjectFactory extends ModelFactory<Project> {
     }
   }
 
-
   protected configure() {
     this.afterCreating(async (project) => {
       await project.load('tenant')

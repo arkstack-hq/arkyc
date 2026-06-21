@@ -105,10 +105,15 @@ export default function ProjectsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">Status: {humanize(project.status)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Status: {humanize(project.status)}
+                  </p>
                 </CardContent>
                 <CardFooter>
-                  <Link to={project.id} className="text-sm font-medium text-primary hover:underline">
+                  <Link
+                    to={project.id}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
                     Manage →
                   </Link>
                 </CardFooter>

@@ -5,11 +5,19 @@ import type { AuthResult } from './types'
 /** Dashboard authentication (Arkstack built-in device-session auth). */
 export class Auth {
   /** Register a new user; the issued JWT is persisted by the token interceptor. */
-  static register(input: { firstname: string; lastname?: string; email: string; password: string }) {
+  static register(input: {
+    firstname: string
+    lastname?: string
+    email: string
+    password: string
+  }) {
     return alova.Post('/v1/auth/register', input, {
       name: 'auth:register',
       meta: { authRole: 'login' },
-      transform: (raw: Envelope<User> & AuthResult) => ({ user: raw.data as User, token: raw.token as string }),
+      transform: (raw: Envelope<User> & AuthResult) => ({
+        user: raw.data as User,
+        token: raw.token as string,
+      }),
     })
   }
 
@@ -18,7 +26,10 @@ export class Auth {
     return alova.Post('/v1/auth/login', input, {
       name: 'auth:login',
       meta: { authRole: 'login' },
-      transform: (raw: Envelope<User> & AuthResult) => ({ user: raw.data as User, token: raw.token as string }),
+      transform: (raw: Envelope<User> & AuthResult) => ({
+        user: raw.data as User,
+        token: raw.token as string,
+      }),
     })
   }
 

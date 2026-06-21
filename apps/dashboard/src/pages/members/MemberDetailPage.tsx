@@ -42,9 +42,12 @@ export default function MemberDetailPage() {
     loading: assigning,
     error: assignError,
     onSuccess: onAssignSuccess,
-  } = useRequest((nextRoleId: string) => Members.assignRole(tenantId, memberId, { role_id: nextRoleId }), {
-    immediate: false,
-  })
+  } = useRequest(
+    (nextRoleId: string) => Members.assignRole(tenantId, memberId, { role_id: nextRoleId }),
+    {
+      immediate: false,
+    },
+  )
 
   onAssignSuccess(() => {
     setSaved(true)

@@ -1,4 +1,4 @@
-import { SecureStorage } from "../Storage/SecureStorage";
+import { SecureStorage } from '../Storage/SecureStorage'
 
 const authPreferenceKeys = [
   'authToken',
@@ -11,47 +11,45 @@ const authPreferenceKeys = [
   'phoneVerified',
   'facialVerified',
   'addressVerified',
-] as const;
+] as const
 
-type UnauthorizedHandler = () => Promise<void> | void;
+type UnauthorizedHandler = () => Promise<void> | void
 
-let unauthorizedHandler: UnauthorizedHandler | undefined;
-let unauthorizedPromise: Promise<void> | null = null;
+let unauthorizedHandler: UnauthorizedHandler | undefined
+let unauthorizedPromise: Promise<void> | null = null
 
 export async function clearPersistedAuthState() {
-  await Promise.all(
-    authPreferenceKeys.map((key) => SecureStorage.remove(key)),
-  );
+  await Promise.all(authPreferenceKeys.map((key) => SecureStorage.remove(key)))
 }
 
 export function setUnauthorizedHandler(handler?: UnauthorizedHandler) {
-  unauthorizedHandler = handler;
+  unauthorizedHandler = handler
 }
 
 export async function handleUnauthorized() {
   if (unauthorizedPromise) {
-    await unauthorizedPromise;
-    return;
+    await unauthorizedPromise
+    return
   }
 
   unauthorizedPromise = (async () => {
     const authToken = await SecureStorage.get('arkyc:authToken')
 
     if (!authToken) {
-      return;
+      return
     }
 
     if (unauthorizedHandler) {
-      await unauthorizedHandler();
-      return;
+      await unauthorizedHandler()
+      return
     }
 
-    await clearPersistedAuthState();
-  })();
+    await clearPersistedAuthState()
+  })()
 
   try {
-    await unauthorizedPromise;
+    await unauthorizedPromise
   } finally {
-    unauthorizedPromise = null;
+    unauthorizedPromise = null
   }
 }

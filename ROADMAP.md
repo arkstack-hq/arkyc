@@ -54,10 +54,10 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 13  | Dashboard                                  | ✅     | Multi-tenant React Router dashboard (Vite + Tailwind + alova); permission-aware UI                                                         |
 | 14  | Playground & Docs                          | ✅     | Runnable example integration + VitePress documentation site                                                                                |
 | 15  | Platform Admin & Global Settings           | ⬜     | Super-admin tier above tenants + a global settings store/UI (feature toggles, provider/transport selection)                                |
-| 16  | Realtime Event Delivery                    | ⬜     | Transport abstraction with **soketi** + **firebase** drivers (admin-selectable); live session/webhook updates replace polling              |
+| 16  | Realtime Event Delivery                    | ⬜     | Transport abstraction with **soketi** + **firebase** + **polling** drivers (admin-selectable); live session/webhook updates                |
 | 17  | Improved Capture & Liveness Flow           | ⬜     | Active liveness (turn/move) + refined document/selfie UX; admin-selectable capture model (current vs improved)                             |
 | 18  | Dashboard Revamp                           | ⬜     | Re-skin to the shadcn UI kit design system (default + project-management layouts)                                                          |
-| 19  | Hosted Website & Custom Docs Theme         | ⬜     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                           |
+| 19  | Hosted Website & Custom Docs Theme         | ⬜     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                            |
 | 20  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                   |
 
 ---

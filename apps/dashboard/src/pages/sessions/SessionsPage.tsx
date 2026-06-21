@@ -39,7 +39,14 @@ export default function SessionsPage() {
   })
 
   // Infinite-scroll list; resets to page 1 whenever a filter changes.
-  const { data: sessions, page, isLastPage, loading, error, update } = usePagination(
+  const {
+    data: sessions,
+    page,
+    isLastPage,
+    loading,
+    error,
+    update,
+  } = usePagination(
     (currentPage, pageSize) =>
       Sessions.list(tenantId, {
         page: currentPage,
@@ -98,7 +105,10 @@ export default function SessionsPage() {
       ) : sessions.length === 0 && loading ? (
         <Loading />
       ) : sessions.length === 0 ? (
-        <EmptyState title="No sessions" description="No verification sessions match these filters." />
+        <EmptyState
+          title="No sessions"
+          description="No verification sessions match these filters."
+        />
       ) : (
         <>
           <Table>

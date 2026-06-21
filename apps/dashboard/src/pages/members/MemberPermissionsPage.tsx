@@ -35,9 +35,12 @@ export default function MemberPermissionsPage() {
     loading: adding,
     error: addError,
     onSuccess: onAddSuccess,
-  } = useRequest((permission: PermissionKey) => Members.addPermission(tenantId, memberId, { permission }), {
-    immediate: false,
-  })
+  } = useRequest(
+    (permission: PermissionKey) => Members.addPermission(tenantId, memberId, { permission }),
+    {
+      immediate: false,
+    },
+  )
 
   onAddSuccess(() => {
     setToAdd('')
@@ -49,9 +52,12 @@ export default function MemberPermissionsPage() {
     loading: removing,
     error: removeError,
     onSuccess: onRemoveSuccess,
-  } = useRequest((permission: PermissionKey) => Members.removePermission(tenantId, memberId, permission), {
-    immediate: false,
-  })
+  } = useRequest(
+    (permission: PermissionKey) => Members.removePermission(tenantId, memberId, permission),
+    {
+      immediate: false,
+    },
+  )
 
   onRemoveSuccess(() => {
     void refreshPerms()

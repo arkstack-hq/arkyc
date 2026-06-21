@@ -65,9 +65,7 @@ export default function OnboardingPage() {
               </InputGroup>
               <FieldError errors={error?.list?.name} />
             </Field>
-            {error && !error.errors ? (
-              <FieldError>{errorMessage(error)}</FieldError>
-            ) : null}
+            {error && !error.errors ? <FieldError>{errorMessage(error)}</FieldError> : null}
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={loading}>

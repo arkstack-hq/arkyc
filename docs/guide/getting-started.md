@@ -24,11 +24,11 @@ The repo ships a Compose file with Postgres, MinIO (S3-compatible), and Redis:
 docker compose up -d
 ```
 
-| Service    | Port(s)      | Credentials                          |
-| ---------- | ------------ | ------------------------------------ |
-| PostgreSQL | `5432`       | user `arkyc` · password `arkyc` · db `arkyc` |
-| MinIO      | `9000`/`9001`| user `arkyc` · password `arkyc-secret` |
-| Redis      | `6379`       | —                                    |
+| Service    | Port(s)       | Credentials                                  |
+| ---------- | ------------- | -------------------------------------------- |
+| PostgreSQL | `5432`        | user `arkyc` · password `arkyc` · db `arkyc` |
+| MinIO      | `9000`/`9001` | user `arkyc` · password `arkyc-secret`       |
+| Redis      | `6379`        | —                                            |
 
 ## 3. Configure the API
 

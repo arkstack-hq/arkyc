@@ -1,4 +1,4 @@
-import { DB, Seeder } from '@arkstack/database'
+import { DB, SchemaBuilder, Seeder } from '@arkstack/database'
 
 import { DefaultRoles } from '@arkyc/permissions'
 import { Permission } from 'src/app/models/Permission'
@@ -42,14 +42,17 @@ export class DemoTenantSeeder extends Seeder {
       }
     }
 
-    await DB.raw("SET session_replication_role = 'replica';")
+    await SchemaBuilder.disableForeignKeyConstraints()
     await User.factory()
       .hasAttached(
-        Tenant.factory().has(Project.factory(3)), {
-        status: 'active',
-        roleId: roleBySlug.get('owner')!.id
-      }, 'tenantMemberships')
+        Tenant.factory().has(Project.factory(3)),
+        {
+          status: 'active',
+          roleId: roleBySlug.get('owner')!.id,
+        },
+        'tenantMemberships',
+      )
       .create()
-    await DB.raw("SET session_replication_role = 'origin';")
+    await SchemaBuilder.enableForeignKeyConstraints()
   }
 }
