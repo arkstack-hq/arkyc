@@ -1,20 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { PermissionKey } from '@arkyc/types';
 import {
-  allKnownPermissions,
-  authorize,
-  clearDefinedPermissions,
-  definePermission,
-  ensurePermission,
-  getDefinedPermissions,
-  hasAllPermissions,
-  hasAnyPermission,
-  hasPermission,
-  PERMISSION_CATALOGUE,
+  Catalogue,
   PermissionDeniedError,
-  resolvePermissions,
-  syncDefaultPermissions,
-  syncDefaultRoles,
+  PermissionRegistry,
+  PermissionSync,
+  Permissions,
   type PermissionDefinition,
   type PermissionResolutionContext,
   type PermissionResolverStore,
@@ -35,14 +26,14 @@ function resolverStore(data: {
 
 const CTX: PermissionResolutionContext = { userId: 'u1', tenantId: 't1' };
 
-describe('resolvePermissions', () => {
+describe('Permissions.resolve', () => {
   it('unions and deduplicates across all sources', async () => {
     const store = resolverStore({
       tenantRole: ['sessions.view', 'reviews.view'],
       projectRole: ['sessions.view', 'sessions.create'],
       direct: ['api_keys.view', 'reviews.view'],
     });
-    const perms = await resolvePermissions({ ...CTX, projectId: 'p1' }, store);
+    const perms = await Permissions.resolve({ ...CTX, projectId: 'p1' }, store);
     expect(perms.sort()).toEqual(
       ['api_keys.view', 'reviews.view', 'sessions.create', 'sessions.view'].sort(),
     );
@@ -56,7 +47,7 @@ describe('resolvePermissions', () => {
       projectRole: ['settings.update'],
       direct: [],
     });
-    const perms = await resolvePermissions(CTX, store);
+    const perms = await Permissions.resolve(CTX, store);
     expect(perms).toEqual(['sessions.view']);
     expect(perms).not.toContain('settings.update');
   });
@@ -70,7 +61,7 @@ describe('resolvePermissions', () => {
       'reviews.request_retry',
     ];
     const store = resolverStore({ tenantRole: reviewer, direct: ['api_keys.view'] });
-    const perms = await resolvePermissions(CTX, store);
+    const perms = await Permissions.resolve(CTX, store);
     expect(new Set(perms)).toEqual(new Set([...reviewer, 'api_keys.view']));
   });
 });
@@ -78,24 +69,24 @@ describe('resolvePermissions', () => {
 describe('permission checks', () => {
   const perms: PermissionKey[] = ['sessions.view', 'reviews.approve'];
 
-  it('hasPermission / hasAny / hasAll', () => {
-    expect(hasPermission(perms, 'sessions.view')).toBe(true);
-    expect(hasPermission(perms, 'api_keys.create')).toBe(false);
-    expect(hasPermission(new Set(perms), 'reviews.approve')).toBe(true);
-    expect(hasAnyPermission(perms, ['api_keys.create', 'reviews.approve'])).toBe(true);
-    expect(hasAllPermissions(perms, ['sessions.view', 'reviews.approve'])).toBe(true);
-    expect(hasAllPermissions(perms, ['sessions.view', 'api_keys.create'])).toBe(false);
+  it('has / hasAny / hasAll', () => {
+    expect(Permissions.has(perms, 'sessions.view')).toBe(true);
+    expect(Permissions.has(perms, 'api_keys.create')).toBe(false);
+    expect(Permissions.has(new Set(perms), 'reviews.approve')).toBe(true);
+    expect(Permissions.hasAny(perms, ['api_keys.create', 'reviews.approve'])).toBe(true);
+    expect(Permissions.hasAll(perms, ['sessions.view', 'reviews.approve'])).toBe(true);
+    expect(Permissions.hasAll(perms, ['sessions.view', 'api_keys.create'])).toBe(false);
   });
 
-  it('ensurePermission throws PermissionDeniedError when missing', () => {
-    expect(() => ensurePermission(perms, 'sessions.view')).not.toThrow();
-    expect(() => ensurePermission(perms, 'api_keys.create')).toThrow(PermissionDeniedError);
+  it('ensure throws PermissionDeniedError when missing', () => {
+    expect(() => Permissions.ensure(perms, 'sessions.view')).not.toThrow();
+    expect(() => Permissions.ensure(perms, 'api_keys.create')).toThrow(PermissionDeniedError);
   });
 
   it('authorize resolves then allows or denies', async () => {
     const store = resolverStore({ tenantRole: ['sessions.view'] });
-    await expect(authorize(CTX, 'sessions.view', store)).resolves.toBeUndefined();
-    await expect(authorize(CTX, 'sessions.cancel', store)).rejects.toBeInstanceOf(
+    await expect(Permissions.authorize(CTX, 'sessions.view', store)).resolves.toBeUndefined();
+    await expect(Permissions.authorize(CTX, 'sessions.cancel', store)).rejects.toBeInstanceOf(
       PermissionDeniedError,
     );
   });
@@ -123,16 +114,16 @@ class FakeSyncStore implements PermissionSyncStore {
 }
 
 describe('sync', () => {
-  it('syncDefaultPermissions upserts the whole catalogue', async () => {
+  it('PermissionSync.permissions upserts the whole catalogue', async () => {
     const store = new FakeSyncStore();
-    await syncDefaultPermissions(store);
-    expect(store.permissions).toHaveLength(PERMISSION_CATALOGUE.length);
+    await PermissionSync.permissions(store);
+    expect(store.permissions).toHaveLength(Catalogue.ALL.length);
     expect(store.permissions.map((p) => p.name)).toContain('sessions.view');
   });
 
-  it('syncDefaultRoles creates the five roles with their grants', async () => {
+  it('PermissionSync.roles creates the five roles with their grants', async () => {
     const store = new FakeSyncStore();
-    await syncDefaultRoles('t1', store);
+    await PermissionSync.roles('t1', store);
     expect(store.roles.map((r) => r.slug)).toEqual([
       'owner',
       'admin',
@@ -141,26 +132,26 @@ describe('sync', () => {
       'readonly',
     ]);
     // owner receives the full catalogue
-    expect(store.rolePerms.get('t1_role_owner')).toHaveLength(PERMISSION_CATALOGUE.length);
+    expect(store.rolePerms.get('t1_role_owner')).toHaveLength(Catalogue.ALL.length);
     // reviewer is scoped
     expect(store.rolePerms.get('t1_role_reviewer')).toContain('reviews.approve');
   });
 });
 
-describe('definePermission', () => {
-  afterEach(() => clearDefinedPermissions());
+describe('PermissionRegistry.define', () => {
+  afterEach(() => PermissionRegistry.clear());
 
   it('registers custom permissions and exposes them', () => {
-    definePermission('exports.schedule', 'exports', 'Schedule exports');
-    expect(getDefinedPermissions()).toEqual([
+    PermissionRegistry.define('exports.schedule', 'exports', 'Schedule exports');
+    expect(PermissionRegistry.defined()).toEqual([
       { name: 'exports.schedule', group: 'exports', description: 'Schedule exports' },
     ]);
   });
 
-  it('allKnownPermissions merges catalogue with custom (custom wins by name)', () => {
-    definePermission('exports.schedule', 'exports', 'Schedule exports');
-    const all = allKnownPermissions();
-    expect(all.length).toBe(PERMISSION_CATALOGUE.length + 1);
+  it('allKnown merges catalogue with custom (custom wins by name)', () => {
+    PermissionRegistry.define('exports.schedule', 'exports', 'Schedule exports');
+    const all = PermissionRegistry.allKnown();
+    expect(all.length).toBe(Catalogue.ALL.length + 1);
     expect(all.find((p) => p.name === 'exports.schedule')).toBeDefined();
   });
 });

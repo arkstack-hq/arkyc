@@ -1,4 +1,4 @@
-import { type VerifyWebhookInput, verifyWebhookSignature } from '@arkyc/webhooks'
+import { type VerifyWebhookInput, WebhookSigner } from '@arkyc/webhooks'
 import { ArkycApiError } from './errors'
 import type { ArkycOptions, CreateSessionParams, CreatedSession, VerificationSession } from './types'
 
@@ -60,7 +60,7 @@ export class Arkyc {
   /** Webhook helpers. */
   readonly webhooks = {
     /** Verify a received webhook signature against the endpoint's signing secret. */
-    verify: (input: VerifyWebhookInput): boolean => verifyWebhookSignature(input),
+    verify: (input: VerifyWebhookInput): boolean => WebhookSigner.verify(input),
   }
 
   /** Issue an authenticated request and unwrap the `{ status, data, … }` envelope. */

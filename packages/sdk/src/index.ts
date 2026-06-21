@@ -13,12 +13,6 @@ export type {
   VerificationSession,
 } from './types'
 
-// Re-export the webhook verification helpers so integrators don't need a
-// separate dependency.
-export {
-  type VerifyWebhookInput,
-  SIGNATURE_HEADER,
-  TIMESTAMP_HEADER,
-  signWebhook,
-  verifyWebhookSignature,
-} from '@arkyc/webhooks'
+// Re-export the webhook signer (sign/verify + signature headers) so integrators
+// don't need a separate dependency.
+export { type VerifyWebhookInput, WebhookSigner } from '@arkyc/webhooks'

@@ -1,6 +1,6 @@
 import { RequestException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
-import { hashToken } from '@arkyc/auth'
+import { Token } from '@arkyc/auth'
 import { VerificationSession } from '@app/models/VerificationSession'
 
 function readToken (req: Request): string | null {
@@ -25,7 +25,7 @@ export class ClientTokenMiddleware {
             RequestException.assertFound(token, 'Missing client token', 401)
 
             const session = await VerificationSession.where({
-                clientTokenHash: hashToken(token),
+                clientTokenHash: Token.hash(token),
             }).first()
             RequestException.assertFound(session, 'Invalid client token', 401)
             RequestException.abortIf(

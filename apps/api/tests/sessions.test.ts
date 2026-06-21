@@ -7,7 +7,7 @@ import { Tenant } from '../src/app/models/Tenant'
 import { VerificationSession } from '../src/app/models/VerificationSession'
 import { app } from '../src/core/bootstrap'
 import { drain } from '../src/app/jobs'
-import { generateApiKey } from '@arkyc/auth'
+import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import request from 'parasito'
 
 /** Phase 8 — verification session engine driven async via the queue + workers. */
@@ -52,7 +52,7 @@ beforeAll(async () => {
   })
   fx.projectId = project.id
 
-  const key = generateApiKey('live')
+  const key = ApiKeyAuth.generate('live')
   fx.apiKeySecret = key.secret
   await ApiKey.create({
     tenantId: tenant.id,

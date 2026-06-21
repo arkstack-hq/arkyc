@@ -1,8 +1,4 @@
-import {
-  type DecisionInput,
-  decideVerification,
-  isDocumentExpired,
-} from '@arkyc/core'
+import { type DecisionInput, DecisionEngine, SessionRules } from '@arkyc/core'
 import { faceMatchDriver } from '@app/services/providers'
 import { audit } from '@app/services/AuditLogger'
 import { readObject } from 'src/support/storage'
@@ -63,7 +59,7 @@ export async function biometricJob (payload: BiometricJobPayload): Promise<void>
     document: {
       qualityScore: capture.qualityScore ?? 0,
       ocrConfidence: ocr.confidence,
-      expired: isDocumentExpired(ocr.fields.expiryDate, new Date()),
+      expired: SessionRules.isDocumentExpired(ocr.fields.expiryDate, new Date()),
     },
     liveness: {
       passed: liveness.passed,
@@ -77,7 +73,7 @@ export async function biometricJob (payload: BiometricJobPayload): Promise<void>
   }
 
   const project = await Project.where({ id: session.projectId }).first()
-  const { decision, reason, riskScore } = decideVerification(
+  const { decision, reason, riskScore } = DecisionEngine.decide(
     decisionInput,
     project?.settings?.thresholds,
   )

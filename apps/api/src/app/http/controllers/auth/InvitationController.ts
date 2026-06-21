@@ -4,7 +4,7 @@ import { HttpContext } from 'clear-router/types/express'
 import { RequestException } from '@arkstack/common'
 import { TenantInvitation } from '@app/models/TenantInvitation'
 import { TenantMember } from '@app/models/TenantMember'
-import { hashToken } from '@arkyc/auth'
+import { Token } from '@arkyc/auth'
 
 /** Accept a tenant invitation as the authenticated user. */
 export default class InvitationController extends BaseController {
@@ -19,7 +19,7 @@ export default class InvitationController extends BaseController {
     const user = req.user!
 
     const invitation = await TenantInvitation
-      .where({ tokenHash: hashToken(data.token) })
+      .where({ tokenHash: Token.hash(data.token) })
       .whereNull('acceptedAt')
       .firstOrFail()
     RequestException.abortIf(

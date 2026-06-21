@@ -1,7 +1,7 @@
 import { RequestException } from '@arkstack/common'
 import { HttpContext } from 'clear-router/types/express'
 import { Str } from '@h3ravel/support'
-import { syncDefaultPermissions, syncDefaultRoles } from '@arkyc/permissions'
+import { PermissionSync } from '@arkyc/permissions'
 import { BaseController } from '@controllers/BaseController'
 import { permissionStore } from '@app/services/ArkormPermissionStore'
 import TenantResource from '@app/http/resources/TenantResource'
@@ -55,8 +55,8 @@ export default class TenantController extends BaseController {
 
         const tenant = await Tenant.create({ name: data.name, slug, settings: {} })
 
-        await syncDefaultPermissions(permissionStore)
-        await syncDefaultRoles(tenant.id, permissionStore)
+        await PermissionSync.permissions(permissionStore)
+        await PermissionSync.roles(tenant.id, permissionStore)
         const ownerRole = await Role.where({ tenantId: tenant.id, slug: 'owner' }).first()
         await TenantMember.create({
             tenantId: tenant.id,

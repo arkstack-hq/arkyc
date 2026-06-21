@@ -1,6 +1,6 @@
-import { type OcrDriverName, createOcrDriver } from '@arkyc/ocr'
-import { type LivenessDriverName, createLivenessDriver } from '@arkyc/liveness'
-import { type FaceMatchDriverName, createFaceMatchDriver } from '@arkyc/face-match'
+import { type OcrDriverName, OcrDriverFactory } from '@arkyc/ocr'
+import { type LivenessDriverName, LivenessDriverFactory } from '@arkyc/liveness'
+import { type FaceMatchDriverName, FaceMatchDriverFactory } from '@arkyc/face-match'
 
 /**
  * Verification provider wiring (Phase 7).
@@ -26,19 +26,19 @@ export interface ProviderSignals {
   faceMatchPassed?: boolean
 }
 
-export const ocrDriver = createOcrDriver({
+export const ocrDriver = OcrDriverFactory.create({
   driver: (env.OCR_DRIVER as OcrDriverName) ?? 'mock',
   endpoint: env.OCR_ENDPOINT,
   apiKey: env.OCR_API_KEY,
 })
 
-export const livenessDriver = createLivenessDriver({
+export const livenessDriver = LivenessDriverFactory.create({
   driver: (env.LIVENESS_DRIVER as LivenessDriverName) ?? 'mock',
   endpoint: env.LIVENESS_ENDPOINT,
   apiKey: env.LIVENESS_API_KEY,
 })
 
-export const faceMatchDriver = createFaceMatchDriver({
+export const faceMatchDriver = FaceMatchDriverFactory.create({
   driver: (env.FACE_MATCH_DRIVER as FaceMatchDriverName) ?? 'mock',
   endpoint: env.FACE_MATCH_ENDPOINT,
   apiKey: env.FACE_MATCH_API_KEY,

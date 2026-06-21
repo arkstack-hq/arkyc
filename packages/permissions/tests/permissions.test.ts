@@ -1,48 +1,43 @@
-import {
-  ALL_PERMISSION_KEYS,
-  DEFAULT_ROLES,
-  PERMISSION_CATALOGUE,
-  defaultRole,
-} from '../src/index';
+import { Catalogue, DefaultRoles } from '../src/index';
 import { describe, expect, it } from 'vitest';
 
 describe('permission catalogue', () => {
   it('has unique permission names', () => {
-    const names = PERMISSION_CATALOGUE.map((p) => p.name);
+    const names = Catalogue.ALL.map((p) => p.name);
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it('derives ALL_PERMISSION_KEYS from the catalogue', () => {
-    expect(ALL_PERMISSION_KEYS).toHaveLength(PERMISSION_CATALOGUE.length);
-    expect(ALL_PERMISSION_KEYS).toContain('sessions.view');
-    expect(ALL_PERMISSION_KEYS).toContain('billing.update');
+  it('derives Catalogue.KEYS from the catalogue', () => {
+    expect(Catalogue.KEYS).toHaveLength(Catalogue.ALL.length);
+    expect(Catalogue.KEYS).toContain('sessions.view');
+    expect(Catalogue.KEYS).toContain('billing.update');
   });
 });
 
 describe('default roles', () => {
   it('owner receives every permission', () => {
-    expect(defaultRole('owner').permissions).toHaveLength(ALL_PERMISSION_KEYS.length);
+    expect(DefaultRoles.bySlug('owner').permissions).toHaveLength(Catalogue.KEYS.length);
   });
 
   it('admin excludes the most destructive/owner-only actions', () => {
-    const admin = defaultRole('admin').permissions;
+    const admin = DefaultRoles.bySlug('admin').permissions;
     expect(admin).not.toContain('tenants.delete');
     expect(admin).not.toContain('billing.update');
     expect(admin).toContain('projects.create');
   });
 
   it('reviewer is scoped to sessions/reviews', () => {
-    const reviewer = defaultRole('reviewer').permissions;
+    const reviewer = DefaultRoles.bySlug('reviewer').permissions;
     expect(reviewer).toContain('reviews.approve');
     expect(reviewer).not.toContain('api_keys.create');
   });
 
   it('readonly is view-only', () => {
-    expect(defaultRole('readonly').permissions.every((p) => p.endsWith('.view'))).toBe(true);
+    expect(DefaultRoles.bySlug('readonly').permissions.every((p) => p.endsWith('.view'))).toBe(true);
   });
 
   it('seeds the five system roles', () => {
-    expect(DEFAULT_ROLES.map((r) => r.slug)).toEqual([
+    expect(DefaultRoles.ALL.map((r) => r.slug)).toEqual([
       'owner',
       'admin',
       'reviewer',
@@ -52,6 +47,6 @@ describe('default roles', () => {
   });
 
   it('throws for an unknown role', () => {
-    expect(() => defaultRole('superuser')).toThrow();
+    expect(() => DefaultRoles.bySlug('superuser')).toThrow();
   });
 });

@@ -4,7 +4,7 @@ import ApiKeyResource from '@app/http/resources/ApiKeyResource'
 import { BaseController } from '@controllers/BaseController'
 import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
-import { generateApiKey } from '@arkyc/auth'
+import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import { audit } from '@app/services/AuditLogger'
 
 export default class ApiKeyController extends BaseController {
@@ -36,7 +36,7 @@ export default class ApiKeyController extends BaseController {
     const project = await Project.where({ id: req.params.projectId, tenantId: req.tenant!.id }).firstOrFail()
     const data = await this.validate({ name: ['required', 'string', 'min:2'] })
 
-    const generated = generateApiKey(project.environment === 'production' ? 'live' : 'test')
+    const generated = ApiKeyAuth.generate(project.environment === 'production' ? 'live' : 'test')
     const key = await ApiKey.create({
       tenantId: project.tenantId,
       projectId: project.id,

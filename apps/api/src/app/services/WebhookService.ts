@@ -1,10 +1,5 @@
-import {
-  SIGNATURE_HEADER,
-  TIMESTAMP_HEADER,
-  buildWebhookPayload,
-  signWebhook,
-} from '@arkyc/webhooks'
-import { isDocumentExpired } from '@arkyc/core'
+import { WebhookPayload, WebhookSigner } from '@arkyc/webhooks'
+import { SessionRules } from '@arkyc/core'
 import type { VerificationStatus, WebhookChecks, WebhookEvent, WebhookEventName } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
@@ -87,7 +82,7 @@ export class WebhookService {
 
     const body = JSON.stringify(delivery.payload)
     const timestamp = Math.floor(Date.now() / 1000)
-    const signature = signWebhook(body, endpoint.secretHash, timestamp)
+    const signature = WebhookSigner.sign(body, endpoint.secretHash, timestamp)
 
     delivery.attempts += 1
     try {
@@ -95,8 +90,8 @@ export class WebhookService {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          [SIGNATURE_HEADER]: signature,
-          [TIMESTAMP_HEADER]: String(timestamp),
+          [WebhookSigner.SIGNATURE_HEADER]: signature,
+          [WebhookSigner.TIMESTAMP_HEADER]: String(timestamp),
         },
         body,
       })
@@ -108,6 +103,7 @@ export class WebhookService {
         delivery.status = 'delivered'
         delivery.nextRetryAt = null
         await delivery.save()
+
         return
       }
 
@@ -124,7 +120,7 @@ export class WebhookService {
 
   /** Build + persist a one-off test delivery for an endpoint, then enqueue it. */
   async sendTest (endpoint: WebhookEndpoint): Promise<WebhookDelivery> {
-    const payload = buildWebhookPayload({
+    const payload = WebhookPayload.build({
       event: 'verification.completed',
       sessionId: '00000000-0000-0000-0000-000000000000',
       tenantId: endpoint.tenantId,
@@ -152,7 +148,7 @@ export class WebhookService {
 
   /** Build the event payload, gathering the latest per-check summaries. */
   async buildPayload (session: VerificationSession, event: WebhookEventName): Promise<WebhookEvent> {
-    return buildWebhookPayload({
+    return WebhookPayload.build({
       event,
       sessionId: session.id,
       tenantId: session.tenantId,
@@ -174,7 +170,7 @@ export class WebhookService {
       checks.document = {
         quality_score: capture?.qualityScore ?? 0,
         ocr_confidence: ocr?.confidence ?? 0,
-        expired: ocr ? isDocumentExpired(ocr.fields.expiryDate, new Date()) : false,
+        expired: ocr ? SessionRules.isDocumentExpired(ocr.fields.expiryDate, new Date()) : false,
       }
     }
 

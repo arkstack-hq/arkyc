@@ -1,6 +1,6 @@
 import { RequestException } from '@arkstack/common'
-import { isTerminalStatus, shouldExpireSession } from '@arkyc/core'
-import { createTokenPair } from '@arkyc/auth'
+import { SessionRules, StatusMachine } from '@arkyc/core'
+import { Token } from '@arkyc/auth'
 import { type FileLike, Storage } from '@arkstack/filesystem'
 import type { DocumentType, Metadata, VerificationStatus } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
@@ -44,7 +44,7 @@ export class VerificationSessionService {
     scope: ProjectScope,
     input: { userReference?: string | null; metadata?: Metadata | null },
   ): Promise<{ session: VerificationSession; clientToken: string }> {
-    const { token, tokenHash } = createTokenPair()
+    const { token, tokenHash } = Token.createPair()
     const session = await VerificationSession.create({
       tenantId: scope.tenant_id,
       projectId: scope.project_id,
@@ -210,7 +210,7 @@ export class VerificationSessionService {
    * reader (e.g. the public `show`) observe expiry without a background job.
    */
   async refresh (session: VerificationSession): Promise<VerificationSession> {
-    if (shouldExpireSession(session.status, session.expiresAt, new Date())) {
+    if (SessionRules.shouldExpire(session.status, session.expiresAt, new Date())) {
       await this.transition(session, 'expired')
     }
 
@@ -221,7 +221,7 @@ export class VerificationSessionService {
   private async ensureMutable (session: VerificationSession): Promise<void> {
     await this.refresh(session)
     RequestException.abortIf(
-      isTerminalStatus(session.status),
+      StatusMachine.isTerminal(session.status),
       `Session is ${session.status} and can no longer be modified`,
       409,
     )

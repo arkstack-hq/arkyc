@@ -1,16 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { FaceMatchResultData, LivenessResultData, OcrResultData } from '@arkyc/types';
 import {
-  assertTenantScope,
-  belongsToTenant,
-  buildDecisionInput,
-  buildSessionStoragePath,
-  buildWebhookChecks,
-  clamp01,
-  computeRiskScore,
-  isDocumentExpired,
-  isSessionExpired,
-  shouldExpireSession,
+  Normalize,
+  Risk,
+  SessionRules,
+  TenantContext,
   TenantScopeError,
   type SessionSignals,
 } from '../src/index';
@@ -19,40 +13,40 @@ const NOW = '2026-06-20T00:00:00.000Z';
 
 describe('session + document expiry', () => {
   it('detects an expired session', () => {
-    expect(isSessionExpired('2026-06-19T23:59:59.000Z', NOW)).toBe(true);
-    expect(isSessionExpired('2026-06-20T00:01:00.000Z', NOW)).toBe(false);
+    expect(SessionRules.isSessionExpired('2026-06-19T23:59:59.000Z', NOW)).toBe(true);
+    expect(SessionRules.isSessionExpired('2026-06-20T00:01:00.000Z', NOW)).toBe(false);
   });
 
   it('treats document expiry as end-of-day and tolerates unknown dates', () => {
-    expect(isDocumentExpired('2026-06-19', NOW)).toBe(true);
-    expect(isDocumentExpired('2026-06-20', NOW)).toBe(false); // still valid on expiry day
-    expect(isDocumentExpired(null, NOW)).toBe(false);
-    expect(isDocumentExpired(undefined, NOW)).toBe(false);
+    expect(SessionRules.isDocumentExpired('2026-06-19', NOW)).toBe(true);
+    expect(SessionRules.isDocumentExpired('2026-06-20', NOW)).toBe(false); // still valid on expiry day
+    expect(SessionRules.isDocumentExpired(null, NOW)).toBe(false);
+    expect(SessionRules.isDocumentExpired(undefined, NOW)).toBe(false);
   });
 
   it('does not re-expire terminal sessions', () => {
-    expect(shouldExpireSession('processing', '2020-01-01T00:00:00.000Z', NOW)).toBe(true);
-    expect(shouldExpireSession('approved', '2020-01-01T00:00:00.000Z', NOW)).toBe(false);
+    expect(SessionRules.shouldExpire('processing', '2020-01-01T00:00:00.000Z', NOW)).toBe(true);
+    expect(SessionRules.shouldExpire('approved', '2020-01-01T00:00:00.000Z', NOW)).toBe(false);
   });
 });
 
 describe('risk scoring', () => {
   it('clamps to [0, 1]', () => {
-    expect(clamp01(-1)).toBe(0);
-    expect(clamp01(2)).toBe(1);
-    expect(clamp01(Number.NaN)).toBe(0);
-    expect(clamp01(0.5)).toBe(0.5);
+    expect(Risk.clamp01(-1)).toBe(0);
+    expect(Risk.clamp01(2)).toBe(1);
+    expect(Risk.clamp01(Number.NaN)).toBe(0);
+    expect(Risk.clamp01(0.5)).toBe(0.5);
   });
 
   it('is low for strong signals and high for hard failures', () => {
-    const strong = computeRiskScore({
+    const strong = Risk.score({
       document: { qualityScore: 1, ocrConfidence: 1, expired: false },
       liveness: { passed: true, score: 1, multipleFaces: false },
       faceMatch: { passed: true, similarityScore: 1 },
     });
     expect(strong).toBeLessThan(0.1);
 
-    const failed = computeRiskScore({
+    const failed = Risk.score({
       document: { qualityScore: 0.9, ocrConfidence: 0.9, expired: false },
       liveness: { passed: false, score: 0.2, multipleFaces: false },
       faceMatch: { passed: true, similarityScore: 0.9 },
@@ -75,14 +69,14 @@ describe('result normalization', () => {
   const signals: SessionSignals = { documentQualityScore: 0.88, ocr, liveness, faceMatch };
 
   it('flattens provider results into decision input', () => {
-    const input = buildDecisionInput(signals, NOW);
+    const input = Normalize.toDecisionInput(signals, NOW);
     expect(input.document).toEqual({ qualityScore: 0.88, ocrConfidence: 0.88, expired: false });
     expect(input.liveness).toEqual({ passed: true, score: 0.93, multipleFaces: true });
     expect(input.faceMatch).toEqual({ passed: true, similarityScore: 0.82 });
   });
 
   it('builds the webhook checks summary', () => {
-    expect(buildWebhookChecks(signals, NOW)).toEqual({
+    expect(Normalize.toWebhookChecks(signals, NOW)).toEqual({
       document: { quality_score: 0.88, ocr_confidence: 0.88, expired: false },
       liveness: { passed: true, score: 0.93 },
       face_match: { passed: true, similarity_score: 0.82 },
@@ -94,17 +88,17 @@ describe('tenant/project context', () => {
   const entity = { tenant_id: 'tenant_1' };
 
   it('checks tenant ownership', () => {
-    expect(belongsToTenant(entity, 'tenant_1')).toBe(true);
-    expect(belongsToTenant(entity, 'tenant_2')).toBe(false);
+    expect(TenantContext.belongsTo(entity, 'tenant_1')).toBe(true);
+    expect(TenantContext.belongsTo(entity, 'tenant_2')).toBe(false);
   });
 
   it('asserts scope or throws', () => {
-    expect(assertTenantScope(entity, 'tenant_1')).toBe(entity);
-    expect(() => assertTenantScope(entity, 'tenant_2')).toThrow(TenantScopeError);
+    expect(TenantContext.assertScope(entity, 'tenant_1')).toBe(entity);
+    expect(() => TenantContext.assertScope(entity, 'tenant_2')).toThrow(TenantScopeError);
   });
 
   it('builds canonical session storage paths', () => {
-    const path = buildSessionStoragePath(
+    const path = TenantContext.storagePath(
       { tenantId: 't1', projectId: 'p1' },
       's1',
       'documents',

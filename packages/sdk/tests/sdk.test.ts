@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { signWebhook } from '@arkyc/webhooks'
+import { WebhookSigner } from '@arkyc/webhooks'
 import { Arkyc, ArkycApiError } from '../src/index'
 
 /** Build a fake fetch returning a JSON envelope with the given status. */
@@ -72,7 +72,7 @@ describe('Arkyc server client', () => {
     const now = 1_700_000_000_000
     const ts = Math.floor(now / 1000)
     const body = JSON.stringify({ event: 'verification.approved' })
-    const signature = signWebhook(body, secret, ts)
+    const signature = WebhookSigner.sign(body, secret, ts)
 
     expect(arkyc.webhooks.verify({ payload: body, secret, signature, timestamp: ts, now })).toBe(true)
     expect(arkyc.webhooks.verify({ payload: '{}', secret, signature, timestamp: ts, now })).toBe(false)

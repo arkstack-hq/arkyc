@@ -2,11 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { VerificationStatus } from '@arkyc/types';
 import {
   InvalidStatusTransitionError,
-  STATUS_TRANSITIONS,
-  TERMINAL_STATUSES,
-  assertTransition,
-  canTransition,
-  isTerminalStatus,
+  StatusMachine,
 } from '../src/index';
 
 describe('status transitions', () => {
@@ -20,28 +16,28 @@ describe('status transitions', () => {
       'approved',
     ];
     for (let i = 0; i < path.length - 1; i++) {
-      expect(canTransition(path[i]!, path[i + 1]!)).toBe(true);
+      expect(StatusMachine.canTransition(path[i]!, path[i + 1]!)).toBe(true);
     }
   });
 
   it('rejects illegal transitions', () => {
-    expect(canTransition('pending', 'approved')).toBe(false);
-    expect(canTransition('approved', 'pending')).toBe(false);
-    expect(canTransition('processing', 'document_submitted')).toBe(false);
+    expect(StatusMachine.canTransition('pending', 'approved')).toBe(false);
+    expect(StatusMachine.canTransition('approved', 'pending')).toBe(false);
+    expect(StatusMachine.canTransition('processing', 'document_submitted')).toBe(false);
   });
 
   it('treats decision and lifecycle-end states as terminal', () => {
-    for (const s of TERMINAL_STATUSES) {
-      expect(isTerminalStatus(s)).toBe(true);
-      expect(STATUS_TRANSITIONS[s]).toEqual([]);
+    for (const s of StatusMachine.TERMINAL) {
+      expect(StatusMachine.isTerminal(s)).toBe(true);
+      expect(StatusMachine.TRANSITIONS[s]).toEqual([]);
     }
-    expect(isTerminalStatus('processing')).toBe(false);
+    expect(StatusMachine.isTerminal('processing')).toBe(false);
   });
 
   it('allows requires_review to resolve or loop back for retry', () => {
-    expect(canTransition('requires_review', 'approved')).toBe(true);
-    expect(canTransition('requires_review', 'rejected')).toBe(true);
-    expect(canTransition('requires_review', 'started')).toBe(true);
+    expect(StatusMachine.canTransition('requires_review', 'approved')).toBe(true);
+    expect(StatusMachine.canTransition('requires_review', 'rejected')).toBe(true);
+    expect(StatusMachine.canTransition('requires_review', 'started')).toBe(true);
   });
 
   it('can expire or cancel from any non-terminal state', () => {
@@ -53,13 +49,13 @@ describe('status transitions', () => {
       'processing',
     ];
     for (const s of nonTerminal) {
-      expect(canTransition(s, 'expired')).toBe(true);
-      expect(canTransition(s, 'cancelled')).toBe(true);
+      expect(StatusMachine.canTransition(s, 'expired')).toBe(true);
+      expect(StatusMachine.canTransition(s, 'cancelled')).toBe(true);
     }
   });
 
-  it('assertTransition returns the target or throws', () => {
-    expect(assertTransition('pending', 'started')).toBe('started');
-    expect(() => assertTransition('pending', 'approved')).toThrow(InvalidStatusTransitionError);
+  it('StatusMachine.assert returns the target or throws', () => {
+    expect(StatusMachine.assert('pending', 'started')).toBe('started');
+    expect(() => StatusMachine.assert('pending', 'approved')).toThrow(InvalidStatusTransitionError);
   });
 });

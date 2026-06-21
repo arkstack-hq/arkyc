@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { createClientToken, generateApiKey } from '@arkyc/auth'
-import { syncDefaultPermissions, syncDefaultRoles } from '@arkyc/permissions'
+import { ApiKey as ApiKeyAuth, ClientToken } from '@arkyc/auth'
+import { PermissionSync } from '@arkyc/permissions'
 
 import { ApiKey } from '../src/app/models/ApiKey'
 import { Hash } from '@arkstack/common'
@@ -33,11 +33,11 @@ const fx = {
 /** Create an isolated tenant with system roles, members, an API key, and a session. */
 beforeAll(async () => {
   const s = Date.now()
-  await syncDefaultPermissions(permissionStore)
+  await PermissionSync.permissions(permissionStore)
 
   const tenant = await Tenant.create({ name: 'Test Co', slug: `test-${s}`, settings: {} })
   fx.tenantId = tenant.id
-  await syncDefaultRoles(tenant.id, permissionStore)
+  await PermissionSync.roles(tenant.id, permissionStore)
 
   const ownerRole = await Role.where({ tenantId: tenant.id, slug: 'owner' }).first()
   const reviewerRole = await Role.where({ tenantId: tenant.id, slug: 'reviewer' }).first()
@@ -76,7 +76,7 @@ beforeAll(async () => {
     status: 'active',
   })
 
-  const key = generateApiKey('live')
+  const key = ApiKeyAuth.generate('live')
   fx.apiKeySecret = key.secret
   await ApiKey.create({
     tenantId: tenant.id,
@@ -86,7 +86,7 @@ beforeAll(async () => {
     keyHash: key.keyHash,
   })
 
-  const ct = createClientToken(900)
+  const ct = ClientToken.create(900)
   fx.clientToken = ct.token
   const session = await VerificationSession.create({
     tenantId: tenant.id,

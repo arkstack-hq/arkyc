@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildWebhookPayload, signWebhook, verifyWebhookSignature } from '../src/index';
+import { WebhookPayload, WebhookSigner } from '../src/index';
 
 const SECRET = 'whsec_test_secret';
 
@@ -8,41 +8,41 @@ describe('webhooks — signing', () => {
     const now = 1_700_000_000_000;
     const ts = Math.floor(now / 1000);
     const body = JSON.stringify({ event: 'verification.approved' });
-    const signature = signWebhook(body, SECRET, ts);
+    const signature = WebhookSigner.sign(body, SECRET, ts);
 
-    expect(verifyWebhookSignature({ payload: body, secret: SECRET, signature, timestamp: ts, now })).toBe(true);
+    expect(WebhookSigner.verify({ payload: body, secret: SECRET, signature, timestamp: ts, now })).toBe(true);
   });
 
   it('rejects a tampered body', () => {
     const now = 1_700_000_000_000;
     const ts = Math.floor(now / 1000);
-    const signature = signWebhook('{"a":1}', SECRET, ts);
+    const signature = WebhookSigner.sign('{"a":1}', SECRET, ts);
 
-    expect(verifyWebhookSignature({ payload: '{"a":2}', secret: SECRET, signature, timestamp: ts, now })).toBe(false);
+    expect(WebhookSigner.verify({ payload: '{"a":2}', secret: SECRET, signature, timestamp: ts, now })).toBe(false);
   });
 
   it('rejects the wrong secret', () => {
     const now = 1_700_000_000_000;
     const ts = Math.floor(now / 1000);
     const body = '{"a":1}';
-    const signature = signWebhook(body, SECRET, ts);
+    const signature = WebhookSigner.sign(body, SECRET, ts);
 
-    expect(verifyWebhookSignature({ payload: body, secret: 'nope', signature, timestamp: ts, now })).toBe(false);
+    expect(WebhookSigner.verify({ payload: body, secret: 'nope', signature, timestamp: ts, now })).toBe(false);
   });
 
   it('rejects a stale timestamp', () => {
     const now = 1_700_000_000_000;
     const ts = Math.floor(now / 1000) - 1_000; // well beyond tolerance
     const body = '{"a":1}';
-    const signature = signWebhook(body, SECRET, ts);
+    const signature = WebhookSigner.sign(body, SECRET, ts);
 
-    expect(verifyWebhookSignature({ payload: body, secret: SECRET, signature, timestamp: ts, now })).toBe(false);
+    expect(WebhookSigner.verify({ payload: body, secret: SECRET, signature, timestamp: ts, now })).toBe(false);
   });
 });
 
 describe('webhooks — payload', () => {
   it('builds the spec-shaped event body', () => {
-    const payload = buildWebhookPayload({
+    const payload = WebhookPayload.build({
       event: 'verification.approved',
       sessionId: 's1',
       tenantId: 't1',

@@ -1,6 +1,6 @@
 import { RequestException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
-import { PermissionDeniedError, authorize } from '@arkyc/permissions'
+import { PermissionDeniedError, Permissions } from '@arkyc/permissions'
 import type { PermissionKey } from '@arkyc/types'
 import { permissionStore } from '@app/services/ArkormPermissionStore'
 
@@ -25,7 +25,7 @@ export class AuthorizeMiddleware {
             RequestException.assertFound(tenantId, 'Missing tenant scope', 400)
             const projectId = param(req.params.projectId) ?? null
 
-            await authorize({ userId: user.id, tenantId, projectId }, this.permission, permissionStore)
+            await Permissions.authorize({ userId: user.id, tenantId, projectId }, this.permission, permissionStore)
             next()
         } catch (error) {
             if (error instanceof PermissionDeniedError) {

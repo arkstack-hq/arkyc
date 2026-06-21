@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import http from 'node:http'
 import { AddressInfo } from 'node:net'
 import request from 'parasito'
-import { SIGNATURE_HEADER, TIMESTAMP_HEADER, verifyWebhookSignature } from '@arkyc/webhooks'
+import { WebhookSigner } from '@arkyc/webhooks'
 import { app } from '../src/core/bootstrap'
 import { drain } from '../src/app/jobs'
 import { Tenant } from '../src/app/models/Tenant'
@@ -35,6 +35,7 @@ async function completeSession (): Promise<string> {
   await client('post', 'liveness', token).send({})
   await client('post', 'complete', token).send({})
   await drain()
+
   return id
 }
 
@@ -45,8 +46,8 @@ beforeAll(async () => {
     req.on('end', () => {
       received.push({
         body: Buffer.concat(chunks).toString('utf8'),
-        signature: String(req.headers[SIGNATURE_HEADER.toLowerCase()] ?? ''),
-        timestamp: Number(req.headers[TIMESTAMP_HEADER.toLowerCase()] ?? 0),
+        signature: String(req.headers[WebhookSigner.SIGNATURE_HEADER.toLowerCase()] ?? ''),
+        timestamp: Number(req.headers[WebhookSigner.TIMESTAMP_HEADER.toLowerCase()] ?? 0),
       })
       res.writeHead(200).end('ok')
     })
@@ -110,7 +111,7 @@ describe('webhook endpoints', () => {
     const hit = delivered.find(
       (d) =>
         JSON.parse(d.body).session_id === sessionId &&
-        verifyWebhookSignature({ payload: d.body, secret, signature: d.signature, timestamp: d.timestamp }),
+        WebhookSigner.verify({ payload: d.body, secret, signature: d.signature, timestamp: d.timestamp }),
     )
     expect(hit).toBeTruthy()
     expect(JSON.parse(hit!.body).event).toBe('verification.approved')

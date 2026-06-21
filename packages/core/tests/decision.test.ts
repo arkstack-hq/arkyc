@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { DecisionReason, VerificationDecision } from '@arkyc/types';
 import {
-  DEFAULT_THRESHOLDS,
-  decideVerification,
-  resolveThresholds,
+  DecisionEngine,
+  Thresholds,
   type DecisionInput,
 } from '../src/index';
 
@@ -16,7 +15,7 @@ function goodInput(): DecisionInput {
   };
 }
 
-describe('decideVerification', () => {
+describe('DecisionEngine.decide', () => {
   interface Case {
     name: string;
     mutate: (i: DecisionInput) => void;
@@ -101,7 +100,7 @@ describe('decideVerification', () => {
     it(c.name, () => {
       const input = goodInput();
       c.mutate(input);
-      const result = decideVerification(input);
+      const result = DecisionEngine.decide(input);
       expect(result.decision).toBe(c.decision);
       expect(result.reason).toBe(c.reason);
       expect(result.riskScore).toBeGreaterThanOrEqual(0);
@@ -111,11 +110,11 @@ describe('decideVerification', () => {
 
   it('treats a score exactly at threshold as passing (>=)', () => {
     const input = goodInput();
-    input.document.qualityScore = DEFAULT_THRESHOLDS.documentQualityThreshold;
-    input.document.ocrConfidence = DEFAULT_THRESHOLDS.ocrConfidenceThreshold;
-    input.liveness.score = DEFAULT_THRESHOLDS.livenessThreshold;
-    input.faceMatch.similarityScore = DEFAULT_THRESHOLDS.faceMatchThreshold;
-    expect(decideVerification(input).reason).toBe('AUTO_APPROVED');
+    input.document.qualityScore = Thresholds.DEFAULTS.documentQualityThreshold;
+    input.document.ocrConfidence = Thresholds.DEFAULTS.ocrConfidenceThreshold;
+    input.liveness.score = Thresholds.DEFAULTS.livenessThreshold;
+    input.faceMatch.similarityScore = Thresholds.DEFAULTS.faceMatchThreshold;
+    expect(DecisionEngine.decide(input).reason).toBe('AUTO_APPROVED');
   });
 
   it('gives hard rejection precedence over review signals', () => {
@@ -123,36 +122,36 @@ describe('decideVerification', () => {
     input.document.expired = true; // reject signal
     input.liveness.multipleFaces = true; // review signal
     input.document.qualityScore = 0.1; // review signal
-    expect(decideVerification(input).reason).toBe('DOCUMENT_EXPIRED');
+    expect(DecisionEngine.decide(input).reason).toBe('DOCUMENT_EXPIRED');
   });
 
   it('orders reject reasons: expired before liveness before face match', () => {
     const input = goodInput();
     input.liveness.passed = false;
     input.faceMatch.passed = false;
-    expect(decideVerification(input).reason).toBe('LIVENESS_FAILED');
+    expect(DecisionEngine.decide(input).reason).toBe('LIVENESS_FAILED');
   });
 
   it('honours per-project threshold overrides', () => {
     const input = goodInput();
     input.faceMatch.similarityScore = 0.8;
     // Default face-match threshold is 0.75 → would approve.
-    expect(decideVerification(input).reason).toBe('AUTO_APPROVED');
+    expect(DecisionEngine.decide(input).reason).toBe('AUTO_APPROVED');
     // Raise the bar to 0.9 → now routed to review.
-    const result = decideVerification(input, { faceMatchThreshold: 0.9 });
+    const result = DecisionEngine.decide(input, { faceMatchThreshold: 0.9 });
     expect(result.decision).toBe('requires_review');
     expect(result.reason).toBe('FACE_MATCH_LOW_CONFIDENCE');
   });
 });
 
-describe('resolveThresholds', () => {
+describe('Thresholds.resolve', () => {
   it('returns defaults when no overrides given', () => {
-    expect(resolveThresholds()).toEqual(DEFAULT_THRESHOLDS);
+    expect(Thresholds.resolve()).toEqual(Thresholds.DEFAULTS);
   });
 
   it('merges a partial override over defaults', () => {
-    const merged = resolveThresholds({ livenessThreshold: 0.99 });
+    const merged = Thresholds.resolve({ livenessThreshold: 0.99 });
     expect(merged.livenessThreshold).toBe(0.99);
-    expect(merged.ocrConfidenceThreshold).toBe(DEFAULT_THRESHOLDS.ocrConfidenceThreshold);
+    expect(merged.ocrConfidenceThreshold).toBe(Thresholds.DEFAULTS.ocrConfidenceThreshold);
   });
 });

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { MockFaceMatchDriver, createFaceMatchDriver } from '../src/index';
+import { MockFaceMatchDriver, FaceMatchDriverFactory } from '../src/index';
 
 const request = { documentPortrait: new Uint8Array([1]), selfie: new Uint8Array([2]) };
 
 describe('face-match', () => {
   it('mock driver passes by default', async () => {
-    const driver = createFaceMatchDriver({ driver: 'mock' });
+    const driver = FaceMatchDriverFactory.create({ driver: 'mock' });
     const result = await driver.compare(request);
     expect(result.passed).toBe(true);
     expect(result.similarityScore).toBeGreaterThan(0.5);
@@ -21,6 +21,6 @@ describe('face-match', () => {
   });
 
   it('requires an endpoint for the external driver', () => {
-    expect(() => createFaceMatchDriver({ driver: 'external' })).toThrow(/endpoint/);
+    expect(() => FaceMatchDriverFactory.create({ driver: 'external' })).toThrow(/endpoint/);
   });
 });

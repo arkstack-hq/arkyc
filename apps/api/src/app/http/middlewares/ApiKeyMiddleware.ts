@@ -1,6 +1,6 @@
 import { RequestException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
-import { apiKeyPrefix, verifyApiKey } from '@arkyc/auth'
+import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import { ApiKey } from '@app/models/ApiKey'
 
 function readSecret (req: Request): string | null {
@@ -24,11 +24,11 @@ export class ApiKeyMiddleware {
             const secret = readSecret(req)
             RequestException.assertFound(secret, 'Missing API key', 401)
 
-            const key = await ApiKey.where({ keyPrefix: apiKeyPrefix(secret) }).first()
+            const key = await ApiKey.where({ keyPrefix: ApiKeyAuth.prefix(secret) }).first()
             const expired = key?.expiresAt != null && new Date(key.expiresAt).getTime() <= Date.now()
             RequestException.assertFound(key, 'Invalid API key', 401)
             RequestException.abortIf(
-                key.revokedAt || expired || !verifyApiKey(secret, key.keyHash),
+                key.revokedAt || expired || !ApiKeyAuth.verify(secret, key.keyHash),
                 'Invalid API key',
                 401,
             )

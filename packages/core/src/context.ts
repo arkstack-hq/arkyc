@@ -16,55 +16,54 @@ export class TenantScopeError extends Error {
   }
 }
 
-/**
- * Whether `entity` belongs to the given tenant.
- *
- * @param entity
- * @param tenantId
- * @returns
- */
-export function belongsToTenant (entity: TenantScoped, tenantId: Id): boolean {
-  return entity.tenant_id === tenantId;
-}
-
-/**
- * Assert that `entity` belongs to `tenantId`, throwing {@link TenantScopeError}
- * otherwise. Returns the entity (narrowed) for inline use.
- *
- * @param entity
- * @param tenantId
- * @returns
- */
-export function assertTenantScope<T extends TenantScoped> (entity: T, tenantId: Id): T {
-  if (!belongsToTenant(entity, tenantId)) {
-    throw new TenantScopeError();
+/** Tenant/project scoping and storage-path helpers. */
+export class TenantContext {
+  /**
+   * Whether `entity` belongs to the given tenant.
+   *
+   * @param entity
+   * @param tenantId
+   * @returns
+   */
+  static belongsTo(entity: TenantScoped, tenantId: Id): boolean {
+    return entity.tenant_id === tenantId;
   }
-  return entity;
-}
 
-/**
- * Build the canonical, tenant/project-scoped storage key for a session object.
- *
- * e.g. `tenants/t1/projects/p1/sessions/s1/documents/front.jpg`
- *
- * @param ctx
- * @param sessionId
- * @param parts
- * @returns
- */
-export function buildSessionStoragePath (
-  ctx: TenantProjectContext,
-  sessionId: Id,
-  ...parts: string[]
-): string {
-  const segments = [
-    'tenants',
-    ctx.tenantId,
-    'projects',
-    ctx.projectId,
-    'sessions',
-    sessionId,
-    ...parts,
-  ];
-  return segments.join('/');
+  /**
+   * Assert that `entity` belongs to `tenantId`, throwing {@link TenantScopeError}
+   * otherwise. Returns the entity (narrowed) for inline use.
+   *
+   * @param entity
+   * @param tenantId
+   * @returns
+   */
+  static assertScope<T extends TenantScoped>(entity: T, tenantId: Id): T {
+    if (!TenantContext.belongsTo(entity, tenantId)) {
+      throw new TenantScopeError();
+    }
+    return entity;
+  }
+
+  /**
+   * Build the canonical, tenant/project-scoped storage key for a session object.
+   *
+   * e.g. `tenants/t1/projects/p1/sessions/s1/documents/front.jpg`
+   *
+   * @param ctx
+   * @param sessionId
+   * @param parts
+   * @returns
+   */
+  static storagePath(ctx: TenantProjectContext, sessionId: Id, ...parts: string[]): string {
+    const segments = [
+      'tenants',
+      ctx.tenantId,
+      'projects',
+      ctx.projectId,
+      'sessions',
+      sessionId,
+      ...parts,
+    ];
+    return segments.join('/');
+  }
 }

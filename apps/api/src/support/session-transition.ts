@@ -1,4 +1,4 @@
-import { assertTransition } from '@arkyc/core'
+import { StatusMachine } from '@arkyc/core'
 import type { VerificationStatus } from '@arkyc/types'
 import type { VerificationSession } from '@app/models/VerificationSession'
 import { webhookService } from '@app/services/WebhookService'
@@ -12,7 +12,7 @@ export async function transitionTo (
   session: VerificationSession,
   to: VerificationStatus,
 ): Promise<void> {
-  session.status = assertTransition(session.status, to)
+  session.status = StatusMachine.assert(session.status, to)
   await session.save()
   await webhookService.onStatusChange(session, to)
 }

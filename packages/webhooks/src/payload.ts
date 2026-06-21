@@ -20,17 +20,20 @@ export interface BuildWebhookPayloadInput {
   createdAt: string;
 }
 
-/** Build the JSON body delivered to a webhook endpoint (matches the spec shape). */
-export function buildWebhookPayload(input: BuildWebhookPayloadInput): WebhookEvent {
-  return {
-    event: input.event,
-    session_id: input.sessionId,
-    tenant_id: input.tenantId,
-    project_id: input.projectId,
-    user_reference: input.userReference,
-    status: input.status,
-    checks: input.checks,
-    decision_reason: input.decisionReason,
-    created_at: input.createdAt,
-  };
+/** Assemble the JSON body delivered to a webhook endpoint. */
+export class WebhookPayload {
+  /** Build the JSON body delivered to a webhook endpoint (matches the spec shape). */
+  static build(input: BuildWebhookPayloadInput): WebhookEvent {
+    return {
+      event: input.event,
+      session_id: input.sessionId,
+      tenant_id: input.tenantId,
+      project_id: input.projectId,
+      user_reference: input.userReference,
+      status: input.status,
+      checks: input.checks,
+      decision_reason: input.decisionReason,
+      created_at: input.createdAt,
+    };
+  }
 }

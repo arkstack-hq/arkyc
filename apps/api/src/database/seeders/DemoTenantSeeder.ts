@@ -1,8 +1,8 @@
 import { Seeder } from '@arkstack/database'
 import { Hash } from '@arkstack/common'
 import { faker } from '@faker-js/faker'
-import { DEFAULT_ROLES } from '@arkyc/permissions'
-import { generateApiKey } from '@arkyc/auth'
+import { DefaultRoles } from '@arkyc/permissions'
+import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import type { PermissionKey, VerificationStatus } from '@arkyc/types'
 import { Tenant } from 'src/app/models/Tenant'
 import { Role } from 'src/app/models/Role'
@@ -48,7 +48,7 @@ export class DemoTenantSeeder extends Seeder {
         )
 
         const roleBySlug = new Map<string, Role>()
-        for (const def of DEFAULT_ROLES) {
+        for (const def of DefaultRoles.ALL) {
             const role = await Role.create({
                 tenantId: tenant.id,
                 name: def.name,
@@ -95,7 +95,7 @@ export class DemoTenantSeeder extends Seeder {
         })
 
         for (const project of [production, staging]) {
-            const key = generateApiKey(project.environment === 'production' ? 'live' : 'test')
+            const key = ApiKeyAuth.generate(project.environment === 'production' ? 'live' : 'test')
             await ApiKey.create({
                 tenantId: tenant.id,
                 projectId: project.id,

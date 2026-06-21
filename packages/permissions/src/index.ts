@@ -10,7 +10,6 @@
 export * from './catalogue';
 export * from './default-roles';
 export * from './types';
-export * from './resolve';
 export * from './check';
 export * from './define';
 export * from './sync';

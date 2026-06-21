@@ -11,7 +11,7 @@ import { Role } from '@app/models/Role'
 import { TenantInvitation } from '@app/models/TenantInvitation'
 import { TenantMember } from '@app/models/TenantMember'
 import { UserPermission } from '@app/models/UserPermission'
-import { createTokenPair } from '@arkyc/auth'
+import { Token } from '@arkyc/auth'
 import { toArray } from 'src/support/collection'
 import { audit } from '@app/services/AuditLogger'
 
@@ -51,7 +51,7 @@ export default class MemberController extends BaseController {
     const role = await Role.where({ id: data.role_id, tenantId: req.tenant!.id }).first()
     RequestException.assertFound(role, 'role_id is not a role of this tenant', 422)
 
-    const { token, tokenHash } = createTokenPair()
+    const { token, tokenHash } = Token.createPair()
     const invitation = await TenantInvitation.create({
       tenantId: req.tenant!.id,
       email: data.email,
@@ -107,7 +107,7 @@ export default class MemberController extends BaseController {
     const direct_permissions = toArray(user.getAttribute('directPermissions') as any)
       .map((up: any) => (up?.getAttribute('permission') as any)?.getAttribute('name'))
       .filter(Boolean)
-    // effective = role + direct (no project context here); matches resolvePermissions().
+    // effective = role + direct (no project context here); matches Permissions.resolve().
     const effective_permissions = [...new Set([...role_permissions, ...direct_permissions])]
 
     return new MemberPermissionsResource({
