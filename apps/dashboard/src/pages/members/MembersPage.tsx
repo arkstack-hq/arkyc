@@ -5,8 +5,10 @@ import { Members, Roles, errorMessage } from '@/lib/api'
 import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -65,6 +67,7 @@ export default function MembersPage() {
     send: sendInvite,
     loading: inviting,
     error: inviteError,
+    update: clearInviteError,
     onSuccess,
   } = useForm((formData) => Members.invite(tenantId, formData), {
     initialForm: { email: '', role_id: '' },
@@ -164,17 +167,27 @@ export default function MembersPage() {
               void sendInvite()
             }}
           >
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="invite-email">Email</Label>
-              <Input
-                id="invite-email"
-                type="email"
-                required
-                value={form.email}
-                onChange={(e) => updateForm({ email: e.target.value })}
-                placeholder="teammate@example.com"
-              />
-            </div>
+            <Field>
+              <FieldLabel htmlFor="invite-email">Email</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <Mail />
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="invite-email"
+                  type="email"
+                  required
+                  value={form.email}
+                  aria-invalid={!!inviteError?.flat?.email}
+                  onChange={(e) => {
+                    updateForm({ email: e.target.value })
+                    if (inviteError?.errors) inviteError.delete('email', clearInviteError)
+                  }}
+                  placeholder="teammate@example.com"
+                />
+              </InputGroup>
+              <FieldError errors={inviteError?.list?.email} />
+            </Field>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="invite-role">Role</Label>
@@ -183,7 +196,11 @@ export default function MembersPage() {
                   id="invite-role"
                   required
                   value={form.role_id}
-                  onChange={(e) => updateForm({ role_id: e.target.value })}
+                  aria-invalid={!!inviteError?.flat?.role_id}
+                  onChange={(e) => {
+                    updateForm({ role_id: e.target.value })
+                    if (inviteError?.errors) inviteError.delete('role_id', clearInviteError)
+                  }}
                 >
                   <option value="" disabled>
                     {rolesLoading ? 'Loading roles…' : 'Select a role'}
@@ -195,18 +212,25 @@ export default function MembersPage() {
                   ))}
                 </Select>
               ) : (
-                <Input
-                  id="invite-role"
-                  required
-                  value={form.role_id}
-                  onChange={(e) => updateForm({ role_id: e.target.value })}
-                  placeholder="Role ID"
-                />
+                <InputGroup>
+                  <InputGroupInput
+                    id="invite-role"
+                    required
+                    value={form.role_id}
+                    aria-invalid={!!inviteError?.flat?.role_id}
+                    onChange={(e) => {
+                      updateForm({ role_id: e.target.value })
+                      if (inviteError?.errors) inviteError.delete('role_id', clearInviteError)
+                    }}
+                    placeholder="Role ID"
+                  />
+                </InputGroup>
               )}
+              <FieldError errors={inviteError?.list?.role_id} />
             </div>
 
-            {inviteError ? (
-              <p className="text-sm text-destructive">{errorMessage(inviteError, 'Failed to invite.')}</p>
+            {inviteError && !inviteError.errors ? (
+              <FieldError>{errorMessage(inviteError, 'Failed to invite.')}</FieldError>
             ) : null}
 
             <DialogFooter>

@@ -1,12 +1,12 @@
 import { GenericResource, Resource, ResourceCollection } from 'resora'
-import { formdata, requestLogger } from '@arkstack/driver-express/middlewares'
+import { formdata, requestLogger, resora } from '@arkstack/driver-express/middlewares'
 
 import { MiddlewareConfig } from '@arkstack/driver-express/types'
 import cors from 'cors'
 import corsConfig from './cors'
 import express from 'express'
-import { useExpressUploadContext } from '@kanun-hq/plugin-file'
 import { requestId } from '@app/http/middlewares'
+import { useExpressUploadContext } from '@kanun-hq/plugin-file'
 
 export default (): MiddlewareConfig => {
   const cConf = corsConfig()
@@ -27,6 +27,7 @@ export default (): MiddlewareConfig => {
       formdata.any(),
     ],
     before: [
+      resora(),
       requestId,
       (req, res, next) => {
         Resource.setCtx({ req, res })

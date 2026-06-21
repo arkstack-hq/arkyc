@@ -3,15 +3,17 @@ import { PersonalAccessToken } from './PersonalAccessToken'
 import { UserNotification } from './UserNotification'
 import { UserTwoFactor } from './UserTwoFactor'
 import { UserFactory } from 'src/database/factories/UserFactory'
-import { TenantMember } from './TenantMember'
 import { ProjectMember } from './ProjectMember'
 import { UserPermission } from './UserPermission'
 import { Review } from './Review'
+import { Tenant } from './Tenant'
 
 export class User extends BaseUser {
   declare email: string
+  declare phone?: string
   declare password: string
-  declare name: string
+  declare firstName: string
+  declare lastName?: string
   declare avatarUrl: string | null
   declare lastLoginAt: Date | null
   declare emailVerifiedAt: Date | null
@@ -19,6 +21,8 @@ export class User extends BaseUser {
   declare updatedAt: Date
 
   protected static override factoryClass = UserFactory
+
+  protected override appends = ['name']
 
   protected static override columns = {
     avatarUrl: 'avatar_url',
@@ -43,7 +47,7 @@ export class User extends BaseUser {
   }
 
   tenantMemberships() {
-    return this.hasMany(TenantMember, 'userId')
+    return this.belongsToMany(Tenant, 'tenant_members', 'tenantId', 'userId')
   }
 
   projectMemberships() {
@@ -56,5 +60,15 @@ export class User extends BaseUser {
 
   reviews() {
     return this.hasMany(Review, 'reviewerId')
+  }
+
+  getNameAttribute(): string {
+    return [this.firstName, this.lastName].filter(Boolean).join(' ')
+  }
+
+  setNameAttribute(name: string): void {
+    const [firstName, lastName] = name.split(' ')
+    this.firstName = firstName
+    this.lastName = lastName
   }
 }

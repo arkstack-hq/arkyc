@@ -1,6 +1,8 @@
 import { RequestException } from "./RequestException";
 
-export type ApiException = (RequestException & { errors?: never }) | ValidationException;
+export type ApiException =
+  | (RequestException & { errors?: never; flat?: never; list?: never })
+  | ValidationException;
 
 export class ValidationException extends RequestException {
   public flat: Record<string, string>;
@@ -35,16 +37,22 @@ export class ValidationException extends RequestException {
 
   /**
    * Return a copy without the given field's errors. Immutable so it can be
-   * fed back into React/alova state to re-render (e.g. clear a field on edit):
-   * `setError((prev) => prev?.delete('email'))`.
+   * fed back into React/alova state to re-render (e.g. clear a field on edit).
+   * Pass alova's `update` as the handler to push the cleared copy straight into
+   * the hook's reactive `error` state:
+   * `error?.errors && error.delete('email', update)`.
    *
    * @param key
+   * @param handler
    * @returns
    */
-  delete(key: string): ValidationException {
+  delete(key: string, handler?: (args: { error: ValidationException }) => void): ValidationException {
     const errors = { ...this.errors };
     delete errors[key];
-    return new ValidationException(this.message, errors, this.statusCode);
+    const error = new ValidationException(this.message, errors, this.statusCode);
+
+    handler?.({ error });
+    return error;
   }
 
   /**

@@ -6,9 +6,10 @@ import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { formatDateTime } from '@/lib/utils'
 import { Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { KeyRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Spinner } from '@/components/ui/spinner'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import {
@@ -54,6 +55,7 @@ export default function ProjectApiKeysPage() {
     send: createKey,
     loading: creating,
     error: createError,
+    update: clearCreateError,
     reset,
     onSuccess: onCreateSuccess,
   } = useForm((f) => ApiKeys.create(tenantId, projectId!, { name: f.name.trim() }), {
@@ -186,20 +188,30 @@ export default function ProjectApiKeysPage() {
               <DialogTitle>Create API key</DialogTitle>
               <DialogDescription>Give the key a recognizable name.</DialogDescription>
             </DialogHeader>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="key-name">Name</Label>
-              <Input
-                id="key-name"
-                value={form.name}
-                onChange={(e) => updateForm({ name: e.target.value })}
-                placeholder="Production server"
-                required
-              />
-            </div>
-            {createError ? (
-              <p className="mt-3 text-sm text-destructive">
+            <Field>
+              <FieldLabel htmlFor="key-name">Name</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <KeyRound />
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="key-name"
+                  value={form.name}
+                  aria-invalid={!!createError?.flat?.name}
+                  onChange={(e) => {
+                    updateForm({ name: e.target.value })
+                    if (createError?.errors) createError.delete('name', clearCreateError)
+                  }}
+                  placeholder="Production server"
+                  required
+                />
+              </InputGroup>
+              <FieldError errors={createError?.list?.name} />
+            </Field>
+            {createError && !createError.errors ? (
+              <FieldError className="mt-3">
                 {errorMessage(createError, 'Failed to create key.')}
-              </p>
+              </FieldError>
             ) : null}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>

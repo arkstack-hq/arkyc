@@ -2,9 +2,10 @@ import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'alova/client'
 import { Tenants, errorMessage } from '@/lib/api'
+import { Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import {
   Card,
   CardContent,
@@ -17,7 +18,7 @@ import {
 export default function OnboardingPage() {
   const navigate = useNavigate()
 
-  const { form, updateForm, send, loading, error, onSuccess } = useForm(
+  const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
     (formData) => Tenants.create({ name: formData.name.trim() }),
     { initialForm: { name: '' } },
   )
@@ -43,18 +44,30 @@ export default function OnboardingPage() {
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="name">Organization name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Acme Inc."
-                required
-                value={form.name}
-                onChange={(e) => updateForm({ name: e.target.value })}
-              />
-            </div>
-            {error ? <p className="text-sm text-destructive">{errorMessage(error)}</p> : null}
+            <Field>
+              <FieldLabel htmlFor="name">Organization name</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <Building2 />
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="name"
+                  type="text"
+                  placeholder="Acme Inc."
+                  required
+                  value={form.name}
+                  aria-invalid={!!error?.flat?.name}
+                  onChange={(e) => {
+                    updateForm({ name: e.target.value })
+                    if (error?.errors) error.delete('name', update)
+                  }}
+                />
+              </InputGroup>
+              <FieldError errors={error?.list?.name} />
+            </Field>
+            {error && !error.errors ? (
+              <FieldError>{errorMessage(error)}</FieldError>
+            ) : null}
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={loading}>

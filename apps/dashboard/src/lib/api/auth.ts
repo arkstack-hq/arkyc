@@ -5,7 +5,7 @@ import type { AuthResult } from './types'
 /** Dashboard authentication (Arkstack built-in device-session auth). */
 export class Auth {
   /** Register a new user; the issued JWT is persisted by the token interceptor. */
-  static register(input: { name: string; email: string; password: string }) {
+  static register(input: { firstname: string; lastname?: string; email: string; password: string }) {
     return alova.Post('/v1/auth/register', input, {
       name: 'auth:register',
       meta: { authRole: 'login' },

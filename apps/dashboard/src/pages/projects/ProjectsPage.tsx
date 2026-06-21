@@ -8,7 +8,8 @@ import { humanize } from '@/lib/utils'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -55,6 +56,7 @@ export default function ProjectsPage() {
     send: createProject,
     loading: creating,
     error: createError,
+    update: clearCreateError,
     reset,
     onSuccess,
   } = useForm(
@@ -134,16 +136,23 @@ export default function ProjectsPage() {
           }}
         >
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="project-name">Name</Label>
-              <Input
-                id="project-name"
-                value={form.name}
-                onChange={(e) => updateForm({ name: e.target.value })}
-                placeholder="My App"
-                required
-              />
-            </div>
+            <Field>
+              <FieldLabel htmlFor="project-name">Name</FieldLabel>
+              <InputGroup>
+                <InputGroupInput
+                  id="project-name"
+                  value={form.name}
+                  aria-invalid={!!createError?.flat?.name}
+                  onChange={(e) => {
+                    updateForm({ name: e.target.value })
+                    if (createError?.errors) createError.delete('name', clearCreateError)
+                  }}
+                  placeholder="My App"
+                  required
+                />
+              </InputGroup>
+              <FieldError errors={createError?.list?.name} />
+            </Field>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="project-env">Environment</Label>
               <Select
@@ -158,10 +167,8 @@ export default function ProjectsPage() {
                 ))}
               </Select>
             </div>
-            {createError ? (
-              <p className="text-sm text-destructive">
-                {errorMessage(createError, 'Failed to create project.')}
-              </p>
+            {createError && !createError.errors ? (
+              <FieldError>{errorMessage(createError, 'Failed to create project.')}</FieldError>
             ) : null}
           </div>
           <DialogFooter>

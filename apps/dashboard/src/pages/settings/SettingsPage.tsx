@@ -4,9 +4,10 @@ import { useForm } from 'alova/client'
 import { Tenants, errorMessage } from '@/lib/api'
 import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader } from '@/components/States'
+import { Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import {
   Card,
   CardHeader,
@@ -22,7 +23,7 @@ export default function SettingsPage() {
 
   const [saved, setSaved] = useState(false)
 
-  const { form, updateForm, send, loading, error, onSuccess } = useForm(
+  const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
     (formData) => Tenants.update(tenantId, { name: formData.name }),
     { initialForm: { name: tenant?.name ?? '' } },
   )
@@ -42,20 +43,27 @@ export default function SettingsPage() {
             <CardDescription>General organization details.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tenant-name">Name</Label>
-              <Input
-                id="tenant-name"
-                value={form.name}
-                onChange={(e) => {
-                  updateForm({ name: e.target.value })
-                  setSaved(false)
-                }}
-                disabled={!canUpdate}
-              />
-            </div>
-            {error ? (
-              <p className="text-sm text-destructive">{errorMessage(error, 'Failed to save.')}</p>
+            <Field>
+              <FieldLabel htmlFor="tenant-name">Name</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <Building2 />
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="tenant-name"
+                  value={form.name}
+                  onChange={(e) => {
+                    updateForm({ name: e.target.value })
+                    setSaved(false)
+                    if (error?.errors) error.delete('name', update)
+                  }}
+                  disabled={!canUpdate}
+                />
+              </InputGroup>
+              <FieldError errors={error?.list?.name} />
+            </Field>
+            {error && !error.errors ? (
+              <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError>
             ) : null}
             {saved ? <p className="text-sm text-success">Settings saved.</p> : null}
           </CardContent>

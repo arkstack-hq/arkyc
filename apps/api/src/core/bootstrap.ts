@@ -1,5 +1,6 @@
 import '@arkstack/database/setup'
 import '@arkstack/http/setup'
+import '@arkstack/jobs/setup'
 
 import * as express from 'express'
 

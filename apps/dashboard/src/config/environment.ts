@@ -16,7 +16,7 @@ const required = (source: EnvironmentSource, name: string) => {
   return value;
 };
 
-const oneOf = <T extends string> (value: string, name: string, values: readonly T[]): T => {
+const oneOf = <T extends string>(value: string, name: string, values: readonly T[]): T => {
   if (!values.includes(value as T)) {
     throw new Error(`${name} must be one of: ${values.join(', ')}`);
   }
@@ -24,7 +24,7 @@ const oneOf = <T extends string> (value: string, name: string, values: readonly 
   return value as T;
 };
 
-export function validateAppEnvironment (source: EnvironmentSource): AppEnvironment {
+export function validateAppEnvironment(source: EnvironmentSource): AppEnvironment {
   const apiEnvironment = oneOf(
     required(source, 'VITE_API_ENV'),
     'VITE_API_ENV',
@@ -56,8 +56,8 @@ export function validateAppEnvironment (source: EnvironmentSource): AppEnvironme
   };
 }
 
-export function getApiUrl (defaultValue: string): string {
-  const apiEnv = import.meta.env.VITE_API_ENV as ApiEnv || 'dev'
+export function getApiUrl(defaultValue: string): string {
+  const apiEnv = import.meta.env.VITE_API_ENV as ApiEnv || 'development'
 
   const DEFAULT = import.meta.env.VITE_API_URL || defaultValue || 'http://localhost:3000/api'
 
@@ -86,11 +86,11 @@ export function getApiUrl (defaultValue: string): string {
  * @param def
  * @returns
  */
-export const env = <X = string, Y = undefined> (
+export const env = <X = string, Y = undefined>(
   env: string,
   defaultValue?: Y,
 ): Y extends undefined ? X : Y => {
-  if (!!env && env.includes('API_URL')) {
+  if (!!env && env.includes('VITE_API_URL')) {
     return getApiUrl(defaultValue as never) as never
   }
 

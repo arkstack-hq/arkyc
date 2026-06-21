@@ -11,7 +11,8 @@ import { Projects, errorMessage } from '@/lib/api'
 import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { Loading, ErrorState } from '@/components/States'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
@@ -70,6 +71,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
     send: save,
     loading: saving,
     error,
+    update,
     onSuccess,
   } = useForm(
     (f) => {
@@ -112,6 +114,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     updateForm({ [key]: value } as Partial<FormState>)
     setSaved(false)
+    if (error?.errors) error.delete(key, update)
   }
 
   const canEdit = can('projects.update')
@@ -134,10 +137,18 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           <CardDescription>Basic project information.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" value={form.name} onChange={(e) => set('name', e.target.value)} />
-          </div>
+          <Field>
+            <FieldLabel htmlFor="name">Name</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                id="name"
+                value={form.name}
+                aria-invalid={!!error?.flat?.name}
+                onChange={(e) => set('name', e.target.value)}
+              />
+            </InputGroup>
+            <FieldError errors={error?.list?.name} />
+          </Field>
         </CardContent>
       </Card>
 
@@ -147,16 +158,18 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           <CardDescription>How the verification widget appears.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="primary-color">Primary color</Label>
-            <Input
-              id="primary-color"
-              type="text"
-              value={form.primaryColor}
-              onChange={(e) => set('primaryColor', e.target.value)}
-              placeholder="#000000"
-            />
-          </div>
+          <Field>
+            <FieldLabel htmlFor="primary-color">Primary color</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                id="primary-color"
+                type="text"
+                value={form.primaryColor}
+                onChange={(e) => set('primaryColor', e.target.value)}
+                placeholder="#000000"
+              />
+            </InputGroup>
+          </Field>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="theme">Theme</Label>
             <Select
@@ -168,15 +181,17 @@ function ProjectSettingsForm({ project }: { project: Project }) {
               <option value="dark">Dark</option>
             </Select>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="border-radius">Border radius</Label>
-            <Input
-              id="border-radius"
-              type="number"
-              value={form.borderRadius}
-              onChange={(e) => set('borderRadius', e.target.value)}
-            />
-          </div>
+          <Field>
+            <FieldLabel htmlFor="border-radius">Border radius</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                id="border-radius"
+                type="number"
+                value={form.borderRadius}
+                onChange={(e) => set('borderRadius', e.target.value)}
+              />
+            </InputGroup>
+          </Field>
         </CardContent>
       </Card>
 
@@ -187,16 +202,18 @@ function ProjectSettingsForm({ project }: { project: Project }) {
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {THRESHOLD_FIELDS.map((field) => (
-            <div key={field.key} className="flex flex-col gap-1.5">
-              <Label htmlFor={field.key}>{field.label}</Label>
-              <Input
-                id={field.key}
-                type="number"
-                step="any"
-                value={form[field.key as keyof FormState] as string}
-                onChange={(e) => set(field.key as keyof FormState, e.target.value)}
-              />
-            </div>
+            <Field key={field.key}>
+              <FieldLabel htmlFor={field.key}>{field.label}</FieldLabel>
+              <InputGroup>
+                <InputGroupInput
+                  id={field.key}
+                  type="number"
+                  step="any"
+                  value={form[field.key as keyof FormState] as string}
+                  onChange={(e) => set(field.key as keyof FormState, e.target.value)}
+                />
+              </InputGroup>
+            </Field>
           ))}
         </CardContent>
       </Card>
@@ -209,15 +226,17 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="allowed-origins">Origins</Label>
-            <Input
-              id="allowed-origins"
-              value={form.allowedOrigins}
-              onChange={(e) => set('allowedOrigins', e.target.value)}
-              placeholder="https://app.example.com, https://example.com"
-            />
-          </div>
+          <Field>
+            <FieldLabel htmlFor="allowed-origins">Origins</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                id="allowed-origins"
+                value={form.allowedOrigins}
+                onChange={(e) => set('allowedOrigins', e.target.value)}
+                placeholder="https://app.example.com, https://example.com"
+              />
+            </InputGroup>
+          </Field>
         </CardContent>
       </Card>
 
@@ -229,8 +248,8 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           </Button>
         ) : null}
         {saved ? <span className="text-sm text-success">Saved.</span> : null}
-        {error ? (
-          <span className="text-sm text-destructive">{errorMessage(error, 'Failed to save.')}</span>
+        {error && !error.errors ? (
+          <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError>
         ) : null}
       </div>
     </form>

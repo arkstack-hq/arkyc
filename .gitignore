@@ -32,4 +32,5 @@ pnpm-debug.log*
 
 # Local storage / uploads (storage `local` driver)
 storage/
+!apps/**/lib/Storage/
 tmp/

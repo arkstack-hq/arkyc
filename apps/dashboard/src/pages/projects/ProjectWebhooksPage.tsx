@@ -7,8 +7,10 @@ import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { formatDateTime, humanize } from '@/lib/utils'
 import { Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
@@ -68,6 +70,7 @@ export default function ProjectWebhooksPage() {
     send: createWebhook,
     loading: creating,
     error: createError,
+    update: clearCreateError,
     reset,
     onSuccess: onCreateSuccess,
   } = useForm((f) => Webhooks.create(tenantId, projectId!, { url: f.url.trim(), events: f.events }), {
@@ -233,17 +236,27 @@ export default function ProjectWebhooksPage() {
               <DialogDescription>Choose which events to deliver to your URL.</DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="webhook-url">Endpoint URL</Label>
-                <Input
-                  id="webhook-url"
-                  type="url"
-                  value={form.url}
-                  onChange={(e) => updateForm({ url: e.target.value })}
-                  placeholder="https://example.com/webhooks/arkyc"
-                  required
-                />
-              </div>
+              <Field>
+                <FieldLabel htmlFor="webhook-url">Endpoint URL</FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <Globe />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="webhook-url"
+                    type="url"
+                    value={form.url}
+                    aria-invalid={!!createError?.flat?.url}
+                    onChange={(e) => {
+                      updateForm({ url: e.target.value })
+                      if (createError?.errors) createError.delete('url', clearCreateError)
+                    }}
+                    placeholder="https://example.com/webhooks/arkyc"
+                    required
+                  />
+                </InputGroup>
+                <FieldError errors={createError?.list?.url} />
+              </Field>
               <div className="flex flex-col gap-2">
                 <Label>Events</Label>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
@@ -260,10 +273,8 @@ export default function ProjectWebhooksPage() {
                   ))}
                 </div>
               </div>
-              {createError ? (
-                <p className="text-sm text-destructive">
-                  {errorMessage(createError, 'Failed to create endpoint.')}
-                </p>
+              {createError && !createError.errors ? (
+                <FieldError>{errorMessage(createError, 'Failed to create endpoint.')}</FieldError>
               ) : null}
             </div>
             <DialogFooter>

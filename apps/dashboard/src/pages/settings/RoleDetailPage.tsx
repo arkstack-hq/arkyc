@@ -7,8 +7,8 @@ import { Permissions, Roles, errorMessage } from '@/lib/api'
 import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { humanize } from '@/lib/utils'
 
@@ -50,7 +50,7 @@ function RoleEditor({
   const { can } = useTenant()
   const [saved, setSaved] = useState(false)
 
-  const { form, updateForm, send, loading, error, onSuccess } = useForm(
+  const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
     (formData) =>
       Roles.update(tenantId, roleId, {
         name: formData.name,
@@ -112,24 +112,38 @@ function RoleEditor({
             <CardTitle>Details</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="role-name">Name</Label>
-              <Input
-                id="role-name"
-                value={form.name}
-                onChange={(e) => updateForm({ name: e.target.value })}
-                disabled={readOnly}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="role-description">Description</Label>
-              <Input
-                id="role-description"
-                value={form.description}
-                onChange={(e) => updateForm({ description: e.target.value })}
-                disabled={readOnly}
-              />
-            </div>
+            <Field>
+              <FieldLabel htmlFor="role-name">Name</FieldLabel>
+              <InputGroup>
+                <InputGroupInput
+                  id="role-name"
+                  value={form.name}
+                  aria-invalid={!!error?.flat?.name}
+                  onChange={(e) => {
+                    updateForm({ name: e.target.value })
+                    if (error?.errors) error.delete('name', update)
+                  }}
+                  disabled={readOnly}
+                />
+              </InputGroup>
+              <FieldError errors={error?.list?.name} />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="role-description">Description</FieldLabel>
+              <InputGroup>
+                <InputGroupInput
+                  id="role-description"
+                  value={form.description}
+                  aria-invalid={!!error?.flat?.description}
+                  onChange={(e) => {
+                    updateForm({ description: e.target.value })
+                    if (error?.errors) error.delete('description', update)
+                  }}
+                  disabled={readOnly}
+                />
+              </InputGroup>
+              <FieldError errors={error?.list?.description} />
+            </Field>
           </CardContent>
         </Card>
 
@@ -169,8 +183,8 @@ function RoleEditor({
 
         {!readOnly ? (
           <div className="flex items-center justify-end gap-3">
-            {error ? (
-              <p className="text-sm text-destructive">{errorMessage(error, 'Failed to save.')}</p>
+            {error && !error.errors ? (
+              <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError>
             ) : null}
             {saved ? <p className="text-sm text-success">Role saved.</p> : null}
             <Button onClick={() => void send()} disabled={loading}>

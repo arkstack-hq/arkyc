@@ -13,13 +13,9 @@ import { createClientTokenAuthentication } from 'alova/client';
 import type reactHook from 'alova/react';
 import { SecureStorage } from '../Storage/SecureStorage';
 
-async function readErrorMessage(response: AxiosResponse) {
-  try {
-    const { message = '' } = response.data || {};
-    return message;
-  } catch {
-    return response.statusText || 'Request failed';
-  }
+function readErrorMessage(data: any, statusText?: string) {
+  const message = data?.message;
+  return typeof message === 'string' && message ? message : statusText || 'Request failed';
 }
 
 const ResponseHandler = async (res: AxiosResponse<any>, method: Method<AlovaGenerics<any, any, AlovaAxiosRequestConfig, AxiosResponse<any>, AxiosResponseHeaders, AlovaDefaultCacheAdapter, AlovaDefaultCacheAdapter, {
@@ -30,32 +26,36 @@ const ResponseHandler = async (res: AxiosResponse<any>, method: Method<AlovaGene
   StateExport: unknown;
   ComputedExport: unknown;
 }>>) => {
-  const headers = new Headers(
-    (res as any).response?.headers ?? res.headers as Record<string, string>
-  )
+  // alova hands us an `AxiosResponse` on success but an `AxiosError` on failure;
+  // the real response (status/data/headers) sits on `.response` for the latter.
+  // Normalise to a single shape so each branch reads from the same place.
+  const axiosRes = (res as any).response ?? res;
+  const status: number = axiosRes.status ?? (res as any).status;
+  const data = axiosRes.data;
+  const headers = new Headers(axiosRes.headers as Record<string, string>);
 
   await persistRateLimitFromResponse(method, headers);
-  if (res.status === 422) {
-    const { message = '', errors = {} } = (res as any).response?.data || {};
-    throw new ValidationException(message, errors, res.status);
-  } else if (res.status === 401) {
-    const message = await readErrorMessage((res as any).response);
+  if (status === 422) {
+    const { message = '', errors = {} } = data || {};
+    throw new ValidationException(message, errors, status);
+  } else if (status === 401) {
+    const message = readErrorMessage(data, axiosRes.statusText);
 
     if (method.config.meta?.handle401 !== 'local') {
       await handleUnauthorized();
     }
 
-    throw new RequestException(message || 'Session expired', res.status, headers);
-  } else if (res.status >= 400) {
-    if (res.status === 429) {
+    throw new RequestException(message || 'Session expired', status, headers);
+  } else if (status >= 400) {
+    if (status === 429) {
       await persistRateLimitFromResponse(method, headers);
     }
 
-    const message = await readErrorMessage((res as any).response);
-    throw new RequestException(message, res.status, headers);
+    const message = readErrorMessage(data, axiosRes.statusText);
+    throw new RequestException(message, status, headers);
   }
 
-  return res.data || {};
+  return data || {};
 }
 
 const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthentication<
@@ -64,19 +64,19 @@ const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthenticati
 >({
   // Persist the token from a login/register response (matched by `authRole: 'login'`).
   login: {
-    handler(response) {
-      if (response?.data?.token) SecureStorage.set('arkyc:authToken', response.data.token);
+    async handler(response) {
+      if (response?.data?.token) await SecureStorage.set('arkyc:authToken', response.data.token);
     },
   },
   // Drop the token on a logout request (matched by `authRole: 'logout'`).
   logout: {
-    handler() {
-      SecureStorage.remove('arkyc:authToken')
+    async handler() {
+      await SecureStorage.remove('arkyc:authToken')
     },
   },
   // Attach the bearer to every authenticated request; login/logout requests skip it.
-  assignToken(method) {
-    const token = SecureStorage.get('arkyc:authToken')
+  async assignToken(method) {
+    const token = await SecureStorage.get('arkyc:authToken')
     if (token) method.config.headers.Authorization = `Bearer ${token}`;
   },
   visitorMeta: {
@@ -86,10 +86,8 @@ const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthenticati
 
 const alovaInstance = createAlova({
   requestAdapter: axiosRequestAdapter(),
-  baseURL: env('VITE_API_URL', 'http://localhost:3000/'),
+  baseURL: env('VITE_API_URL', '') + '/api',
   statesHook: ReactHook,
-  l1Cache: SecureStorage,
-  l2Cache: SecureStorage,
   beforeRequest: onAuthRequired((method) => {
     method.config.headers = {
       Accept: 'application/json',

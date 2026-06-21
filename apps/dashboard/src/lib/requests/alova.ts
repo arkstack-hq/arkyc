@@ -10,14 +10,15 @@ import { createAlova, type Method } from 'alova';
 import { createClientTokenAuthentication } from 'alova/client';
 import { persistRateLimitFromResponse } from './rate-limit';
 import type { GenericApiResponsePayload } from '@/types/core';
+import { env } from '@/config/environment';
 
 /** localStorage key the dashboard JWT is persisted under. */
 export const AUTH_TOKEN_KEY = 'arkyc:authToken';
 
-async function normaliseErrorPayload(
+function normaliseErrorPayload(
+  payload: any,
   response: Response,
-): Promise<GenericApiResponsePayload> {
-  const payload = await response.clone().json()
+): GenericApiResponsePayload {
   return {
     status: typeof payload?.status === 'string' ? payload.status : 'error',
     code: typeof payload?.code === 'number' ? payload.code : response.status,
@@ -30,8 +31,12 @@ async function normaliseErrorPayload(
 }
 
 async function ResponseHandler<T>(response: Response, method: Method<any>): Promise<any> {
-  const payload = await response.json()
-  const data = await normaliseErrorPayload(response)
+  if (response.status === 204) return { data: undefined as T };
+
+  // Read the body exactly once — a Response's stream can't be re-read or
+  // cloned after consumption (`clone()` throws "body is already used").
+  const payload = await response.json().catch(() => null)
+  const data = normaliseErrorPayload(payload, response)
 
   if (response.status === 422) {
     const { message = '', errors = {} } = data || {};
@@ -49,8 +54,6 @@ async function ResponseHandler<T>(response: Response, method: Method<any>): Prom
 
     throw new RequestException(data.message, response.status, response.headers);
   }
-
-  if (response.status === 204) return { data: undefined as T };
 
   return payload
 }
@@ -78,8 +81,6 @@ const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthenticati
     },
   },
   // Attach the bearer to every authenticated request; login/logout requests skip it.
-  // `SecureStorage.get` is async, so this handler must await it — otherwise a
-  // pending Promise would be coerced into the header value.
   async assignToken(method) {
     const token = await SecureStorage.get<string>(AUTH_TOKEN_KEY)
     if (token) method.config.headers.Authorization = `Bearer ${token}`;
@@ -91,14 +92,8 @@ const { onAuthRequired, onResponseRefreshToken } = createClientTokenAuthenticati
 
 const alovaInstance = createAlova({
   requestAdapter: adapterFetch(),
-  // Same-origin path: Vite proxies `/api` to the Arkstack API in dev, and the
-  // dashboard is served behind the same host in production. Override with
-  // VITE_API_URL when pointing at an absolute API origin.
-  baseURL: (import.meta.env.VITE_API_URL as string | undefined) ?? '/api',
+  baseURL: env('VITE_API_URL', '') + '/api',
   statesHook: ReactHook,
-  // Default adapters: in-memory L1 (fast) + localStorage L2 with alova's own
-  // JSON serialisation. SecureStorage is a raw string store and would corrupt
-  // cached objects, so it is reserved for the auth token only.
   beforeRequest: onAuthRequired((method) => {
     method.config.headers = {
       Accept: 'application/json',

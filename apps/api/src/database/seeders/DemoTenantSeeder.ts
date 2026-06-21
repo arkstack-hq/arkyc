@@ -1,31 +1,14 @@
-import { Seeder } from '@arkstack/database'
-import { Hash } from '@arkstack/common'
-import { faker } from '@faker-js/faker'
-import { DefaultRoles } from '@arkyc/permissions'
-import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
-import type { PermissionKey, VerificationStatus } from '@arkyc/types'
-import { Tenant } from 'src/app/models/Tenant'
-import { Role } from 'src/app/models/Role'
-import { Permission } from 'src/app/models/Permission'
-import { RolePermission } from 'src/app/models/RolePermission'
-import { TenantMember } from 'src/app/models/TenantMember'
-import { Project } from 'src/app/models/Project'
-import { ApiKey } from 'src/app/models/ApiKey'
-import { User } from 'src/app/models/User'
-import { VerificationSession } from 'src/app/models/VerificationSession'
+import { DB, Seeder } from '@arkstack/database'
 
-const SESSION_STATUSES: VerificationStatus[] = [
-  'pending',
-  'started',
-  'document_submitted',
-  'liveness_submitted',
-  'processing',
-  'requires_review',
-  'approved',
-  'rejected',
-  'expired',
-  'cancelled',
-]
+import { DefaultRoles } from '@arkyc/permissions'
+import { Permission } from 'src/app/models/Permission'
+import type { PermissionKey } from '@arkyc/types'
+import { Project } from 'src/app/models/Project'
+import { Role } from 'src/app/models/Role'
+import { RolePermission } from 'src/app/models/RolePermission'
+import { Tenant } from 'src/app/models/Tenant'
+import { TenantFactory } from '../factories/TenantFactory'
+import { User } from 'src/app/models/User'
 
 /**
  * Seed a complete demo workspace: a tenant with the five system roles (and
@@ -34,12 +17,7 @@ const SESSION_STATUSES: VerificationStatus[] = [
  */
 export class DemoTenantSeeder extends Seeder {
   public async run(): Promise<void> {
-    const tenant = await Tenant.create({
-      name: 'Acme Inc',
-      slug: 'acme',
-      logoUrl: null,
-      settings: { retention_days: 90 },
-    })
+    const tenant = await Tenant.factory<TenantFactory>(1).create()
 
     // Build a permission-name → id lookup once to avoid per-grant queries.
     const permissions = Array.from(await Permission.all())
@@ -64,55 +42,14 @@ export class DemoTenantSeeder extends Seeder {
       }
     }
 
-    const owner = await User.create({
-      name: 'Acme Owner',
-      email: 'owner@acme.test',
-      password: await Hash.make('password'),
-    })
-    await TenantMember.create({
-      tenantId: tenant.id,
-      userId: owner.id,
-      roleId: roleBySlug.get('owner')!.id,
-      status: 'active',
-      joinedAt: new Date(),
-    })
-
-    const production = await Project.factory().create({
-      tenantId: tenant.id,
-      name: 'Acme Web App - Production',
-      slug: 'web-production',
-      environment: 'production',
-      status: 'active',
-    })
-    const staging = await Project.factory().create({
-      tenantId: tenant.id,
-      name: 'Acme Staging',
-      slug: 'staging',
-      environment: 'staging',
-      status: 'active',
-    })
-
-    for (const project of [production, staging]) {
-      const key = ApiKeyAuth.generate(project.environment === 'production' ? 'live' : 'test')
-      await ApiKey.create({
-        tenantId: tenant.id,
-        projectId: project.id,
-        name: 'Default key',
-        keyPrefix: key.keyPrefix,
-        keyHash: key.keyHash,
-      })
-    }
-
-    // One fixture session per status, all under the production project.
-    for (const status of SESSION_STATUSES) {
-      await VerificationSession.create({
-        tenantId: tenant.id,
-        projectId: production.id,
-        userReference: `user_${status}`,
-        status,
-        expiresAt: faker.date.soon({ days: 1 }),
-        metadata: { seeded: true },
-      })
-    }
+    await DB.raw("SET session_replication_role = 'replica';")
+    await User.factory()
+      .hasAttached(
+        Tenant.factory().has(Project.factory(3)), {
+        status: 'active',
+        roleId: roleBySlug.get('owner')!.id
+      }, 'tenantMemberships')
+      .create()
+    await DB.raw("SET session_replication_role = 'origin';")
   }
 }

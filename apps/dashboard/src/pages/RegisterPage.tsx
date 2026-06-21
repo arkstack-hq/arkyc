@@ -1,11 +1,4 @@
-import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useForm } from 'alova/client'
 import { Auth, errorMessage } from '@/lib/api'
-import { useAuth } from '@/contexts/auth-context'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
@@ -14,14 +7,30 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Field, FieldError, FieldLabel, FieldSet } from '@/components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
+import { Link, useNavigate } from 'react-router-dom'
+import { Lock, Mail, User } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import type { FormEvent } from 'react'
+import { useAuth } from '@/contexts/auth-context'
+import { useForm } from 'alova/client'
 
 export default function RegisterPage() {
   const { setUser } = useAuth()
   const navigate = useNavigate()
 
-  const { form, updateForm, send, loading, error, onSuccess } = useForm(
+  const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
     (formData) => Auth.register(formData),
-    { initialForm: { name: '', email: '', password: '' } },
+    {
+      initialForm: {
+        firstname: '',
+        lastname: '',
+        email: '',
+        password: '',
+      },
+    },
   )
 
   onSuccess(({ data }) => {
@@ -43,42 +52,93 @@ export default function RegisterPage() {
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                type="text"
-                autoComplete="name"
-                required
-                value={form.name}
-                onChange={(e) => updateForm({ name: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={form.email}
-                onChange={(e) => updateForm({ email: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={form.password}
-                onChange={(e) => updateForm({ password: e.target.value })}
-              />
-            </div>
-            {error ? (
-              <p className="text-sm text-destructive">{errorMessage(error)}</p>
-            ) : null}
+            <FieldSet className="grid grid-cols-2 gap-2">
+              <Field>
+                <FieldLabel htmlFor="firstname">First Name</FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <User />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="firstname"
+                    type="text"
+                    autoComplete="firstname"
+                    required
+                    value={form.firstname}
+                    aria-invalid={!!error?.flat?.firstname}
+                    onChange={(e) => {
+                      updateForm({ firstname: e.target.value })
+                      if (error?.errors) error.delete('firstname', update)
+                    }}
+                  />
+                </InputGroup>
+                <FieldError errors={error?.list?.firstname} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="name">Last Name</FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <User />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="lastname"
+                    type="text"
+                    autoComplete="lastname"
+                    required
+                    value={form.lastname}
+                    aria-invalid={!!error?.flat?.lastname}
+                    onChange={(e) => {
+                      updateForm({ lastname: e.target.value })
+                      if (error?.errors) error.delete('lastname', update)
+                    }}
+                  />
+                </InputGroup>
+                <FieldError errors={error?.list?.lastname} />
+              </Field>
+            </FieldSet>
+            <Field>
+              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <Mail />
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={form.email}
+                  aria-invalid={!!error?.flat?.email}
+                  onChange={(e) => {
+                    updateForm({ email: e.target.value })
+                    if (error?.errors) error.delete('email', update)
+                  }}
+                />
+              </InputGroup>
+              <FieldError errors={error?.list?.email} />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <Lock />
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={form.password}
+                  aria-invalid={!!error?.flat?.password}
+                  onChange={(e) => {
+                    updateForm({ password: e.target.value })
+                    if (error?.errors) error.delete('password', update)
+                  }}
+                />
+              </InputGroup>
+              <FieldError errors={error?.list?.password} />
+            </Field>
+            {error && !error.errors ? <FieldError>{errorMessage(error)}</FieldError> : null}
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
             <Button type="submit" className="w-full" disabled={loading}>

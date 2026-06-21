@@ -6,8 +6,8 @@ import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
 import { Badge } from '@/components/ui/badge'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import {
@@ -49,6 +49,7 @@ export default function RolesPage() {
     send,
     loading: creating,
     error: createError,
+    update: clearCreateError,
     onSuccess,
   } = useForm(
     (formData) =>
@@ -144,30 +145,42 @@ export default function RolesPage() {
             void send()
           }}
         >
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="role-name">Name</Label>
-            <Input
-              id="role-name"
-              required
-              value={form.name}
-              onChange={(e) => updateForm({ name: e.target.value })}
-              placeholder="Support agent"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="role-description">Description</Label>
-            <Input
-              id="role-description"
-              value={form.description}
-              onChange={(e) => updateForm({ description: e.target.value })}
-              placeholder="What this role is for"
-            />
-          </div>
+          <Field>
+            <FieldLabel htmlFor="role-name">Name</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                id="role-name"
+                required
+                value={form.name}
+                aria-invalid={!!createError?.flat?.name}
+                onChange={(e) => {
+                  updateForm({ name: e.target.value })
+                  if (createError?.errors) createError.delete('name', clearCreateError)
+                }}
+                placeholder="Support agent"
+              />
+            </InputGroup>
+            <FieldError errors={createError?.list?.name} />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="role-description">Description</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                id="role-description"
+                value={form.description}
+                aria-invalid={!!createError?.flat?.description}
+                onChange={(e) => {
+                  updateForm({ description: e.target.value })
+                  if (createError?.errors) createError.delete('description', clearCreateError)
+                }}
+                placeholder="What this role is for"
+              />
+            </InputGroup>
+            <FieldError errors={createError?.list?.description} />
+          </Field>
 
-          {createError ? (
-            <p className="text-sm text-destructive">
-              {errorMessage(createError, 'Failed to create role.')}
-            </p>
+          {createError && !createError.errors ? (
+            <FieldError>{errorMessage(createError, 'Failed to create role.')}</FieldError>
           ) : null}
 
           <DialogFooter>

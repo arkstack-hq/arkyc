@@ -1,6 +1,6 @@
-import { Hash } from '@arkstack/common'
-import { BaseController } from '@controllers/BaseController'
 import AuthUserResource from '@app/http/resources/AuthUserResource'
+import { BaseController } from '@controllers/BaseController'
+import { Hash } from '@arkstack/common'
 import { User } from '@app/models/User'
 import { auth } from 'src/core/auth-instance'
 
@@ -13,13 +13,15 @@ export default class RegisteredUserController extends BaseController {
    */
   async create() {
     const data = await this.validate({
-      name: ['required', 'string', 'min:2'],
+      firstname: ['required', 'string', 'min:2'],
+      lastname: ['required', 'string', 'min:2'],
       email: ['required', 'email', 'unique:users,email'],
       password: ['required', 'string', 'min:8'],
     })
 
     const user = await User.create({
-      name: data.name,
+      firstName: data.firstname,
+      lastName: data.lastname,
       email: data.email,
       password: await Hash.make(data.password),
     })
