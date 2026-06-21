@@ -77,32 +77,57 @@ async function showResult(sessionId: string): Promise<void> {
   }
 }
 
+function createWebhookEl(hook: ReceivedWebhook): HTMLDetailsElement {
+  const event = hook.event as { event?: string; status?: string } | string
+  const name = typeof event === 'object' && event.event ? event.event : 'webhook'
+  const verified =
+    hook.verified === null ? 'unverified' : hook.verified ? 'verified ✓' : 'invalid ✗'
+
+  const wrap = document.createElement('details')
+  wrap.className = 'webhook'
+  wrap.dataset.verified = String(hook.verified)
+  const summary = document.createElement('summary')
+  summary.innerHTML =
+    `<span class="webhook__name">${name}</span>` +
+    `<span class="webhook__meta">${verified} · ${new Date(hook.receivedAt).toLocaleTimeString()}</span>`
+  const body = document.createElement('pre')
+  body.textContent = JSON.stringify(hook.event, null, 2)
+  wrap.append(summary, body)
+  return wrap
+}
+
+// How many webhooks are currently in the DOM. Webhooks arrive newest-first and
+// only grow, so we PREPEND just the new ones each poll rather than replacing the
+// whole list — otherwise re-rendering collapses any <details> you've expanded.
+let renderedCount = 0
+
 function renderWebhooks(hooks: ReceivedWebhook[]): void {
   webhookCountEl.textContent = String(hooks.length)
+
   if (hooks.length === 0) {
     webhooksEl.innerHTML = '<p class="hint">None received yet.</p>'
+    renderedCount = 0
     return
   }
-  webhooksEl.replaceChildren(
-    ...hooks.map((hook) => {
-      const event = hook.event as { event?: string; status?: string } | string
-      const name = typeof event === 'object' && event.event ? event.event : 'webhook'
-      const verified =
-        hook.verified === null ? 'unverified' : hook.verified ? 'verified ✓' : 'invalid ✗'
 
-      const wrap = document.createElement('details')
-      wrap.className = 'webhook'
-      wrap.dataset.verified = String(hook.verified)
-      const summary = document.createElement('summary')
-      summary.innerHTML =
-        `<span class="webhook__name">${name}</span>` +
-        `<span class="webhook__meta">${verified} · ${new Date(hook.receivedAt).toLocaleTimeString()}</span>`
-      const body = document.createElement('pre')
-      body.textContent = JSON.stringify(hook.event, null, 2)
-      wrap.append(summary, body)
-      return wrap
-    }),
-  )
+  // Server restarted / list shrank → rebuild from scratch.
+  if (hooks.length < renderedCount) {
+    webhooksEl.replaceChildren()
+    renderedCount = 0
+  }
+
+  // Nothing new — leave the DOM (and any expanded item) untouched.
+  if (hooks.length === renderedCount) return
+
+  if (renderedCount === 0) webhooksEl.replaceChildren()
+
+  // The newest `hooks.length - renderedCount` entries are at the front.
+  // Insert oldest-of-the-batch first so the very newest ends up on top.
+  const fresh = hooks.slice(0, hooks.length - renderedCount)
+  for (let i = fresh.length - 1; i >= 0; i--) {
+    webhooksEl.prepend(createWebhookEl(fresh[i]!))
+  }
+  renderedCount = hooks.length
 }
 
 async function pollWebhooks(): Promise<void> {
