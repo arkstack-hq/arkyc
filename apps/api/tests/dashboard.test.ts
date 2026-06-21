@@ -126,6 +126,16 @@ describe('members & permissions', () => {
     expect(owner.role.slug).toBe('owner')
   })
 
+  it('shows a single member with eager-loaded user + role', async () => {
+    const list = await authed('get', `/tenants/${ctx.tenantId}/members`)
+    const memberId = list.body.data[0].id
+    const res = await authed('get', `/tenants/${ctx.tenantId}/members/${memberId}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.id).toBe(memberId)
+    expect(res.body.data.user.email).toBeTruthy()
+    expect(res.body.data.role.slug).toBeTruthy()
+  })
+
   it('creates an invitation with a one-time token', async () => {
     const roles = await authed('get', `/tenants/${ctx.tenantId}/roles`)
     const reviewer = roles.body.data.find((r: { slug: string }) => r.slug === 'reviewer')

@@ -3,10 +3,11 @@ import EmptyResource from '@app/http/resources/EmptyResource'
 import { HttpContext } from 'clear-router/types/express'
 import InvitationResource from '@app/http/resources/InvitationResource'
 import MemberCollection from '@app/http/resources/MemberCollection'
+import MemberResource from '@app/http/resources/MemberResource'
 import MemberPermissionsResource from '@app/http/resources/MemberPermissionsResource'
 import { Permission } from '@app/models/Permission'
 import type { QueryBuilder } from 'arkormx'
-import { RequestException } from '@arkstack/common'
+import { RequestException, perPage } from '@arkstack/common'
 import { Role } from '@app/models/Role'
 import { TenantInvitation } from '@app/models/TenantInvitation'
 import { TenantMember } from '@app/models/TenantMember'
@@ -27,9 +28,31 @@ export default class MemberController extends BaseController {
   async index({ req }: HttpContext) {
     const members = await TenantMember.where({ tenantId: req.tenant!.id })
       .with(['user', 'role'])
-      .get()
+      .paginate(perPage(req.query))
 
     return new MemberCollection(members).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
+  }
+
+  /**
+   * Show a single member (with user + role) in the active tenant. Lets the
+   * member detail page resolve one member without fetching the paginated list.
+   *
+   * @param   ctx  The HTTP context (`:memberId`, `req.tenant`).
+   * @returns      A MemberResource.
+   */
+  async show({ req }: HttpContext) {
+    const member = await TenantMember.where({
+      id: req.params.memberId,
+      tenantId: req.tenant!.id,
+    })
+      .with(['user', 'role'])
+      .firstOrFail()
+
+    return new MemberResource(member).additional({
       status: 'success',
       message: 'OK',
       code: 200,

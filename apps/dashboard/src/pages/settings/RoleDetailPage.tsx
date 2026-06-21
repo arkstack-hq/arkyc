@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useForm, useRequest } from 'alova/client'
 import type { Permission, PermissionKey } from '@arkyc/types'
-import { api, ApiError } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import type { RoleWithPermissions } from '@/lib/api'
+import { Permissions, Roles, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,69 +15,77 @@ import { humanize } from '@/lib/utils'
 export default function RoleDetailPage() {
   const { roleId = '' } = useParams()
   const tenantId = useTenantId()
+
+  const {
+    data: role,
+    loading: roleLoading,
+    error: roleError,
+  } = useRequest(Roles.get(tenantId, roleId))
+
+  const {
+    data: catalogue,
+    loading: catalogueLoading,
+    error: catalogueError,
+  } = useRequest(Permissions.list(tenantId))
+
+  if (roleLoading || catalogueLoading) return <Loading />
+  if (roleError) return <ErrorState error={roleError} />
+  if (catalogueError) return <ErrorState error={catalogueError} />
+  if (!role) return <ErrorState error={new Error('Role not found.')} />
+
+  return <RoleEditor role={role} catalogue={catalogue} tenantId={tenantId} roleId={roleId} />
+}
+
+function RoleEditor({
+  role,
+  catalogue,
+  tenantId,
+  roleId,
+}: {
+  role: RoleWithPermissions
+  catalogue: Permission[]
+  tenantId: string
+  roleId: string
+}) {
   const { can } = useTenant()
-  const queryClient = useQueryClient()
+  const [saved, setSaved] = useState(false)
 
-  const roleQuery = useQuery({
-    queryKey: ['role', tenantId, roleId],
-    queryFn: () => api.roles.get(tenantId, roleId),
-  })
+  const { form, updateForm, send, loading, error, onSuccess } = useForm(
+    (formData) =>
+      Roles.update(tenantId, roleId, {
+        name: formData.name,
+        description: formData.description,
+        permissions: formData.permissions as PermissionKey[],
+      }),
+    {
+      initialForm: {
+        name: role.name,
+        description: role.description ?? '',
+        permissions: (role.permissions ?? []).map((p) => p.name),
+      },
+    },
+  )
 
-  const catalogQuery = useQuery({
-    queryKey: ['permissions', tenantId],
-    queryFn: () => api.permissions.list(tenantId),
-  })
-
-  const role = roleQuery.data
-
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [checked, setChecked] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    if (!role) return
-    setName(role.name)
-    setDescription(role.description ?? '')
-    setChecked(new Set((role.permissions ?? []).map((p) => p.name)))
-  }, [role])
+  onSuccess(() => setSaved(true))
 
   const grouped = useMemo(() => {
     const map = new Map<string, Permission[]>()
-    for (const perm of catalogQuery.data ?? []) {
+    for (const perm of catalogue) {
       const list = map.get(perm.group) ?? []
       list.push(perm)
       map.set(perm.group, list)
     }
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
-  }, [catalogQuery.data])
-
-  const save = useMutation({
-    mutationFn: () =>
-      api.roles.update(tenantId, roleId, {
-        name,
-        description,
-        permissions: [...checked] as PermissionKey[],
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['role', tenantId, roleId] })
-      queryClient.invalidateQueries({ queryKey: ['roles', tenantId] })
-    },
-  })
-
-  if (roleQuery.isLoading || catalogQuery.isLoading) return <Loading />
-  if (roleQuery.isError) return <ErrorState error={roleQuery.error} />
-  if (catalogQuery.isError) return <ErrorState error={catalogQuery.error} />
-  if (!role) return <ErrorState error={new Error('Role not found.')} />
+  }, [catalogue])
 
   const readOnly = role.is_system || !can('settings.update')
+  const checked = new Set(form.permissions)
 
-  function toggle(permName: string) {
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(permName)) next.delete(permName)
-      else next.add(permName)
-      return next
-    })
+  function toggle(permName: PermissionKey) {
+    const next = new Set(form.permissions)
+    if (next.has(permName)) next.delete(permName)
+    else next.add(permName)
+    updateForm({ permissions: [...next] })
   }
 
   return (
@@ -107,8 +116,8 @@ export default function RoleDetailPage() {
               <Label htmlFor="role-name">Name</Label>
               <Input
                 id="role-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={form.name}
+                onChange={(e) => updateForm({ name: e.target.value })}
                 disabled={readOnly}
               />
             </div>
@@ -116,8 +125,8 @@ export default function RoleDetailPage() {
               <Label htmlFor="role-description">Description</Label>
               <Input
                 id="role-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={form.description}
+                onChange={(e) => updateForm({ description: e.target.value })}
                 disabled={readOnly}
               />
             </div>
@@ -160,14 +169,12 @@ export default function RoleDetailPage() {
 
         {!readOnly ? (
           <div className="flex items-center justify-end gap-3">
-            {save.isError ? (
-              <p className="text-sm text-destructive">
-                {save.error instanceof ApiError ? save.error.message : 'Failed to save.'}
-              </p>
+            {error ? (
+              <p className="text-sm text-destructive">{errorMessage(error, 'Failed to save.')}</p>
             ) : null}
-            {save.isSuccess ? <p className="text-sm text-success">Role saved.</p> : null}
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>
-              {save.isPending ? 'Saving…' : 'Save'}
+            {saved ? <p className="text-sm text-success">Role saved.</p> : null}
+            <Button onClick={() => void send()} disabled={loading}>
+              {loading ? 'Saving…' : 'Save'}
             </Button>
           </div>
         ) : null}

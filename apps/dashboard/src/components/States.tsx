@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { AlertCircle, Inbox } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
-import { ApiError } from '@/lib/api'
+import { RequestException } from '@/lib/api'
 
 export function PageHeader({
   title,
@@ -33,8 +33,8 @@ export function Loading({ label = 'Loading…' }: { label?: string }) {
 
 export function ErrorState({ error }: { error: unknown }) {
   const message =
-    error instanceof ApiError
-      ? error.status === 403
+    error instanceof RequestException
+      ? error.statusCode === 403
         ? "You don't have permission to view this."
         : error.message
       : error instanceof Error

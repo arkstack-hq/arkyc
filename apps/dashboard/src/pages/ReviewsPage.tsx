@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { VerificationSession } from '@arkyc/types'
-import { api } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { useForm, usePagination, useRequest } from 'alova/client'
+import { Sessions } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
+import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
@@ -23,42 +23,76 @@ type Action = 'approve' | 'reject' | 'retry'
 export default function ReviewsPage() {
   const tenantId = useTenantId()
   const { tenant, can } = useTenant()
-  const queryClient = useQueryClient()
 
   const [noteFor, setNoteFor] = useState<string | null>(null)
-  const [noteBody, setNoteBody] = useState('')
+  const [actingId, setActingId] = useState<string | null>(null)
 
-  const sessionsQuery = useQuery({
-    queryKey: ['sessions', tenantId, { status: 'requires_review' }],
-    queryFn: () => api.sessions.list(tenantId, { status: 'requires_review' }),
-  })
-
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['sessions', tenantId] })
-
-  const actionMutation = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: Action }) => {
-      if (action === 'approve') return api.sessions.approve(tenantId, id)
-      if (action === 'reject') return api.sessions.reject(tenantId, id)
-      return api.sessions.requestRetry(tenantId, id)
+  // Infinite-scroll list filtered to sessions awaiting review.
+  const {
+    data: sessions,
+    loading,
+    error,
+    refresh,
+    page,
+    isLastPage,
+    update,
+  } = usePagination(
+    (currentPage, pageSize) =>
+      Sessions.list(tenantId, {
+        page: currentPage,
+        limit: pageSize,
+        status: 'requires_review',
+      }),
+    {
+      append: true,
+      initialPage: 1,
+      initialPageSize: 15,
+      data: (res) => res.data,
+      total: (res) => res.meta.total,
     },
-    onSuccess: invalidate,
-  })
+  )
 
-  const noteMutation = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: string }) =>
-      api.sessions.note(tenantId, id, { body }),
-    onSuccess: () => {
-      invalidate()
-      setNoteFor(null)
-      setNoteBody('')
+  // Reviewer row actions; the list cache auto-invalidates via hitSource, but the
+  // mounted pagination needs an explicit refresh to reload the current page.
+  const {
+    send: sendAction,
+    onSuccess: onActionSuccess,
+    onError: onActionError,
+  } = useRequest(
+    (id: string, act: Action) => {
+      if (act === 'approve') return Sessions.approve(tenantId, id)
+      if (act === 'reject') return Sessions.reject(tenantId, id)
+      return Sessions.requestRetry(tenantId, id)
     },
+    { immediate: false },
+  )
+
+  onActionSuccess(() => {
+    setActingId(null)
+    void refresh(page)
+  })
+  onActionError(() => setActingId(null))
+
+  const {
+    form: noteForm,
+    updateForm: updateNote,
+    send: sendNote,
+    loading: noteLoading,
+    onSuccess: onNoteSuccess,
+  } = useForm((form) => Sessions.note(tenantId, noteFor as string, { body: form.body.trim() }), {
+    initialForm: { body: '' },
   })
 
-  const sessionPending = (id: string) =>
-    (actionMutation.isPending && actionMutation.variables?.id === id) ||
-    (noteMutation.isPending && noteMutation.variables?.id === id)
+  onNoteSuccess(() => {
+    setNoteFor(null)
+    void refresh(page)
+  })
 
-  const sessions = (sessionsQuery.data ?? []) as VerificationSession[]
+  const runAction = (id: string, act: Action) => {
+    setActingId(id)
+    void sendAction(id, act)
+  }
+
   const sessionPath = (id: string) =>
     tenant ? `/t/${tenant.slug}/sessions/${id}` : `../sessions/${id}`
 
@@ -66,13 +100,14 @@ export default function ReviewsPage() {
     <div className="p-8">
       <PageHeader title="Review Queue" />
 
-      {sessionsQuery.isLoading ? (
+      {error ? (
+        <ErrorState error={error} />
+      ) : sessions.length === 0 && loading ? (
         <Loading />
-      ) : sessionsQuery.isError ? (
-        <ErrorState error={sessionsQuery.error} />
       ) : sessions.length === 0 ? (
         <EmptyState title="No sessions awaiting review" />
       ) : (
+        <>
         <Table>
           <THead>
             <TR>
@@ -85,7 +120,7 @@ export default function ReviewsPage() {
           </THead>
           <TBody>
             {sessions.map((s) => {
-              const pending = sessionPending(s.id)
+              const pending = actingId === s.id
               return (
                 <TR key={s.id}>
                   <TD>
@@ -104,7 +139,7 @@ export default function ReviewsPage() {
                           size="sm"
                           variant="default"
                           disabled={pending}
-                          onClick={() => actionMutation.mutate({ id: s.id, action: 'approve' })}
+                          onClick={() => runAction(s.id, 'approve')}
                         >
                           Approve
                         </Button>
@@ -114,7 +149,7 @@ export default function ReviewsPage() {
                           size="sm"
                           variant="destructive"
                           disabled={pending}
-                          onClick={() => actionMutation.mutate({ id: s.id, action: 'reject' })}
+                          onClick={() => runAction(s.id, 'reject')}
                         >
                           Reject
                         </Button>
@@ -124,7 +159,7 @@ export default function ReviewsPage() {
                           size="sm"
                           variant="outline"
                           disabled={pending}
-                          onClick={() => actionMutation.mutate({ id: s.id, action: 'retry' })}
+                          onClick={() => runAction(s.id, 'retry')}
                         >
                           Retry
                         </Button>
@@ -136,7 +171,7 @@ export default function ReviewsPage() {
                           disabled={pending}
                           onClick={() => {
                             setNoteFor(s.id)
-                            setNoteBody('')
+                            updateNote({ body: '' })
                           }}
                         >
                           Note
@@ -149,6 +184,13 @@ export default function ReviewsPage() {
             })}
           </TBody>
         </Table>
+
+          <InfiniteScroll
+            onLoadMore={() => update({ page: page + 1 })}
+            isLast={isLastPage}
+            loading={loading}
+          />
+        </>
       )}
 
       <Dialog open={noteFor !== null} onClose={() => setNoteFor(null)}>
@@ -158,8 +200,8 @@ export default function ReviewsPage() {
         </DialogHeader>
         <Textarea
           rows={4}
-          value={noteBody}
-          onChange={(e) => setNoteBody(e.target.value)}
+          value={noteForm.body}
+          onChange={(e) => updateNote({ body: e.target.value })}
           placeholder="Write a note…"
         />
         <DialogFooter>
@@ -167,12 +209,12 @@ export default function ReviewsPage() {
             Cancel
           </Button>
           <Button
-            disabled={!noteBody.trim() || noteMutation.isPending}
+            disabled={!noteForm.body.trim() || noteLoading}
             onClick={() => {
-              if (noteFor) noteMutation.mutate({ id: noteFor, body: noteBody.trim() })
+              if (noteFor) void sendNote()
             }}
           >
-            {noteMutation.isPending ? 'Saving…' : 'Save note'}
+            {noteLoading ? 'Saving…' : 'Save note'}
           </Button>
         </DialogFooter>
       </Dialog>

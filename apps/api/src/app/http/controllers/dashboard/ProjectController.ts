@@ -1,4 +1,4 @@
-import { RequestException } from '@arkstack/common'
+import { RequestException, perPage } from '@arkstack/common'
 import { BaseController } from '@controllers/BaseController'
 import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
@@ -15,7 +15,7 @@ export default class ProjectController extends BaseController {
    * @returns      A ProjectCollection.
    */
   async index({ req }: HttpContext) {
-    const projects = await Project.where({ tenantId: req.tenant!.id }).get()
+    const projects = await Project.where({ tenantId: req.tenant!.id }).paginate(perPage(req.query))
 
     return new ProjectCollection(projects).additional({
       status: 'success',

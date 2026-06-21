@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { WebhookEndpoint, WebhookEventName } from '@arkyc/types'
-import { api } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { useForm, usePagination, useRequest } from 'alova/client'
+import type { WebhookEventName } from '@arkyc/types'
+import { Webhooks, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { formatDateTime, humanize } from '@/lib/utils'
 import { Loading, ErrorState, EmptyState } from '@/components/States'
+import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -36,52 +37,80 @@ export default function ProjectWebhooksPage() {
   const tenantId = useTenantId()
   const { can } = useTenant()
   const { projectId } = useParams()
-  const qc = useQueryClient()
 
-  const webhooksQuery = useQuery({
-    queryKey: ['webhooks', tenantId, projectId],
-    queryFn: () => api.webhooks.list(tenantId, projectId!),
-    enabled: !!projectId,
-  })
+  const {
+    data: webhooks,
+    page,
+    isLastPage,
+    loading,
+    error,
+    update,
+    reload: refreshWebhooks,
+  } = usePagination(
+    (currentPage, pageSize) =>
+      Webhooks.list(tenantId, projectId!, { page: currentPage, limit: pageSize }),
+    {
+      append: true,
+      initialPage: 1,
+      initialPageSize: 15,
+      data: (res) => res.data,
+      total: (res) => res.meta.total,
+    },
+  )
 
   const [open, setOpen] = useState(false)
-  const [url, setUrl] = useState('')
-  const [events, setEvents] = useState<WebhookEventName[]>([])
   const [secret, setSecret] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['webhooks', tenantId, projectId] })
-
-  const createMutation = useMutation({
-    mutationFn: () => api.webhooks.create(tenantId, projectId!, { url: url.trim(), events }),
-    onSuccess: (result) => {
-      invalidate()
-      setSecret(result.secret)
-      setUrl('')
-      setEvents([])
-    },
+  const {
+    form,
+    updateForm,
+    send: createWebhook,
+    loading: creating,
+    error: createError,
+    reset,
+    onSuccess: onCreateSuccess,
+  } = useForm((f) => Webhooks.create(tenantId, projectId!, { url: f.url.trim(), events: f.events }), {
+    initialForm: { url: '', events: [] as WebhookEventName[] },
   })
 
-  const testMutation = useMutation({
-    mutationFn: (webhookId: string) => api.webhooks.test(tenantId, projectId!, webhookId),
+  onCreateSuccess(({ data }) => {
+    setSecret(data.secret)
+    reset()
+    void refreshWebhooks()
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: (webhookId: string) => api.webhooks.remove(tenantId, projectId!, webhookId),
-    onSuccess: invalidate,
+  const { send: testWebhook, loading: testing } = useRequest(
+    (webhookId: string) => Webhooks.test(tenantId, projectId!, webhookId),
+    { immediate: false },
+  )
+
+  const {
+    send: deleteWebhook,
+    loading: deleting,
+    onSuccess: onDeleteSuccess,
+  } = useRequest((webhookId: string) => Webhooks.remove(tenantId, projectId!, webhookId), {
+    immediate: false,
+  })
+
+  onDeleteSuccess(() => {
+    void refreshWebhooks()
   })
 
   const closeDialog = () => {
     setOpen(false)
     setSecret(null)
-    setUrl('')
-    setEvents([])
+    reset()
     setCopied(false)
-    createMutation.reset()
   }
 
   const toggleEvent = (event: WebhookEventName) => {
-    setEvents((prev) => (prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event]))
+    updateForm((prev) => ({
+      ...prev,
+      events: prev.events.includes(event)
+        ? prev.events.filter((e) => e !== event)
+        : [...prev.events, event],
+    }))
   }
 
   const copySecret = async () => {
@@ -94,8 +123,6 @@ export default function ProjectWebhooksPage() {
     }
   }
 
-  const webhooks: WebhookEndpoint[] = webhooksQuery.data ?? []
-
   return (
     <div>
       <div className="mb-4 flex justify-end">
@@ -104,65 +131,73 @@ export default function ProjectWebhooksPage() {
         ) : null}
       </div>
 
-      {webhooksQuery.isLoading ? (
+      {error ? (
+        <ErrorState error={error} />
+      ) : webhooks.length === 0 && loading ? (
         <Loading />
-      ) : webhooksQuery.isError ? (
-        <ErrorState error={webhooksQuery.error} />
       ) : webhooks.length === 0 ? (
         <EmptyState
           title="No webhook endpoints"
           description="Add an endpoint to receive verification events."
         />
       ) : (
-        <Table>
-          <THead>
-            <TR>
-              <TH>URL</TH>
-              <TH>Events</TH>
-              <TH>Status</TH>
-              <TH>Created</TH>
-              <TH />
-            </TR>
-          </THead>
-          <TBody>
-            {webhooks.map((webhook) => (
-              <TR key={webhook.id}>
-                <TD className="font-mono text-xs">{webhook.url}</TD>
-                <TD className="text-xs text-muted-foreground">{webhook.events.join(', ')}</TD>
-                <TD>
-                  <Badge variant={webhook.status === 'active' ? 'success' : 'muted'}>
-                    {humanize(webhook.status)}
-                  </Badge>
-                </TD>
-                <TD>{formatDateTime(webhook.created_at)}</TD>
-                <TD className="text-right">
-                  <div className="flex justify-end gap-2">
-                    {can('webhooks.test') ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={testMutation.isPending}
-                        onClick={() => testMutation.mutate(webhook.id)}
-                      >
-                        Test
-                      </Button>
-                    ) : null}
-                    {can('webhooks.delete') ? (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteMutation.isPending}
-                        onClick={() => deleteMutation.mutate(webhook.id)}
-                      >
-                        Delete
-                      </Button>
-                    ) : null}
-                  </div>
-                </TD>
+        <>
+          <Table>
+            <THead>
+              <TR>
+                <TH>URL</TH>
+                <TH>Events</TH>
+                <TH>Status</TH>
+                <TH>Created</TH>
+                <TH />
               </TR>
-            ))}
-          </TBody>
-        </Table>
+            </THead>
+            <TBody>
+              {webhooks.map((webhook) => (
+                <TR key={webhook.id}>
+                  <TD className="font-mono text-xs">{webhook.url}</TD>
+                  <TD className="text-xs text-muted-foreground">{webhook.events.join(', ')}</TD>
+                  <TD>
+                    <Badge variant={webhook.status === 'active' ? 'success' : 'muted'}>
+                      {humanize(webhook.status)}
+                    </Badge>
+                  </TD>
+                  <TD>{formatDateTime(webhook.created_at)}</TD>
+                  <TD className="text-right">
+                    <div className="flex justify-end gap-2">
+                      {can('webhooks.test') ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={testing}
+                          onClick={() => void testWebhook(webhook.id)}
+                        >
+                          Test
+                        </Button>
+                      ) : null}
+                      {can('webhooks.delete') ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleting}
+                          onClick={() => void deleteWebhook(webhook.id)}
+                        >
+                          Delete
+                        </Button>
+                      ) : null}
+                    </div>
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+
+          <InfiniteScroll
+            onLoadMore={() => update({ page: page + 1 })}
+            isLast={isLastPage}
+            loading={loading}
+          />
+        </>
       )}
 
       <Dialog open={open} onClose={closeDialog}>
@@ -190,7 +225,7 @@ export default function ProjectWebhooksPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              createMutation.mutate()
+              void createWebhook()
             }}
           >
             <DialogHeader>
@@ -203,8 +238,8 @@ export default function ProjectWebhooksPage() {
                 <Input
                   id="webhook-url"
                   type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  value={form.url}
+                  onChange={(e) => updateForm({ url: e.target.value })}
                   placeholder="https://example.com/webhooks/arkyc"
                   required
                 />
@@ -216,7 +251,7 @@ export default function ProjectWebhooksPage() {
                     <label key={event} className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
-                        checked={events.includes(event)}
+                        checked={form.events.includes(event)}
                         onChange={() => toggleEvent(event)}
                         className="h-4 w-4 rounded border-input"
                       />
@@ -225,11 +260,9 @@ export default function ProjectWebhooksPage() {
                   ))}
                 </div>
               </div>
-              {createMutation.isError ? (
+              {createError ? (
                 <p className="text-sm text-destructive">
-                  {createMutation.error instanceof Error
-                    ? createMutation.error.message
-                    : 'Failed to create endpoint.'}
+                  {errorMessage(createError, 'Failed to create endpoint.')}
                 </p>
               ) : null}
             </div>
@@ -239,9 +272,9 @@ export default function ProjectWebhooksPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={createMutation.isPending || !url.trim() || events.length === 0}
+                disabled={creating || !form.url.trim() || form.events.length === 0}
               >
-                {createMutation.isPending ? <Spinner /> : null}
+                {creating ? <Spinner /> : null}
                 Create
               </Button>
             </DialogFooter>

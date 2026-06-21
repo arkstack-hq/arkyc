@@ -1,4 +1,4 @@
-import { RequestException } from '@arkstack/common'
+import { RequestException, perPage } from '@arkstack/common'
 import { HttpContext } from 'clear-router/types/express'
 import { Str } from '@h3ravel/support'
 import { BaseController } from '@controllers/BaseController'
@@ -16,7 +16,7 @@ export default class RoleController extends BaseController {
    * @returns      A RoleCollection.
    */
   async index({ req }: HttpContext) {
-    const roles = await Role.where({ tenantId: req.tenant!.id }).get()
+    const roles = await Role.where({ tenantId: req.tenant!.id }).paginate(perPage(req.query))
 
     return new RoleCollection(roles).additional({
       status: 'success',

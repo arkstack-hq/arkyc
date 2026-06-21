@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api'
-import { useTenantId } from '@/lib/tenant'
+import { useRequest } from 'alova/client'
+import { Sessions } from '@/lib/api'
+import { useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { StatusBadge, DecisionBadge } from '@/components/StatusBadge'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -41,14 +41,11 @@ export default function SessionDetailPage() {
   const tenantId = useTenantId()
   const { sessionId } = useParams()
 
-  const sessionQuery = useQuery({
-    queryKey: ['session', tenantId, sessionId],
-    queryFn: () => api.sessions.get(tenantId, sessionId as string),
-    enabled: !!sessionId,
+  const { data, loading, error } = useRequest(Sessions.get(tenantId, sessionId as string), {
+    immediate: !!sessionId,
   })
 
-  const session = sessionQuery.data
-  const checks = session && isRecord(session.checks) ? session.checks : null
+  const checks = data && isRecord(data.checks) ? data.checks : null
 
   return (
     <div className="p-8">
@@ -61,11 +58,11 @@ export default function SessionDetailPage() {
         }
       />
 
-      {sessionQuery.isLoading ? (
+      {loading ? (
         <Loading />
-      ) : sessionQuery.isError ? (
-        <ErrorState error={sessionQuery.error} />
-      ) : session ? (
+      ) : error ? (
+        <ErrorState error={error} />
+      ) : data ? (
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -73,18 +70,18 @@ export default function SessionDetailPage() {
             </CardHeader>
             <CardContent className="space-y-0">
               <Row label="Status">
-                <StatusBadge status={session.status} />
+                <StatusBadge status={data.status} />
               </Row>
               <Row label="Auto decision">
-                <DecisionBadge decision={session.auto_decision} />
+                <DecisionBadge decision={data.auto_decision} />
               </Row>
               <Row label="Final decision">
-                <DecisionBadge decision={session.final_decision} />
+                <DecisionBadge decision={data.final_decision} />
               </Row>
-              <Row label="Decision reason">{humanize(session.decision_reason)}</Row>
-              <Row label="Risk score">{session.risk_score?.toFixed(2) ?? '—'}</Row>
-              <Row label="Completed at">{formatDateTime(session.completed_at)}</Row>
-              <Row label="Reviewed at">{formatDateTime(session.reviewed_at)}</Row>
+              <Row label="Decision reason">{humanize(data.decision_reason)}</Row>
+              <Row label="Risk score">{data.risk_score?.toFixed(2) ?? '—'}</Row>
+              <Row label="Completed at">{formatDateTime(data.completed_at)}</Row>
+              <Row label="Reviewed at">{formatDateTime(data.reviewed_at)}</Row>
             </CardContent>
           </Card>
 
@@ -94,14 +91,14 @@ export default function SessionDetailPage() {
             </CardHeader>
             <CardContent className="space-y-0">
               <Row label="ID">
-                <span className="font-mono text-xs">{session.id}</span>
+                <span className="font-mono text-xs">{data.id}</span>
               </Row>
-              <Row label="User reference">{session.user_reference ?? '—'}</Row>
+              <Row label="User reference">{data.user_reference ?? '—'}</Row>
               <Row label="Project ID">
-                <span className="font-mono text-xs">{session.project_id}</span>
+                <span className="font-mono text-xs">{data.project_id}</span>
               </Row>
-              <Row label="Created at">{formatDateTime(session.created_at)}</Row>
-              <Row label="Expires at">{formatDateTime(session.expires_at)}</Row>
+              <Row label="Created at">{formatDateTime(data.created_at)}</Row>
+              <Row label="Expires at">{formatDateTime(data.expires_at)}</Row>
             </CardContent>
           </Card>
 

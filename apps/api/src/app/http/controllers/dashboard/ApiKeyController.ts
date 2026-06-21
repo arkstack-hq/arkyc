@@ -1,5 +1,6 @@
 import { ApiKey } from '@app/models/ApiKey'
 import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
+import { perPage } from '@arkstack/common'
 import ApiKeyCollection from '@app/http/resources/ApiKeyCollection'
 import ApiKeyResource from '@app/http/resources/ApiKeyResource'
 import { BaseController } from '@controllers/BaseController'
@@ -15,11 +16,13 @@ export default class ApiKeyController extends BaseController {
    * @returns      An ApiKeyCollection.
    */
   async index({ req }: HttpContext) {
-    const project = await Project.where({ id: req.params.projectId, tenantId: req.tenant!.id })
-      .with('apiKeys')
-      .firstOrFail()
+    const project = await Project.where({
+      id: req.params.projectId,
+      tenantId: req.tenant!.id,
+    }).firstOrFail()
+    const keys = await ApiKey.where({ projectId: project.id }).paginate(perPage(req.query))
 
-    return new ApiKeyCollection(project.getAttribute('apiKeys')).additional({
+    return new ApiKeyCollection(keys).additional({
       status: 'success',
       message: 'OK',
       code: 200,

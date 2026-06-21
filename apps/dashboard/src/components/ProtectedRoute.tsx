@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/contexts/auth-context'
 import { Loading } from '@/components/States'
 
 /** Gate a route behind authentication; redirects to /login when signed out. */

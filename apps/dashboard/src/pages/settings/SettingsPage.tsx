@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { useForm } from 'alova/client'
+import { Tenants, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader } from '@/components/States'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,20 +19,15 @@ import {
 export default function SettingsPage() {
   const tenantId = useTenantId()
   const { tenant, can } = useTenant()
-  const queryClient = useQueryClient()
 
-  const [name, setName] = useState(tenant?.name ?? '')
+  const [saved, setSaved] = useState(false)
 
-  useEffect(() => {
-    setName(tenant?.name ?? '')
-  }, [tenant?.name])
+  const { form, updateForm, send, loading, error, onSuccess } = useForm(
+    (formData) => Tenants.update(tenantId, { name: formData.name }),
+    { initialForm: { name: tenant?.name ?? '' } },
+  )
 
-  const save = useMutation({
-    mutationFn: () => api.tenants.update(tenantId, { name }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenants'] })
-    },
-  })
+  onSuccess(() => setSaved(true))
 
   const canUpdate = can('settings.update')
 
@@ -51,24 +46,25 @@ export default function SettingsPage() {
               <Label htmlFor="tenant-name">Name</Label>
               <Input
                 id="tenant-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={form.name}
+                onChange={(e) => {
+                  updateForm({ name: e.target.value })
+                  setSaved(false)
+                }}
                 disabled={!canUpdate}
               />
             </div>
-            {save.isError ? (
-              <p className="text-sm text-destructive">
-                {save.error instanceof ApiError ? save.error.message : 'Failed to save.'}
-              </p>
+            {error ? (
+              <p className="text-sm text-destructive">{errorMessage(error, 'Failed to save.')}</p>
             ) : null}
-            {save.isSuccess ? <p className="text-sm text-success">Settings saved.</p> : null}
+            {saved ? <p className="text-sm text-success">Settings saved.</p> : null}
           </CardContent>
           <CardFooter className="justify-end">
             <Button
-              onClick={() => save.mutate()}
-              disabled={!canUpdate || save.isPending || name.trim() === ''}
+              onClick={() => void send()}
+              disabled={!canUpdate || loading || form.name.trim() === ''}
             >
-              {save.isPending ? 'Saving…' : 'Save'}
+              {loading ? 'Saving…' : 'Save'}
             </Button>
           </CardFooter>
         </Card>

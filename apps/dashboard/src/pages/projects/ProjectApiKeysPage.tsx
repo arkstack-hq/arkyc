@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ApiKey } from '@arkyc/types'
-import { api } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { useForm, usePagination, useRequest } from 'alova/client'
+import { ApiKeys, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { formatDateTime } from '@/lib/utils'
 import { Loading, ErrorState, EmptyState } from '@/components/States'
+import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,39 +23,66 @@ export default function ProjectApiKeysPage() {
   const tenantId = useTenantId()
   const { can } = useTenant()
   const { projectId } = useParams()
-  const qc = useQueryClient()
 
-  const keysQuery = useQuery({
-    queryKey: ['apiKeys', tenantId, projectId],
-    queryFn: () => api.apiKeys.list(tenantId, projectId!),
-    enabled: !!projectId,
-  })
+  const {
+    data: keys,
+    page,
+    isLastPage,
+    loading,
+    error,
+    update,
+    reload: refreshKeys,
+  } = usePagination(
+    (currentPage, pageSize) =>
+      ApiKeys.list(tenantId, projectId!, { page: currentPage, limit: pageSize }),
+    {
+      append: true,
+      initialPage: 1,
+      initialPageSize: 15,
+      data: (res) => res.data,
+      total: (res) => res.meta.total,
+    },
+  )
 
   const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
   const [secret, setSecret] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const createMutation = useMutation({
-    mutationFn: () => api.apiKeys.create(tenantId, projectId!, { name: name.trim() }),
-    onSuccess: (result) => {
-      qc.invalidateQueries({ queryKey: ['apiKeys', tenantId, projectId] })
-      setSecret(result.secret)
-      setName('')
-    },
+  const {
+    form,
+    updateForm,
+    send: createKey,
+    loading: creating,
+    error: createError,
+    reset,
+    onSuccess: onCreateSuccess,
+  } = useForm((f) => ApiKeys.create(tenantId, projectId!, { name: f.name.trim() }), {
+    initialForm: { name: '' },
   })
 
-  const revokeMutation = useMutation({
-    mutationFn: (keyId: string) => api.apiKeys.revoke(tenantId, projectId!, keyId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['apiKeys', tenantId, projectId] }),
+  onCreateSuccess(({ data }) => {
+    setSecret(data.secret)
+    reset()
+    void refreshKeys()
+  })
+
+  const {
+    send: revokeKey,
+    loading: revoking,
+    onSuccess: onRevokeSuccess,
+  } = useRequest((keyId: string) => ApiKeys.revoke(tenantId, projectId!, keyId), {
+    immediate: false,
+  })
+
+  onRevokeSuccess(() => {
+    void refreshKeys()
   })
 
   const closeDialog = () => {
     setOpen(false)
     setSecret(null)
-    setName('')
+    reset()
     setCopied(false)
-    createMutation.reset()
   }
 
   const copySecret = async () => {
@@ -68,57 +95,63 @@ export default function ProjectApiKeysPage() {
     }
   }
 
-  const keys: ApiKey[] = keysQuery.data ?? []
-
   return (
     <div>
       <div className="mb-4 flex justify-end">
         {can('api_keys.create') ? <Button onClick={() => setOpen(true)}>Create key</Button> : null}
       </div>
 
-      {keysQuery.isLoading ? (
+      {error ? (
+        <ErrorState error={error} />
+      ) : keys.length === 0 && loading ? (
         <Loading />
-      ) : keysQuery.isError ? (
-        <ErrorState error={keysQuery.error} />
       ) : keys.length === 0 ? (
         <EmptyState
           title="No API keys"
           description="Create a key to authenticate server-side requests."
         />
       ) : (
-        <Table>
-          <THead>
-            <TR>
-              <TH>Name</TH>
-              <TH>Prefix</TH>
-              <TH>Last used</TH>
-              <TH>Created</TH>
-              <TH />
-            </TR>
-          </THead>
-          <TBody>
-            {keys.map((key) => (
-              <TR key={key.id}>
-                <TD className="font-medium">{key.name}</TD>
-                <TD className="font-mono text-xs">{key.key_prefix}</TD>
-                <TD>{formatDateTime(key.last_used_at)}</TD>
-                <TD>{formatDateTime(key.created_at)}</TD>
-                <TD className="text-right">
-                  {can('api_keys.revoke') ? (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={revokeMutation.isPending}
-                      onClick={() => revokeMutation.mutate(key.id)}
-                    >
-                      Revoke
-                    </Button>
-                  ) : null}
-                </TD>
+        <>
+          <Table>
+            <THead>
+              <TR>
+                <TH>Name</TH>
+                <TH>Prefix</TH>
+                <TH>Last used</TH>
+                <TH>Created</TH>
+                <TH />
               </TR>
-            ))}
-          </TBody>
-        </Table>
+            </THead>
+            <TBody>
+              {keys.map((key) => (
+                <TR key={key.id}>
+                  <TD className="font-medium">{key.name}</TD>
+                  <TD className="font-mono text-xs">{key.key_prefix}</TD>
+                  <TD>{formatDateTime(key.last_used_at)}</TD>
+                  <TD>{formatDateTime(key.created_at)}</TD>
+                  <TD className="text-right">
+                    {can('api_keys.revoke') ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={revoking}
+                        onClick={() => void revokeKey(key.id)}
+                      >
+                        Revoke
+                      </Button>
+                    ) : null}
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+
+          <InfiniteScroll
+            onLoadMore={() => update({ page: page + 1 })}
+            isLast={isLastPage}
+            loading={loading}
+          />
+        </>
       )}
 
       <Dialog open={open} onClose={closeDialog}>
@@ -146,7 +179,7 @@ export default function ProjectApiKeysPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              createMutation.mutate()
+              void createKey()
             }}
           >
             <DialogHeader>
@@ -157,25 +190,23 @@ export default function ProjectApiKeysPage() {
               <Label htmlFor="key-name">Name</Label>
               <Input
                 id="key-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={form.name}
+                onChange={(e) => updateForm({ name: e.target.value })}
                 placeholder="Production server"
                 required
               />
             </div>
-            {createMutation.isError ? (
+            {createError ? (
               <p className="mt-3 text-sm text-destructive">
-                {createMutation.error instanceof Error
-                  ? createMutation.error.message
-                  : 'Failed to create key.'}
+                {errorMessage(createError, 'Failed to create key.')}
               </p>
             ) : null}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMutation.isPending || !name.trim()}>
-                {createMutation.isPending ? <Spinner /> : null}
+              <Button type="submit" disabled={creating || !form.name.trim()}>
+                {creating ? <Spinner /> : null}
                 Create
               </Button>
             </DialogFooter>

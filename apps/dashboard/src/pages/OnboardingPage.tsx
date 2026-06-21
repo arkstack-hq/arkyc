@@ -1,9 +1,7 @@
-import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Tenant } from '@arkyc/types'
-import { api, ApiError } from '@/lib/api'
+import { useForm } from 'alova/client'
+import { Tenants, errorMessage } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,29 +16,21 @@ import {
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const [name, setName] = useState('')
 
-  const mutation = useMutation({
-    mutationFn: (input: { name: string }) => api.tenants.create(input),
-    onSuccess: async (created: Tenant) => {
-      await queryClient.invalidateQueries({ queryKey: ['tenants'] })
-      navigate(`/t/${created.slug}/overview`)
-    },
+  const { form, updateForm, send, loading, error, onSuccess } = useForm(
+    (formData) => Tenants.create({ name: formData.name.trim() }),
+    { initialForm: { name: '' } },
+  )
+
+  onSuccess(({ data }) => {
+    navigate(`/t/${data.slug}/overview`)
   })
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!name.trim()) return
-    mutation.mutate({ name: name.trim() })
+    if (!form.name.trim()) return
+    void send()
   }
-
-  const error =
-    mutation.error instanceof ApiError
-      ? mutation.error.message
-      : mutation.error
-        ? 'Something went wrong. Please try again.'
-        : null
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -60,15 +50,15 @@ export default function OnboardingPage() {
                 type="text"
                 placeholder="Acme Inc."
                 required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={form.name}
+                onChange={(e) => updateForm({ name: e.target.value })}
               />
             </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {error ? <p className="text-sm text-destructive">{errorMessage(error)}</p> : null}
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Creating…' : 'Create'}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating…' : 'Create'}
             </Button>
           </CardFooter>
         </form>

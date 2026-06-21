@@ -1,7 +1,7 @@
 import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api'
-import { useTenantId } from '@/lib/tenant'
+import { useRequest } from 'alova/client'
+import { Projects } from '@/lib/api'
+import { useTenantId } from '@/contexts/tenant-context'
 import { cn } from '@/lib/utils'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 
@@ -15,16 +15,12 @@ export default function ProjectDetailLayout() {
   const tenantId = useTenantId()
   const { projectId } = useParams()
 
-  const projectQuery = useQuery({
-    queryKey: ['project', tenantId, projectId],
-    queryFn: () => api.projects.get(tenantId, projectId!),
-    enabled: !!projectId,
+  const { data: project, loading, error } = useRequest(Projects.get(tenantId, projectId!), {
+    immediate: !!projectId,
   })
 
-  if (projectQuery.isLoading) return <Loading />
-  if (projectQuery.isError) return <ErrorState error={projectQuery.error} />
-
-  const project = projectQuery.data
+  if (loading) return <Loading />
+  if (error) return <ErrorState error={error} />
 
   return (
     <div className="p-8">

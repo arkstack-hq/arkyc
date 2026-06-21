@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { useForm, usePagination } from 'alova/client'
+import { Roles, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
+import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,30 +21,52 @@ import {
 export default function RolesPage() {
   const tenantId = useTenantId()
   const { can } = useTenant()
-  const queryClient = useQueryClient()
 
   const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
 
-  const rolesQuery = useQuery({
-    queryKey: ['roles', tenantId],
-    queryFn: () => api.roles.list(tenantId),
-  })
-
-  const create = useMutation({
-    mutationFn: () => api.roles.create(tenantId, { name, description: description || undefined }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles', tenantId] })
-      closeDialog()
+  const {
+    data: roles,
+    page,
+    isLastPage,
+    loading,
+    error,
+    update,
+    reload: refreshRoles,
+  } = usePagination(
+    (currentPage, pageSize) => Roles.list(tenantId, { page: currentPage, limit: pageSize }),
+    {
+      append: true,
+      initialPage: 1,
+      initialPageSize: 15,
+      data: (res) => res.data,
+      total: (res) => res.meta.total,
     },
+  )
+
+  const {
+    form,
+    updateForm,
+    send,
+    loading: creating,
+    error: createError,
+    onSuccess,
+  } = useForm(
+    (formData) =>
+      Roles.create(tenantId, {
+        name: formData.name,
+        description: formData.description || undefined,
+      }),
+    { initialForm: { name: '', description: '' } },
+  )
+
+  onSuccess(() => {
+    closeDialog()
+    void refreshRoles()
   })
 
   function closeDialog() {
     setOpen(false)
-    setName('')
-    setDescription('')
-    create.reset()
+    updateForm({ name: '', description: '' })
   }
 
   return (
@@ -63,41 +86,49 @@ export default function RolesPage() {
         }
       />
 
-      {rolesQuery.isLoading ? (
+      {error ? (
+        <ErrorState error={error} />
+      ) : roles.length === 0 && loading ? (
         <Loading />
-      ) : rolesQuery.isError ? (
-        <ErrorState error={rolesQuery.error} />
-      ) : !rolesQuery.data || rolesQuery.data.length === 0 ? (
+      ) : roles.length === 0 ? (
         <EmptyState title="No roles" description="Create a role to get started." />
       ) : (
-        <Table>
-          <THead>
-            <TR>
-              <TH>Name</TH>
-              <TH>Description</TH>
-              <TH>Type</TH>
-            </TR>
-          </THead>
-          <TBody>
-            {rolesQuery.data.map((role) => (
-              <TR key={role.id}>
-                <TD>
-                  <Link to={role.id} className="font-medium text-primary hover:underline">
-                    {role.name}
-                  </Link>
-                </TD>
-                <TD className="text-muted-foreground">{role.description ?? '—'}</TD>
-                <TD>
-                  {role.is_system ? (
-                    <Badge variant="muted">System</Badge>
-                  ) : (
-                    <Badge variant="secondary">Custom</Badge>
-                  )}
-                </TD>
+        <>
+          <Table>
+            <THead>
+              <TR>
+                <TH>Name</TH>
+                <TH>Description</TH>
+                <TH>Type</TH>
               </TR>
-            ))}
-          </TBody>
-        </Table>
+            </THead>
+            <TBody>
+              {roles.map((role) => (
+                <TR key={role.id}>
+                  <TD>
+                    <Link to={role.id} className="font-medium text-primary hover:underline">
+                      {role.name}
+                    </Link>
+                  </TD>
+                  <TD className="text-muted-foreground">{role.description ?? '—'}</TD>
+                  <TD>
+                    {role.is_system ? (
+                      <Badge variant="muted">System</Badge>
+                    ) : (
+                      <Badge variant="secondary">Custom</Badge>
+                    )}
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+
+          <InfiniteScroll
+            onLoadMore={() => update({ page: page + 1 })}
+            isLast={isLastPage}
+            loading={loading}
+          />
+        </>
       )}
 
       <Dialog open={open} onClose={closeDialog}>
@@ -110,7 +141,7 @@ export default function RolesPage() {
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault()
-            create.mutate()
+            void send()
           }}
         >
           <div className="flex flex-col gap-1.5">
@@ -118,8 +149,8 @@ export default function RolesPage() {
             <Input
               id="role-name"
               required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={form.name}
+              onChange={(e) => updateForm({ name: e.target.value })}
               placeholder="Support agent"
             />
           </div>
@@ -127,15 +158,15 @@ export default function RolesPage() {
             <Label htmlFor="role-description">Description</Label>
             <Input
               id="role-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={form.description}
+              onChange={(e) => updateForm({ description: e.target.value })}
               placeholder="What this role is for"
             />
           </div>
 
-          {create.isError ? (
+          {createError ? (
             <p className="text-sm text-destructive">
-              {create.error instanceof ApiError ? create.error.message : 'Failed to create role.'}
+              {errorMessage(createError, 'Failed to create role.')}
             </p>
           ) : null}
 
@@ -143,8 +174,8 @@ export default function RolesPage() {
             <Button type="button" variant="outline" onClick={closeDialog}>
               Cancel
             </Button>
-            <Button type="submit" disabled={create.isPending}>
-              {create.isPending ? 'Creating…' : 'Create role'}
+            <Button type="submit" disabled={creating}>
+              {creating ? 'Creating…' : 'Create role'}
             </Button>
           </DialogFooter>
         </form>

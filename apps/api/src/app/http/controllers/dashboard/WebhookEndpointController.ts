@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { HttpContext } from 'clear-router/types/express'
+import { perPage } from '@arkstack/common'
 import { BaseController } from '@controllers/BaseController'
 import type { WebhookEventName } from '@arkyc/types'
 import { Project } from '@app/models/Project'
@@ -28,7 +29,9 @@ export default class WebhookEndpointController extends BaseController {
   /** List a project's webhook endpoints (secret never included). */
   async index({ req }: HttpContext) {
     const project = await this.scopedProject(req)
-    const endpoints = await WebhookEndpoint.where({ projectId: project.id }).get()
+    const endpoints = await WebhookEndpoint.where({ projectId: project.id }).paginate(
+      perPage(req.query),
+    )
 
     return new WebhookEndpointCollection(endpoints).additional({
       status: 'success',

@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import type { VerificationSession } from '@arkyc/types'
-import { api, ApiError } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { usePagination } from 'alova/client'
+import { Sessions, isForbidden } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { ErrorState, Loading, PageHeader } from '@/components/States'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDateTime, humanize } from '@/lib/utils'
@@ -24,16 +23,23 @@ export default function OverviewPage() {
   const tenantId = useTenantId()
   const { tenant } = useTenant()
 
-  const sessionsQuery = useQuery({
-    queryKey: ['sessions', tenantId, {}],
-    queryFn: () => api.sessions.list(tenantId),
+  // Sessions are a paginated endpoint, so usePagination is the right hook. A wide
+  // first page drives the status breakdown + recent list; `total` is exact.
+  const {
+    data: sessions,
+    total,
+    loading,
+    error,
+  } = usePagination((page, pageSize) => Sessions.list(tenantId, { page, limit: pageSize }), {
+    initialPage: 1,
+    initialPageSize: 100,
+    data: (res) => res.data,
+    total: (res) => res.meta.total,
   })
 
   const title = `${tenant?.name ?? 'Tenant'} Overview`
 
-  const forbidden = sessionsQuery.error instanceof ApiError && sessionsQuery.error.status === 403
-
-  if (forbidden) {
+  if (isForbidden(error)) {
     return (
       <div className="p-6">
         <PageHeader title={title} />
@@ -44,7 +50,7 @@ export default function OverviewPage() {
     )
   }
 
-  if (sessionsQuery.isLoading) {
+  if (loading) {
     return (
       <div className="p-6">
         <PageHeader title={title} />
@@ -53,16 +59,15 @@ export default function OverviewPage() {
     )
   }
 
-  if (sessionsQuery.isError) {
+  if (error) {
     return (
       <div className="p-6">
         <PageHeader title={title} />
-        <ErrorState error={sessionsQuery.error} />
+        <ErrorState error={error} />
       </div>
     )
   }
 
-  const sessions: VerificationSession[] = sessionsQuery.data ?? []
   const countBy = (status: string) => sessions.filter((s) => s.status === status).length
 
   const recent = [...sessions]
@@ -74,7 +79,7 @@ export default function OverviewPage() {
       <PageHeader title={title} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric label="Total sessions" value={sessions.length} />
+        <Metric label="Total sessions" value={total ?? sessions.length} />
         <Metric label="Approved" value={countBy('approved')} />
         <Metric label="Requires review" value={countBy('requires_review')} />
         <Metric label="Rejected" value={countBy('rejected')} />

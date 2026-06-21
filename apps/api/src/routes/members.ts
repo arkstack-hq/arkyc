@@ -18,6 +18,7 @@ Router.group('/v1/dashboard/tenants/:tenantId', () => {
     [MemberController, 'showPermissions'],
     scoped('members.view'),
   )
+  Router.get('/members/:memberId', [MemberController, 'show'], scoped('members.view'))
   Router.patch('/members/:memberId', [MemberController, 'assignRole'], scoped('members.update'))
   Router.post(
     '/members/:memberId/permissions',

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useForm, usePagination } from 'alova/client'
 import type { ProjectEnvironment } from '@arkyc/types'
-import { api } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { Projects, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { humanize } from '@/lib/utils'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
+import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,25 +27,49 @@ const ENVIRONMENTS: ProjectEnvironment[] = ['production', 'staging', 'developmen
 export default function ProjectsPage() {
   const tenantId = useTenantId()
   const { can } = useTenant()
-  const qc = useQueryClient()
 
-  const projectsQuery = useQuery({
-    queryKey: ['projects', tenantId],
-    queryFn: () => api.projects.list(tenantId),
-  })
+  const {
+    data: projects,
+    page,
+    isLastPage,
+    loading,
+    error,
+    update,
+    reload,
+  } = usePagination(
+    (currentPage, pageSize) => Projects.list(tenantId, { page: currentPage, limit: pageSize }),
+    {
+      append: true,
+      initialPage: 1,
+      initialPageSize: 15,
+      data: (res) => res.data,
+      total: (res) => res.meta.total,
+    },
+  )
 
   const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
-  const [environment, setEnvironment] = useState<ProjectEnvironment>('production')
 
-  const createMutation = useMutation({
-    mutationFn: () => api.projects.create(tenantId, { name: name.trim(), environment }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['projects', tenantId] })
-      setOpen(false)
-      setName('')
-      setEnvironment('production')
-    },
+  const {
+    form,
+    updateForm,
+    send: createProject,
+    loading: creating,
+    error: createError,
+    reset,
+    onSuccess,
+  } = useForm(
+    (formData) =>
+      Projects.create(tenantId, {
+        name: formData.name.trim(),
+        environment: formData.environment,
+      }),
+    { initialForm: { name: '', environment: 'production' as ProjectEnvironment } },
+  )
+
+  onSuccess(() => {
+    setOpen(false)
+    reset()
+    void reload()
   })
 
   return (
@@ -57,36 +82,44 @@ export default function ProjectsPage() {
         }
       />
 
-      {projectsQuery.isLoading ? (
+      {error ? (
+        <ErrorState error={error} />
+      ) : projects.length === 0 && loading ? (
         <Loading />
-      ) : projectsQuery.isError ? (
-        <ErrorState error={projectsQuery.error} />
-      ) : (projectsQuery.data ?? []).length === 0 ? (
+      ) : projects.length === 0 ? (
         <EmptyState
           title="No projects yet"
           description="Create your first project to start verifying users."
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(projectsQuery.data ?? []).map((project) => (
-            <Card key={project.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle>{project.name}</CardTitle>
-                  <Badge variant="secondary">{humanize(project.environment)}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">Status: {humanize(project.status)}</p>
-              </CardContent>
-              <CardFooter>
-                <Link to={project.id} className="text-sm font-medium text-primary hover:underline">
-                  Manage →
-                </Link>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => (
+              <Card key={project.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle>{project.name}</CardTitle>
+                    <Badge variant="secondary">{humanize(project.environment)}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">Status: {humanize(project.status)}</p>
+                </CardContent>
+                <CardFooter>
+                  <Link to={project.id} className="text-sm font-medium text-primary hover:underline">
+                    Manage →
+                  </Link>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          <InfiniteScroll
+            onLoadMore={() => update({ page: page + 1 })}
+            isLast={isLastPage}
+            loading={loading}
+          />
+        </>
       )}
 
       <Dialog open={open} onClose={() => setOpen(false)}>
@@ -97,7 +130,7 @@ export default function ProjectsPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            createMutation.mutate()
+            void createProject()
           }}
         >
           <div className="flex flex-col gap-4">
@@ -105,8 +138,8 @@ export default function ProjectsPage() {
               <Label htmlFor="project-name">Name</Label>
               <Input
                 id="project-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={form.name}
+                onChange={(e) => updateForm({ name: e.target.value })}
                 placeholder="My App"
                 required
               />
@@ -115,8 +148,8 @@ export default function ProjectsPage() {
               <Label htmlFor="project-env">Environment</Label>
               <Select
                 id="project-env"
-                value={environment}
-                onChange={(e) => setEnvironment(e.target.value as ProjectEnvironment)}
+                value={form.environment}
+                onChange={(e) => updateForm({ environment: e.target.value as ProjectEnvironment })}
               >
                 {ENVIRONMENTS.map((env) => (
                   <option key={env} value={env}>
@@ -125,11 +158,9 @@ export default function ProjectsPage() {
                 ))}
               </Select>
             </div>
-            {createMutation.isError ? (
+            {createError ? (
               <p className="text-sm text-destructive">
-                {createMutation.error instanceof Error
-                  ? createMutation.error.message
-                  : 'Failed to create project.'}
+                {errorMessage(createError, 'Failed to create project.')}
               </p>
             ) : null}
           </div>
@@ -137,8 +168,8 @@ export default function ProjectsPage() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createMutation.isPending || !name.trim()}>
-              {createMutation.isPending ? <Spinner /> : null}
+            <Button type="submit" disabled={creating || !form.name.trim()}>
+              {creating ? <Spinner /> : null}
               Create
             </Button>
           </DialogFooter>

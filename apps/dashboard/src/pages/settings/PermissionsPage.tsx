@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useRequest } from 'alova/client'
 import type { Permission } from '@arkyc/types'
-import { api } from '@/lib/api'
-import { useTenantId } from '@/lib/tenant'
+import { Permissions } from '@/lib/api'
+import { useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
@@ -12,20 +12,21 @@ import { humanize } from '@/lib/utils'
 export default function PermissionsPage() {
   const tenantId = useTenantId()
 
-  const catalogQuery = useQuery({
-    queryKey: ['permissions', tenantId],
-    queryFn: () => api.permissions.list(tenantId),
-  })
+  const {
+    data: catalogue,
+    loading,
+    error,
+  } = useRequest(Permissions.list(tenantId), { initialData: [] })
 
   const grouped = useMemo(() => {
     const map = new Map<string, Permission[]>()
-    for (const perm of catalogQuery.data ?? []) {
+    for (const perm of catalogue) {
       const list = map.get(perm.group) ?? []
       list.push(perm)
       map.set(perm.group, list)
     }
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
-  }, [catalogQuery.data])
+  }, [catalogue])
 
   return (
     <div>
@@ -39,10 +40,10 @@ export default function PermissionsPage() {
         }
       />
 
-      {catalogQuery.isLoading ? (
+      {loading ? (
         <Loading />
-      ) : catalogQuery.isError ? (
-        <ErrorState error={catalogQuery.error} />
+      ) : error ? (
+        <ErrorState error={error} />
       ) : grouped.length === 0 ? (
         <EmptyState title="No permissions" />
       ) : (

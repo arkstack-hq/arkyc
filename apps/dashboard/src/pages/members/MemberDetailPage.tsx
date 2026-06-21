@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { useRequest } from 'alova/client'
+import { Members, Roles, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -21,33 +21,38 @@ export default function MemberDetailPage() {
   const { memberId = '' } = useParams()
   const tenantId = useTenantId()
   const { can } = useTenant()
-  const queryClient = useQueryClient()
 
-  const membersQuery = useQuery({
-    queryKey: ['members', tenantId],
-    queryFn: () => api.members.list(tenantId),
+  const {
+    data: member,
+    loading,
+    error,
+    send: refreshMember,
+  } = useRequest(Members.get(tenantId, memberId), { immediate: !!memberId })
+
+  const { data: roles, loading: rolesLoading } = useRequest(Roles.options(tenantId), {
+    immediate: can('settings.view') && can('members.update'),
+    initialData: [],
   })
-
-  const rolesQuery = useQuery({
-    queryKey: ['roles', tenantId],
-    queryFn: () => api.roles.list(tenantId),
-    enabled: can('settings.view') && can('members.update'),
-  })
-
-  const member = membersQuery.data?.find((m) => m.id === memberId)
 
   const [roleId, setRoleId] = useState('')
+  const [saved, setSaved] = useState(false)
 
-  const assignRole = useMutation({
-    mutationFn: (nextRoleId: string) =>
-      api.members.assignRole(tenantId, memberId, { role_id: nextRoleId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['members', tenantId] })
-    },
+  const {
+    send: assignRole,
+    loading: assigning,
+    error: assignError,
+    onSuccess: onAssignSuccess,
+  } = useRequest((nextRoleId: string) => Members.assignRole(tenantId, memberId, { role_id: nextRoleId }), {
+    immediate: false,
   })
 
-  if (membersQuery.isLoading) return <Loading />
-  if (membersQuery.isError) return <ErrorState error={membersQuery.error} />
+  onAssignSuccess(() => {
+    setSaved(true)
+    void refreshMember()
+  })
+
+  if (loading) return <Loading />
+  if (error) return <ErrorState error={error} />
   if (!member) {
     return (
       <div>
@@ -117,32 +122,31 @@ export default function MemberDetailPage() {
                   <Select
                     id="member-role"
                     value={currentRoleId}
-                    onChange={(e) => setRoleId(e.target.value)}
-                    disabled={rolesQuery.isLoading}
+                    onChange={(e) => {
+                      setRoleId(e.target.value)
+                      setSaved(false)
+                    }}
+                    disabled={rolesLoading}
                   >
-                    {(rolesQuery.data ?? []).map((role) => (
+                    {roles.map((role) => (
                       <option key={role.id} value={role.id}>
                         {role.name}
                       </option>
                     ))}
                   </Select>
                   <Button
-                    onClick={() => assignRole.mutate(currentRoleId)}
-                    disabled={assignRole.isPending || currentRoleId === member.role_id}
+                    onClick={() => void assignRole(currentRoleId)}
+                    disabled={assigning || currentRoleId === member.role_id}
                   >
-                    {assignRole.isPending ? 'Saving…' : 'Save'}
+                    {assigning ? 'Saving…' : 'Save'}
                   </Button>
                 </div>
-                {assignRole.isError ? (
+                {assignError ? (
                   <p className="text-sm text-destructive">
-                    {assignRole.error instanceof ApiError
-                      ? assignRole.error.message
-                      : 'Failed to change role.'}
+                    {errorMessage(assignError, 'Failed to change role.')}
                   </p>
                 ) : null}
-                {assignRole.isSuccess ? (
-                  <p className="text-sm text-success">Role updated.</p>
-                ) : null}
+                {saved ? <p className="text-sm text-success">Role updated.</p> : null}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">

@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRequest } from 'alova/client'
 import type { PermissionKey } from '@arkyc/types'
-import { api, ApiError } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { Members, Permissions, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
@@ -14,46 +14,54 @@ export default function MemberPermissionsPage() {
   const { memberId = '' } = useParams()
   const tenantId = useTenantId()
   const { can } = useTenant()
-  const queryClient = useQueryClient()
 
   const canUpdate = can('members.update')
   const [toAdd, setToAdd] = useState('')
 
-  const permsQuery = useQuery({
-    queryKey: ['member-permissions', tenantId, memberId],
-    queryFn: () => api.members.permissions(tenantId, memberId),
+  const {
+    data: perms,
+    loading,
+    error,
+    send: refreshPerms,
+  } = useRequest(Members.permissions(tenantId, memberId))
+
+  const { data: catalogue, loading: catalogueLoading } = useRequest(Permissions.list(tenantId), {
+    immediate: canUpdate,
+    initialData: [],
   })
 
-  const catalogQuery = useQuery({
-    queryKey: ['permissions', tenantId],
-    queryFn: () => api.permissions.list(tenantId),
-    enabled: canUpdate,
+  const {
+    send: addPermission,
+    loading: adding,
+    error: addError,
+    onSuccess: onAddSuccess,
+  } = useRequest((permission: PermissionKey) => Members.addPermission(tenantId, memberId, { permission }), {
+    immediate: false,
   })
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['member-permissions', tenantId, memberId] })
-
-  const addPermission = useMutation({
-    mutationFn: (permission: PermissionKey) =>
-      api.members.addPermission(tenantId, memberId, { permission }),
-    onSuccess: () => {
-      setToAdd('')
-      invalidate()
-    },
+  onAddSuccess(() => {
+    setToAdd('')
+    void refreshPerms()
   })
 
-  const removePermission = useMutation({
-    mutationFn: (permission: PermissionKey) =>
-      api.members.removePermission(tenantId, memberId, permission),
-    onSuccess: invalidate,
+  const {
+    send: removePermission,
+    loading: removing,
+    error: removeError,
+    onSuccess: onRemoveSuccess,
+  } = useRequest((permission: PermissionKey) => Members.removePermission(tenantId, memberId, permission), {
+    immediate: false,
   })
 
-  if (permsQuery.isLoading) return <Loading />
-  if (permsQuery.isError) return <ErrorState error={permsQuery.error} />
+  onRemoveSuccess(() => {
+    void refreshPerms()
+  })
 
-  const perms = permsQuery.data!
+  if (loading) return <Loading />
+  if (error) return <ErrorState error={error} />
+
   const directSet = new Set<string>(perms.direct_permissions)
-  const available = (catalogQuery.data ?? []).filter((p) => !directSet.has(p.name))
+  const available = catalogue.filter((p) => !directSet.has(p.name))
 
   return (
     <div>
@@ -109,8 +117,8 @@ export default function MemberPermissionsPage() {
                         type="button"
                         aria-label={`Remove ${p}`}
                         className="text-muted-foreground hover:text-destructive disabled:opacity-50"
-                        disabled={removePermission.isPending}
-                        onClick={() => removePermission.mutate(p)}
+                        disabled={removing}
+                        onClick={() => void removePermission(p)}
                       >
                         ✕
                       </button>
@@ -127,10 +135,10 @@ export default function MemberPermissionsPage() {
                   <Select
                     value={toAdd}
                     onChange={(e) => setToAdd(e.target.value)}
-                    disabled={catalogQuery.isLoading}
+                    disabled={catalogueLoading}
                   >
                     <option value="" disabled>
-                      {catalogQuery.isLoading ? 'Loading…' : 'Select a permission'}
+                      {catalogueLoading ? 'Loading…' : 'Select a permission'}
                     </option>
                     {available.map((p) => (
                       <option key={p.name} value={p.name}>
@@ -139,17 +147,15 @@ export default function MemberPermissionsPage() {
                     ))}
                   </Select>
                   <Button
-                    disabled={!toAdd || addPermission.isPending}
-                    onClick={() => addPermission.mutate(toAdd as PermissionKey)}
+                    disabled={!toAdd || adding}
+                    onClick={() => void addPermission(toAdd as PermissionKey)}
                   >
-                    {addPermission.isPending ? 'Adding…' : 'Add'}
+                    {adding ? 'Adding…' : 'Add'}
                   </Button>
                 </div>
-                {addPermission.isError || removePermission.isError ? (
+                {addError || removeError ? (
                   <p className="text-sm text-destructive">
-                    {(addPermission.error ?? removePermission.error) instanceof ApiError
-                      ? (addPermission.error ?? (removePermission.error as ApiError)).message
-                      : 'Failed to update permissions.'}
+                    {errorMessage(addError ?? removeError, 'Failed to update permissions.')}
                   </p>
                 ) : null}
               </div>

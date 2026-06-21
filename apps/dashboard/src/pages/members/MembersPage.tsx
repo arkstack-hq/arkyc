@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { useForm, usePagination, useRequest } from 'alova/client'
+import { Members, Roles, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
+import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,40 +29,56 @@ function statusVariant(status: string): 'success' | 'warning' | 'muted' {
 export default function MembersPage() {
   const tenantId = useTenantId()
   const { can } = useTenant()
-  const queryClient = useQueryClient()
 
   const [open, setOpen] = useState(false)
-  const [email, setEmail] = useState('')
-  const [roleId, setRoleId] = useState('')
   const [success, setSuccess] = useState(false)
 
   const canSeeRoles = can('settings.view')
 
-  const membersQuery = useQuery({
-    queryKey: ['members', tenantId],
-    queryFn: () => api.members.list(tenantId),
-  })
-
-  const rolesQuery = useQuery({
-    queryKey: ['roles', tenantId],
-    queryFn: () => api.roles.list(tenantId),
-    enabled: canSeeRoles && open,
-  })
-
-  const invite = useMutation({
-    mutationFn: () => api.members.invite(tenantId, { email, role_id: roleId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['members', tenantId] })
-      setSuccess(true)
-      setEmail('')
-      setRoleId('')
+  const {
+    data: members,
+    page,
+    isLastPage,
+    loading,
+    error,
+    update,
+    reload: refreshMembers,
+  } = usePagination(
+    (currentPage, pageSize) => Members.list(tenantId, { page: currentPage, limit: pageSize }),
+    {
+      append: true,
+      initialPage: 1,
+      initialPageSize: 15,
+      data: (res) => res.data,
+      total: (res) => res.meta.total,
     },
+  )
+
+  const { data: roles, loading: rolesLoading } = useRequest(Roles.options(tenantId), {
+    immediate: canSeeRoles && open,
+    initialData: [],
+  })
+
+  const {
+    form,
+    updateForm,
+    send: sendInvite,
+    loading: inviting,
+    error: inviteError,
+    onSuccess,
+  } = useForm((formData) => Members.invite(tenantId, formData), {
+    initialForm: { email: '', role_id: '' },
+  })
+
+  onSuccess(() => {
+    setSuccess(true)
+    updateForm({ email: '', role_id: '' })
+    void refreshMembers()
   })
 
   function closeDialog() {
     setOpen(false)
     setSuccess(false)
-    invite.reset()
   }
 
   return (
@@ -74,43 +91,51 @@ export default function MembersPage() {
         }
       />
 
-      {membersQuery.isLoading ? (
+      {error ? (
+        <ErrorState error={error} />
+      ) : members.length === 0 && loading ? (
         <Loading />
-      ) : membersQuery.isError ? (
-        <ErrorState error={membersQuery.error} />
-      ) : !membersQuery.data || membersQuery.data.length === 0 ? (
+      ) : members.length === 0 ? (
         <EmptyState title="No members yet" description="Invite teammates to collaborate." />
       ) : (
-        <Table>
-          <THead>
-            <TR>
-              <TH>Name</TH>
-              <TH>Email</TH>
-              <TH>Role</TH>
-              <TH>Status</TH>
-              <TH>Joined</TH>
-            </TR>
-          </THead>
-          <TBody>
-            {membersQuery.data.map((member) => (
-              <TR key={member.id}>
-                <TD>
-                  <Link to={member.id} className="font-medium text-primary hover:underline">
-                    {member.user?.name ?? '—'}
-                  </Link>
-                </TD>
-                <TD className="text-muted-foreground">{member.user?.email ?? '—'}</TD>
-                <TD>{member.role?.name ?? '—'}</TD>
-                <TD>
-                  <Badge variant={statusVariant(member.status)}>{humanize(member.status)}</Badge>
-                </TD>
-                <TD className="text-muted-foreground">
-                  {formatDateTime(member.joined_at ?? member.created_at)}
-                </TD>
+        <>
+          <Table>
+            <THead>
+              <TR>
+                <TH>Name</TH>
+                <TH>Email</TH>
+                <TH>Role</TH>
+                <TH>Status</TH>
+                <TH>Joined</TH>
               </TR>
-            ))}
-          </TBody>
-        </Table>
+            </THead>
+            <TBody>
+              {members.map((member) => (
+                <TR key={member.id}>
+                  <TD>
+                    <Link to={member.id} className="font-medium text-primary hover:underline">
+                      {member.user?.name ?? '—'}
+                    </Link>
+                  </TD>
+                  <TD className="text-muted-foreground">{member.user?.email ?? '—'}</TD>
+                  <TD>{member.role?.name ?? '—'}</TD>
+                  <TD>
+                    <Badge variant={statusVariant(member.status)}>{humanize(member.status)}</Badge>
+                  </TD>
+                  <TD className="text-muted-foreground">
+                    {formatDateTime(member.joined_at ?? member.created_at)}
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+
+          <InfiniteScroll
+            onLoadMore={() => update({ page: page + 1 })}
+            isLast={isLastPage}
+            loading={loading}
+          />
+        </>
       )}
 
       <Dialog open={open} onClose={closeDialog}>
@@ -136,7 +161,7 @@ export default function MembersPage() {
             className="flex flex-col gap-4"
             onSubmit={(e) => {
               e.preventDefault()
-              invite.mutate()
+              void sendInvite()
             }}
           >
             <div className="flex flex-col gap-1.5">
@@ -145,8 +170,8 @@ export default function MembersPage() {
                 id="invite-email"
                 type="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={form.email}
+                onChange={(e) => updateForm({ email: e.target.value })}
                 placeholder="teammate@example.com"
               />
             </div>
@@ -157,13 +182,13 @@ export default function MembersPage() {
                 <Select
                   id="invite-role"
                   required
-                  value={roleId}
-                  onChange={(e) => setRoleId(e.target.value)}
+                  value={form.role_id}
+                  onChange={(e) => updateForm({ role_id: e.target.value })}
                 >
                   <option value="" disabled>
-                    {rolesQuery.isLoading ? 'Loading roles…' : 'Select a role'}
+                    {rolesLoading ? 'Loading roles…' : 'Select a role'}
                   </option>
-                  {(rolesQuery.data ?? []).map((role) => (
+                  {roles.map((role) => (
                     <option key={role.id} value={role.id}>
                       {role.name}
                     </option>
@@ -173,25 +198,23 @@ export default function MembersPage() {
                 <Input
                   id="invite-role"
                   required
-                  value={roleId}
-                  onChange={(e) => setRoleId(e.target.value)}
+                  value={form.role_id}
+                  onChange={(e) => updateForm({ role_id: e.target.value })}
                   placeholder="Role ID"
                 />
               )}
             </div>
 
-            {invite.isError ? (
-              <p className="text-sm text-destructive">
-                {invite.error instanceof ApiError ? invite.error.message : 'Failed to invite.'}
-              </p>
+            {inviteError ? (
+              <p className="text-sm text-destructive">{errorMessage(inviteError, 'Failed to invite.')}</p>
             ) : null}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={invite.isPending}>
-                {invite.isPending ? 'Sending…' : 'Send invite'}
+              <Button type="submit" disabled={inviting}>
+                {inviting ? 'Sending…' : 'Send invite'}
               </Button>
             </DialogFooter>
           </form>

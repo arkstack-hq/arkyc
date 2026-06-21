@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api'
-import { useAuth } from '@/lib/auth'
+import { useRequest } from 'alova/client'
+import { Tenants } from '@/lib/api'
+import { useAuth } from '@/contexts/auth-context'
 import { Loading } from '@/components/States'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { TenantLayout } from '@/components/Layout'
@@ -29,9 +29,9 @@ import PermissionsPage from '@/pages/settings/PermissionsPage'
 
 /** Send "/" to the first tenant's overview, or onboarding when none exist. */
 function RootRedirect() {
-  const { data, isLoading } = useQuery({ queryKey: ['tenants'], queryFn: api.tenants.list })
-  if (isLoading) return <Loading />
-  const first = data?.[0]
+  const { data: tenants = [], loading } = useRequest(Tenants.list(), { initialData: [] })
+  if (loading) return <Loading />
+  const first = tenants[0]
   return <Navigate to={first ? `/t/${first.slug}/overview` : '/onboarding'} replace />
 }
 

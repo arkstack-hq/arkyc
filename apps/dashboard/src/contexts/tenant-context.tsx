@@ -1,9 +1,10 @@
-import { createContext, useContext, useMemo } from 'react'
-import type { ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router-dom'
 import type { PermissionKey, Tenant } from '@arkyc/types'
-import { api } from './api'
+import { createContext, useContext, useMemo } from 'react'
+import { useRequest, useWatcher } from 'alova/client'
+
+import type { ReactNode } from 'react'
+import { Tenants } from '@/lib/api'
+import { useParams } from 'react-router-dom'
 
 interface TenantState {
   tenant: Tenant | null
@@ -21,39 +22,32 @@ const TenantContext = createContext<TenantState | null>(null)
 export function TenantProvider({ children }: { children: ReactNode }) {
   const { tenantSlug } = useParams()
 
-  const tenantsQuery = useQuery({ queryKey: ['tenants'], queryFn: api.tenants.list })
-  const tenants = tenantsQuery.data ?? []
+  const { data: tenants, loading: tenantsLoading } = useRequest(Tenants.list(), {
+    initialData: [],
+  })
+
   const tenant = useMemo(
     () => tenants.find((x) => x.slug === tenantSlug) ?? null,
     [tenants, tenantSlug],
   )
 
-  const meQuery = useQuery({
-    queryKey: ['tenant-me', tenant?.id],
-    queryFn: () => api.tenants.me(tenant!.id),
-    enabled: !!tenant,
+  // Effective permissions depend on the active tenant id (reactive state).
+  const { data: me, loading: meLoading } = useWatcher(() => Tenants.me(tenant!.id), [tenant?.id], {
+    immediate: false,
   })
 
-  const permissions = meQuery.data?.effective_permissions ?? []
-
   const value = useMemo<TenantState>(() => {
+    const permissions = (tenant ? (me?.effective_permissions ?? []) : []) as PermissionKey[]
     const set = new Set(permissions)
     return {
       tenant,
       tenants,
       permissions,
       can: (permission) => set.has(permission),
-      loading: tenantsQuery.isLoading || (!!tenant && meQuery.isLoading),
-      notFound: tenantsQuery.isSuccess && !tenant,
+      loading: tenantsLoading || (!!tenant && meLoading && !me),
+      notFound: !tenantsLoading && !!tenantSlug && !tenant,
     }
-  }, [
-    tenant,
-    tenants,
-    permissions,
-    tenantsQuery.isLoading,
-    tenantsQuery.isSuccess,
-    meQuery.isLoading,
-  ])
+  }, [tenant, tenants, me, tenantsLoading, meLoading, tenantSlug])
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>
 }

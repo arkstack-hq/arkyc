@@ -11,8 +11,8 @@ import {
   Users,
 } from 'lucide-react'
 import type { PermissionKey } from '@arkyc/types'
-import { TenantProvider, useTenant } from '@/lib/tenant'
-import { useAuth } from '@/lib/auth'
+import { TenantProvider, useTenant } from '@/contexts/tenant-context'
+import { useAuth } from '@/contexts/auth-context'
 import { isDark, toggleTheme } from '@/lib/theme'
 import { Loading } from '@/components/States'
 import { Button } from '@/components/ui/button'

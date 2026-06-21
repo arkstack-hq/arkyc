@@ -1,9 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
-import { api } from '@/lib/api'
-import { useTenant, useTenantId } from '@/lib/tenant'
+import { useForm, useRequest } from 'alova/client'
+import type {
+  Project,
+  ProjectBranding,
+  ProjectSettings,
+  VerificationThresholds,
+} from '@arkyc/types'
+import { Projects, errorMessage } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { Loading, ErrorState } from '@/components/States'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,48 +36,43 @@ const THRESHOLD_FIELDS: { key: keyof VerificationThresholds; label: string }[] =
   { key: 'faceMatchThreshold', label: 'Face match' },
 ]
 
-export default function ProjectSettingsPage() {
+function formFromProject(project: Project): FormState {
+  const thresholds = project.settings?.thresholds ?? {}
+  return {
+    name: project.name ?? '',
+    primaryColor: project.branding?.primary_color ?? '#000000',
+    theme: project.branding?.theme ?? 'light',
+    borderRadius:
+      project.branding?.border_radius != null ? String(project.branding.border_radius) : '',
+    documentQualityThreshold:
+      thresholds.documentQualityThreshold != null
+        ? String(thresholds.documentQualityThreshold)
+        : '',
+    ocrConfidenceThreshold:
+      thresholds.ocrConfidenceThreshold != null ? String(thresholds.ocrConfidenceThreshold) : '',
+    livenessThreshold:
+      thresholds.livenessThreshold != null ? String(thresholds.livenessThreshold) : '',
+    faceMatchThreshold:
+      thresholds.faceMatchThreshold != null ? String(thresholds.faceMatchThreshold) : '',
+    allowedOrigins: (project.settings?.allowed_origins ?? []).join(', '),
+  }
+}
+
+function ProjectSettingsForm({ project }: { project: Project }) {
   const tenantId = useTenantId()
   const { can } = useTenant()
   const { projectId } = useParams()
-  const qc = useQueryClient()
-
-  const projectQuery = useQuery({
-    queryKey: ['project', tenantId, projectId],
-    queryFn: () => api.projects.get(tenantId, projectId!),
-    enabled: !!projectId,
-  })
-
-  const [form, setForm] = useState<FormState | null>(null)
   const [saved, setSaved] = useState(false)
 
-  const project = projectQuery.data
-  useEffect(() => {
-    if (!project) return
-    const thresholds = project.settings?.thresholds ?? {}
-    setForm({
-      name: project.name ?? '',
-      primaryColor: project.branding?.primary_color ?? '#000000',
-      theme: project.branding?.theme ?? 'light',
-      borderRadius:
-        project.branding?.border_radius != null ? String(project.branding.border_radius) : '',
-      documentQualityThreshold:
-        thresholds.documentQualityThreshold != null
-          ? String(thresholds.documentQualityThreshold)
-          : '',
-      ocrConfidenceThreshold:
-        thresholds.ocrConfidenceThreshold != null ? String(thresholds.ocrConfidenceThreshold) : '',
-      livenessThreshold:
-        thresholds.livenessThreshold != null ? String(thresholds.livenessThreshold) : '',
-      faceMatchThreshold:
-        thresholds.faceMatchThreshold != null ? String(thresholds.faceMatchThreshold) : '',
-      allowedOrigins: (project.settings?.allowed_origins ?? []).join(', '),
-    })
-  }, [project])
-
-  const updateMutation = useMutation({
-    mutationFn: () => {
-      const f = form!
+  const {
+    form,
+    updateForm,
+    send: save,
+    loading: saving,
+    error,
+    onSuccess,
+  } = useForm(
+    (f) => {
       const branding: ProjectBranding = {
         primary_color: f.primaryColor,
         theme: f.theme,
@@ -95,39 +95,37 @@ export default function ProjectSettingsPage() {
         .filter((o) => o.length > 0)
 
       const settings: ProjectSettings = {
-        ...(project?.settings ?? {}),
+        ...(project.settings ?? {}),
         allowed_origins,
       }
       if (Object.keys(thresholds).length > 0) settings.thresholds = thresholds
 
-      return api.projects.update(tenantId, projectId!, {
+      return Projects.update(tenantId, projectId!, {
         name: f.name.trim(),
         branding,
         settings,
       })
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['project', tenantId, projectId] })
-      setSaved(true)
-    },
-  })
-
-  if (projectQuery.isLoading || !form) return <Loading />
-  if (projectQuery.isError) return <ErrorState error={projectQuery.error} />
+    { initialForm: formFromProject(project) },
+  )
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-    setForm((prev) => (prev ? { ...prev, [key]: value } : prev))
+    updateForm({ [key]: value } as Partial<FormState>)
     setSaved(false)
   }
 
   const canEdit = can('projects.update')
+
+  onSuccess(() => {
+    setSaved(true)
+  })
 
   return (
     <form
       className="flex max-w-2xl flex-col gap-6"
       onSubmit={(e) => {
         e.preventDefault()
-        updateMutation.mutate()
+        void save()
       }}
     >
       <Card>
@@ -225,20 +223,30 @@ export default function ProjectSettingsPage() {
 
       <div className="flex items-center gap-3">
         {canEdit ? (
-          <Button type="submit" disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? <Spinner /> : null}
+          <Button type="submit" disabled={saving}>
+            {saving ? <Spinner /> : null}
             Save
           </Button>
         ) : null}
         {saved ? <span className="text-sm text-success">Saved.</span> : null}
-        {updateMutation.isError ? (
-          <span className="text-sm text-destructive">
-            {updateMutation.error instanceof Error
-              ? updateMutation.error.message
-              : 'Failed to save.'}
-          </span>
+        {error ? (
+          <span className="text-sm text-destructive">{errorMessage(error, 'Failed to save.')}</span>
         ) : null}
       </div>
     </form>
   )
+}
+
+export default function ProjectSettingsPage() {
+  const tenantId = useTenantId()
+  const { projectId } = useParams()
+
+  const { data: project, loading, error } = useRequest(Projects.get(tenantId, projectId!), {
+    immediate: !!projectId,
+  })
+
+  if (loading || !project) return <Loading />
+  if (error) return <ErrorState error={error} />
+
+  return <ProjectSettingsForm project={project} />
 }
