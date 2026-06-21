@@ -107,7 +107,7 @@ afterAll(async () => {
   if (fx.tenantId) await Tenant.destroy(fx.tenantId)
 })
 
-async function login (email: string, password: string): Promise<string> {
+async function login(email: string, password: string): Promise<string> {
   const res = await request(app).post('/api/v1/auth/login').send({ email, password })
 
   return res.body?.token
@@ -200,16 +200,40 @@ describe('public API-key surface', () => {
     expect(ok.status).toBe(200)
     expect(ok.body.data.tenant_id).toBe(fx.tenantId)
 
-    await request(app).get('/api/v1/ping/project').set('Authorization', 'Bearer sk_live_bogus').expect(401)
+    await request(app)
+      .get('/api/v1/ping/project')
+      .set('Authorization', 'Bearer sk_live_bogus')
+      .expect(401)
   })
 })
 
 describe('client-token surface', () => {
   it('resolves a session from a valid token and rejects a bad one', async () => {
-    const ok = await request(app).get('/api/v1/client/session').set('X-Client-Token', fx.clientToken)
+    const ok = await request(app)
+      .get('/api/v1/client/session')
+      .set('X-Client-Token', fx.clientToken)
     expect(ok.status).toBe(201)
     expect(ok.body.data.id).toBe(fx.sessionId)
 
     await request(app).get('/api/v1/client/session').set('X-Client-Token', 'nope').expect(401)
+  })
+})
+
+describe('tenant me (effective permissions)', () => {
+  it('returns the full effective permission set for an owner', async () => {
+    const res = await request(app)
+      .get(`/api/v1/dashboard/tenants/${fx.tenantId}/me`)
+      .set('Authorization', `Bearer ${fx.ownerToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.effective_permissions).toContain('tenants.view')
+  })
+
+  it('reflects a narrower set for a reviewer (no tenants.view)', async () => {
+    const res = await request(app)
+      .get(`/api/v1/dashboard/tenants/${fx.tenantId}/me`)
+      .set('Authorization', `Bearer ${fx.reviewerToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.effective_permissions).toContain('reviews.view')
+    expect(res.body.data.effective_permissions).not.toContain('tenants.view')
   })
 })

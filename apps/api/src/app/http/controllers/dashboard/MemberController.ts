@@ -24,7 +24,7 @@ export default class MemberController extends BaseController {
    * @param   ctx  The HTTP context (`req.tenant`).
    * @returns      A MemberCollection.
    */
-  async index ({ req }: HttpContext) {
+  async index({ req }: HttpContext) {
     const members = await TenantMember.where({ tenantId: req.tenant!.id })
       .with(['user', 'role'])
       .get()
@@ -37,12 +37,55 @@ export default class MemberController extends BaseController {
   }
 
   /**
+   * Resolve the authenticated user's own role/direct/effective permissions in
+   * the active tenant. Open to any member (no `can()` guard) so the dashboard can
+   * render permission-aware navigation regardless of the user's role.
+   *
+   * @param   ctx  The HTTP context (`req.tenant`, `req.user`).
+   * @returns      A Resource of the caller's role/direct/effective permissions.
+   */
+  async me({ req }: HttpContext) {
+    const member = await TenantMember.where({ userId: req.user!.id, tenantId: req.tenant!.id })
+      .with({
+        role: (q) => q.with('permissions'),
+        user: (q) =>
+          q.with({
+            directPermissions: (d: QueryBuilder<UserPermission>) =>
+              d.where({ tenantId: req.tenant!.id }).whereNull('projectId').with('permission'),
+          }),
+      })
+      .firstOrFail()
+
+    const role = member.getAttribute('role')
+    const user = member.getAttribute('user')!
+
+    const role_permissions = toArray(role?.getAttribute('permissions')).map((p) =>
+      p?.getAttribute('name'),
+    )
+    const direct_permissions = toArray(user.getAttribute('directPermissions') as any)
+      .map((up: any) => (up?.getAttribute('permission') as any)?.getAttribute('name'))
+      .filter(Boolean)
+    const effective_permissions = [...new Set([...role_permissions, ...direct_permissions])]
+
+    return new MemberPermissionsResource({
+      roleId: member.roleId,
+      rolePermissions: role_permissions,
+      directPermissions: direct_permissions,
+      effectivePermissions: effective_permissions,
+    }).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
+  }
+
+  /**
    * Invite an email address to the tenant with a role (one-time token).
    *
    * @param   ctx  The HTTP context (`req.tenant`).
    * @returns      An InvitationResource plus the one-time `token` (HTTP 201).
    */
-  async invite ({ req }: HttpContext) {
+  async invite({ req }: HttpContext) {
     const data = await this.validate({
       email: ['required', 'email'],
       role_id: ['required', 'string'],
@@ -85,9 +128,8 @@ export default class MemberController extends BaseController {
    * @param   ctx  The HTTP context (`:memberId`, `req.tenant`).
    * @returns      A Resource of role/direct/effective permissions.
    */
-  async showPermissions ({ req }: HttpContext) {
-    const member = await TenantMember
-      .where({ id: req.params.memberId, tenantId: req.tenant!.id })
+  async showPermissions({ req }: HttpContext) {
+    const member = await TenantMember.where({ id: req.params.memberId, tenantId: req.tenant!.id })
       .with({
         role: (q) => q.with('permissions'),
         user: (q) =>
@@ -101,8 +143,9 @@ export default class MemberController extends BaseController {
     const role = member.getAttribute('role')
     const user = member.getAttribute('user')!
 
-    const role_permissions = toArray(role?.getAttribute('permissions'))
-      .map((p) => p?.getAttribute('name'))
+    const role_permissions = toArray(role?.getAttribute('permissions')).map((p) =>
+      p?.getAttribute('name'),
+    )
 
     const direct_permissions = toArray(user.getAttribute('directPermissions') as any)
       .map((up: any) => (up?.getAttribute('permission') as any)?.getAttribute('name'))
@@ -128,8 +171,11 @@ export default class MemberController extends BaseController {
    * @param   ctx  The HTTP context (`:memberId`, `req.tenant`).
    * @returns      An EmptyResource.
    */
-  async assignRole ({ req }: HttpContext) {
-    const member = await TenantMember.where({ id: req.params.memberId, tenantId: req.tenant!.id }).firstOrFail()
+  async assignRole({ req }: HttpContext) {
+    const member = await TenantMember.where({
+      id: req.params.memberId,
+      tenantId: req.tenant!.id,
+    }).firstOrFail()
     const data = await this.validate({ role_id: ['required', 'string'] })
 
     const role = await Role.where({ id: data.role_id, tenantId: req.tenant!.id }).first()
@@ -158,9 +204,14 @@ export default class MemberController extends BaseController {
    * @param   ctx  The HTTP context (`:memberId`, `req.tenant`).
    * @returns      An EmptyResource.
    */
-  async addPermission ({ req }: HttpContext) {
-    const member = await TenantMember.where({ id: req.params.memberId, tenantId: req.tenant!.id }).firstOrFail()
-    const data = await this.validate({ permission: ['required', 'string', 'exists:permissions,name'] })
+  async addPermission({ req }: HttpContext) {
+    const member = await TenantMember.where({
+      id: req.params.memberId,
+      tenantId: req.tenant!.id,
+    }).firstOrFail()
+    const data = await this.validate({
+      permission: ['required', 'string', 'exists:permissions,name'],
+    })
 
     // `exists` already 422s on an unknown permission; fetch it for its id.
     const perm = await Permission.where({ name: data.permission }).firstOrFail()
@@ -190,8 +241,11 @@ export default class MemberController extends BaseController {
    * @param   ctx  The HTTP context (`:memberId`, `:permission`, `req.tenant`).
    * @returns      An EmptyResource.
    */
-  async removePermission ({ req }: HttpContext) {
-    const member = await TenantMember.where({ id: req.params.memberId, tenantId: req.tenant!.id }).firstOrFail()
+  async removePermission({ req }: HttpContext) {
+    const member = await TenantMember.where({
+      id: req.params.memberId,
+      tenantId: req.tenant!.id,
+    }).firstOrFail()
     const name = req.params.permission
 
     const perm = await Permission.where({ name }).firstOrFail()
