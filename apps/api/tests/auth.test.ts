@@ -1,9 +1,9 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ApiKey as ApiKeyAuth, ClientToken } from '@arkyc/auth'
-import { PermissionSync } from '@arkyc/permissions'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { ApiKey } from '../src/app/models/ApiKey'
 import { Hash } from '@arkstack/common'
+import { PermissionSync } from '@arkyc/permissions'
 import { Project } from '../src/app/models/Project'
 import { Role } from '../src/app/models/Role'
 import { Tenant } from '../src/app/models/Tenant'

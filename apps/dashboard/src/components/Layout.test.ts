@@ -23,12 +23,7 @@ describe('permission-aware navigation', () => {
 
   it('limits a reviewer to overview + session/review sections', () => {
     // Default `reviewer` role: sessions.view + reviews.*
-    const reviewer = canFor([
-      'sessions.view',
-      'reviews.view',
-      'reviews.approve',
-      'reviews.reject',
-    ])
+    const reviewer = canFor(['sessions.view', 'reviews.view', 'reviews.approve', 'reviews.reject'])
     const labels = visibleNavItems(reviewer).map((i) => i.label)
     expect(labels).toEqual(['Overview', 'Sessions', 'Reviews'])
     expect(labels).not.toContain('Members')

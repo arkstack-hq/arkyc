@@ -47,7 +47,8 @@ export default defineConfig(
       // 'no-ternary': 'error',
       'newline-before-return': 'error',
       semi: ['error', 'never'],
-      quotes: ['error', 'single'],
+      quotes: 'off',
+      '@typescript-eslint/quotes': 'off',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
