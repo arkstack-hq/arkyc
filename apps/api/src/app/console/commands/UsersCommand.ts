@@ -4,7 +4,13 @@ import { Command } from '@h3ravel/musket'
 import { PersonalAccessToken } from 'src/app/models/PersonalAccessToken'
 import { User } from 'src/app/models/User'
 import { UserTwoFactor } from 'src/app/models/UserTwoFactor'
-import dayjs from 'dayjs'
+import * as dayjsModule from 'dayjs'
+
+// The `ark` SWC pipeline doesn't apply esModuleInterop, so a default import of
+// dayjs (a CJS module whose `module.exports` IS the factory) resolves to
+// `undefined`. Grab the callable from whichever shape is present at runtime.
+const dayjs = ((dayjsModule as { default?: unknown }).default ??
+  dayjsModule) as unknown as typeof import('dayjs')
 import { perPage } from '@arkstack/common'
 
 export class UsersCommand extends Command {
@@ -182,9 +188,9 @@ export class UsersCommand extends Command {
       ['Phone', String(user.phone || 'N/A')],
       ['Avatar URL', String(user.getAttribute('avatarUrl') || 'N/A')],
       ['Two-Factor Method', String(twoFa?.method || 'N/A')],
-      ['Two-Factor Enabled At', twoFa?.enabledAt ? dayjs(twoFa.enabledAt).format('YYYY-MM-DD h:MM A') : 'N/A'],
-      ['Created At', dayjs(user.createdAt).format('YYYY-MM-DD h:MM A')],
-      ['Last Login', dayjs(session?.lastUsedAt ?? new Date()).format('YYYY-MM-DD h:MM A')],
+      ['Two-Factor Enabled At', twoFa?.enabledAt ? dayjs(twoFa.enabledAt).format('YYYY-MM-DD h:mm A') : 'N/A'],
+      ['Created At', dayjs(user.createdAt).format('YYYY-MM-DD h:mm A')],
+      ['Last Login', dayjs(session?.lastUsedAt ?? new Date()).format('YYYY-MM-DD h:mm A')],
     ]
 
     console.log(fields.map(([label, value]) => Logger.log([
