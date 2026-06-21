@@ -108,12 +108,14 @@ export default function ProjectWebhooksPage() {
   }
 
   const toggleEvent = (event: WebhookEventName) => {
-    updateForm((prev) => ({
-      ...prev,
-      events: prev.events.includes(event)
-        ? prev.events.filter((e) => e !== event)
-        : [...prev.events, event],
-    }))
+    // alova's `updateForm` only merges a partial object — its function-updater
+    // overload is typed but not implemented (it spreads the function, a no-op).
+    // Compute from the current reactive `form.events` and pass a partial.
+    updateForm({
+      events: form.events.includes(event)
+        ? form.events.filter((e) => e !== event)
+        : [...form.events, event],
+    })
   }
 
   const copySecret = async () => {

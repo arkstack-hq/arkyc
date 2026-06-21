@@ -56,8 +56,11 @@ export default function MembersPage() {
     },
   )
 
+  // Fetch role options eagerly when permitted (TenantLayout blocks rendering
+  // until permissions resolve, so `canSeeRoles` is accurate at mount). Gating on
+  // `open` would never fire — `immediate` is evaluated once, when open is false.
   const { data: roles, loading: rolesLoading } = useRequest(Roles.options(tenantId), {
-    immediate: canSeeRoles && open,
+    immediate: canSeeRoles,
     initialData: [],
   })
 
