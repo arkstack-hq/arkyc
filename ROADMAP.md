@@ -51,7 +51,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 10  | Webhooks                                   | ✅     | Signed (HMAC) webhook delivery per project; endpoint CRUD + test, queue-backed delivery worker with retries/`webhook_deliveries`           |
 | 11  | TypeScript SDK                             | ✅     | `@arkyc/sdk` server client (sessions create/retrieve/cancel, typed errors, webhook verify) + `@arkyc/sdk/browser` widget launcher          |
 | 12  | Widget                                     | ✅     | `@arkyc/widget` full verification flow (overlay/inline/hosted) driving the Client API                                                      |
-| 13  | Dashboard                                  | ✅     | Multi-tenant React Router dashboard (Vite + Tailwind + TanStack Query); permission-aware UI                                                |
+| 13  | Dashboard                                  | ✅     | Multi-tenant React Router dashboard (Vite + Tailwind + alova); permission-aware UI                                                         |
 | 14  | Playground & Docs                          | ⬜     | Example integration + documentation                                                                                                        |
 | 15  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                   |
 
@@ -330,14 +330,15 @@ _Note: the browser launcher points at the hosted widget origin; the actual widge
 
 **Scope**
 
-- [x] React + React Router + Tailwind v4 + TanStack Query (Vite app), with a shadcn-style component kit (`components/ui/*`). Auth (login/register/onboarding) + tenant switching (slug-based). _(shadcn-style hand-rolled kit rather than the CLI registry; same copy-in components.)_
+- [x] React + React Router + Tailwind v4 + **alova** (strategy hooks: `useRequest`/`usePagination`/`useWatcher`/`useForm`) (Vite app), with a shadcn component kit (`components/ui/*`). Auth (login/register/onboarding) + tenant switching (slug-based). _(Data layer migrated off react-query to alova; growth-prone lists paginate. Component kit is mostly hand-rolled shadcn-style, with `field`/`input-group` pulled via the shadcn CLI — `components.json` present.)_
+- [x] Form validation UX: shadcn `Field`/`FieldLabel`/`FieldError` + `InputGroup` wired to alova's typed `ValidationException` — inline per-field errors (`error.list[field]`), `aria-invalid` error styling, and reactive clearing on edit via `error.delete(field, update)`.
 - [x] Route tree from the spec: `/t/:tenantSlug/{overview,projects,projects/:id/{api-keys,webhooks},sessions,sessions/:id,reviews,audit-logs,settings,settings/roles,settings/roles/:id,settings/permissions,members,members/:id,members/:id/permissions}`.
 - [x] Pages: Overview (metrics), Tenant Settings, Role Management (grouped permission editor; system roles read-only), Member Permissions (role/direct/effective), Projects (keys/webhooks/origins/branding/thresholds), Sessions list (filters), Session Detail (decision/checks/details), Review Queue (approve/reject/retry/notes + assign/suspicious).
 - [x] **Permission-aware UI:** nav + action buttons render from the user's effective permissions. Backed by a new `GET /v1/dashboard/tenants/:tenantId/me` endpoint (any member) that resolves the caller's role/direct/effective permissions.
 
 **Deliverables:** Deployable dashboard consuming the Dashboard API end-to-end (`vite build`); typed `lib/api.ts` client + auth/tenant contexts.
 
-**Exit criteria:** An owner can manage tenant/projects/roles/members; a reviewer (role-limited) sees only review-relevant nav/actions and can clear the review queue. ✅ tsc + `vite build` + eslint green; `tests/Layout.test.ts` asserts the reviewer-vs-owner nav gating; the `/me` endpoint is covered by `apps/api/tests/auth.test.ts`. _(Full click-through e2e against a live API is the manual verification step.)_
+**Exit criteria:** An owner can manage tenant/projects/roles/members; a reviewer (role-limited) sees only review-relevant nav/actions and can clear the review queue. ✅ tsc + `vite build` + eslint green; `tests/Layout.test.ts` asserts the reviewer-vs-owner nav gating; the `/me` endpoint is covered by `apps/api/tests/auth.test.ts`. _(Manual click-through against a live API is in progress; it has already surfaced and fixed: the alova fetch-`Response` clone bug on 422s, the post-login sidebar permissions race in `tenant-context` `useWatcher`, and the `dayjs` SWC-interop crash in the `users` console command. Full e2e walkthrough still outstanding.)_
 
 ---
 
