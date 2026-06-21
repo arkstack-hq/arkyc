@@ -4,7 +4,6 @@ import { AddressInfo } from 'node:net'
 import request from 'parasito'
 import { WebhookSigner } from '@arkyc/webhooks'
 import { app } from '../src/core/bootstrap'
-import { drain } from '../src/app/jobs'
 import { Tenant } from '../src/app/models/Tenant'
 import { WebhookDelivery } from '../src/app/models/WebhookDelivery'
 
@@ -25,7 +24,7 @@ const authed = (method: 'get' | 'post' | 'patch' | 'delete', path: string) =>
 const client = (method: 'get' | 'post', path: string, token: string) =>
   request(app)[method](`/api/v1/client/${path}`).set('X-Client-Token', token)
 
-/** Open + complete a clean session; drain runs ocr → biometric → webhook jobs. */
+/** Open + complete a clean session; the sync queue runs ocr → biometric → webhook inline. */
 async function completeSession(): Promise<string> {
   const open = await request(app)
     .post('/api/v1/sessions')
@@ -37,7 +36,6 @@ async function completeSession(): Promise<string> {
   await client('post', 'document/front', token).send({})
   await client('post', 'liveness', token).send({})
   await client('post', 'complete', token).send({})
-  await drain()
 
   return id
 }

@@ -52,15 +52,16 @@ QUEUE_CONNECTION=database   # in apps/api/.env
 ```
 
 ```bash
-pnpm --filter @arkyc/api exec ark queue:work ocr
-pnpm --filter @arkyc/api exec ark queue:work biometric
-pnpm --filter @arkyc/api exec ark queue:work webhook
+pnpm --filter @arkyc/api exec ark queue:work database --queue=ocr
+pnpm --filter @arkyc/api exec ark queue:work database --queue=biometric
+pnpm --filter @arkyc/api exec ark queue:work database --queue=webhook
 ```
 
-Run the three roles as separate processes. Use `--once` to drain and exit (for
-cron/CI). Jobs are claimed atomically (`FOR UPDATE SKIP LOCKED`), retried with
-backoff, dead-lettered after max attempts, and a visibility-timeout reaper
-reclaims jobs from crashed workers (at-least-once).
+Run the roles as separate processes (use `redis` in place of `database` for the
+redis connection). `--once` processes a single job and exits; `--stop-when-empty`
+drains and exits (handy for cron/CI). Retries use each job's `tries`/`backoff`;
+exhausted jobs run their `failed` hook. The `database` driver needs the `jobs`
+table — `ark migrate` creates it.
 
 ## Production checklist
 

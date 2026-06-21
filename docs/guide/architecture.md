@@ -70,17 +70,20 @@ face match `0.75` — overridable per project.
 
 ## Async pipeline
 
-Heavy analysis runs off the request path on a durable, Postgres-backed job
-queue (`UPDATE … RETURNING` over `FOR UPDATE SKIP LOCKED`). Three queues:
+Heavy analysis runs off the request path via **`@arkstack/jobs`** + **`@arkstack/queue`**.
+Each unit of work is a `Job` class dispatched to a named queue:
 
-| Queue       | Trigger                     | Work                                                  |
-| ----------- | --------------------------- | ----------------------------------------------------- |
-| `ocr`       | document front submitted    | run OCR driver + portrait extraction, persist results |
-| `biometric` | session enters `processing` | run face match + decision engine, land the verdict    |
-| `webhook`   | a transition emits an event | sign + POST the delivery, record the attempt          |
+| Job (queue)        | Trigger                     | Work                                                  |
+| ------------------ | --------------------------- | ----------------------------------------------------- |
+| `OcrJob` (`ocr`)         | document front submitted    | run OCR driver + portrait extraction, persist results |
+| `BiometricJob` (`biometric`) | session enters `processing` | run face match + decision engine, land the verdict    |
+| `WebhookJob` (`webhook`)     | a transition emits an event | sign + POST the delivery, record the attempt          |
 
-Run workers with `ark queue:work [queue]`. In dev the queue defaults to `sync`
-(inline), so no worker is needed.
+The queue **connection** is config-selected (`QUEUE_CONNECTION`): `sync` runs jobs
+**inline** (the dev/test default — no worker needed, a session resolves within the
+request), while `database` and `redis` are durable. In production run workers with
+`ark queue:work <connection> --queue=<name>` (one per role). See
+[Self-hosting](./self-hosting#queue-workers).
 
 ## Storage
 

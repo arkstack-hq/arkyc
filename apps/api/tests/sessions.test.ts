@@ -6,7 +6,6 @@ import { Storage } from '@arkstack/filesystem'
 import { Tenant } from '../src/app/models/Tenant'
 import { VerificationSession } from '../src/app/models/VerificationSession'
 import { app } from '../src/core/bootstrap'
-import { drain } from '../src/app/jobs'
 import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import request from 'parasito'
 
@@ -85,7 +84,6 @@ describe('verification session lifecycle', () => {
     // Decision is async — completing only moves the session to `processing`.
     expect(complete.body.data.status).toBe('processing')
 
-    await drain() // run the ocr + biometric workers
 
     const show = await publicApi('get', `sessions/${id}`)
     expect(show.body.data.status).toBe('approved')
@@ -108,14 +106,12 @@ describe('verification session lifecycle', () => {
       'processing',
     )
 
-    await drain()
     expect((await clientApi('get', 'session', token)).body.data.status).toBe('approved')
   })
 
   it('rejects an expired document', async () => {
     const { id, token } = await toLiveness({ expired: true })
     await clientApi('post', 'complete', token).send({})
-    await drain()
 
     const show = await publicApi('get', `sessions/${id}`)
     expect(show.body.data.status).toBe('rejected')
@@ -126,7 +122,6 @@ describe('verification session lifecycle', () => {
   it('routes low document quality to manual review', async () => {
     const { id, token } = await toLiveness({ quality_score: 0.4 })
     await clientApi('post', 'complete', token).send({})
-    await drain()
 
     const show = await publicApi('get', `sessions/${id}`)
     expect(show.body.data.status).toBe('requires_review')

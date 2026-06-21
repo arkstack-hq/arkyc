@@ -14,7 +14,7 @@ import { OcrResult } from '@app/models/OcrResult'
 import { LivenessCheck } from '@app/models/LivenessCheck'
 import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
 import { toArray } from 'src/support/collection'
-import { queue } from './Queue'
+import { WebhookJob } from '@app/jobs'
 
 /** Map a session status to the webhook event it emits (omitted = no event). */
 const STATUS_EVENT: Partial<Record<VerificationStatus, WebhookEventName>> = {
@@ -27,9 +27,6 @@ const STATUS_EVENT: Partial<Record<VerificationStatus, WebhookEventName>> = {
   expired: 'verification.expired',
   cancelled: 'verification.cancelled',
 }
-
-/** Max delivery attempts before a webhook is given up on. */
-const MAX_DELIVERY_ATTEMPTS = 5
 
 /**
  * Webhook fan-out + delivery (Phase 10). On a session status change it creates a
@@ -69,11 +66,7 @@ export class WebhookService {
         attempts: 0,
         nextRetryAt: null,
       })
-      await queue.enqueue(
-        'webhook',
-        { deliveryId: delivery.id },
-        { maxAttempts: MAX_DELIVERY_ATTEMPTS },
-      )
+      await WebhookJob.dispatch(delivery.id)
     }
   }
 
@@ -150,11 +143,7 @@ export class WebhookService {
       attempts: 0,
       nextRetryAt: null,
     })
-    await queue.enqueue(
-      'webhook',
-      { deliveryId: delivery.id },
-      { maxAttempts: MAX_DELIVERY_ATTEMPTS },
-    )
+    await WebhookJob.dispatch(delivery.id)
 
     return delivery
   }

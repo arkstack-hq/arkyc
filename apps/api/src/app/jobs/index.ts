@@ -1,45 +1,16 @@
-import { queue } from '@app/services/Queue'
-import { type OcrJobPayload, ocrJob } from './ocr'
-import { type BiometricJobPayload, biometricJob } from './biometric'
-import { type WebhookJobPayload, webhookJob } from './webhook'
+import { JobRegistry } from '@arkstack/jobs'
+import { OcrJob } from './OcrJob'
+import { BiometricJob } from './BiometricJob'
+import { WebhookJob } from './WebhookJob'
 
-/** Map of queue name → job handler. */
-export const handlers: Record<string, (payload: never) => Promise<void>> = {
-  ocr: ocrJob as (payload: never) => Promise<void>,
-  biometric: biometricJob as (payload: never) => Promise<void>,
-  webhook: webhookJob as (payload: never) => Promise<void>,
-}
+// Register the job classes so dedicated worker processes (which reconstruct
+// jobs from a stored payload, bypassing the constructor) can resolve them by
+// name. Importing this module once — e.g. from the app bootstrap and the
+// `queue:work` command — is enough.
+JobRegistry.register(OcrJob)
+JobRegistry.register(BiometricJob)
+JobRegistry.register(WebhookJob)
 
-export type { OcrJobPayload, BiometricJobPayload, WebhookJobPayload }
-
-/**
- * Claim and run the next job (optionally for a single queue). Returns `false`
- * when nothing was runnable. Handler failures are recorded on the job (retry or
- * dead-letter) rather than thrown.
- */
-export async function processNext(queueName?: string): Promise<boolean> {
-  const job = await queue.claim(queueName)
-  if (!job) return false
-
-  const handler = handlers[job.queue]
-  try {
-    if (!handler) throw new Error(`No handler registered for queue "${job.queue}"`)
-    await handler(job.payload as never)
-    await queue.complete(job)
-  } catch (error) {
-    await queue.fail(job, error)
-  }
-
-  return true
-}
-
-/**
- * Drain all currently-runnable jobs and return. Used by the worker's single
- * pass and by tests to process the pipeline synchronously. `max` bounds the loop
- * as a runaway guard.
- */
-export async function drain(queueName?: string, max = 1000): Promise<void> {
-  for (let i = 0; i < max; i++) {
-    if (!(await processNext(queueName))) break
-  }
-}
+export { OcrJob, BiometricJob, WebhookJob }
+export type { OcrJobHints } from './OcrJob'
+export type { BiometricJobHints } from './BiometricJob'

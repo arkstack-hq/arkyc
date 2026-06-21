@@ -9,7 +9,7 @@ import { LivenessCheck } from '@app/models/LivenessCheck'
 import { sessionObjectKey } from 'src/support/storage'
 import { transitionTo } from 'src/support/session-transition'
 import { type ProviderSignals, livenessDriver } from './providers'
-import { queue } from './Queue'
+import { BiometricJob, OcrJob } from '@app/jobs'
 
 /** A verification session's lifetime — also bounds its client token. */
 const SESSION_TTL_MS = 15 * 60 * 1000
@@ -108,9 +108,9 @@ export class VerificationSessionService {
 
     // The front side carries the readable data — OCR + portrait run async.
     if (side === 'front') {
-      await queue.enqueue('ocr', {
-        sessionId: session.id,
-        hints: { ocrConfidence: input.signals?.ocrConfidence, expired: input.signals?.expired },
+      await OcrJob.dispatch(session.id, {
+        ocrConfidence: input.signals?.ocrConfidence,
+        expired: input.signals?.expired,
       })
 
       if (session.status === 'started') {
@@ -186,12 +186,9 @@ export class VerificationSessionService {
     RequestException.assertFound(liveness, 'No liveness check has been submitted', 409)
 
     await this.transition(session, 'processing')
-    await queue.enqueue('biometric', {
-      sessionId: session.id,
-      hints: {
-        faceSimilarity: input.signals?.faceSimilarity,
-        faceMatchPassed: input.signals?.faceMatchPassed,
-      },
+    await BiometricJob.dispatch(session.id, {
+      faceSimilarity: input.signals?.faceSimilarity,
+      faceMatchPassed: input.signals?.faceMatchPassed,
     })
 
     return session

@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'parasito'
 import { app } from '../src/core/bootstrap'
-import { drain } from '../src/app/jobs'
 import { Tenant } from '../src/app/models/Tenant'
 
 /** Phase 9 — human review of `requires_review` sessions + the audit trail. */
@@ -26,7 +25,6 @@ async function reviewableSession(): Promise<string> {
   await client('post', 'document/front', token).send({ quality_score: 0.4 })
   await client('post', 'liveness', token).send({})
   await client('post', 'complete', token).send({})
-  await drain()
 
   return id
 }

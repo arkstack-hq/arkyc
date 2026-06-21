@@ -25,7 +25,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | Backend framework | Arkstack (Express driver, full template)                                 |
 | ORM / migrations  | Arkormˣ                                                                  |
 | Database          | PostgreSQL                                                               |
-| Async work        | Postgres-backed job queue + `ark queue:work` (`ocr` / `biometric` roles) |
+| Async work        | Arkstack queue + jobs (`@arkstack/queue` + `@arkstack/jobs`); `sync` inline in dev, `database`/`redis` + `ark queue:work` in prod |
 | Storage           | S3-compatible (local driver for dev)                                     |
 | Dashboard         | React + React Router + shadcn/ui + Tailwind                              |
 | SDK               | TypeScript (browser + server)                                            |
