@@ -26,6 +26,6 @@
     "@arkyc/types": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^25.6.2"
+    "@types/node": "^26.0.0"
   }
 }
