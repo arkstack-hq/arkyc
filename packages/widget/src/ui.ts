@@ -1,8 +1,7 @@
 import type { DocumentType, VerificationDecision, WidgetStep } from '@arkyc/types';
-import { cameraSupported, fileFromInput, grabFrame, startCamera, stopCamera } from './capture';
+import { Camera } from './capture';
 import type { Facing } from './capture';
-import type { ResolvedTheme } from './theme';
-import { themeStylesheet } from './theme';
+import { Theme } from './theme';
 
 /** High-level events the view raises back to the controller. */
 export interface ViewHandlers {
@@ -54,17 +53,18 @@ export class WidgetView {
   private readonly root: HTMLElement;
   private readonly body: HTMLElement;
   private readonly footer: HTMLElement;
-  private stream: MediaStream | null = null;
+  private readonly camera: Camera;
 
   constructor(
     private readonly doc: Document,
-    private readonly theme: ResolvedTheme,
+    private readonly theme: Theme,
     private readonly handlers: ViewHandlers,
-    private readonly nav: Navigator = globalThis.navigator,
+    nav: Navigator = globalThis.navigator,
   ) {
+    this.camera = new Camera(doc, nav);
     this.root = this.el('div', { class: 'arkyc-root' });
 
-    const style = this.el('style', { text: themeStylesheet(theme) });
+    const style = this.el('style', { text: theme.stylesheet() });
     this.root.appendChild(style);
 
     const card = this.el('div', { class: 'arkyc-card' });
@@ -94,8 +94,7 @@ export class WidgetView {
 
   /** Release any active camera stream. */
   destroy(): void {
-    stopCamera(this.stream);
-    this.stream = null;
+    this.camera.stop();
   }
 
   /** Render the screen for the given state. */
@@ -170,25 +169,21 @@ export class WidgetView {
       accept: 'image/*',
       class: 'arkyc-hidden',
     }) as HTMLInputElement;
-    fileInput.addEventListener('change', () => this.handlers.onImage(fileFromInput(fileInput)));
+    fileInput.addEventListener('change', () => this.handlers.onImage(Camera.fileFromInput(fileInput)));
     this.body.appendChild(fileInput);
 
-    if (cameraSupported(this.nav)) {
+    if (this.camera.supported) {
       const video = this.el('video', { class: `arkyc-preview${selfie ? ' selfie' : ''}` }) as HTMLVideoElement;
       this.body.appendChild(video);
-      void startCamera(video, facing, this.nav)
-        .then((stream) => {
-          this.stream = stream;
-        })
-        .catch(() => {
-          // Camera denied/unavailable — fall back to the file input.
-          video.classList.add('arkyc-hidden');
-          fileInput.click();
-        });
+      void this.camera.start(video, facing).catch(() => {
+        // Camera denied/unavailable — fall back to the file input.
+        video.classList.add('arkyc-hidden');
+        fileInput.click();
+      });
 
       this.footer.appendChild(
         this.button('Capture', () => {
-          void grabFrame(video, this.doc).then((blob) => this.handlers.onImage(blob));
+          void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob));
         }),
       );
     } else {

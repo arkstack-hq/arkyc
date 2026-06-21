@@ -79,6 +79,7 @@ the user always sees the outcome before the widget tears down.
 
 ## Programmatic API
 
-`ArkycClient` (the Client API wrapper), `resolveTheme`, and the pure flow
-helpers (`nextStep`, `isTerminal`, `statusToDecision`, `STEP_ORDER`) are exported
-for custom integrations and testing.
+Each concern is a class, exported for custom integrations and testing:
+`ArkycClient` (the Client API wrapper), `Theme` (branding → CSS), `Camera`
+(capture), and `Flow` (the step machine: `Flow.nextStep`, `Flow.isTerminal`,
+`Flow.statusToDecision`, `Flow.STEP_ORDER`).

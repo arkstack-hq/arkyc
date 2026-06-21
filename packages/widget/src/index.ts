@@ -124,14 +124,9 @@ export const ArkycWidget = {
 export type { WidgetController } from './controller';
 export { ArkycClient, WidgetApiError } from './client';
 export type { ClientSession, ProviderSignalHints, ArkycClientOptions } from './client';
-export { resolveTheme } from './theme';
-export type { ResolvedTheme } from './theme';
-export {
-  STEP_ORDER,
-  nextStep,
-  documentHasBack,
-  isTerminal,
-  statusToDecision,
-  TERMINAL_STATUSES,
-} from './flow';
+export { Theme } from './theme';
+export { Camera } from './capture';
+export type { Facing } from './capture';
+export { Flow } from './flow';
+export type { FlowContext } from './flow';
 export type { WidgetResult } from '@arkyc/types';

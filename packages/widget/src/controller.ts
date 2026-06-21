@@ -1,7 +1,7 @@
 import type { DocumentType, ProjectBranding, VerificationStatus, WidgetResult, WidgetStep } from '@arkyc/types';
 import { ArkycClient, type ProviderSignalHints } from './client';
-import { isTerminal, nextStep, statusToDecision } from './flow';
-import { resolveTheme } from './theme';
+import { Flow } from './flow';
+import { Theme } from './theme';
 import { WidgetView, type ViewHandlers } from './ui';
 
 /** Configuration for a {@link WidgetController}. */
@@ -71,7 +71,7 @@ export class WidgetController {
     this.win = win;
 
     this.client = new ArkycClient({ token: config.token, baseUrl: config.baseUrl, fetch: config.fetch });
-    const theme = resolveTheme(config.branding);
+    const theme = new Theme(config.branding);
     this.view = new WidgetView(doc, theme, this.handlers(), config.nav ?? globalThis.navigator);
 
     this.postToParent = config.postToParent ?? (!!win.parent && win.parent !== win);
@@ -167,7 +167,7 @@ export class WidgetController {
   private async poll(): Promise<void> {
     for (let i = 0; i < this.maxPolls && !this.settled; i++) {
       const session = await this.client.getSession();
-      if (isTerminal(session.status)) return this.showResult(session.status);
+      if (Flow.isTerminal(session.status)) return this.showResult(session.status);
       await this.delay(this.pollMs);
     }
     // Still processing after the poll budget — surface as pending review.
@@ -175,7 +175,7 @@ export class WidgetController {
   }
 
   private showResult(status: VerificationStatus): void {
-    this.result = { status, decision: statusToDecision(status) };
+    this.result = { status, decision: Flow.statusToDecision(status) };
     this.step = 'result';
     this.render();
   }
@@ -190,7 +190,7 @@ export class WidgetController {
   }
 
   private next(): WidgetStep {
-    return nextStep(this.step, { documentType: this.documentType });
+    return Flow.nextStep(this.step, { documentType: this.documentType });
   }
 
   private delay(ms: number): Promise<void> {
