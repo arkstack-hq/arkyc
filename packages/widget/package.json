@@ -1,7 +1,7 @@
 {
   "name": "@arkyc/widget",
-  "version": "0.0.0",
-  "description": "Embeddable Arkyc verification widget",
+  "version": "0.1.0",
+  "description": "Embeddable, framework-agnostic Arkyc identity-verification widget",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.mjs",
@@ -11,12 +11,14 @@
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
-    }
+    },
+    "./standalone": "./dist/arkyc-widget.iife.global.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
+    "build:standalone": "tsdown -c tsdown.iife.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint src",

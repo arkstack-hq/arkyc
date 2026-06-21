@@ -50,7 +50,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 9   | Reviews & Audit Logging                    | ✅     | Review queue + approve/reject/retry/assign/suspicious/note; audit trail (review + session + dashboard CRUD) + read API                     |
 | 10  | Webhooks                                   | ✅     | Signed (HMAC) webhook delivery per project; endpoint CRUD + test, queue-backed delivery worker with retries/`webhook_deliveries`           |
 | 11  | TypeScript SDK                             | ✅     | `@arkyc/sdk` server client (sessions create/retrieve/cancel, typed errors, webhook verify) + `@arkyc/sdk/browser` widget launcher          |
-| 12  | Widget                                     | ⬜     | `@arkyc/widget` full verification flow                                                                                                     |
+| 12  | Widget                                     | ✅     | `@arkyc/widget` full verification flow (overlay/inline/hosted) driving the Client API                                                      |
 | 13  | Dashboard                                  | ⬜     | Multi-tenant React Router dashboard                                                                                                        |
 | 14  | Playground & Docs                          | ⬜     | Example integration + documentation                                                                                                        |
 | 15  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                   |
@@ -305,21 +305,22 @@ _Note: the browser launcher points at the hosted widget origin; the actual widge
 
 ---
 
-## Phase 12 — Widget (`@arkyc/widget`) ⬜
+## Phase 12 — Widget (`@arkyc/widget`) ✅
 
 **Goal:** Polished, mobile-friendly embeddable verification flow.
 
 **Scope**
 
-- [ ] Framework-agnostic widget: `ArkycWidget.open(...)` and `ArkycWidget.mount(...)`.
-- [ ] Modes: `overlay`, `inline`, `hosted`.
-- [ ] Flow screens: Welcome → Document Selection → Front Capture → Back Capture → OCR Processing → Selfie Capture → Passive Liveness → Face Match → Processing → Result.
-- [ ] Camera capture (document + selfie), client-side quality hints, talks only to the **Client/Widget API** with the short-lived client token.
-- [ ] Customization: brand colors, logo, border radius, light/dark theme; branding sourced from project config.
+- [x] Framework-agnostic widget: `ArkycWidget.open(...)` (overlay) and `ArkycWidget.mount(...)` (inline), plus `ArkycWidget.hosted()` for the hosted page. Pure, DOM-injectable core (`flow`/`client`/`theme`) so it's testable without a browser.
+- [x] Modes: `overlay`, `inline`, `hosted`.
+- [x] Flow screens: Welcome → Document Selection → Front Capture → Back Capture → OCR Processing → Selfie Capture → Passive Liveness → Face Match → Processing → Result. `back_capture` auto-skipped for single-sided documents (passports); cosmetic processing screens auto-advance; final `processing` polls the session to a terminal status.
+- [x] Camera capture (document + selfie) via `getUserMedia` + canvas frame grab, with a file-input fallback; client-side mock signal hints; talks only to the **Client/Widget API** (`GET /v1/client/session`, `POST /v1/client/document/{front,back}`, `/liveness`, `/complete`) with the short-lived client token (`X-Client-Token`).
+- [x] Customization: brand colors, logo, border radius, light/dark theme via CSS variables; branding sourced from project config.
+- [x] Posts `arkyc:complete` / `arkyc:error` / `arkyc:close` to the parent window — the contract `@arkyc/sdk/browser`'s `ArkycWidget.open()` launcher already listens for.
 
-**Deliverables:** `@arkyc/widget` bundle (UMD/ESM) usable standalone or via the SDK browser launcher.
+**Deliverables:** `@arkyc/widget` bundle — ESM + `.d.ts` (workspace `tsdown`) plus a minified IIFE/UMD browser global (`Arkyc`, `build:standalone`) usable standalone or via the SDK browser launcher.
 
-**Exit criteria:** A user completes a full document + selfie verification in overlay and inline modes on mobile + desktop, themed from project branding.
+**Exit criteria:** A user completes a full document + selfie verification in overlay and inline modes on mobile + desktop, themed from project branding. ✅ Covered by `tests/{flow,client,theme,widget}.test.ts` (pure step-machine + envelope client + theme + a fake-DOM controller walk: passport→approved with `arkyc:complete`, two-sided back-capture, API-failure→`arkyc:error`, close→`arkyc:close`, and the `open`/`mount`/`hosted` launchers).
 
 ---
 
