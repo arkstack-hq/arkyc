@@ -17,8 +17,7 @@ export default tseslint.config(
   },
   {
     rules: {
-      quotes: 'off',
-      '@typescript-eslint/quotes': 'off',
+      'quotes': ['error', 'single', { 'avoidEscape': true }],
       'space-before-function-paren': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
