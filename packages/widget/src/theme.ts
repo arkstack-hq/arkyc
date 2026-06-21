@@ -1,18 +1,18 @@
-import type { ProjectBranding } from '@arkyc/types';
+import type { ProjectBranding } from '@arkyc/types'
 
 const LIGHT = {
   background: '#ffffff',
   foreground: '#0f172a',
   muted: '#64748b',
   border: '#e2e8f0',
-};
+}
 
 const DARK = {
   background: '#0f172a',
   foreground: '#f8fafc',
   muted: '#94a3b8',
   border: '#1e293b',
-};
+}
 
 /**
  * Resolves project branding into a concrete theme and renders its CSS. One class
@@ -20,32 +20,36 @@ const DARK = {
  * CSS-variable block and stylesheet derived from them.
  */
 export class Theme {
-  readonly primaryColor: string;
-  readonly borderRadius: number;
-  readonly mode: 'light' | 'dark';
-  readonly logoUrl: string | null;
+  readonly primaryColor: string
+  readonly borderRadius: number
+  readonly mode: 'light' | 'dark'
+  readonly logoUrl: string | null
   /** Surface (card) background. */
-  readonly background: string;
+  readonly background: string
   /** Primary text colour. */
-  readonly foreground: string;
+  readonly foreground: string
   /** Muted text colour. */
-  readonly muted: string;
+  readonly muted: string
   /** Subtle border colour. */
-  readonly border: string;
+  readonly border: string
 
   constructor(branding?: ProjectBranding | null) {
-    this.mode = branding?.theme === 'dark' ? 'dark' : 'light';
-    const palette = this.mode === 'dark' ? DARK : LIGHT;
-    this.primaryColor = branding?.primary_color ?? '#4f46e5';
-    this.borderRadius = branding?.border_radius ?? 12;
-    this.logoUrl = branding?.logo_url ?? null;
-    this.background = palette.background;
-    this.foreground = palette.foreground;
-    this.muted = palette.muted;
-    this.border = palette.border;
+    this.mode = branding?.theme === 'dark' ? 'dark' : 'light'
+    const palette = this.mode === 'dark' ? DARK : LIGHT
+    this.primaryColor = branding?.primary_color ?? '#4f46e5'
+    this.borderRadius = branding?.border_radius ?? 12
+    this.logoUrl = branding?.logo_url ?? null
+    this.background = palette.background
+    this.foreground = palette.foreground
+    this.muted = palette.muted
+    this.border = palette.border
   }
 
-  /** The CSS-variable declaration block for this theme. */
+  /**
+   * The CSS-variable declaration block for this theme.
+   *
+   * @returns
+   */
   variables(): string {
     return [
       `--arkyc-primary:${this.primaryColor}`,
@@ -54,10 +58,14 @@ export class Theme {
       `--arkyc-fg:${this.foreground}`,
       `--arkyc-muted:${this.muted}`,
       `--arkyc-border:${this.border}`,
-    ].join(';');
+    ].join(';')
   }
 
-  /** The widget stylesheet, parameterised by this theme's variables. */
+  /**
+   * The widget stylesheet, parameterised by this theme's variables.
+   *
+   * @returns
+   */
   stylesheet(): string {
     return `
 .arkyc-root{${this.variables()};color:var(--arkyc-fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-sizing:border-box}
@@ -84,6 +92,6 @@ export class Theme {
 .arkyc-badge.warn{background:#d97706}
 .arkyc-badge.err{background:#dc2626}
 .arkyc-hidden{display:none}
-`.trim();
+`.trim()
   }
 }

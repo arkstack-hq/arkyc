@@ -9,6 +9,6 @@ export interface WebhookJobPayload {
  * endpoint. Throws on failure so the queue retries with backoff; the
  * `webhook_deliveries` row records each attempt's outcome.
  */
-export async function webhookJob (payload: WebhookJobPayload): Promise<void> {
+export async function webhookJob(payload: WebhookJobPayload): Promise<void> {
   await webhookService.deliver(payload.deliveryId)
 }

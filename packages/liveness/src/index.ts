@@ -6,7 +6,7 @@
  * from config so call sites stay driver-agnostic. Point `external` at any
  * liveness HTTP service (e.g. a self-hosted model server).
  */
-export * from './types';
-export * from './registry';
-export { MockLivenessDriver } from './drivers/mock';
-export { ExternalLivenessDriver } from './drivers/external';
+export * from './types'
+export * from './registry'
+export { MockLivenessDriver } from './drivers/mock'
+export { ExternalLivenessDriver } from './drivers/external'

@@ -5,10 +5,12 @@ import { app } from '../src/core/bootstrap'
 import { User } from '../src/app/models/User'
 import { PasswordReset } from '../src/app/models/PasswordReset'
 
-async function registerUser (email: string, password = 'secret123'): Promise<string> {
-  const res = await request(app).post('/api/v1/auth/register').send({ name: 'Acct', email, password })
-  
-return res.body.token
+async function registerUser(email: string, password = 'secret123'): Promise<string> {
+  const res = await request(app)
+    .post('/api/v1/auth/register')
+    .send({ name: 'Acct', email, password })
+
+  return res.body.token
 }
 
 describe('email verification', () => {
@@ -62,13 +64,19 @@ describe('password reset', () => {
     const check = await request(app).get(`/api/v1/auth/forgot/${code}`)
     expect(check.status).toBe(202)
 
-    const reset = await request(app).put(`/api/v1/auth/forgot/${code}`).send({ password: 'newpass123' })
+    const reset = await request(app)
+      .put(`/api/v1/auth/forgot/${code}`)
+      .send({ password: 'newpass123' })
     expect(reset.status).toBe(202)
 
     // Old password no longer works; new one does.
-    const oldLogin = await request(app).post('/api/v1/auth/login').send({ email, password: 'oldpass123' })
+    const oldLogin = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email, password: 'oldpass123' })
     expect(oldLogin.status).toBe(422)
-    const newLogin = await request(app).post('/api/v1/auth/login').send({ email, password: 'newpass123' })
+    const newLogin = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email, password: 'newpass123' })
     expect(newLogin.status).toBe(200)
     expect(newLogin.body.token).toBeTruthy()
   })

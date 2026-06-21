@@ -21,28 +21,30 @@ export default defineConfig([
     deps: {
       skipNodeModulesBundle: true,
     },
-    watch: env === 'dev' && process.env.CLI_BUILD !== 'true' ? ['.env', '.env.*', 'src', 'tsconfig.json'] : false,
+    watch:
+      env === 'dev' && process.env.CLI_BUILD !== 'true'
+        ? ['.env', '.env.*', 'src', 'tsconfig.json']
+        : false,
     plugins:
       env === 'dev' && process.env.CLI_BUILD !== 'true'
         ? [
-          run({
-            env: Object.assign({}, process.env, {
-              NODE_ENV: env,
+            run({
+              env: Object.assign({}, process.env, {
+                NODE_ENV: env,
+              }),
+              execArgv: ['-r', 'source-map-support/register'],
+              allowRestarts: true,
+              input: path.join(Arkstack.rootDir(), 'src/server.ts'),
             }),
-            execArgv: ['-r', 'source-map-support/register'],
-            allowRestarts: true,
-            input: path.join(Arkstack.rootDir(), 'src/server.ts'),
-          })
-        ]
-        : [
-        ],
+          ]
+        : [],
     outExtensions: (e) => {
       return {
         js: e.format === 'es' ? '.js' : '.cjs',
         dts: '.d.ts',
       }
     },
-    hooks (e) {
+    hooks(e) {
       e.hook('build:done', async (e) => {
         for (let i = 0; i < e.chunks.length; i++) {
           const chunk = e.chunks[i]

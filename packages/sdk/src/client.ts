@@ -1,6 +1,11 @@
 import { type VerifyWebhookInput, WebhookSigner } from '@arkyc/webhooks'
 import { ArkycApiError } from './errors'
-import type { ArkycOptions, CreateSessionParams, CreatedSession, VerificationSession } from './types'
+import type {
+  ArkycOptions,
+  CreateSessionParams,
+  CreatedSession,
+  VerificationSession,
+} from './types'
 
 const DEFAULT_BASE_URL = 'https://api.arkyc.dev'
 
@@ -18,9 +23,8 @@ export class Arkyc {
   private readonly baseUrl: string
   private readonly fetchImpl: typeof fetch
 
-  constructor (options: ArkycOptions) {
-    if (!options.secretKey)
-      throw new Error('Arkyc requires a `secretKey`.')
+  constructor(options: ArkycOptions) {
+    if (!options.secretKey) throw new Error('Arkyc requires a `secretKey`.')
 
     this.secretKey = options.secretKey
     this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '')
@@ -29,7 +33,12 @@ export class Arkyc {
 
   /** Verification session operations. */
   readonly sessions = {
-    /** Open a session and receive its one-time client token for the widget. */
+    /**
+     * Open a session and receive its one-time client token for the widget.
+     *
+     * @param params
+     * @returns
+     */
     create: async (params: CreateSessionParams = {}): Promise<CreatedSession> => {
       const body = await this.request('POST', '/v1/sessions', {
         user_reference: params.userReference ?? null,
@@ -42,14 +51,24 @@ export class Arkyc {
       }
     },
 
-    /** Fetch a session by id. */
+    /**
+     * Fetch a session by id.
+     *
+     * @param id
+     * @returns
+     */
     retrieve: async (id: string): Promise<VerificationSession> => {
       const body = await this.request('GET', `/v1/sessions/${encodeURIComponent(id)}`)
 
       return body.data as VerificationSession
     },
 
-    /** Cancel a non-terminal session. */
+    /**
+     * Cancel a non-terminal session.
+     *
+     * @param id
+     * @returns
+     */
     cancel: async (id: string): Promise<VerificationSession> => {
       const body = await this.request('POST', `/v1/sessions/${encodeURIComponent(id)}/cancel`)
 
@@ -57,14 +76,28 @@ export class Arkyc {
     },
   }
 
-  /** Webhook helpers. */
+  /**
+   * Webhook helpers.
+   */
   readonly webhooks = {
-    /** Verify a received webhook signature against the endpoint's signing secret. */
+    /**
+     * Verify a received webhook signature against the endpoint's signing secret.
+     *
+     * @param input
+     * @returns
+     */
     verify: (input: VerifyWebhookInput): boolean => WebhookSigner.verify(input),
   }
 
-  /** Issue an authenticated request and unwrap the `{ status, data, … }` envelope. */
-  private async request (
+  /**
+   * Issue an authenticated request and unwrap the `{ status, data, … }` envelope.
+   *
+   * @param method
+   * @param path
+   * @param body
+   * @returns
+   */
+  private async request(
     method: string,
     path: string,
     body?: unknown,

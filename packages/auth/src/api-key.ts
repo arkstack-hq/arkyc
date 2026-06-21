@@ -1,20 +1,20 @@
-import { Token } from './tokens';
+import { Token } from './tokens'
 
 /** Environment marker embedded in an API key (`sk_live_…` / `sk_test_…`). */
-export type ApiKeyEnvironment = 'live' | 'test';
+export type ApiKeyEnvironment = 'live' | 'test'
 
 /** A newly-generated API key: the one-time secret plus its stored fields. */
 export interface GeneratedApiKey {
   /** Full secret shown to the integrator exactly once, e.g. `sk_live_…`. */
-  secret: string;
+  secret: string
   /** Stored, human-identifiable prefix (also used for fast lookup). */
-  keyPrefix: string;
+  keyPrefix: string
   /** SHA-256 hash of the secret, stored in `api_keys.key_hash`. */
-  keyHash: string;
+  keyHash: string
 }
 
 /** Number of leading characters of the secret retained as the lookup prefix. */
-const PREFIX_LENGTH = 12;
+const PREFIX_LENGTH = 12
 
 /** Project API key generation, prefixing, hashing, and verification. */
 export class ApiKey {
@@ -27,13 +27,13 @@ export class ApiKey {
    * @param environment
    * @returns
    */
-  static generate (environment: ApiKeyEnvironment = 'live'): GeneratedApiKey {
-    const secret = `sk_${environment}_${Token.generate(24)}`;
+  static generate(environment: ApiKeyEnvironment = 'live'): GeneratedApiKey {
+    const secret = `sk_${environment}_${Token.generate(24)}`
     return {
       secret,
       keyPrefix: secret.slice(0, PREFIX_LENGTH),
       keyHash: Token.sha256(secret),
-    };
+    }
   }
 
   /**
@@ -42,8 +42,8 @@ export class ApiKey {
    * @param secret
    * @returns
    */
-  static prefix (secret: string): string {
-    return secret.slice(0, PREFIX_LENGTH);
+  static prefix(secret: string): string {
+    return secret.slice(0, PREFIX_LENGTH)
   }
 
   /**
@@ -52,8 +52,8 @@ export class ApiKey {
    * @param secret
    * @returns
    */
-  static hash (secret: string): string {
-    return Token.sha256(secret);
+  static hash(secret: string): string {
+    return Token.sha256(secret)
   }
 
   /**
@@ -63,7 +63,7 @@ export class ApiKey {
    * @param keyHash
    * @returns
    */
-  static verify (secret: string, keyHash: string): boolean {
-    return Token.safeEqualHex(Token.sha256(secret), keyHash);
+  static verify(secret: string, keyHash: string): boolean {
+    return Token.safeEqualHex(Token.sha256(secret), keyHash)
   }
 }

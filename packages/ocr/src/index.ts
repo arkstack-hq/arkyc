@@ -6,7 +6,7 @@
  * call sites stay driver-agnostic. Point `external` at any OCR HTTP service
  * (e.g. a self-hosted Tesseract/model server).
  */
-export * from './types';
-export * from './registry';
-export { MockOcrDriver } from './drivers/mock';
-export { ExternalOcrDriver } from './drivers/external';
+export * from './types'
+export * from './registry'
+export { MockOcrDriver } from './drivers/mock'
+export { ExternalOcrDriver } from './drivers/external'

@@ -38,5 +38,5 @@ export default defineConfig({
     api: 'controller.api.stub',
     model: 'controller.model.stub',
     apiResource: 'controller.api.resource.stub',
-  }
+  },
 })

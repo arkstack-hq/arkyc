@@ -15,11 +15,11 @@ const rwd = path.join(process.cwd(), '/templates/express')
 if (existsSync(rwd)) Arkstack.setRootDir(rwd)
 
 describe('starter template', () => {
-    it('runs a basic assertion', () => {
-        expect(1 + 1).toBe(2)
-    })
+  it('runs a basic assertion', () => {
+    expect(1 + 1).toBe(2)
+  })
 
-    it('can test a route', async () => {
-        await request(app).get('/api').contains('{"status":"OK"}')
-    })
+  it('can test a route', async () => {
+    await request(app).get('/api').contains('{"status":"OK"}')
+  })
 })

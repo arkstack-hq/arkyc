@@ -10,28 +10,56 @@ import WebhookEndpointController from '@controllers/dashboard/WebhookEndpointCon
 const scoped = (perm: PermissionKey) => [auth, resolveTenant, can(perm)]
 
 Router.group('/v1/dashboard/tenants/:tenantId/projects', () => {
-    Router.get('/', [ProjectController, 'index'], scoped('projects.view'))
-    Router.post('/', [ProjectController, 'create'], scoped('projects.create'))
-    Router.get('/:projectId', [ProjectController, 'show'], scoped('projects.view'))
-    Router.patch('/:projectId', [ProjectController, 'update'], scoped('projects.update'))
+  Router.get('/', [ProjectController, 'index'], scoped('projects.view'))
+  Router.post('/', [ProjectController, 'create'], scoped('projects.create'))
+  Router.get('/:projectId', [ProjectController, 'show'], scoped('projects.view'))
+  Router.patch('/:projectId', [ProjectController, 'update'], scoped('projects.update'))
 
-    // Project members (project-scoped)
-    Router.get('/:projectId/members', [ProjectMemberController, 'index'], scoped('members.view'))
-    Router.post('/:projectId/members', [ProjectMemberController, 'store'], scoped('members.update'))
-    Router.patch('/:projectId/members/:memberId', [ProjectMemberController, 'update'], scoped('members.update'))
-    Router.delete('/:projectId/members/:memberId', [ProjectMemberController, 'destroy'], scoped('members.remove'))
+  // Project members (project-scoped)
+  Router.get('/:projectId/members', [ProjectMemberController, 'index'], scoped('members.view'))
+  Router.post('/:projectId/members', [ProjectMemberController, 'store'], scoped('members.update'))
+  Router.patch(
+    '/:projectId/members/:memberId',
+    [ProjectMemberController, 'update'],
+    scoped('members.update'),
+  )
+  Router.delete(
+    '/:projectId/members/:memberId',
+    [ProjectMemberController, 'destroy'],
+    scoped('members.remove'),
+  )
 
-    // API keys (project-scoped)
-    Router.get('/:projectId/api-keys', [ApiKeyController, 'index'], scoped('api_keys.view'))
-    Router.post('/:projectId/api-keys', [ApiKeyController, 'create'], scoped('api_keys.create'))
-    Router.delete('/:projectId/api-keys/:keyId', [ApiKeyController, 'destroy'], scoped('api_keys.revoke'))
+  // API keys (project-scoped)
+  Router.get('/:projectId/api-keys', [ApiKeyController, 'index'], scoped('api_keys.view'))
+  Router.post('/:projectId/api-keys', [ApiKeyController, 'create'], scoped('api_keys.create'))
+  Router.delete(
+    '/:projectId/api-keys/:keyId',
+    [ApiKeyController, 'destroy'],
+    scoped('api_keys.revoke'),
+  )
 
-    // Webhook endpoints (project-scoped)
-    Router.get('/:projectId/webhooks', [WebhookEndpointController, 'index'], scoped('webhooks.view'))
-    Router.post('/:projectId/webhooks', [WebhookEndpointController, 'create'], scoped('webhooks.create'))
-    Router.patch('/:projectId/webhooks/:webhookId', [WebhookEndpointController, 'update'], scoped('webhooks.update'))
-    Router.delete('/:projectId/webhooks/:webhookId', [WebhookEndpointController, 'destroy'], scoped('webhooks.delete'))
-    Router.post('/:projectId/webhooks/:webhookId/test', [WebhookEndpointController, 'test'], scoped('webhooks.test'))
+  // Webhook endpoints (project-scoped)
+  Router.get('/:projectId/webhooks', [WebhookEndpointController, 'index'], scoped('webhooks.view'))
+  Router.post(
+    '/:projectId/webhooks',
+    [WebhookEndpointController, 'create'],
+    scoped('webhooks.create'),
+  )
+  Router.patch(
+    '/:projectId/webhooks/:webhookId',
+    [WebhookEndpointController, 'update'],
+    scoped('webhooks.update'),
+  )
+  Router.delete(
+    '/:projectId/webhooks/:webhookId',
+    [WebhookEndpointController, 'destroy'],
+    scoped('webhooks.delete'),
+  )
+  Router.post(
+    '/:projectId/webhooks/:webhookId/test',
+    [WebhookEndpointController, 'test'],
+    scoped('webhooks.test'),
+  )
 })
 
 export default () => {}

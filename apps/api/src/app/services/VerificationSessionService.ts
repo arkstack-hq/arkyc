@@ -40,7 +40,7 @@ const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
  */
 export class VerificationSessionService {
   /** Create a `pending` session and mint its one-time client token. */
-  async create (
+  async create(
     scope: ProjectScope,
     input: { userReference?: string | null; metadata?: Metadata | null },
   ): Promise<{ session: VerificationSession; clientToken: string }> {
@@ -59,7 +59,7 @@ export class VerificationSessionService {
   }
 
   /** Move a freshly-opened session to `started` when the widget first loads. */
-  async start (session: VerificationSession): Promise<VerificationSession> {
+  async start(session: VerificationSession): Promise<VerificationSession> {
     await this.refresh(session)
     if (session.status === 'pending') {
       await this.transition(session, 'started')
@@ -73,7 +73,7 @@ export class VerificationSessionService {
    * front capture enqueues async OCR + portrait extraction and advances the
    * session to `document_submitted`.
    */
-  async submitDocument (
+  async submitDocument(
     session: VerificationSession,
     side: 'front' | 'back',
     input: {
@@ -122,7 +122,7 @@ export class VerificationSessionService {
   }
 
   /** Persist a liveness/selfie check and advance to `liveness_submitted`. */
-  async submitLiveness (
+  async submitLiveness(
     session: VerificationSession,
     input: { selfie?: FileLike; signals?: ProviderSignals },
   ): Promise<LivenessCheck> {
@@ -174,7 +174,7 @@ export class VerificationSessionService {
    * Finalise: require a document + liveness, move to `processing`, and enqueue
    * the biometric job (face match + decision). A worker lands the final outcome.
    */
-  async complete (
+  async complete(
     session: VerificationSession,
     input: { signals?: ProviderSignals },
   ): Promise<VerificationSession> {
@@ -198,7 +198,7 @@ export class VerificationSessionService {
   }
 
   /** Cancel a non-terminal session. */
-  async cancel (session: VerificationSession): Promise<VerificationSession> {
+  async cancel(session: VerificationSession): Promise<VerificationSession> {
     await this.ensureMutable(session)
     await this.transition(session, 'cancelled')
 
@@ -209,7 +209,7 @@ export class VerificationSessionService {
    * Lazily transition a past-its-TTL session to `expired` (no throw). Lets a
    * reader (e.g. the public `show`) observe expiry without a background job.
    */
-  async refresh (session: VerificationSession): Promise<VerificationSession> {
+  async refresh(session: VerificationSession): Promise<VerificationSession> {
     if (SessionRules.shouldExpire(session.status, session.expiresAt, new Date())) {
       await this.transition(session, 'expired')
     }
@@ -218,7 +218,7 @@ export class VerificationSessionService {
   }
 
   /** Lazily expire, then reject mutations on a session that has ended. */
-  private async ensureMutable (session: VerificationSession): Promise<void> {
+  private async ensureMutable(session: VerificationSession): Promise<void> {
     await this.refresh(session)
     RequestException.abortIf(
       StatusMachine.isTerminal(session.status),
@@ -228,10 +228,7 @@ export class VerificationSessionService {
   }
 
   /** Apply and persist a status change (validated) and fan out webhooks. */
-  private async transition (
-    session: VerificationSession,
-    to: VerificationStatus,
-  ): Promise<void> {
+  private async transition(session: VerificationSession, to: VerificationStatus): Promise<void> {
     await transitionTo(session, to)
   }
 }

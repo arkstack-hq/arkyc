@@ -1,17 +1,22 @@
-import type { DecisionInput } from './decision';
+import type { DecisionInput } from './decision'
 
 /** Average of a list of numbers; 0 for an empty list. */
 function mean(values: number[]): number {
-  if (values.length === 0) return 0;
-  return values.reduce((sum, v) => sum + v, 0) / values.length;
+  if (values.length === 0) return 0
+  return values.reduce((sum, v) => sum + v, 0) / values.length
 }
 
 /** Aggregate risk scoring for a verification session. */
 export class Risk {
-  /** Clamp a number into the [0, 1] range. */
+  /**
+   * Clamp a number into the [0, 1] range.
+   *
+   * @param value
+   * @returns
+   */
   static clamp01(value: number): number {
-    if (Number.isNaN(value)) return 0;
-    return Math.min(1, Math.max(0, value));
+    if (Number.isNaN(value)) return 0
+    return Math.min(1, Math.max(0, value))
   }
 
   /**
@@ -21,6 +26,9 @@ export class Risk {
    * quality, OCR confidence, liveness score, face-match similarity). Hard failure
    * signals (expired document, failed liveness/face-match, multiple faces) floor
    * the risk near the top of the range so risky sessions never look safe.
+   *
+   * @param input
+   * @returns
    */
   static score(input: DecisionInput): number {
     const positives = [
@@ -28,20 +36,20 @@ export class Risk {
       input.document.ocrConfidence,
       input.liveness.score,
       input.faceMatch.similarityScore,
-    ].map(Risk.clamp01);
+    ].map(Risk.clamp01)
 
-    let risk = 1 - mean(positives);
+    let risk = 1 - mean(positives)
 
     const hardFailure =
       input.document.expired ||
       !input.liveness.passed ||
       !input.faceMatch.passed ||
-      input.liveness.multipleFaces === true;
+      input.liveness.multipleFaces === true
 
     if (hardFailure) {
-      risk = Math.max(risk, 0.9);
+      risk = Math.max(risk, 0.9)
     }
 
-    return Risk.clamp01(risk);
+    return Risk.clamp01(risk)
   }
 }

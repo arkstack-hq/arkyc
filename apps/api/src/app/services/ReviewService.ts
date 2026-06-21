@@ -1,5 +1,10 @@
 import { RequestException } from '@arkstack/common'
-import type { DecisionReason, Metadata, VerificationDecision, VerificationStatus } from '@arkyc/types'
+import type {
+  DecisionReason,
+  Metadata,
+  VerificationDecision,
+  VerificationStatus,
+} from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { Review } from '@app/models/Review'
 import { ReviewNote } from '@app/models/ReviewNote'
@@ -16,17 +21,25 @@ export type RetryKind = 'document' | 'selfie' | 'full'
  */
 export class ReviewService {
   /** Manually approve a session awaiting review. */
-  async approve (session: VerificationSession, actor: AuditActor, reason?: string): Promise<VerificationSession> {
+  async approve(
+    session: VerificationSession,
+    actor: AuditActor,
+    reason?: string,
+  ): Promise<VerificationSession> {
     return this.decide(session, actor, 'approved', 'MANUAL_APPROVAL', 'review.approved', reason)
   }
 
   /** Manually reject a session awaiting review. */
-  async reject (session: VerificationSession, actor: AuditActor, reason?: string): Promise<VerificationSession> {
+  async reject(
+    session: VerificationSession,
+    actor: AuditActor,
+    reason?: string,
+  ): Promise<VerificationSession> {
     return this.decide(session, actor, 'rejected', 'MANUAL_REJECTION', 'review.rejected', reason)
   }
 
   /** Send the session back for a document, selfie, or full retry. */
-  async requestRetry (
+  async requestRetry(
     session: VerificationSession,
     actor: AuditActor,
     kind: RetryKind,
@@ -47,7 +60,11 @@ export class ReviewService {
   }
 
   /** Assign the session to a reviewer (no status change). */
-  async assign (session: VerificationSession, actor: AuditActor, assigneeId: string): Promise<VerificationSession> {
+  async assign(
+    session: VerificationSession,
+    actor: AuditActor,
+    assigneeId: string,
+  ): Promise<VerificationSession> {
     session.assignedTo = assigneeId
     await session.save()
     await this.emit(session, actor, 'review.assigned', { assigneeId })
@@ -56,7 +73,11 @@ export class ReviewService {
   }
 
   /** Flag a session as suspicious — records a review row + audit, no status change. */
-  async markSuspicious (session: VerificationSession, actor: AuditActor, reason?: string): Promise<VerificationSession> {
+  async markSuspicious(
+    session: VerificationSession,
+    actor: AuditActor,
+    reason?: string,
+  ): Promise<VerificationSession> {
     await this.recordReview(session, actor, session.status, session.status, reason ?? 'suspicious')
     await this.emit(session, actor, 'review.suspicious', { reason: reason ?? null })
 
@@ -64,7 +85,11 @@ export class ReviewService {
   }
 
   /** Attach a reviewer note without changing the session's status. */
-  async addNote (session: VerificationSession, actor: AuditActor, note: string): Promise<ReviewNote> {
+  async addNote(
+    session: VerificationSession,
+    actor: AuditActor,
+    note: string,
+  ): Promise<ReviewNote> {
     const row = await ReviewNote.create({
       tenantId: session.tenantId,
       projectId: session.projectId,
@@ -78,7 +103,7 @@ export class ReviewService {
   }
 
   /** Shared approve/reject path. */
-  private async decide (
+  private async decide(
     session: VerificationSession,
     actor: AuditActor,
     decision: Extract<VerificationDecision, 'approved' | 'rejected'>,
@@ -103,7 +128,7 @@ export class ReviewService {
   }
 
   /** Only a `requires_review` session can be acted on. */
-  private assertAwaitingReview (session: VerificationSession): void {
+  private assertAwaitingReview(session: VerificationSession): void {
     RequestException.abortIf(
       session.status !== 'requires_review',
       `Session is ${session.status}, not awaiting review`,
@@ -111,7 +136,7 @@ export class ReviewService {
     )
   }
 
-  private async recordReview (
+  private async recordReview(
     session: VerificationSession,
     actor: AuditActor,
     previousStatus: VerificationStatus,
@@ -130,7 +155,7 @@ export class ReviewService {
     })
   }
 
-  private async emit (
+  private async emit(
     session: VerificationSession,
     actor: AuditActor,
     action: string,

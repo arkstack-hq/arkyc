@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsdown';
+import { defineConfig } from 'tsdown'
 
 /**
  * Standalone (IIFE/UMD-style) build for the widget. Produces a single minified
@@ -17,4 +17,4 @@ export default defineConfig({
   minify: true,
   target: 'es2020',
   outExtensions: () => ({ js: '.global.js' }),
-});
+})

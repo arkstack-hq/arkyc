@@ -19,7 +19,7 @@ export default class SessionReviewController extends BaseController {
    * List the tenant's sessions, newest first. Filter by `status`,
    * `decision_reason`, or `project_id` query params.
    */
-  async index ({ req }: HttpContext) {
+  async index({ req }: HttpContext) {
     let query = VerificationSession.where({ tenantId: req.tenant!.id })
     const status = param(req.query.status)
     const decisionReason = param(req.query.decision_reason)
@@ -38,7 +38,7 @@ export default class SessionReviewController extends BaseController {
   }
 
   /** Fetch a single session in the tenant. */
-  async show ({ req }: HttpContext) {
+  async show({ req }: HttpContext) {
     const session = await this.scoped(req)
 
     return new VerificationSessionResource(session).additional({
@@ -49,7 +49,7 @@ export default class SessionReviewController extends BaseController {
   }
 
   /** Approve a session awaiting review. */
-  async approve ({ req }: HttpContext) {
+  async approve({ req }: HttpContext) {
     const data = await this.validate({ reason: ['nullable', 'string'] })
     const session = await this.scoped(req)
     await reviewService.approve(session, audit.actorFromRequest(req), data.reason ?? undefined)
@@ -58,7 +58,7 @@ export default class SessionReviewController extends BaseController {
   }
 
   /** Reject a session awaiting review. */
-  async reject ({ req }: HttpContext) {
+  async reject({ req }: HttpContext) {
     const data = await this.validate({ reason: ['nullable', 'string'] })
     const session = await this.scoped(req)
     await reviewService.reject(session, audit.actorFromRequest(req), data.reason ?? undefined)
@@ -67,19 +67,24 @@ export default class SessionReviewController extends BaseController {
   }
 
   /** Send the session back for a document/selfie/full retry. */
-  async requestRetry ({ req }: HttpContext) {
+  async requestRetry({ req }: HttpContext) {
     const data = await this.validate({
       kind: ['required', 'string', 'in:document,selfie,full'],
       reason: ['nullable', 'string'],
     })
     const session = await this.scoped(req)
-    await reviewService.requestRetry(session, audit.actorFromRequest(req), data.kind as RetryKind, data.reason ?? undefined)
+    await reviewService.requestRetry(
+      session,
+      audit.actorFromRequest(req),
+      data.kind as RetryKind,
+      data.reason ?? undefined,
+    )
 
     return this.session(session, 'Retry requested')
   }
 
   /** Assign the session to a reviewer. */
-  async assign ({ req }: HttpContext) {
+  async assign({ req }: HttpContext) {
     const data = await this.validate({ user_id: ['required', 'string'] })
     const session = await this.scoped(req)
     await reviewService.assign(session, audit.actorFromRequest(req), data.user_id)
@@ -88,16 +93,20 @@ export default class SessionReviewController extends BaseController {
   }
 
   /** Flag the session as suspicious (no status change). */
-  async markSuspicious ({ req }: HttpContext) {
+  async markSuspicious({ req }: HttpContext) {
     const data = await this.validate({ reason: ['nullable', 'string'] })
     const session = await this.scoped(req)
-    await reviewService.markSuspicious(session, audit.actorFromRequest(req), data.reason ?? undefined)
+    await reviewService.markSuspicious(
+      session,
+      audit.actorFromRequest(req),
+      data.reason ?? undefined,
+    )
 
     return this.session(session, 'Session flagged as suspicious')
   }
 
   /** Attach a reviewer note (no status change). */
-  async note ({ req }: HttpContext) {
+  async note({ req }: HttpContext) {
     const data = await this.validate({ note: ['required', 'string'] })
     const session = await this.scoped(req)
     await reviewService.addNote(session, audit.actorFromRequest(req), data.note)
@@ -106,11 +115,11 @@ export default class SessionReviewController extends BaseController {
   }
 
   /** Resolve a session by id, scoped to the active tenant (404 otherwise). */
-  private scoped (req: HttpContext['req']) {
+  private scoped(req: HttpContext['req']) {
     return VerificationSession.where({ id: req.params.id, tenantId: req.tenant!.id }).firstOrFail()
   }
 
-  private session (session: VerificationSession, message: string) {
+  private session(session: VerificationSession, message: string) {
     return new VerificationSessionResource(session).additional({
       status: 'success',
       message,

@@ -31,7 +31,7 @@ export interface AuditActor {
  */
 export class AuditLogger {
   /** Persist an audit entry. */
-  async record (entry: AuditEntry): Promise<void> {
+  async record(entry: AuditEntry): Promise<void> {
     await AuditLog.create({
       tenantId: entry.tenantId,
       projectId: entry.projectId ?? null,
@@ -50,7 +50,7 @@ export class AuditLogger {
    * Record an entry for a tenant-scoped dashboard request — pulls `tenantId`
    * from `req.tenant` and the actor/IP/UA from the request.
    */
-  async recordForRequest (
+  async recordForRequest(
     req: HttpContext['req'],
     entry: {
       projectId?: string | null
@@ -76,7 +76,7 @@ export class AuditLogger {
   }
 
   /** Derive the dashboard-user actor + request context from an HTTP request. */
-  actorFromRequest (req: HttpContext['req']): AuditActor {
+  actorFromRequest(req: HttpContext['req']): AuditActor {
     return {
       actorId: req.user?.id ?? null,
       actorType: 'user',

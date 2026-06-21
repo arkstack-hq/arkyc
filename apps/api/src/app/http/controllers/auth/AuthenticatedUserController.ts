@@ -12,13 +12,12 @@ export default class AuthenticatedUserController extends BaseController {
    * @param   ctx  The HTTP context (the user is attached by the auth middleware).
    * @returns      An AuthUserResource for `req.user`.
    */
-  async show ({ req }: HttpContext) {
-    return new AuthUserResource(req.user!)
-      .additional({
-        status: 'success',
-        message: 'OK',
-        code: 200,
-      })
+  async show({ req }: HttpContext) {
+    return new AuthUserResource(req.user!).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
   }
 
   /**
@@ -26,7 +25,7 @@ export default class AuthenticatedUserController extends BaseController {
    *
    * @returns An AuthUserResource with the issued `token`.
    */
-  async create () {
+  async create() {
     const data = await this.validate({
       email: ['required', 'email', 'exists:users,email'],
       password: ['required', 'string'],
@@ -55,14 +54,13 @@ export default class AuthenticatedUserController extends BaseController {
    * @param   ctx  The HTTP context carrying the bearer `authToken`.
    * @returns      An EmptyResource.
    */
-  async destroy ({ req }: HttpContext) {
+  async destroy({ req }: HttpContext) {
     await auth.logout(req.authToken)
 
-    return new EmptyResource({})
-      .additional({
-        status: 'success',
-        message: 'You have successfully been logged out',
-        code: 200,
-      })
+    return new EmptyResource({}).additional({
+      status: 'success',
+      message: 'You have successfully been logged out',
+      code: 200,
+    })
   }
 }

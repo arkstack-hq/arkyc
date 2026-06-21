@@ -8,7 +8,7 @@ import { webhookService } from '@app/services/WebhookService'
  * machine), then fan out the matching webhook event. The single choke point for
  * every status transition so webhooks fire consistently.
  */
-export async function transitionTo (
+export async function transitionTo(
   session: VerificationSession,
   to: VerificationStatus,
 ): Promise<void> {

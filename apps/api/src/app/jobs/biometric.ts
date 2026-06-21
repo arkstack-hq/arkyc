@@ -22,7 +22,7 @@ export interface BiometricJobPayload {
  * decision. Only acts on a `processing` session (idempotent on re-delivery) and
  * throws if OCR/liveness aren't ready yet so the job retries with backoff.
  */
-export async function biometricJob (payload: BiometricJobPayload): Promise<void> {
+export async function biometricJob(payload: BiometricJobPayload): Promise<void> {
   const session = await VerificationSession.where({ id: payload.sessionId }).first()
   if (!session || session.status !== 'processing') return
 

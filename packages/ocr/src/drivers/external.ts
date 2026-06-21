@@ -1,15 +1,15 @@
-import type { OcrResultData } from '@arkyc/types';
-import type { OcrConfig, OcrDriver, OcrRequest } from '../types';
+import type { OcrResultData } from '@arkyc/types'
+import type { OcrConfig, OcrDriver, OcrRequest } from '../types'
 
 /**
  * Generic HTTP OCR driver: POSTs the base64 image to a configured endpoint and
  * expects an {@link OcrResultData}-shaped JSON response.
  */
 export class ExternalOcrDriver implements OcrDriver {
-  readonly name = 'external';
+  readonly name = 'external'
 
   constructor(private readonly config: OcrConfig) {
-    if (!config.endpoint) throw new Error('ExternalOcrDriver requires config.endpoint');
+    if (!config.endpoint) throw new Error('ExternalOcrDriver requires config.endpoint')
   }
 
   async extract(request: OcrRequest): Promise<OcrResultData> {
@@ -24,12 +24,12 @@ export class ExternalOcrDriver implements OcrDriver {
         documentType: request.documentType ?? null,
         country: request.country ?? null,
       }),
-    });
+    })
 
     if (!res.ok) {
-      throw new Error(`ExternalOcrDriver request failed with status ${res.status}`);
+      throw new Error(`ExternalOcrDriver request failed with status ${res.status}`)
     }
 
-    return (await res.json()) as OcrResultData;
+    return (await res.json()) as OcrResultData
   }
 }

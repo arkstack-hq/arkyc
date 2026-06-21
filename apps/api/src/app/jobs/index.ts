@@ -17,7 +17,7 @@ export type { OcrJobPayload, BiometricJobPayload, WebhookJobPayload }
  * when nothing was runnable. Handler failures are recorded on the job (retry or
  * dead-letter) rather than thrown.
  */
-export async function processNext (queueName?: string): Promise<boolean> {
+export async function processNext(queueName?: string): Promise<boolean> {
   const job = await queue.claim(queueName)
   if (!job) return false
 
@@ -38,7 +38,7 @@ export async function processNext (queueName?: string): Promise<boolean> {
  * pass and by tests to process the pipeline synchronously. `max` bounds the loop
  * as a runaway guard.
  */
-export async function drain (queueName?: string, max = 1000): Promise<void> {
+export async function drain(queueName?: string, max = 1000): Promise<void> {
   for (let i = 0; i < max; i++) {
     if (!(await processNext(queueName))) break
   }

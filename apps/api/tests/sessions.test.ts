@@ -20,7 +20,7 @@ const clientApi = (method: 'get' | 'post', path: string, token: string) =>
   request(app)[method](`/api/v1/client/${path}`).set('X-Client-Token', token)
 
 /** Open a fresh session and return its id + one-time client token. */
-async function openSession (): Promise<{ id: string; token: string }> {
+async function openSession(): Promise<{ id: string; token: string }> {
   const res = await publicApi('post', 'sessions').send({ user_reference: 'user-123' })
   expect(res.status).toBe(201)
 
@@ -28,7 +28,9 @@ async function openSession (): Promise<{ id: string; token: string }> {
 }
 
 /** Walk a session through document + liveness, returning the started token/id. */
-async function toLiveness (signals: Record<string, unknown> = {}): Promise<{ id: string; token: string }> {
+async function toLiveness(
+  signals: Record<string, unknown> = {},
+): Promise<{ id: string; token: string }> {
   const { id, token } = await openSession()
   await clientApi('get', 'session', token)
   await clientApi('post', 'document/front', token).send({ document_type: 'passport', ...signals })
@@ -96,9 +98,15 @@ describe('verification session lifecycle', () => {
   it('advances status through each step', async () => {
     const { token } = await openSession()
     expect((await clientApi('get', 'session', token)).body.data.status).toBe('started')
-    expect((await clientApi('post', 'document/front', token).send({})).body.data.status).toBe('document_submitted')
-    expect((await clientApi('post', 'liveness', token).send({})).body.data.status).toBe('liveness_submitted')
-    expect((await clientApi('post', 'complete', token).send({})).body.data.status).toBe('processing')
+    expect((await clientApi('post', 'document/front', token).send({})).body.data.status).toBe(
+      'document_submitted',
+    )
+    expect((await clientApi('post', 'liveness', token).send({})).body.data.status).toBe(
+      'liveness_submitted',
+    )
+    expect((await clientApi('post', 'complete', token).send({})).body.data.status).toBe(
+      'processing',
+    )
 
     await drain()
     expect((await clientApi('get', 'session', token)).body.data.status).toBe('approved')
@@ -167,7 +175,9 @@ describe('verification session lifecycle', () => {
   it('rejects an invalid document_type', async () => {
     const { token } = await openSession()
     await clientApi('get', 'session', token)
-    const res = await clientApi('post', 'document/front', token).send({ document_type: 'nonsense' })
+    const res = await clientApi('post', 'document/front', token).send({
+      document_type: 'nonsense',
+    })
     expect(res.status).toBe(422)
   })
 

@@ -3,12 +3,13 @@ import { WebhookSigner } from '@arkyc/webhooks'
 import { Arkyc, ArkycApiError } from '../src/index'
 
 /** Build a fake fetch returning a JSON envelope with the given status. */
-function fakeFetch (status: number, body: unknown) {
-  return vi.fn(async () =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { 'content-type': 'application/json' },
-    }),
+function fakeFetch(status: number, body: unknown) {
+  return vi.fn(
+    async () =>
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { 'content-type': 'application/json' },
+      }),
   ) as unknown as typeof fetch
 }
 
@@ -30,7 +31,11 @@ const SESSION = {
 describe('Arkyc server client', () => {
   it('creates a session and returns the client token', async () => {
     const fetchImpl = fakeFetch(201, { status: 'success', data: SESSION, client_token: 'ct_abc' })
-    const arkyc = new Arkyc({ secretKey: 'sk_test', baseUrl: 'https://api.test', fetch: fetchImpl })
+    const arkyc = new Arkyc({
+      secretKey: 'sk_test',
+      baseUrl: 'https://api.test',
+      fetch: fetchImpl,
+    })
 
     const { session, clientToken } = await arkyc.sessions.create({ userReference: 'user_9' })
 
@@ -40,19 +45,32 @@ describe('Arkyc server client', () => {
     expect(url).toBe('https://api.test/api/v1/sessions')
     expect((init as RequestInit).method).toBe('POST')
     expect((init as RequestInit).headers).toMatchObject({ authorization: 'Bearer sk_test' })
-    expect(JSON.parse((init as RequestInit).body as string)).toMatchObject({ user_reference: 'user_9' })
+    expect(JSON.parse((init as RequestInit).body as string)).toMatchObject({
+      user_reference: 'user_9',
+    })
   })
 
   it('retrieves and cancels a session', async () => {
-    const arkyc = new Arkyc({ secretKey: 'sk_test', baseUrl: 'https://api.test', fetch: fakeFetch(200, { status: 'success', data: SESSION }) })
+    const arkyc = new Arkyc({
+      secretKey: 'sk_test',
+      baseUrl: 'https://api.test',
+      fetch: fakeFetch(200, { status: 'success', data: SESSION }),
+    })
     expect((await arkyc.sessions.retrieve('vs_1')).id).toBe('vs_1')
 
-    const cancelled = new Arkyc({ secretKey: 'sk_test', baseUrl: 'https://api.test', fetch: fakeFetch(200, { status: 'success', data: { ...SESSION, status: 'cancelled' } }) })
+    const cancelled = new Arkyc({
+      secretKey: 'sk_test',
+      baseUrl: 'https://api.test',
+      fetch: fakeFetch(200, { status: 'success', data: { ...SESSION, status: 'cancelled' } }),
+    })
     expect((await cancelled.sessions.cancel('vs_1')).status).toBe('cancelled')
   })
 
   it('throws a typed ArkycApiError on a non-2xx response', async () => {
-    const arkyc = new Arkyc({ secretKey: 'sk_test', fetch: fakeFetch(404, { status: 'error', code: 404, message: 'Record not found' }) })
+    const arkyc = new Arkyc({
+      secretKey: 'sk_test',
+      fetch: fakeFetch(404, { status: 'error', code: 404, message: 'Record not found' }),
+    })
 
     await expect(arkyc.sessions.retrieve('missing')).rejects.toMatchObject({
       name: 'ArkycApiError',
@@ -74,7 +92,11 @@ describe('Arkyc server client', () => {
     const body = JSON.stringify({ event: 'verification.approved' })
     const signature = WebhookSigner.sign(body, secret, ts)
 
-    expect(arkyc.webhooks.verify({ payload: body, secret, signature, timestamp: ts, now })).toBe(true)
-    expect(arkyc.webhooks.verify({ payload: '{}', secret, signature, timestamp: ts, now })).toBe(false)
+    expect(arkyc.webhooks.verify({ payload: body, secret, signature, timestamp: ts, now })).toBe(
+      true,
+    )
+    expect(arkyc.webhooks.verify({ payload: '{}', secret, signature, timestamp: ts, now })).toBe(
+      false,
+    )
   })
 })

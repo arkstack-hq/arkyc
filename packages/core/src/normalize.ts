@@ -4,16 +4,19 @@ import type {
   LivenessResultData,
   OcrResultData,
   WebhookChecks,
-} from '@arkyc/types';
-import type { DecisionInput } from './decision';
-import { SessionRules } from './session';
+} from '@arkyc/types'
 
-/** The raw provider outputs gathered for a session, plus the document quality. */
+import type { DecisionInput } from './decision'
+import { SessionRules } from './session'
+
+/**
+ * The raw provider outputs gathered for a session, plus the document quality.
+ */
 export interface SessionSignals {
-  documentQualityScore: number;
-  ocr: OcrResultData;
-  liveness: LivenessResultData;
-  faceMatch: FaceMatchResultData;
+  documentQualityScore: number
+  ocr: OcrResultData
+  liveness: LivenessResultData
+  faceMatch: FaceMatchResultData
 }
 
 /** Normalisation of gathered provider results into engine/webhook shapes. */
@@ -22,6 +25,10 @@ export class Normalize {
    * Normalise gathered provider results into the flat {@link DecisionInput} the
    * decision engine consumes. Document expiry is derived from the OCR `expiryDate`
    * field relative to `now`.
+   *
+   * @param signals
+   * @param now
+   * @returns
    */
   static toDecisionInput(signals: SessionSignals, now: IsoDateTime | Date): DecisionInput {
     return {
@@ -39,12 +46,16 @@ export class Normalize {
         passed: signals.faceMatch.passed,
         similarityScore: signals.faceMatch.similarityScore,
       },
-    };
+    }
   }
 
   /**
    * Build the `checks` summary embedded in webhook payloads from the same
    * gathered signals.
+   *
+   * @param signals
+   * @param now
+   * @returns
    */
   static toWebhookChecks(signals: SessionSignals, now: IsoDateTime | Date): WebhookChecks {
     return {
@@ -61,6 +72,6 @@ export class Normalize {
         passed: signals.faceMatch.passed,
         similarity_score: signals.faceMatch.similarityScore,
       },
-    };
+    }
   }
 }

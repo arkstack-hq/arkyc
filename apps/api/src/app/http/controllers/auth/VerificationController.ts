@@ -15,7 +15,7 @@ export default class VerificationController extends BaseController {
    * @param   ctx  The HTTP context (`req.user` is the recipient).
    * @returns      An EmptyResource confirming the code was sent (HTTP 201).
    */
-  async create ({ req }: HttpContext) {
+  async create({ req }: HttpContext) {
     await this.validate({ object: ['nullable', 'in:email'] })
     const user = req.user!
 
@@ -47,7 +47,7 @@ export default class VerificationController extends BaseController {
    * @param   ctx  The HTTP context (`req.user` and the submitted `code`).
    * @returns      An EmptyResource confirming verification (HTTP 202).
    */
-  async update ({ req }: HttpContext) {
+  async update({ req }: HttpContext) {
     const form = await this.validate({ code: ['required', 'string', 'size:6'] })
     const user = req.user!
 
@@ -60,7 +60,10 @@ export default class VerificationController extends BaseController {
     await user.save()
 
     const msg = config('messages.verification_complete.email')
-    sendMail(user.email, msg.template, msg.subject, { name: user.name, app_name: config('app.name') })
+    sendMail(user.email, msg.template, msg.subject, {
+      name: user.name,
+      app_name: config('app.name'),
+    })
 
     return new EmptyResource({})
       .additional({

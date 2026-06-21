@@ -13,7 +13,7 @@ export default class AuditLogController extends BaseController {
    * List the tenant's audit entries, newest first. Filter by `action` or
    * `entity_type` query params.
    */
-  async index ({ req }: HttpContext) {
+  async index({ req }: HttpContext) {
     let query = AuditLog.where({ tenantId: req.tenant!.id })
     const action = param(req.query.action)
     const entityType = param(req.query.entity_type)

@@ -16,7 +16,7 @@ export default class NewPasswordController extends BaseController {
    *
    * @returns An EmptyResource confirming the code was sent (HTTP 201).
    */
-  async create () {
+  async create() {
     const data = await this.validate({ email: ['required', 'email', 'exists:users,email'] })
     const user = await User.where({ email: data.email }).firstOrFail()
 
@@ -46,7 +46,7 @@ export default class NewPasswordController extends BaseController {
    *
    * @returns An EmptyResource confirming validity (HTTP 202).
    */
-  async show () {
+  async show() {
     const { token } = await Validator.make(this.params, {
       token: ['required', 'string'],
     }).validate()
@@ -58,7 +58,9 @@ export default class NewPasswordController extends BaseController {
 
     if (delta === null) {
       if (pr) await pr.delete()
-      throw ValidationException.withMessages({ token: ['Invalid or expired password reset token.'] })
+      throw ValidationException.withMessages({
+        token: ['Invalid or expired password reset token.'],
+      })
     }
 
     return new EmptyResource({})
@@ -76,11 +78,14 @@ export default class NewPasswordController extends BaseController {
    *
    * @returns An EmptyResource confirming the password change (HTTP 202).
    */
-  async update () {
-    const data = await Validator.make({ ...this.params, ...this.body }, {
-      token: ['required', 'string'],
-      password: ['required', 'string', 'min:8'],
-    }).validate()
+  async update() {
+    const data = await Validator.make(
+      { ...this.params, ...this.body },
+      {
+        token: ['required', 'string'],
+        password: ['required', 'string', 'min:8'],
+      },
+    ).validate()
 
     const pr = await PasswordReset.fromToken(data.token).catch(() => null)
     const delta = pr
@@ -89,7 +94,9 @@ export default class NewPasswordController extends BaseController {
 
     if (delta === null || pr === null) {
       if (pr) await pr.delete()
-      throw ValidationException.withMessages({ token: ['Invalid or expired password reset token.'] })
+      throw ValidationException.withMessages({
+        token: ['Invalid or expired password reset token.'],
+      })
     }
 
     const user = await User.where({ email: pr.email! }).firstOrFail()

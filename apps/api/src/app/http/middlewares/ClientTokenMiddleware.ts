@@ -3,14 +3,14 @@ import type { NextFunction, Request, Response } from 'express'
 import { Token } from '@arkyc/auth'
 import { VerificationSession } from '@app/models/VerificationSession'
 
-function readToken (req: Request): string | null {
-    const auth = req.headers.authorization
-    const bearer = Array.isArray(auth) ? auth[0] : auth
-    if (bearer?.startsWith('Bearer ')) return bearer.substring(7)
-    const header = req.headers['x-client-token']
-    const value = Array.isArray(header) ? header[0] : header
+function readToken(req: Request): string | null {
+  const auth = req.headers.authorization
+  const bearer = Array.isArray(auth) ? auth[0] : auth
+  if (bearer?.startsWith('Bearer ')) return bearer.substring(7)
+  const header = req.headers['x-client-token']
+  const value = Array.isArray(header) ? header[0] : header
 
-    return value || null
+  return value || null
 }
 
 /**
@@ -19,28 +19,28 @@ function readToken (req: Request): string | null {
  * attaches `req.verificationSession`.
  */
 export class ClientTokenMiddleware {
-    async handler (req: Request, _res: Response, next: NextFunction): Promise<void> {
-        try {
-            const token = readToken(req)
-            RequestException.assertFound(token, 'Missing client token', 401)
+  async handler(req: Request, _res: Response, next: NextFunction): Promise<void> {
+    try {
+      const token = readToken(req)
+      RequestException.assertFound(token, 'Missing client token', 401)
 
-            const session = await VerificationSession.where({
-                clientTokenHash: Token.hash(token),
-            }).first()
-            RequestException.assertFound(session, 'Invalid client token', 401)
-            RequestException.abortIf(
-                new Date(session.expiresAt).getTime() <= Date.now(),
-                'Session expired',
-                401,
-            )
+      const session = await VerificationSession.where({
+        clientTokenHash: Token.hash(token),
+      }).first()
+      RequestException.assertFound(session, 'Invalid client token', 401)
+      RequestException.abortIf(
+        new Date(session.expiresAt).getTime() <= Date.now(),
+        'Session expired',
+        401,
+      )
 
-            req.verificationSession = session
-            next()
-        } catch (error) {
-            next(error)
-        }
+      req.verificationSession = session
+      next()
+    } catch (error) {
+      next(error)
     }
+  }
 }
 
 export const clientTokenAuth = (req: Request, res: Response, next: NextFunction): Promise<void> =>
-    new ClientTokenMiddleware().handler(req, res, next)
+  new ClientTokenMiddleware().handler(req, res, next)

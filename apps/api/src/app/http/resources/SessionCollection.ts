@@ -4,7 +4,7 @@ import VerificationSessionResource from './VerificationSessionResource'
 export default class SessionCollection extends ResourceCollection {
   collects = VerificationSessionResource
 
-  data () {
+  data() {
     return this.toObject()
   }
 }

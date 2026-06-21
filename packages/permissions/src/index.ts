@@ -7,9 +7,9 @@
  * store ports in `./types`, so this package is reusable by the api, dashboard,
  * and sdk.
  */
-export * from './catalogue';
-export * from './default-roles';
-export * from './types';
-export * from './check';
-export * from './define';
-export * from './sync';
+export * from './catalogue'
+export * from './default-roles'
+export * from './types'
+export * from './check'
+export * from './define'
+export * from './sync'

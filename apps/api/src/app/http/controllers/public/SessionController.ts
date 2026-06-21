@@ -16,7 +16,7 @@ export default class SessionController extends BaseController {
    *
    * @returns A VerificationSessionResource plus the `client_token` (HTTP 201).
    */
-  async create ({ req }: HttpContext) {
+  async create({ req }: HttpContext) {
     const data = await this.validate({
       user_reference: ['nullable', 'string'],
       metadata: ['nullable'],
@@ -55,19 +55,18 @@ export default class SessionController extends BaseController {
    *
    * @returns A VerificationSessionResource.
    */
-  async show ({ req }: HttpContext) {
+  async show({ req }: HttpContext) {
     const session = await VerificationSession.where({
       id: String(req.params.id),
-      projectId: req.projectContext!.project_id
+      projectId: req.projectContext!.project_id,
     }).firstOrFail()
     await sessionService.refresh(session)
 
-    return new VerificationSessionResource(session)
-      .additional({
-        status: 'success',
-        message: 'OK',
-        code: 200,
-      })
+    return new VerificationSessionResource(session).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
   }
 
   /**
@@ -75,18 +74,17 @@ export default class SessionController extends BaseController {
    *
    * @returns The cancelled VerificationSessionResource.
    */
-  async cancel ({ req }: HttpContext) {
+  async cancel({ req }: HttpContext) {
     const session = await VerificationSession.where({
       id: String(req.params.id),
-      projectId: req.projectContext!.project_id
+      projectId: req.projectContext!.project_id,
     }).firstOrFail()
     await sessionService.cancel(session)
 
-    return new VerificationSessionResource(session)
-      .additional({
-        status: 'success',
-        message: 'Verification session cancelled',
-        code: 200,
-      })
+    return new VerificationSessionResource(session).additional({
+      status: 'success',
+      message: 'Verification session cancelled',
+      code: 200,
+    })
   }
 }

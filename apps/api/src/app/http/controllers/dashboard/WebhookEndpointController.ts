@@ -26,7 +26,7 @@ const EVENTS_RULE = `in:${EVENT_NAMES.join(',')}`
 /** Webhook endpoint management for a project. Gated by `webhooks.*`. */
 export default class WebhookEndpointController extends BaseController {
   /** List a project's webhook endpoints (secret never included). */
-  async index ({ req }: HttpContext) {
+  async index({ req }: HttpContext) {
     const project = await this.scopedProject(req)
     const endpoints = await WebhookEndpoint.where({ projectId: project.id }).get()
 
@@ -41,7 +41,7 @@ export default class WebhookEndpointController extends BaseController {
    * Register an endpoint. The signing secret is generated and returned exactly
    * once (stored server-side for signing future deliveries).
    */
-  async create ({ req }: HttpContext) {
+  async create({ req }: HttpContext) {
     const project = await this.scopedProject(req)
     const data = await this.validate({
       url: ['required', 'string', 'max:2048'],
@@ -69,7 +69,8 @@ export default class WebhookEndpointController extends BaseController {
     return new WebhookEndpointResource(endpoint)
       .additional({
         status: 'success',
-        message: 'Webhook endpoint created — store the signing secret now; it will not be shown again',
+        message:
+          'Webhook endpoint created — store the signing secret now; it will not be shown again',
         code: 201,
         secret,
       })
@@ -78,7 +79,7 @@ export default class WebhookEndpointController extends BaseController {
   }
 
   /** Update an endpoint's url / events / status. */
-  async update ({ req }: HttpContext) {
+  async update({ req }: HttpContext) {
     const project = await this.scopedProject(req)
     const data = await this.validate({
       url: ['nullable', 'string', 'max:2048'],
@@ -111,7 +112,7 @@ export default class WebhookEndpointController extends BaseController {
   }
 
   /** Delete an endpoint. */
-  async destroy ({ req }: HttpContext) {
+  async destroy({ req }: HttpContext) {
     const project = await this.scopedProject(req)
     const endpoint = await WebhookEndpoint.where({
       id: req.params.webhookId,
@@ -134,7 +135,7 @@ export default class WebhookEndpointController extends BaseController {
   }
 
   /** Queue a sample delivery to the endpoint to verify connectivity. */
-  async test ({ req }: HttpContext) {
+  async test({ req }: HttpContext) {
     const project = await this.scopedProject(req)
     const endpoint = await WebhookEndpoint.where({
       id: req.params.webhookId,
@@ -150,7 +151,7 @@ export default class WebhookEndpointController extends BaseController {
   }
 
   /** Resolve the route's project, scoped to the active tenant (404 otherwise). */
-  private scopedProject (req: HttpContext['req']) {
+  private scopedProject(req: HttpContext['req']) {
     return Project.where({ id: req.params.projectId, tenantId: req.tenant!.id }).firstOrFail()
   }
 }

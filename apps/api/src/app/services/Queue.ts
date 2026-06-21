@@ -35,7 +35,7 @@ export interface EnqueueOptions {
  */
 export class Queue {
   /** Add a job to `queue`. */
-  async enqueue (
+  async enqueue(
     queue: string,
     payload: Record<string, unknown>,
     opts: EnqueueOptions = {},
@@ -57,7 +57,7 @@ export class Queue {
    * `reserved` one past the visibility timeout (crashed worker). Increments
    * `attempts`. Returns `null` when nothing is runnable.
    */
-  async claim (queue?: string): Promise<Job | null> {
+  async claim(queue?: string): Promise<Job | null> {
     const rows = await DB.raw<{ id: string }>(
       `UPDATE jobs
           SET status = 'reserved', reserved_at = NOW(), attempts = attempts + 1, updated_at = NOW()
@@ -84,7 +84,7 @@ export class Queue {
   }
 
   /** Mark a job done. */
-  async complete (job: Job): Promise<void> {
+  async complete(job: Job): Promise<void> {
     job.status = 'completed'
     job.reservedAt = null
     await job.save()
@@ -94,7 +94,7 @@ export class Queue {
    * Record a failure: reschedule with quadratic backoff while attempts remain,
    * otherwise dead-letter the job.
    */
-  async fail (job: Job, error: unknown): Promise<void> {
+  async fail(job: Job, error: unknown): Promise<void> {
     job.lastError = error instanceof Error ? error.message : String(error)
     job.reservedAt = null
 

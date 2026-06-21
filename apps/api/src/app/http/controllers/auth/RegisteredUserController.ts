@@ -11,7 +11,7 @@ export default class RegisteredUserController extends BaseController {
    *
    * @returns An AuthUserResource with the issued `token` (HTTP 201).
    */
-  async create () {
+  async create() {
     const data = await this.validate({
       name: ['required', 'string', 'min:2'],
       email: ['required', 'email', 'unique:users,email'],

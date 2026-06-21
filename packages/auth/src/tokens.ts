@@ -1,12 +1,14 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 
 /** A freshly-minted opaque token and its at-rest hash. */
 export interface TokenPair {
-  token: string;
-  tokenHash: string;
+  token: string
+  tokenHash: string
 }
 
-/** Opaque token generation, hashing, and constant-time verification. */
+/**
+ * Opaque token generation, hashing, and constant-time verification.
+ */
 export class Token {
   /**
    * Generate a cryptographically-random, URL-safe opaque token.
@@ -16,8 +18,8 @@ export class Token {
    * @param byteLength
    * @returns
    */
-  static generate (byteLength = 32): string {
-    return randomBytes(byteLength).toString('base64url');
+  static generate(byteLength = 32): string {
+    return randomBytes(byteLength).toString('base64url')
   }
 
   /**
@@ -26,8 +28,8 @@ export class Token {
    * @param value
    * @returns
    */
-  static sha256 (value: string): string {
-    return createHash('sha256').update(value).digest('hex');
+  static sha256(value: string): string {
+    return createHash('sha256').update(value).digest('hex')
   }
 
   /**
@@ -36,8 +38,8 @@ export class Token {
    * @param token
    * @returns
    */
-  static hash (token: string): string {
-    return Token.sha256(token);
+  static hash(token: string): string {
+    return Token.sha256(token)
   }
 
   /**
@@ -47,12 +49,12 @@ export class Token {
    * @param b
    * @returns
    */
-  static safeEqualHex (a: string, b: string): boolean {
-    if (a.length !== b.length) return false;
-    const bufA = Buffer.from(a, 'hex');
-    const bufB = Buffer.from(b, 'hex');
-    if (bufA.length !== bufB.length || bufA.length === 0) return false;
-    return timingSafeEqual(bufA, bufB);
+  static safeEqualHex(a: string, b: string): boolean {
+    if (a.length !== b.length) return false
+    const bufA = Buffer.from(a, 'hex')
+    const bufB = Buffer.from(b, 'hex')
+    if (bufA.length !== bufB.length || bufA.length === 0) return false
+    return timingSafeEqual(bufA, bufB)
   }
 
   /**
@@ -62,8 +64,8 @@ export class Token {
    * @param tokenHash
    * @returns
    */
-  static verify (token: string, tokenHash: string): boolean {
-    return Token.safeEqualHex(Token.sha256(token), tokenHash);
+  static verify(token: string, tokenHash: string): boolean {
+    return Token.safeEqualHex(Token.sha256(token), tokenHash)
   }
 
   /**
@@ -72,8 +74,8 @@ export class Token {
    * @param byteLength
    * @returns
    */
-  static createPair (byteLength = 32): TokenPair {
-    const token = Token.generate(byteLength);
-    return { token, tokenHash: Token.hash(token) };
+  static createPair(byteLength = 32): TokenPair {
+    const token = Token.generate(byteLength)
+    return { token, tokenHash: Token.hash(token) }
   }
 }

@@ -9,108 +9,122 @@ import { Role } from '@app/models/Role'
 import { audit } from '@app/services/AuditLogger'
 
 export default class RoleController extends BaseController {
-    /**
-     * List the active tenant's roles.
-     *
-     * @param   ctx  The HTTP context (`req.tenant`).
-     * @returns      A RoleCollection.
-     */
-    async index ({ req }: HttpContext) {
-        const roles = await Role.where({ tenantId: req.tenant!.id }).get()
+  /**
+   * List the active tenant's roles.
+   *
+   * @param   ctx  The HTTP context (`req.tenant`).
+   * @returns      A RoleCollection.
+   */
+  async index({ req }: HttpContext) {
+    const roles = await Role.where({ tenantId: req.tenant!.id }).get()
 
-        return new RoleCollection(roles).additional({
-          status: 'success',
-          message: 'OK',
-          code: 200,
-        })
-    }
+    return new RoleCollection(roles).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
+  }
 
-    /**
-     * Create a custom role with an optional permission set.
-     *
-     * @param   ctx  The HTTP context (`req.tenant`).
-     * @returns      A RoleResource with its `permissions` (HTTP 201).
-     */
-    async create ({ req }: HttpContext) {
-        const data = await this.validate({
-            name: ['required', 'string', 'min:2'],
-            slug: ['nullable', 'string'],
-            description: ['nullable', 'string'],
-            permissions: ['nullable', 'array'],
-        })
+  /**
+   * Create a custom role with an optional permission set.
+   *
+   * @param   ctx  The HTTP context (`req.tenant`).
+   * @returns      A RoleResource with its `permissions` (HTTP 201).
+   */
+  async create({ req }: HttpContext) {
+    const data = await this.validate({
+      name: ['required', 'string', 'min:2'],
+      slug: ['nullable', 'string'],
+      description: ['nullable', 'string'],
+      permissions: ['nullable', 'array'],
+    })
 
-        const slug = (data.slug || Str.slug(data.name)).toLowerCase()
-        RequestException.abortIf(
-            await Role.where({ tenantId: req.tenant!.id, slug }).first(),
-            'A role with this slug already exists',
-            409,
-        )
+    const slug = (data.slug || Str.slug(data.name)).toLowerCase()
+    RequestException.abortIf(
+      await Role.where({ tenantId: req.tenant!.id, slug }).first(),
+      'A role with this slug already exists',
+      409,
+    )
 
-        const role = await Role.create({
-            tenantId: req.tenant!.id,
-            name: data.name,
-            slug,
-            description: data.description ?? null,
-            isSystem: false,
-        })
-        if (data.permissions) await setRolePermissions(role.id, data.permissions)
+    const role = await Role.create({
+      tenantId: req.tenant!.id,
+      name: data.name,
+      slug,
+      description: data.description ?? null,
+      isSystem: false,
+    })
+    if (data.permissions) await setRolePermissions(role.id, data.permissions)
 
-        await audit.recordForRequest(req, { action: 'role.created', entityType: 'role', entityId: role.id })
+    await audit.recordForRequest(req, {
+      action: 'role.created',
+      entityType: 'role',
+      entityId: role.id,
+    })
 
-        return new RoleResource(role)
-            .additional({
-                status: 'success',
-                message: 'Role created',
-                code: 201,
-                permissions: await rolePermissionNames(role.id),
-            })
-            .response()
-            .setStatusCode(201)
-    }
+    return new RoleResource(role)
+      .additional({
+        status: 'success',
+        message: 'Role created',
+        code: 201,
+        permissions: await rolePermissionNames(role.id),
+      })
+      .response()
+      .setStatusCode(201)
+  }
 
-    /**
-     * Show a role and its permission names.
-     *
-     * @param   ctx  The HTTP context (`:roleId`, `req.tenant`).
-     * @returns      A RoleResource with its `permissions`.
-     */
-    async show ({ req }: HttpContext) {
-        const role = await Role.where({ id: req.params.roleId, tenantId: req.tenant!.id }).firstOrFail()
+  /**
+   * Show a role and its permission names.
+   *
+   * @param   ctx  The HTTP context (`:roleId`, `req.tenant`).
+   * @returns      A RoleResource with its `permissions`.
+   */
+  async show({ req }: HttpContext) {
+    const role = await Role.where({
+      id: req.params.roleId,
+      tenantId: req.tenant!.id,
+    }).firstOrFail()
 
-        return new RoleResource(role).additional({
-            status: 'success',
-            message: 'OK',
-            code: 200,
-            permissions: await rolePermissionNames(role.id),
-        })
-    }
+    return new RoleResource(role).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+      permissions: await rolePermissionNames(role.id),
+    })
+  }
 
-    /**
-     * Update a role's name/description and (optionally) its permission set.
-     *
-     * @param   ctx  The HTTP context (`:roleId`, `req.tenant`).
-     * @returns      A RoleResource with its `permissions`.
-     */
-    async update ({ req }: HttpContext) {
-        const data = await this.validate({
-            name: ['nullable', 'string'],
-            description: ['nullable', 'string'],
-            permissions: ['nullable', 'array'],
-        })
+  /**
+   * Update a role's name/description and (optionally) its permission set.
+   *
+   * @param   ctx  The HTTP context (`:roleId`, `req.tenant`).
+   * @returns      A RoleResource with its `permissions`.
+   */
+  async update({ req }: HttpContext) {
+    const data = await this.validate({
+      name: ['nullable', 'string'],
+      description: ['nullable', 'string'],
+      permissions: ['nullable', 'array'],
+    })
 
-        const role = await Role.where({ id: req.params.roleId, tenantId: req.tenant!.id }).firstOrFail()
-        if (data.name) role.name = data.name
-        if (data.description !== undefined) role.description = data.description
-        await role.save()
-        if (data.permissions) await setRolePermissions(role.id, data.permissions)
+    const role = await Role.where({
+      id: req.params.roleId,
+      tenantId: req.tenant!.id,
+    }).firstOrFail()
+    if (data.name) role.name = data.name
+    if (data.description !== undefined) role.description = data.description
+    await role.save()
+    if (data.permissions) await setRolePermissions(role.id, data.permissions)
 
-        await audit.recordForRequest(req, { action: 'role.updated', entityType: 'role', entityId: role.id })
+    await audit.recordForRequest(req, {
+      action: 'role.updated',
+      entityType: 'role',
+      entityId: role.id,
+    })
 
-        return new RoleResource(role).additional({
-            status: 'success',
-            message: 'Role updated',
-            code: 200,
-            permissions: await rolePermissionNames(role.id),
-        })
-    }
+    return new RoleResource(role).additional({
+      status: 'success',
+      message: 'Role updated',
+      code: 200,
+      permissions: await rolePermissionNames(role.id),
+    })
+  }
 }

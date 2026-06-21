@@ -22,12 +22,12 @@ export class QueueWorkCommand extends Command {
 
   sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-  async handle (): Promise<void> {
+  async handle(): Promise<void> {
     const queueName = (this.argument('queue') as string | undefined) || undefined
     const once = Boolean(this.option('once'))
 
     this.info(
-      `Queue worker started${queueName ? ` for "${queueName}"` : ''}${once ? ' (once)' : ''}`
+      `Queue worker started${queueName ? ` for "${queueName}"` : ''}${once ? ' (once)' : ''}`,
     )
 
     if (once) {
@@ -37,7 +37,7 @@ export class QueueWorkCommand extends Command {
       return
     }
 
-    for (; ;) {
+    for (;;) {
       const processed = await processNext(queueName)
       if (!processed) await this.sleep(QueueWorkCommand.IDLE_POLL_MS)
     }

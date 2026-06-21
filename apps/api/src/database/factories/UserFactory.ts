@@ -4,13 +4,13 @@ import { User } from '@app/models/User'
 import { faker } from '@faker-js/faker'
 
 export class UserFactory extends ModelFactory<User> {
-    protected model = User
+  protected model = User
 
-    protected async definition (_sequence: number) {
-        return {
-            'name': faker.person.fullName(),
-            'email': faker.internet.email(),
-            'password': await Hash.make('password'),
-        }
+  protected async definition(_sequence: number) {
+    return {
+      name: faker.person.fullName(),
+      email: faker.internet.email(),
+      password: await Hash.make('password'),
     }
+  }
 }

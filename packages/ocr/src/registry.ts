@@ -1,6 +1,7 @@
-import type { OcrConfig, OcrDriver } from './types';
-import { MockOcrDriver } from './drivers/mock';
-import { ExternalOcrDriver } from './drivers/external';
+import type { OcrConfig, OcrDriver } from './types'
+
+import { ExternalOcrDriver } from './drivers/external'
+import { MockOcrDriver } from './drivers/mock'
 
 /**
  * Selects an OCR driver from config. Call sites depend only on the
@@ -8,15 +9,20 @@ import { ExternalOcrDriver } from './drivers/external';
  * with no other changes.
  */
 export class OcrDriverFactory {
-  /** Resolve the OCR driver named by `config`. */
+  /**
+   * Resolve the OCR driver named by `config`.
+   *
+   * @param config
+   * @returns
+   */
   static create(config: OcrConfig): OcrDriver {
     switch (config.driver) {
       case 'mock':
-        return new MockOcrDriver();
+        return new MockOcrDriver()
       case 'external':
-        return new ExternalOcrDriver(config);
+        return new ExternalOcrDriver(config)
       default:
-        throw new Error(`Unknown OCR driver: ${(config as OcrConfig).driver}`);
+        throw new Error(`Unknown OCR driver: ${(config as OcrConfig).driver}`)
     }
   }
 }

@@ -12,57 +12,57 @@ import { AuditLog } from './AuditLog'
 import { TenantFactory } from 'src/database/factories/TenantFactory'
 
 export class Tenant extends Model {
-    protected static override table = 'tenants'
+  protected static override table = 'tenants'
 
-    protected static override factoryClass = TenantFactory
+  protected static override factoryClass = TenantFactory
 
-    declare id: string
-    declare name: string
-    declare slug: string
-    declare logoUrl: string | null
-    declare settings: TenantSettings | null
-    declare createdAt: Date
-    declare updatedAt: Date
+  declare id: string
+  declare name: string
+  declare slug: string
+  declare logoUrl: string | null
+  declare settings: TenantSettings | null
+  declare createdAt: Date
+  declare updatedAt: Date
 
-    protected static override columns = {
-        logoUrl: 'logo_url',
-        createdAt: 'created_at',
-        updatedAt: 'updated_at',
-    }
+  protected static override columns = {
+    logoUrl: 'logo_url',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  }
 
-    protected override casts: CastMap = {
-        settings: 'json',
-    }
+  protected override casts: CastMap = {
+    settings: 'json',
+  }
 
-    roles () {
-        return this.hasMany(Role, 'tenantId')
-    }
+  roles() {
+    return this.hasMany(Role, 'tenantId')
+  }
 
-    members () {
-        return this.hasMany(TenantMember, 'tenantId')
-    }
+  members() {
+    return this.hasMany(TenantMember, 'tenantId')
+  }
 
-    invitations () {
-        return this.hasMany(TenantInvitation, 'tenantId')
-    }
+  invitations() {
+    return this.hasMany(TenantInvitation, 'tenantId')
+  }
 
-    projects () {
-        return this.hasMany(Project, 'tenantId')
-    }
+  projects() {
+    return this.hasMany(Project, 'tenantId')
+  }
 
-    apiKeys () {
-        return this.hasMany(ApiKey, 'tenantId')
-    }
+  apiKeys() {
+    return this.hasMany(ApiKey, 'tenantId')
+  }
 
-    sessions () {
-        return this.hasMany(VerificationSession, 'tenantId')
-    }
+  sessions() {
+    return this.hasMany(VerificationSession, 'tenantId')
+  }
 
-    webhookEndpoints () {
-        return this.hasMany(WebhookEndpoint, 'tenantId')
-    }
+  webhookEndpoints() {
+    return this.hasMany(WebhookEndpoint, 'tenantId')
+  }
 
-    auditLogs () {
-        return this.hasMany(AuditLog, 'tenantId')
-    }
+  auditLogs() {
+    return this.hasMany(AuditLog, 'tenantId')
+  }
 }

@@ -2,7 +2,7 @@ import { Resource } from 'resora'
 
 /** A single audit-trail entry. */
 export default class AuditLogResource extends Resource {
-  data () {
+  data() {
     return {
       id: this.id,
       project_id: this.projectId ?? null,

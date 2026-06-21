@@ -21,7 +21,7 @@ const DOCUMENT_TYPES = 'passport,id_card,drivers_license,residence_permit'
  */
 export default class ClientSessionController extends BaseController {
   /** Return the current session, marking it `started` on first load. */
-  async session ({ req }: HttpContext) {
+  async session({ req }: HttpContext) {
     const session = await sessionService.start(req.verificationSession!)
 
     return new ClientSessionResource(session)
@@ -29,11 +29,13 @@ export default class ClientSessionController extends BaseController {
         status: 'success',
         message: 'OK',
         code: 201,
-      }).response().setStatusCode(201)
+      })
+      .response()
+      .setStatusCode(201)
   }
 
   /** Submit the document front image (runs OCR + portrait extraction). */
-  async documentFront ({ req }: HttpContext) {
+  async documentFront({ req }: HttpContext) {
     const data = await this.validate({
       country: ['nullable', 'string', 'max:3'],
       document_type: ['nullable', 'string', `in:${DOCUMENT_TYPES}`],
@@ -55,11 +57,13 @@ export default class ClientSessionController extends BaseController {
         status: 'success',
         message: 'Document front received',
         code: 201,
-      }).response().setStatusCode(201)
+      })
+      .response()
+      .setStatusCode(201)
   }
 
   /** Submit the document back image. */
-  async documentBack ({ req }: HttpContext) {
+  async documentBack({ req }: HttpContext) {
     const data = await this.validate({
       country: ['nullable', 'string', 'max:3'],
       document_type: ['nullable', 'string', `in:${DOCUMENT_TYPES}`],
@@ -77,11 +81,13 @@ export default class ClientSessionController extends BaseController {
         status: 'success',
         message: 'Document back received',
         code: 201,
-      }).response().setStatusCode(201)
+      })
+      .response()
+      .setStatusCode(201)
   }
 
   /** Submit the liveness/selfie check. */
-  async liveness ({ req }: HttpContext) {
+  async liveness({ req }: HttpContext) {
     const data = await this.validate({
       selfie: ['nullable', 'file', 'image', 'max:10240'],
       liveness_score: ['nullable', 'numeric', 'between:0,1'],
@@ -99,11 +105,13 @@ export default class ClientSessionController extends BaseController {
         status: 'success',
         message: 'Liveness check received',
         code: 201,
-      }).response().setStatusCode(201)
+      })
+      .response()
+      .setStatusCode(201)
   }
 
   /** Finalise the session — runs the decision engine and lands a verdict. */
-  async complete ({ req }: HttpContext) {
+  async complete({ req }: HttpContext) {
     const data = await this.validate({
       face_similarity: ['nullable', 'numeric', 'between:0,1'],
       face_match_passed: ['nullable', 'boolean'],
@@ -118,11 +126,13 @@ export default class ClientSessionController extends BaseController {
         status: 'success',
         message: 'Verification complete',
         code: 202,
-      }).response().setStatusCode(202)
+      })
+      .response()
+      .setStatusCode(202)
   }
 
   /** Map validated body fields to provider signal hints. */
-  private signals (data: Record<string, unknown>): ProviderSignals {
+  private signals(data: Record<string, unknown>): ProviderSignals {
     return {
       qualityScore: data.quality_score as number | undefined,
       ocrConfidence: data.ocr_confidence as number | undefined,

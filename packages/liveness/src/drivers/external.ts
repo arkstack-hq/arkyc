@@ -1,15 +1,15 @@
-import type { LivenessResultData } from '@arkyc/types';
-import type { LivenessConfig, LivenessDriver, LivenessRequest } from '../types';
+import type { LivenessResultData } from '@arkyc/types'
+import type { LivenessConfig, LivenessDriver, LivenessRequest } from '../types'
 
 /**
  * Generic HTTP liveness driver: POSTs the base64 selfie to a configured
  * endpoint and expects a {@link LivenessResultData}-shaped JSON response.
  */
 export class ExternalLivenessDriver implements LivenessDriver {
-  readonly name = 'external';
+  readonly name = 'external'
 
   constructor(private readonly config: LivenessConfig) {
-    if (!config.endpoint) throw new Error('ExternalLivenessDriver requires config.endpoint');
+    if (!config.endpoint) throw new Error('ExternalLivenessDriver requires config.endpoint')
   }
 
   async check(request: LivenessRequest): Promise<LivenessResultData> {
@@ -20,12 +20,12 @@ export class ExternalLivenessDriver implements LivenessDriver {
         ...(this.config.apiKey ? { authorization: `Bearer ${this.config.apiKey}` } : {}),
       },
       body: JSON.stringify({ selfie: Buffer.from(request.selfie).toString('base64') }),
-    });
+    })
 
     if (!res.ok) {
-      throw new Error(`ExternalLivenessDriver request failed with status ${res.status}`);
+      throw new Error(`ExternalLivenessDriver request failed with status ${res.status}`)
     }
 
-    return (await res.json()) as LivenessResultData;
+    return (await res.json()) as LivenessResultData
   }
 }

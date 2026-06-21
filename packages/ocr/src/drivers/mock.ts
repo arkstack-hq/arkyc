@@ -1,7 +1,7 @@
-import type { OcrResultData } from '@arkyc/types';
-import type { OcrDriver, OcrRequest } from '../types';
+import type { OcrResultData } from '@arkyc/types'
+import type { OcrDriver, OcrRequest } from '../types'
 
-const clamp01 = (n: number): number => Math.min(1, Math.max(0, n));
+const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
 
 /**
  * Deterministic OCR driver for development + tests. Returns fixed identity
@@ -9,10 +9,10 @@ const clamp01 = (n: number): number => Math.min(1, Math.max(0, n));
  * session toward any decision.
  */
 export class MockOcrDriver implements OcrDriver {
-  readonly name = 'mock';
+  readonly name = 'mock'
 
   async extract(request: OcrRequest): Promise<OcrResultData> {
-    const confidence = clamp01(request.hints?.confidence ?? 0.92);
+    const confidence = clamp01(request.hints?.confidence ?? 0.92)
 
     return {
       fields: {
@@ -26,6 +26,6 @@ export class MockOcrDriver implements OcrDriver {
       },
       confidence,
       raw: { provider: 'mock', confidence, documentType: request.documentType ?? null },
-    };
+    }
   }
 }

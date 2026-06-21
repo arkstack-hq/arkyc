@@ -14,7 +14,7 @@ const client = (method: 'get' | 'post', path: string, token: string) =>
   request(app)[method](`/api/v1/client/${path}`).set('X-Client-Token', token)
 
 /** Open a session and walk it to `requires_review` (low document quality). */
-async function reviewableSession (): Promise<string> {
+async function reviewableSession(): Promise<string> {
   const open = await request(app)
     .post('/api/v1/sessions')
     .set('Authorization', `Bearer ${fx.apiKeySecret}`)
@@ -42,10 +42,15 @@ beforeAll(async () => {
   const tenant = await authed('post', '/tenants').send({ name: `Rev Co ${s}` })
   fx.tenantId = tenant.body.data.id
 
-  const project = await authed('post', `/tenants/${fx.tenantId}/projects`).send({ name: 'Rev Prod' })
+  const project = await authed('post', `/tenants/${fx.tenantId}/projects`).send({
+    name: 'Rev Prod',
+  })
   fx.projectId = project.body.data.id
 
-  const key = await authed('post', `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`).send({ name: 'Rev key' })
+  const key = await authed(
+    'post',
+    `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`,
+  ).send({ name: 'Rev key' })
   fx.apiKeySecret = key.body.secret
 })
 
@@ -66,7 +71,9 @@ describe('review queue + actions', () => {
   it('approves a session and records the audit trail', async () => {
     const id = await reviewableSession()
 
-    const approve = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/approve`).send({ reason: 'looks ok' })
+    const approve = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/approve`).send({
+      reason: 'looks ok',
+    })
     expect(approve.status).toBe(200)
     expect(approve.body.data.status).toBe('approved')
     expect(approve.body.data.final_decision).toBe('approved')
@@ -88,7 +95,9 @@ describe('review queue + actions', () => {
   it('sends a session back for a document retry', async () => {
     const id = await reviewableSession()
 
-    const retry = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/request-retry`).send({ kind: 'document' })
+    const retry = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/request-retry`).send(
+      { kind: 'document' },
+    )
     expect(retry.body.data.status).toBe('started')
   })
 
@@ -102,7 +111,9 @@ describe('review queue + actions', () => {
   it('assigns a session to a reviewer', async () => {
     const id = await reviewableSession()
 
-    const res = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/assign`).send({ user_id: fx.ownerId })
+    const res = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/assign`).send({
+      user_id: fx.ownerId,
+    })
     expect(res.status).toBe(200)
     expect(res.body.data.assigned_to).toBe(fx.ownerId)
 
@@ -113,7 +124,9 @@ describe('review queue + actions', () => {
   it('flags a session as suspicious', async () => {
     const id = await reviewableSession()
 
-    const res = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/suspicious`).send({ reason: 'face mismatch' })
+    const res = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/suspicious`).send({
+      reason: 'face mismatch',
+    })
     expect(res.status).toBe(200)
 
     const logs = await authed('get', `/tenants/${fx.tenantId}/audit-logs?action=review.suspicious`)

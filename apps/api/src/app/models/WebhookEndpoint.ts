@@ -6,42 +6,42 @@ import { Project } from './Project'
 import { WebhookDelivery } from './WebhookDelivery'
 
 export class WebhookEndpoint extends Model {
-    protected static override table = 'webhook_endpoints'
+  protected static override table = 'webhook_endpoints'
 
-    declare id: string
-    declare tenantId: string
-    declare projectId: string
-    declare url: string
-    declare secretHash: string
-    declare events: WebhookEventName[]
-    declare status: WebhookEndpointStatus
-    declare createdAt: Date
-    declare updatedAt: Date
+  declare id: string
+  declare tenantId: string
+  declare projectId: string
+  declare url: string
+  declare secretHash: string
+  declare events: WebhookEventName[]
+  declare status: WebhookEndpointStatus
+  declare createdAt: Date
+  declare updatedAt: Date
 
-    protected static override columns = {
-        tenantId: 'tenant_id',
-        projectId: 'project_id',
-        secretHash: 'secret_hash',
-        createdAt: 'created_at',
-        updatedAt: 'updated_at',
-    }
+  protected static override columns = {
+    tenantId: 'tenant_id',
+    projectId: 'project_id',
+    secretHash: 'secret_hash',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  }
 
-    protected override casts: CastMap = {
-        events: 'json',
-    }
+  protected override casts: CastMap = {
+    events: 'json',
+  }
 
-    /** The signing secret hash is never serialised. */
-    protected override hidden = ['secretHash']
+  /** The signing secret hash is never serialised. */
+  protected override hidden = ['secretHash']
 
-    tenant () {
-        return this.belongsTo(Tenant, 'tenantId')
-    }
+  tenant() {
+    return this.belongsTo(Tenant, 'tenantId')
+  }
 
-    project () {
-        return this.belongsTo(Project, 'projectId')
-    }
+  project() {
+    return this.belongsTo(Project, 'projectId')
+  }
 
-    deliveries () {
-        return this.hasMany(WebhookDelivery, 'webhookEndpointId')
-    }
+  deliveries() {
+    return this.hasMany(WebhookDelivery, 'webhookEndpointId')
+  }
 }

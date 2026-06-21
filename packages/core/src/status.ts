@@ -1,17 +1,21 @@
-import type { VerificationStatus } from '@arkyc/types';
+import type { VerificationStatus } from '@arkyc/types'
 
-/** Thrown when an illegal status transition is attempted. */
+/**
+ * Thrown when an illegal status transition is attempted.
+ */
 export class InvalidStatusTransitionError extends Error {
   constructor(
     public readonly from: VerificationStatus,
     public readonly to: VerificationStatus,
   ) {
-    super(`Invalid verification status transition: ${from} → ${to}`);
-    this.name = 'InvalidStatusTransitionError';
+    super(`Invalid verification status transition: ${from} → ${to}`)
+    this.name = 'InvalidStatusTransitionError'
   }
 }
 
-/** Verification session status-transition rules. */
+/**
+ * Verification session status-transition rules.
+ */
 export class StatusMachine {
   /**
    * Allowed status transitions for a verification session.
@@ -35,7 +39,7 @@ export class StatusMachine {
       rejected: [],
       expired: [],
       cancelled: [],
-    };
+    }
 
   /** Statuses from which no further transition is possible. */
   static readonly TERMINAL: readonly VerificationStatus[] = [
@@ -43,26 +47,41 @@ export class StatusMachine {
     'rejected',
     'expired',
     'cancelled',
-  ];
+  ]
 
-  /** Whether `status` is terminal (no further transitions allowed). */
+  /**
+   * Whether `status` is terminal (no further transitions allowed).
+   *
+   * @param status
+   * @returns
+   */
   static isTerminal(status: VerificationStatus): boolean {
-    return StatusMachine.TERMINAL.includes(status);
+    return StatusMachine.TERMINAL.includes(status)
   }
 
-  /** Whether moving from `from` to `to` is a permitted transition. */
+  /**
+   * Whether moving from `from` to `to` is a permitted transition.
+   *
+   * @param from
+   * @param to
+   * @returns
+   */
   static canTransition(from: VerificationStatus, to: VerificationStatus): boolean {
-    return StatusMachine.TRANSITIONS[from].includes(to);
+    return StatusMachine.TRANSITIONS[from].includes(to)
   }
 
   /**
    * Assert that `from → to` is permitted, throwing {@link InvalidStatusTransitionError}
    * otherwise. Returns `to` so it can be used inline.
+   *
+   * @param from
+   * @param to
+   * @returns
    */
   static assert(from: VerificationStatus, to: VerificationStatus): VerificationStatus {
     if (!StatusMachine.canTransition(from, to)) {
-      throw new InvalidStatusTransitionError(from, to);
+      throw new InvalidStatusTransitionError(from, to)
     }
-    return to;
+    return to
   }
 }

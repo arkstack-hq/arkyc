@@ -59,14 +59,14 @@ pnpm lint
 
 Scripts fan out across the workspace with `pnpm -r` (recursive, topological order).
 
-| Script            | Description                                  |
-| ----------------- | -------------------------------------------- |
-| `pnpm build`      | Build every package/app in dependency order  |
-| `pnpm dev`        | Run dev tasks across the workspace            |
-| `pnpm test`       | Run Vitest across packages                    |
-| `pnpm lint`       | ESLint across the workspace                   |
-| `pnpm typecheck`  | `tsc --noEmit` across the workspace           |
-| `pnpm format`     | Prettier write                                |
+| Script           | Description                                 |
+| ---------------- | ------------------------------------------- |
+| `pnpm build`     | Build every package/app in dependency order |
+| `pnpm dev`       | Run dev tasks across the workspace          |
+| `pnpm test`      | Run Vitest across packages                  |
+| `pnpm lint`      | ESLint across the workspace                 |
+| `pnpm typecheck` | `tsc --noEmit` across the workspace         |
+| `pnpm format`    | Prettier write                              |
 
 ## License
 

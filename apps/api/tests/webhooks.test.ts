@@ -26,8 +26,11 @@ const client = (method: 'get' | 'post', path: string, token: string) =>
   request(app)[method](`/api/v1/client/${path}`).set('X-Client-Token', token)
 
 /** Open + complete a clean session; drain runs ocr → biometric → webhook jobs. */
-async function completeSession (): Promise<string> {
-  const open = await request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send({})
+async function completeSession(): Promise<string> {
+  const open = await request(app)
+    .post('/api/v1/sessions')
+    .set('Authorization', `Bearer ${fx.apiKeySecret}`)
+    .send({})
   const id = open.body.data.id
   const token = open.body.client_token
   await client('get', 'session', token)
@@ -63,9 +66,14 @@ beforeAll(async () => {
 
   const tenant = await authed('post', '/tenants').send({ name: `Wh Co ${s}` })
   fx.tenantId = tenant.body.data.id
-  const project = await authed('post', `/tenants/${fx.tenantId}/projects`).send({ name: 'Wh Prod' })
+  const project = await authed('post', `/tenants/${fx.tenantId}/projects`).send({
+    name: 'Wh Prod',
+  })
   fx.projectId = project.body.data.id
-  const key = await authed('post', `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`).send({ name: 'Wh key' })
+  const key = await authed(
+    'post',
+    `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`,
+  ).send({ name: 'Wh key' })
   fx.apiKeySecret = key.body.secret
 })
 
@@ -74,7 +82,8 @@ afterAll(async () => {
   if (fx.tenantId) await Tenant.destroy(fx.tenantId)
 })
 
-const webhooks = (suffix = '') => `/tenants/${fx.tenantId}/projects/${fx.projectId}/webhooks${suffix}`
+const webhooks = (suffix = '') =>
+  `/tenants/${fx.tenantId}/projects/${fx.projectId}/webhooks${suffix}`
 
 describe('webhook endpoints', () => {
   it('returns the signing secret once on create, then hides it', async () => {
@@ -92,7 +101,10 @@ describe('webhook endpoints', () => {
   })
 
   it('rejects an invalid event name', async () => {
-    const res = await authed('post', webhooks()).send({ url: receiverUrl, events: ['not.an.event'] })
+    const res = await authed('post', webhooks()).send({
+      url: receiverUrl,
+      events: ['not.an.event'],
+    })
     expect(res.status).toBe(422)
   })
 
@@ -111,7 +123,12 @@ describe('webhook endpoints', () => {
     const hit = delivered.find(
       (d) =>
         JSON.parse(d.body).session_id === sessionId &&
-        WebhookSigner.verify({ payload: d.body, secret, signature: d.signature, timestamp: d.timestamp }),
+        WebhookSigner.verify({
+          payload: d.body,
+          secret,
+          signature: d.signature,
+          timestamp: d.timestamp,
+        }),
     )
     expect(hit).toBeTruthy()
     expect(JSON.parse(hit!.body).event).toBe('verification.approved')
@@ -130,7 +147,9 @@ describe('webhook endpoints', () => {
 
     await completeSession()
 
-    const deliveries = Array.from(await WebhookDelivery.where({ webhookEndpointId: endpointId }).get())
+    const deliveries = Array.from(
+      await WebhookDelivery.where({ webhookEndpointId: endpointId }).get(),
+    )
     expect(deliveries.length).toBeGreaterThan(0)
     expect(deliveries.every((d) => d.status === 'failed')).toBe(true)
     expect(deliveries[0].attempts).toBeGreaterThanOrEqual(1)

@@ -1,8 +1,13 @@
-import type { DocumentType, VerificationDecision, VerificationStatus, WidgetStep } from '@arkyc/types';
+import type {
+  DocumentType,
+  VerificationDecision,
+  VerificationStatus,
+  WidgetStep,
+} from '@arkyc/types'
 
 /** Context that influences flow branching. */
 export interface FlowContext {
-  documentType?: DocumentType | null;
+  documentType?: DocumentType | null
 }
 
 /**
@@ -25,40 +30,56 @@ export class Flow {
     'face_match',
     'processing',
     'result',
-  ];
+  ]
 
-  /** Statuses from which a session can no longer progress. */
+  /**
+   * Statuses from which a session can no longer progress.
+   */
   static readonly TERMINAL_STATUSES: VerificationStatus[] = [
     'approved',
     'rejected',
     'requires_review',
     'expired',
     'cancelled',
-  ];
+  ]
 
-  /** Whether a document type has a second (back) side to capture. */
+  /**
+   * Whether a document type has a second (back) side to capture.
+   *
+   * @param type
+   * @returns
+   */
   static documentHasBack(type: DocumentType | null | undefined): boolean {
-    return type != null && type !== 'passport';
+    return type != null && type !== 'passport'
   }
 
   /**
    * The next screen after `current`, honouring branch rules (skip `back_capture`
    * for single-sided documents). Returns `current` when already at the end.
+   *
+   * @param current
+   * @param ctx
+   * @returns
    */
   static nextStep(current: WidgetStep, ctx: FlowContext = {}): WidgetStep {
-    const idx = Flow.STEP_ORDER.indexOf(current);
-    if (idx < 0 || idx >= Flow.STEP_ORDER.length - 1) return current;
+    const idx = Flow.STEP_ORDER.indexOf(current)
+    if (idx < 0 || idx >= Flow.STEP_ORDER.length - 1) return current
 
-    const next = Flow.STEP_ORDER[idx + 1]!;
+    const next = Flow.STEP_ORDER[idx + 1]!
     if (next === 'back_capture' && !Flow.documentHasBack(ctx.documentType)) {
-      return Flow.STEP_ORDER[idx + 2] ?? next;
+      return Flow.STEP_ORDER[idx + 2] ?? next
     }
-    return next;
+    return next
   }
 
-  /** Whether a session status is terminal (the flow is done). */
+  /**
+   * Whether a session status is terminal (the flow is done).
+   *
+   * @param status
+   * @returns
+   */
   static isTerminal(status: VerificationStatus): boolean {
-    return Flow.TERMINAL_STATUSES.includes(status);
+    return Flow.TERMINAL_STATUSES.includes(status)
   }
 
   /**
@@ -69,13 +90,13 @@ export class Flow {
   static statusToDecision(status: VerificationStatus): VerificationDecision | null {
     switch (status) {
       case 'approved':
-        return 'approved';
+        return 'approved'
       case 'rejected':
-        return 'rejected';
+        return 'rejected'
       case 'requires_review':
-        return 'requires_review';
+        return 'requires_review'
       default:
-        return null;
+        return null
     }
   }
 }

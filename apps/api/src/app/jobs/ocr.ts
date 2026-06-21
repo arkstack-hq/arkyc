@@ -19,7 +19,7 @@ export interface OcrJobPayload {
  * + portrait extraction, and persists the results. Idempotent — a re-delivery
  * after the OCR result exists is a no-op.
  */
-export async function ocrJob (payload: OcrJobPayload): Promise<void> {
+export async function ocrJob(payload: OcrJobPayload): Promise<void> {
   const session = await VerificationSession.where({ id: payload.sessionId }).first()
   if (!session) return
   if (await OcrResult.where({ sessionId: session.id }).first()) return

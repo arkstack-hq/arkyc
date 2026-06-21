@@ -1,4 +1,4 @@
-import type { VerificationThresholds } from '@arkyc/types';
+import type { VerificationThresholds } from '@arkyc/types'
 
 /** Verification threshold defaults and override resolution. */
 export class Thresholds {
@@ -11,10 +11,15 @@ export class Thresholds {
     ocrConfidenceThreshold: 0.8,
     livenessThreshold: 0.85,
     faceMatchThreshold: 0.75,
-  };
+  }
 
-  /** Merge a partial set of project overrides over the platform defaults. */
+  /**
+   * Merge a partial set of project overrides over the platform defaults.
+   *
+   * @param overrides
+   * @returns
+   */
   static resolve(overrides?: Partial<VerificationThresholds>): VerificationThresholds {
-    return { ...Thresholds.DEFAULTS, ...(overrides ?? {}) };
+    return { ...Thresholds.DEFAULTS, ...(overrides ?? {}) }
   }
 }

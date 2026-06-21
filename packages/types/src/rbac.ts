@@ -1,4 +1,4 @@
-import type { Entity, Id, TenantScoped } from './common';
+import type { Entity, Id, TenantScoped } from './common'
 
 /**
  * The full catalogue of permission strings recognised by Arkyc.
@@ -42,7 +42,7 @@ export type PermissionKey =
   | 'settings.view'
   | 'settings.update'
   | 'billing.view'
-  | 'billing.update';
+  | 'billing.update'
 
 /** The domain groups permissions are organised under. */
 export type PermissionGroup =
@@ -55,17 +55,17 @@ export type PermissionGroup =
   | 'reviews'
   | 'audit_logs'
   | 'settings'
-  | 'billing';
+  | 'billing'
 
 /** The built-in system roles seeded for every tenant. */
-export type SystemRoleSlug = 'owner' | 'admin' | 'reviewer' | 'developer' | 'readonly';
+export type SystemRoleSlug = 'owner' | 'admin' | 'reviewer' | 'developer' | 'readonly'
 
 /** A permission definition row. Permissions are global (not tenant-scoped). */
 export interface Permission extends Entity {
   /** The permission string, e.g. `sessions.view`. */
-  name: PermissionKey;
-  description: string | null;
-  group: PermissionGroup;
+  name: PermissionKey
+  description: string | null
+  group: PermissionGroup
 }
 
 /**
@@ -73,16 +73,16 @@ export interface Permission extends Entity {
  * deleted; tenants may also define custom roles.
  */
 export interface Role extends Entity, TenantScoped {
-  name: string;
-  slug: string;
-  description: string | null;
-  is_system: boolean;
+  name: string
+  slug: string
+  description: string | null
+  is_system: boolean
 }
 
 /** Join row granting a {@link Permission} to a {@link Role}. */
 export interface RolePermission extends Entity {
-  role_id: Id;
-  permission_id: Id;
+  role_id: Id
+  permission_id: Id
 }
 
 /**
@@ -90,7 +90,7 @@ export interface RolePermission extends Entity {
  * `project_id` is null for tenant-level grants, set for project-level grants.
  */
 export interface UserPermission extends Entity, TenantScoped {
-  project_id: Id | null;
-  user_id: Id;
-  permission_id: Id;
+  project_id: Id | null
+  user_id: Id
+  permission_id: Id
 }

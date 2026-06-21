@@ -4,7 +4,7 @@ import AuditLogResource from './AuditLogResource'
 export default class AuditLogCollection extends ResourceCollection {
   collects = AuditLogResource
 
-  data () {
+  data() {
     return this.toObject()
   }
 }

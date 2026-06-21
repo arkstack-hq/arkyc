@@ -68,11 +68,11 @@ or permission is denied. Overlay iframes are launched with
 In hosted/iframe mode the widget posts these messages to `window.parent`, which
 `@arkyc/sdk/browser` listens for:
 
-| Message           | Payload                          |
-| ----------------- | -------------------------------- |
-| `arkyc:complete`  | `{ status, decision }`           |
-| `arkyc:error`     | `{ message, name }`              |
-| `arkyc:close`     | —                                |
+| Message          | Payload                |
+| ---------------- | ---------------------- |
+| `arkyc:complete` | `{ status, decision }` |
+| `arkyc:error`    | `{ message, name }`    |
+| `arkyc:close`    | —                      |
 
 `onComplete` / `onError` fire when the user acknowledges the result screen, so
 the user always sees the outcome before the widget tears down.

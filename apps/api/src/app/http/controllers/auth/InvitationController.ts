@@ -14,23 +14,22 @@ export default class InvitationController extends BaseController {
    * @param   ctx  The HTTP context (the accepting user is `req.user`).
    * @returns      An EmptyResource confirming acceptance.
    */
-  async create ({ req }: HttpContext) {
+  async create({ req }: HttpContext) {
     const data = await this.validate({ token: ['required', 'string'] })
     const user = req.user!
 
-    const invitation = await TenantInvitation
-      .where({ tokenHash: Token.hash(data.token) })
+    const invitation = await TenantInvitation.where({ tokenHash: Token.hash(data.token) })
       .whereNull('acceptedAt')
       .firstOrFail()
     RequestException.abortIf(
       new Date(invitation.expiresAt).getTime() <= Date.now(),
       'Invitation has expired',
-      410
+      410,
     )
     RequestException.abortIf(
       invitation.email !== user.email,
       'This invitation is for a different email',
-      403
+      403,
     )
 
     await TenantMember.query().firstOrCreate(
@@ -39,17 +38,16 @@ export default class InvitationController extends BaseController {
         roleId: invitation.roleId,
         status: 'active',
         joinedAt: new Date(),
-      }
+      },
     )
 
     invitation.acceptedAt = new Date()
     await invitation.save()
 
-    return new EmptyResource({})
-      .additional({
-        status: 'success',
-        message: 'Invitation accepted',
-        code: 200,
-      })
+    return new EmptyResource({}).additional({
+      status: 'success',
+      message: 'Invitation accepted',
+      code: 200,
+    })
   }
 }

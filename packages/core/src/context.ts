@@ -1,9 +1,9 @@
-import type { Id, TenantScoped } from '@arkyc/types';
+import type { Id, TenantScoped } from '@arkyc/types'
 
 /** Identifies the tenant + project a request or entity belongs to. */
 export interface TenantProjectContext {
-  tenantId: Id;
-  projectId: Id;
+  tenantId: Id
+  projectId: Id
 }
 
 /**
@@ -11,8 +11,8 @@ export interface TenantProjectContext {
  */
 export class TenantScopeError extends Error {
   constructor(message = 'Entity is outside the active tenant scope') {
-    super(message);
-    this.name = 'TenantScopeError';
+    super(message)
+    this.name = 'TenantScopeError'
   }
 }
 
@@ -26,7 +26,7 @@ export class TenantContext {
    * @returns
    */
   static belongsTo(entity: TenantScoped, tenantId: Id): boolean {
-    return entity.tenant_id === tenantId;
+    return entity.tenant_id === tenantId
   }
 
   /**
@@ -39,9 +39,9 @@ export class TenantContext {
    */
   static assertScope<T extends TenantScoped>(entity: T, tenantId: Id): T {
     if (!TenantContext.belongsTo(entity, tenantId)) {
-      throw new TenantScopeError();
+      throw new TenantScopeError()
     }
-    return entity;
+    return entity
   }
 
   /**
@@ -63,7 +63,7 @@ export class TenantContext {
       'sessions',
       sessionId,
       ...parts,
-    ];
-    return segments.join('/');
+    ]
+    return segments.join('/')
   }
 }

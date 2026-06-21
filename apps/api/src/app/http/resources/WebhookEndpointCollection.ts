@@ -4,7 +4,7 @@ import WebhookEndpointResource from './WebhookEndpointResource'
 export default class WebhookEndpointCollection extends ResourceCollection {
   collects = WebhookEndpointResource
 
-  data () {
+  data() {
     return this.toObject()
   }
 }

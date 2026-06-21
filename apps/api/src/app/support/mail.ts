@@ -12,7 +12,7 @@ import { Notification } from '@arkstack/notifications'
  * @param data      Template variables to interpolate.
  * @returns         Nothing; the send runs in the background.
  */
-export function sendMail (
+export function sendMail(
   recipient: string,
   message: string,
   subject: string,

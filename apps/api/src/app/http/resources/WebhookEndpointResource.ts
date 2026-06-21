@@ -2,7 +2,7 @@ import { Resource } from 'resora'
 
 /** A webhook endpoint (the signing secret is never serialised — shown once at creation). */
 export default class WebhookEndpointResource extends Resource {
-  data () {
+  data() {
     return {
       id: this.id,
       project_id: this.projectId,

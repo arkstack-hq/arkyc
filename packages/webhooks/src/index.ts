@@ -5,5 +5,5 @@
  * `${timestamp}.${body}`, surfaced via the `X-Arkyc-Signature` /
  * `X-Arkyc-Timestamp` headers. Pure + framework-agnostic.
  */
-export * from './signing';
-export * from './payload';
+export * from './signing'
+export * from './payload'

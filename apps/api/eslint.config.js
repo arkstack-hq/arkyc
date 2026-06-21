@@ -12,8 +12,8 @@ export default defineConfig(
         process: 'readonly',
       },
       parserOptions: {
-        tsconfigRootDir: process.cwd()
-      }
+        tsconfigRootDir: process.cwd(),
+      },
     },
   },
   js.configs.recommended,
@@ -27,7 +27,7 @@ export default defineConfig(
     rules: {
       'no-irregular-whitespace': 'off',
       'markdown/no-missing-label-refs': 'off',
-    }
+    },
   },
   [
     globalIgnores([
@@ -37,35 +37,35 @@ export default defineConfig(
       'build/**',
       '.arkstack/**',
       'node_modules/**',
-    ])
+    ]),
   ],
   {
     rules: {
-      'brace-style': [
-        'error',
-        '1tbs',
-        { 'allowSingleLine': false },
-      ],
+      'brace-style': ['error', '1tbs', { allowSingleLine: false }],
       'no-console': 'off',
       'no-thenable': 'off',
       // 'no-ternary': 'error',
       'newline-before-return': 'error',
-      'semi': ['error', 'never'],
-      'quotes': ['error', 'single'],
+      semi: ['error', 'never'],
+      quotes: ['error', 'single'],
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
-        'warn', {
-          'argsIgnorePattern': '^_|_',
-          'vars': 'all',
-          'args': 'after-used',
-          'ignoreRestSiblings': false,
-          'varsIgnorePattern': '^I[A-Z]|^_',
-        }
+        'warn',
+        {
+          argsIgnorePattern: '^_|_',
+          vars: 'all',
+          args: 'after-used',
+          ignoreRestSiblings: false,
+          varsIgnorePattern: '^I[A-Z]|^_',
+        },
       ],
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/triple-slash-reference': ['error', {
-        'path': 'always'
-      }]
-    }
+      '@typescript-eslint/triple-slash-reference': [
+        'error',
+        {
+          path: 'always',
+        },
+      ],
+    },
   },
 )

@@ -54,8 +54,7 @@ const config = () => {
     two_factor: {
       sms: {
         setup: {
-          template:
-            'Your {app_name} two-factor setup code is {code}. It expires in 10 minutes.',
+          template: 'Your {app_name} two-factor setup code is {code}. It expires in 10 minutes.',
         },
         login: {
           template:

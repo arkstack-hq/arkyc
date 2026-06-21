@@ -1,4 +1,4 @@
-import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped } from './common';
+import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped } from './common'
 
 /** The lifecycle state of a verification session. */
 export type VerificationStatus =
@@ -11,10 +11,10 @@ export type VerificationStatus =
   | 'approved'
   | 'rejected'
   | 'expired'
-  | 'cancelled';
+  | 'cancelled'
 
 /** The outcome of the decision engine (or a manual review). */
-export type VerificationDecision = 'approved' | 'requires_review' | 'rejected';
+export type VerificationDecision = 'approved' | 'requires_review' | 'rejected'
 
 /** Why a session reached its decision. */
 export type DecisionReason =
@@ -29,7 +29,7 @@ export type DecisionReason =
   | 'MULTIPLE_FACES_DETECTED'
   | 'MANUAL_APPROVAL'
   | 'MANUAL_REJECTION'
-  | 'RETRY_REQUESTED';
+  | 'RETRY_REQUESTED'
 
 /**
  * A verification session: the full lifecycle of one verification flow, owned by
@@ -38,18 +38,18 @@ export type DecisionReason =
  */
 export interface VerificationSession extends Entity, ProjectScoped {
   /** Integrator's own reference for the end user being verified. */
-  user_reference: string | null;
-  status: VerificationStatus;
-  auto_decision: VerificationDecision | null;
-  final_decision: VerificationDecision | null;
-  decision_reason: DecisionReason | null;
+  user_reference: string | null
+  status: VerificationStatus
+  auto_decision: VerificationDecision | null
+  final_decision: VerificationDecision | null
+  decision_reason: DecisionReason | null
   /** Aggregate risk score in [0, 1]; higher means riskier. */
-  risk_score: number | null;
+  risk_score: number | null
   /** Hash of the short-lived client token issued to the widget. */
-  client_token_hash: string | null;
-  expires_at: IsoDateTime;
-  completed_at: IsoDateTime | null;
-  reviewed_at: IsoDateTime | null;
-  reviewed_by: Id | null;
-  metadata: Metadata;
+  client_token_hash: string | null
+  expires_at: IsoDateTime
+  completed_at: IsoDateTime | null
+  reviewed_at: IsoDateTime | null
+  reviewed_by: Id | null
+  metadata: Metadata
 }

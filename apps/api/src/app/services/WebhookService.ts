@@ -1,6 +1,11 @@
 import { WebhookPayload, WebhookSigner } from '@arkyc/webhooks'
 import { SessionRules } from '@arkyc/core'
-import type { VerificationStatus, WebhookChecks, WebhookEvent, WebhookEventName } from '@arkyc/types'
+import type {
+  VerificationStatus,
+  WebhookChecks,
+  WebhookEvent,
+  WebhookEventName,
+} from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
 import { WebhookDelivery } from '@app/models/WebhookDelivery'
@@ -34,7 +39,7 @@ const MAX_DELIVERY_ATTEMPTS = 5
  */
 export class WebhookService {
   /** Emit the event(s) for a status change to all subscribed, active endpoints. */
-  async onStatusChange (session: VerificationSession, status: VerificationStatus): Promise<void> {
+  async onStatusChange(session: VerificationSession, status: VerificationStatus): Promise<void> {
     const event = STATUS_EVENT[status]
     if (!event) return
 
@@ -46,7 +51,7 @@ export class WebhookService {
   }
 
   /** Create + enqueue a delivery for each active endpoint subscribed to `event`. */
-  async dispatch (session: VerificationSession, event: WebhookEventName): Promise<void> {
+  async dispatch(session: VerificationSession, event: WebhookEventName): Promise<void> {
     const endpoints = toArray(
       await WebhookEndpoint.where({ projectId: session.projectId, status: 'active' }).get(),
     ).filter((endpoint) => endpoint.events.includes(event))
@@ -64,7 +69,11 @@ export class WebhookService {
         attempts: 0,
         nextRetryAt: null,
       })
-      await queue.enqueue('webhook', { deliveryId: delivery.id }, { maxAttempts: MAX_DELIVERY_ATTEMPTS })
+      await queue.enqueue(
+        'webhook',
+        { deliveryId: delivery.id },
+        { maxAttempts: MAX_DELIVERY_ATTEMPTS },
+      )
     }
   }
 
@@ -73,7 +82,7 @@ export class WebhookService {
    * outcome. Throws on non-2xx / transport error so the queue retries (the
    * delivery row mirrors the latest attempt).
    */
-  async deliver (deliveryId: string): Promise<void> {
+  async deliver(deliveryId: string): Promise<void> {
     const delivery = await WebhookDelivery.where({ id: deliveryId }).first()
     if (!delivery || delivery.status === 'delivered') return
 
@@ -119,7 +128,7 @@ export class WebhookService {
   }
 
   /** Build + persist a one-off test delivery for an endpoint, then enqueue it. */
-  async sendTest (endpoint: WebhookEndpoint): Promise<WebhookDelivery> {
+  async sendTest(endpoint: WebhookEndpoint): Promise<WebhookDelivery> {
     const payload = WebhookPayload.build({
       event: 'verification.completed',
       sessionId: '00000000-0000-0000-0000-000000000000',
@@ -141,13 +150,17 @@ export class WebhookService {
       attempts: 0,
       nextRetryAt: null,
     })
-    await queue.enqueue('webhook', { deliveryId: delivery.id }, { maxAttempts: MAX_DELIVERY_ATTEMPTS })
+    await queue.enqueue(
+      'webhook',
+      { deliveryId: delivery.id },
+      { maxAttempts: MAX_DELIVERY_ATTEMPTS },
+    )
 
     return delivery
   }
 
   /** Build the event payload, gathering the latest per-check summaries. */
-  async buildPayload (session: VerificationSession, event: WebhookEventName): Promise<WebhookEvent> {
+  async buildPayload(session: VerificationSession, event: WebhookEventName): Promise<WebhookEvent> {
     return WebhookPayload.build({
       event,
       sessionId: session.id,
@@ -161,7 +174,7 @@ export class WebhookService {
     })
   }
 
-  private async checks (session: VerificationSession): Promise<WebhookChecks> {
+  private async checks(session: VerificationSession): Promise<WebhookChecks> {
     const checks: WebhookChecks = {}
 
     const capture = await DocumentCapture.where({ sessionId: session.id }).first()
@@ -178,7 +191,8 @@ export class WebhookService {
     if (liveness) checks.liveness = { passed: liveness.passed, score: liveness.score }
 
     const faceMatch = await FaceMatchCheck.where({ sessionId: session.id }).first()
-    if (faceMatch) checks.face_match = { passed: faceMatch.passed, similarity_score: faceMatch.similarityScore }
+    if (faceMatch)
+      checks.face_match = { passed: faceMatch.passed, similarity_score: faceMatch.similarityScore }
 
     return checks
   }

@@ -1,10 +1,10 @@
-import type { PermissionGroup, PermissionKey } from '@arkyc/types';
+import type { PermissionGroup, PermissionKey } from '@arkyc/types'
 
 /** A single permission definition in the catalogue. */
 export interface PermissionDefinition {
-  name: PermissionKey;
-  group: PermissionGroup;
-  description: string;
+  name: PermissionKey
+  group: PermissionGroup
+  description: string
 }
 
 /** The catalogue of permissions Arkyc recognises and the keys derived from it. */
@@ -48,7 +48,11 @@ export class Catalogue {
     { name: 'reviews.assign', group: 'reviews', description: 'Assign reviews to reviewers' },
     { name: 'reviews.approve', group: 'reviews', description: 'Approve sessions in review' },
     { name: 'reviews.reject', group: 'reviews', description: 'Reject sessions in review' },
-    { name: 'reviews.request_retry', group: 'reviews', description: 'Request a verification retry' },
+    {
+      name: 'reviews.request_retry',
+      group: 'reviews',
+      description: 'Request a verification retry',
+    },
     { name: 'reviews.note', group: 'reviews', description: 'Add reviewer notes' },
 
     { name: 'audit_logs.view', group: 'audit_logs', description: 'View audit logs' },
@@ -58,8 +62,8 @@ export class Catalogue {
 
     { name: 'billing.view', group: 'billing', description: 'View billing' },
     { name: 'billing.update', group: 'billing', description: 'Update billing' },
-  ];
+  ]
 
   /** Every permission key, derived from the catalogue. */
-  static readonly KEYS: readonly PermissionKey[] = Catalogue.ALL.map((p) => p.name);
+  static readonly KEYS: readonly PermissionKey[] = Catalogue.ALL.map((p) => p.name)
 }

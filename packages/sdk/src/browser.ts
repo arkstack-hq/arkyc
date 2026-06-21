@@ -39,15 +39,18 @@ export interface WidgetHandle {
 }
 
 export const ArkycWidget = {
-  /** Open the verification widget for a client token. Returns a close handle. */
-  open (options: OpenWidgetOptions): WidgetHandle {
-    if (!options.token)
-      throw new Error('ArkycWidget.open requires a client `token`.')
+  /**
+   * Open the verification widget for a client token. Returns a close handle.
+   *
+   * @param options
+   * @returns
+   */
+  open(options: OpenWidgetOptions): WidgetHandle {
+    if (!options.token) throw new Error('ArkycWidget.open requires a client `token`.')
 
     const doc = options.doc ?? globalThis.document
     const win = options.win ?? globalThis.window
-    if (!doc || !win)
-      throw new Error('ArkycWidget.open must run in a browser environment.')
+    if (!doc || !win) throw new Error('ArkycWidget.open must run in a browser environment.')
 
     const widgetUrl = (options.widgetUrl ?? DEFAULT_WIDGET_URL).replace(/\/$/, '')
     const src = `${widgetUrl}?token=${encodeURIComponent(options.token)}`
@@ -72,8 +75,7 @@ export const ArkycWidget = {
 
     const onMessage = (event: MessageEvent): void => {
       const data = event.data as { type?: string; payload?: WidgetResult; error?: unknown } | null
-      if (!data || typeof data.type !== 'string' || !data.type.startsWith('arkyc:'))
-        return
+      if (!data || typeof data.type !== 'string' || !data.type.startsWith('arkyc:')) return
 
       if (data.type === 'arkyc:complete') {
         options.onComplete?.(data.payload ?? { status: 'completed' })

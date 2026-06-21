@@ -34,10 +34,8 @@ export default (): MiddlewareConfig => {
         ResourceCollection.setCtx({ res, req })
         useExpressUploadContext(req as never)
         next()
-      }
+      },
     ],
-    after: [
-      requestLogger()
-    ],
+    after: [requestLogger()],
   }
-} 
+}

@@ -4,25 +4,32 @@ import type {
   WebhookChecks,
   WebhookEvent,
   WebhookEventName,
-} from '@arkyc/types';
+} from '@arkyc/types'
 
 /** The data needed to assemble a {@link WebhookEvent} body. */
 export interface BuildWebhookPayloadInput {
-  event: WebhookEventName;
-  sessionId: string;
-  tenantId: string;
-  projectId: string;
-  userReference: string | null;
-  status: VerificationStatus;
-  checks: WebhookChecks;
-  decisionReason: DecisionReason | null;
+  event: WebhookEventName
+  sessionId: string
+  tenantId: string
+  projectId: string
+  userReference: string | null
+  status: VerificationStatus
+  checks: WebhookChecks
+  decisionReason: DecisionReason | null
   /** ISO-8601 timestamp the event occurred. */
-  createdAt: string;
+  createdAt: string
 }
 
-/** Assemble the JSON body delivered to a webhook endpoint. */
+/**
+ * Assemble the JSON body delivered to a webhook endpoint.
+ */
 export class WebhookPayload {
-  /** Build the JSON body delivered to a webhook endpoint (matches the spec shape). */
+  /**
+   * Build the JSON body delivered to a webhook endpoint (matches the spec shape).
+   *
+   * @param input
+   * @returns
+   */
   static build(input: BuildWebhookPayloadInput): WebhookEvent {
     return {
       event: input.event,
@@ -34,6 +41,6 @@ export class WebhookPayload {
       checks: input.checks,
       decision_reason: input.decisionReason,
       created_at: input.createdAt,
-    };
+    }
   }
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ArkycWidget } from '../src/browser'
 
-function fakeEl () {
+function fakeEl() {
   return {
     setAttribute: vi.fn(),
     appendChild: vi.fn(),
@@ -12,7 +12,7 @@ function fakeEl () {
   }
 }
 
-function fakeDom () {
+function fakeDom() {
   const created: ReturnType<typeof fakeEl>[] = []
   let messageHandler: ((event: { data: unknown }) => void) | undefined
   const body = fakeEl()

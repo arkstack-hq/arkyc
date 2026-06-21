@@ -1,10 +1,10 @@
 import { ApiKey } from '@app/models/ApiKey'
+import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import ApiKeyCollection from '@app/http/resources/ApiKeyCollection'
 import ApiKeyResource from '@app/http/resources/ApiKeyResource'
 import { BaseController } from '@controllers/BaseController'
 import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
-import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import { audit } from '@app/services/AuditLogger'
 
 export default class ApiKeyController extends BaseController {
@@ -14,7 +14,7 @@ export default class ApiKeyController extends BaseController {
    * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
    * @returns      An ApiKeyCollection.
    */
-  async index ({ req }: HttpContext) {
+  async index({ req }: HttpContext) {
     const project = await Project.where({ id: req.params.projectId, tenantId: req.tenant!.id })
       .with('apiKeys')
       .firstOrFail()
@@ -32,8 +32,12 @@ export default class ApiKeyController extends BaseController {
    * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
    * @returns      An ApiKeyResource plus the one-time `secret` (HTTP 201).
    */
-  async create ({ req }: HttpContext) {
-    const project = await Project.where({ id: req.params.projectId, tenantId: req.tenant!.id }).firstOrFail()
+  async create({ req }: HttpContext) {
+    const project = await Project.where({
+      id: req.params.projectId,
+      tenantId: req.tenant!.id,
+    }).firstOrFail()
+
     const data = await this.validate({ name: ['required', 'string', 'min:2'] })
 
     const generated = ApiKeyAuth.generate(project.environment === 'production' ? 'live' : 'test')
@@ -69,8 +73,11 @@ export default class ApiKeyController extends BaseController {
    * @param   ctx  The HTTP context (`:projectId`, `:keyId`, `req.tenant`).
    * @returns      The revoked ApiKeyResource.
    */
-  async destroy ({ req }: HttpContext) {
-    const project = await Project.where({ id: req.params.projectId, tenantId: req.tenant!.id }).firstOrFail()
+  async destroy({ req }: HttpContext) {
+    const project = await Project.where({
+      id: req.params.projectId,
+      tenantId: req.tenant!.id,
+    }).firstOrFail()
     const key = await ApiKey.where({
       id: req.params.keyId,
       projectId: project.id,
@@ -86,11 +93,10 @@ export default class ApiKeyController extends BaseController {
       entityId: key.id,
     })
 
-    return new ApiKeyResource(key)
-      .additional({
-        status: 'success',
-        message: 'API key revoked',
-        code: 200
-      })
+    return new ApiKeyResource(key).additional({
+      status: 'success',
+      message: 'API key revoked',
+      code: 200,
+    })
   }
 }

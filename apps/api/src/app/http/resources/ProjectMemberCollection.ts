@@ -2,9 +2,9 @@ import { ResourceCollection } from 'resora'
 import ProjectMemberResource from './ProjectMemberResource'
 
 export default class ProjectMemberCollection extends ResourceCollection {
-    collects = ProjectMemberResource
+  collects = ProjectMemberResource
 
-    data () {
-        return this.toObject()
-    }
+  data() {
+    return this.toObject()
+  }
 }

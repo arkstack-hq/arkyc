@@ -14,15 +14,14 @@ export default class ProjectController extends BaseController {
    * @param   ctx  The HTTP context (`req.tenant`).
    * @returns      A ProjectCollection.
    */
-  async index ({ req }: HttpContext) {
+  async index({ req }: HttpContext) {
     const projects = await Project.where({ tenantId: req.tenant!.id }).get()
 
-    return new ProjectCollection(projects)
-      .additional({
-        status: 'success',
-        message: 'OK',
-        code: 200
-      })
+    return new ProjectCollection(projects).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
   }
 
   /**
@@ -31,7 +30,7 @@ export default class ProjectController extends BaseController {
    * @param   ctx  The HTTP context (`req.tenant`).
    * @returns      A ProjectResource (HTTP 201).
    */
-  async create ({ req }: HttpContext) {
+  async create({ req }: HttpContext) {
     const data = await this.validate({
       name: ['required', 'string', 'min:2'],
       slug: ['nullable', 'string'],
@@ -80,7 +79,7 @@ export default class ProjectController extends BaseController {
    * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
    * @returns      A ProjectResource.
    */
-  async show ({ req }: HttpContext) {
+  async show({ req }: HttpContext) {
     const project = await Project.where({
       id: req.params.projectId,
       tenantId: req.tenant!.id,
@@ -99,7 +98,7 @@ export default class ProjectController extends BaseController {
    * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
    * @returns      A ProjectResource.
    */
-  async update ({ req }: HttpContext) {
+  async update({ req }: HttpContext) {
     const data = await this.validate({
       name: ['nullable', 'string'],
       status: ['nullable', 'in:active,paused,archived'],

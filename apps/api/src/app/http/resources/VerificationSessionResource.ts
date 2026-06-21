@@ -2,7 +2,7 @@ import { Resource } from 'resora'
 
 /** A verification session as seen by the integrating backend (Public API). */
 export default class VerificationSessionResource extends Resource {
-  data () {
+  data() {
     return {
       id: this.id,
       project_id: this.projectId,
