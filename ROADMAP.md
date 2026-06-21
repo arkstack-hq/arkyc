@@ -53,7 +53,12 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 12  | Widget                                     | ✅     | `@arkyc/widget` full verification flow (overlay/inline/hosted) driving the Client API                                                      |
 | 13  | Dashboard                                  | ✅     | Multi-tenant React Router dashboard (Vite + Tailwind + alova); permission-aware UI                                                         |
 | 14  | Playground & Docs                          | ✅     | Runnable example integration + VitePress documentation site                                                                                |
-| 15  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                   |
+| 15  | Platform Admin & Global Settings           | ⬜     | Super-admin tier above tenants + a global settings store/UI (feature toggles, provider/transport selection)                                |
+| 16  | Realtime Event Delivery                    | ⬜     | Transport abstraction with **soketi** + **firebase** drivers (admin-selectable); live session/webhook updates replace polling              |
+| 17  | Improved Capture & Liveness Flow           | ⬜     | Active liveness (turn/move) + refined document/selfie UX; admin-selectable capture model (current vs improved)                             |
+| 18  | Dashboard Revamp                           | ⬜     | Re-skin to the shadcn UI kit design system (default + project-management layouts)                                                          |
+| 19  | Hosted Website & Custom Docs Theme         | ⬜     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                           |
+| 20  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                   |
 
 ---
 
@@ -282,7 +287,7 @@ _Operational notes (not blocking): run the two roles as separate long-lived proc
 
 **Exit criteria:** Completing a session POSTs a correctly-signed payload to the configured endpoint; failures retry and are visible in `webhook_deliveries`. ✅ Covered by `packages/webhooks` tests + `tests/webhooks.test.ts` (live local receiver verifies the signature; unreachable endpoint records a failed delivery).
 
-_Note: the signing secret is stored as-is for re-signing deliveries (column named `secret_hash`); encryption-at-rest is a Phase 15 hardening item._
+_Note: the signing secret is stored as-is for re-signing deliveries (column named `secret_hash`); encryption-at-rest is a Phase 20 hardening item._
 
 ---
 
@@ -357,7 +362,96 @@ _Note: the browser launcher points at the hosted widget origin; the actual widge
 
 ---
 
-## Phase 15 — Hardening & Release (v0.1.0) ⬜
+## Phase 15 — Platform Admin & Global Settings ⬜
+
+**Goal:** A platform **super-admin** tier above tenants, plus a global settings
+store that gates app-wide behavior (feature toggles, realtime transport, which
+capture model is offered).
+
+**Scope**
+
+- [ ] Platform-admin auth scope, **distinct** from tenant RBAC (a platform-admin flag/table on users + guard middleware; never conflated with tenant permissions).
+- [ ] Global settings store — a typed, singleton settings service/table with a read path the app consults at runtime and an admin write path.
+- [ ] Settings include: realtime transport (`soketi` | `firebase` | `off`), offered capture model (`current` | `improved` | `both`), and general feature flags.
+- [ ] Admin area (separate `/admin` surface or guarded dashboard section) to view/edit global settings, list tenants, and see platform-wide health.
+- [ ] Audit platform-admin actions separately from tenant audit logs.
+
+**Deliverables:** A platform-admin can sign in and change global settings the rest of the app reads at runtime.
+
+**Exit criteria:** Toggling a global setting (e.g. the realtime transport) changes app behavior without a redeploy; tenant users cannot reach platform-admin surfaces.
+
+---
+
+## Phase 16 — Realtime Event Delivery ⬜
+
+**Goal:** Push live updates (sessions, webhooks, review queue) to clients via a
+provider-abstracted transport, replacing polling.
+
+**Scope**
+
+- [ ] Transport interface with two drivers — **soketi** (self-hostable, Pusher-compatible WS) and **firebase** — selected by the Phase 15 global setting, with an env fallback.
+- [ ] Server: publish events from the single `transitionTo` choke point (session transitions, webhook deliveries, review actions) to authorized per-tenant/per-project channels.
+- [ ] Channel authorization scoped to tenant/project (and client-token scope for the widget where relevant).
+- [ ] Clients: a small realtime client in the dashboard + playground that subscribes and updates reactively (alova cache invalidation / live data); remove the playground/dashboard polling.
+- [ ] Infra: `soketi` in docker-compose; firebase via env/config.
+
+**Deliverables:** Dashboard review queue and playground webhooks update live; the transport is swappable by a platform-admin.
+
+**Exit criteria:** A completed verification pushes to the dashboard and playground in realtime with no polling; switching the transport in admin settings takes effect.
+
+---
+
+## Phase 17 — Improved Capture & Liveness Flow ⬜
+
+**Goal:** A higher-quality, more spoof-resistant capture experience with **active**
+liveness, offered per the admin's global capture-model setting.
+
+**Scope**
+
+- [ ] New widget flow: guided **active liveness** (turn head, move closer, blink/smile challenges) and improved document capture (edge detection, glare/quality hints, auto-capture).
+- [ ] Keep the current passive flow; the offered model resolves from the global setting (`current` | `improved` | `both`), overridable per tenant/project.
+- [ ] Client/Liveness API + provider contract updates to carry richer challenge/response signals; `mock` driver parity so it's demoable without real providers.
+- [ ] Mobile-first, accessible UX; themed via project branding.
+
+**Deliverables:** `@arkyc/widget` supports both flows; the admin toggle selects which is offered.
+
+**Exit criteria:** A user completes an active-liveness verification end-to-end; switching the offered model in admin settings changes the widget flow.
+
+---
+
+## Phase 18 — Dashboard Revamp ⬜
+
+**Goal:** A polished dashboard aligned to the **shadcn UI kit** design system.
+
+**Scope**
+
+- [ ] Adopt the [shadcnuikit.com](https://shadcnuikit.com/dashboard/default) design language (default + [project-management](https://shadcnuikit.com/dashboard/project-management) layouts): refreshed shell (sidebar/topbar), data tables, cards, charts, empty/loading states.
+- [ ] Expand the shadcn component kit consistently; refined dark/light theming; responsive.
+- [ ] Preserve the alova data layer and permission-aware UI — no API changes, full feature parity.
+
+**Deliverables:** Redesigned dashboard shipping the new design system across all pages.
+
+**Exit criteria:** Every existing dashboard flow works under the new design with parity and improved UX.
+
+---
+
+## Phase 19 — Hosted Website & Custom Docs Theme ⬜
+
+**Goal:** A public marketing + documentation website with a bespoke theme.
+
+**Scope**
+
+- [ ] Custom VitePress theme (brand, landing components) layered over the Phase 14 docs content.
+- [ ] Marketing/landing pages + the integration documentation in one hosted site.
+- [ ] Build/deploy pipeline (static hosting); SEO and analytics hooks.
+
+**Deliverables:** A deployable public site combining marketing + docs under a custom theme.
+
+**Exit criteria:** The site builds and deploys; a visitor can go landing → docs → first integration without leaving it.
+
+---
+
+## Phase 20 — Hardening & Release (v0.1.0) ⬜
 
 **Goal:** Production-readiness pass and first tagged release.
 
@@ -389,5 +483,7 @@ _Note: the browser launcher points at the hosted widget origin; the actual widge
 - **M1 — Foundation (Phases 0–3):** monorepo, contracts, data model, RBAC.
 - **M2 — Verification core (Phases 4–8):** API, tenants/projects, session engine, providers, workers.
 - **M3 — Operations (Phases 9–10):** reviews, audit, webhooks.
-- **M4 — Integration surface (Phases 11–13):** SDK, widget, dashboard.
-- **M5 — Ship (Phases 14–15):** playground, docs, hardening, `v0.1.0`.
+- **M4 — Integration surface (Phases 11–14):** SDK, widget, dashboard, playground + docs.
+- **M5 — Platform & realtime (Phases 15–16):** super-admin tier, global settings, realtime transports.
+- **M6 — Experience (Phases 17–19):** active-liveness capture, dashboard revamp, hosted site + custom docs theme.
+- **M7 — Ship (Phase 20):** hardening, `v0.1.0`.
