@@ -52,7 +52,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 11  | TypeScript SDK                             | ✅     | `@arkyc/sdk` server client (sessions create/retrieve/cancel, typed errors, webhook verify) + `@arkyc/sdk/browser` widget launcher          |
 | 12  | Widget                                     | ✅     | `@arkyc/widget` full verification flow (overlay/inline/hosted) driving the Client API                                                      |
 | 13  | Dashboard                                  | ✅     | Multi-tenant React Router dashboard (Vite + Tailwind + alova); permission-aware UI                                                         |
-| 14  | Playground & Docs                          | 🚧     | Runnable example integration ✅; documentation outstanding                                                                                 |
+| 14  | Playground & Docs                          | ✅     | Runnable example integration + VitePress documentation site                                                                                |
 | 15  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                   |
 
 ---
@@ -342,18 +342,18 @@ _Note: the browser launcher points at the hosted widget origin; the actual widge
 
 ---
 
-## Phase 14 — Playground & Documentation 🚧
+## Phase 14 — Playground & Documentation ✅
 
 **Goal:** Prove the integrator story and document it.
 
 **Scope**
 
 - [x] **`apps/playground`** — minimal example app: a Vite dev server whose backend plugin uses `@arkyc/sdk` (secret key, server-side) to open/retrieve sessions, the frontend mounts `@arkyc/widget` with the client token (widget `baseUrl: '/api'`, proxied to the API — no CORS), shows the decision, and a `POST /pg/webhooks/arkyc` receiver verifies + displays delivered events. _(`pnpm --filter @arkyc/playground dev`; see `apps/playground/README.md`.)_
-- [ ] **`docs/`** — getting started, architecture, multi-tenancy, RBAC, API reference (public/client/dashboard), SDK guide, widget integration, webhooks, provider drivers, self-hosting (Docker Compose), env reference.
+- [x] **`docs/`** — VitePress site (`@arkyc/docs`): getting started, architecture, multi-tenancy, RBAC, API reference (overview/public/client/dashboard), SDK guide, widget integration, webhooks, provider drivers, self-hosting (Docker Compose), configuration/env reference. _(`pnpm --filter @arkyc/docs dev`; builds clean.)_
 
-**Deliverables:** Runnable playground + a docs site/folder covering the full integration path.
+**Deliverables:** Runnable playground + a VitePress docs site covering the full integration path.
 
-**Exit criteria:** A new developer can follow `docs/` + run the playground to complete a verification without reading source.
+**Exit criteria:** A new developer can follow `docs/` + run the playground to complete a verification without reading source. ✅ Playground verified locally; docs site builds (`vitepress build`) with no dead links. _(End-to-end run against a live seeded API remains the manual verification step.)_
 
 ---
 
