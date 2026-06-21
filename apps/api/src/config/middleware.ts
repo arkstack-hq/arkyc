@@ -1,4 +1,3 @@
-import { GenericResource, Resource, ResourceCollection } from 'resora'
 import { formdata, requestLogger, resora } from '@arkstack/driver-express/middlewares'
 
 import { MiddlewareConfig } from '@arkstack/driver-express/types'
@@ -29,10 +28,7 @@ export default (): MiddlewareConfig => {
     before: [
       resora(),
       requestId,
-      (req, res, next) => {
-        Resource.setCtx({ req, res })
-        GenericResource.setCtx({ req, res })
-        ResourceCollection.setCtx({ res, req })
+      (req, _, next) => {
         useExpressUploadContext(req as never)
         next()
       },
