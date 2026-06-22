@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { Loading } from '@/components/States'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { TenantLayout } from '@/components/Layout'
+import { AdminLayout } from '@/components/AdminLayout'
 
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
@@ -26,6 +27,8 @@ import SettingsPage from '@/pages/settings/SettingsPage'
 import RolesPage from '@/pages/settings/RolesPage'
 import RoleDetailPage from '@/pages/settings/RoleDetailPage'
 import PermissionsPage from '@/pages/settings/PermissionsPage'
+import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
+import AdminTenantsPage from '@/pages/admin/AdminTenantsPage'
 
 /** Send "/" to the first tenant's overview, or onboarding when none exist. */
 function RootRedirect() {
@@ -97,6 +100,19 @@ export default function App() {
         <Route path="settings/roles" element={<RolesPage />} />
         <Route path="settings/roles/:roleId" element={<RoleDetailPage />} />
         <Route path="settings/permissions" element={<PermissionsPage />} />
+      </Route>
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="settings" replace />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
+        <Route path="tenants" element={<AdminTenantsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

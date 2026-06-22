@@ -1,6 +1,8 @@
-import type { PermissionKey } from '@arkyc/types'
+import type { AdminPermissionKey, PermissionKey } from '@arkyc/types'
 import {
   PermissionDeniedError,
+  type AdminResolutionContext,
+  type AdminResolverStore,
   type PermissionResolutionContext,
   type PermissionResolverStore,
 } from './types'
@@ -114,5 +116,46 @@ export class Permissions {
   ): Promise<void> {
     const permissions = await Permissions.resolve(ctx, store)
     Permissions.ensure(permissions, required)
+  }
+
+  /**
+   * Resolve a user's effective platform-admin permission set: the deduplicated
+   * union of their admin role permissions and direct admin grants. This is an
+   * entirely separate path from tenant {@link resolve} — a tenant role can never
+   * contribute admin access.
+   *
+   * @param ctx
+   * @param store
+   * @returns
+   */
+  static async resolveAdmin(
+    ctx: AdminResolutionContext,
+    store: AdminResolverStore,
+  ): Promise<AdminPermissionKey[]> {
+    const [role, direct] = await Promise.all([
+      store.adminRolePermissions(ctx),
+      store.adminDirectPermissions(ctx),
+    ])
+
+    return [...new Set([...role, ...direct])]
+  }
+
+  /**
+   * Resolve the user's effective admin permissions and assert they include
+   * `required`, throwing {@link PermissionDeniedError} otherwise.
+   *
+   * @param ctx
+   * @param required
+   * @param store
+   */
+  static async authorizeAdmin(
+    ctx: AdminResolutionContext,
+    required: AdminPermissionKey,
+    store: AdminResolverStore,
+  ): Promise<void> {
+    const permissions = await Permissions.resolveAdmin(ctx, store)
+    if (!new Set(permissions).has(required)) {
+      throw new PermissionDeniedError(required)
+    }
   }
 }

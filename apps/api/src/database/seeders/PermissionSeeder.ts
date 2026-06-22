@@ -1,19 +1,19 @@
 import { Seeder } from '@arkstack/database'
-import { Permission } from 'src/app/models/Permission'
-import { Catalogue } from '@arkyc/permissions'
+import { PermissionSync } from '@arkyc/permissions'
+import { permissionStore } from 'src/app/services/ArkormPermissionStore'
 
-/** Upsert the global permission catalogue. Idempotent. */
+/**
+ * Sync the global permission catalogue and platform-admin scope. Idempotent:
+ *   - tenant catalogue (`admin: false`)
+ *   - platform-admin catalogue (`admin: true`)
+ *   - platform-admin role(s) and their grants
+ *
+ * The first platform owner is granted separately via `ark admin:grant <email>`.
+ */
 export class PermissionSeeder extends Seeder {
   public async run(): Promise<void> {
-    for (const def of Catalogue.ALL) {
-      const existing = await Permission.where({ name: def.name }).first()
-      if (!existing) {
-        await Permission.create({
-          name: def.name,
-          description: def.description,
-          group: def.group,
-        })
-      }
-    }
+    await PermissionSync.permissions(permissionStore)
+    await PermissionSync.adminPermissions(permissionStore)
+    await PermissionSync.adminRoles(permissionStore)
   }
 }

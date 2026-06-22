@@ -7,11 +7,13 @@ import {
   Moon,
   ScrollText,
   Settings,
+  ShieldCheck,
   Sun,
   Users,
 } from 'lucide-react'
 import type { PermissionKey } from '@arkyc/types'
 import { TenantProvider, useTenant } from '@/contexts/tenant-context'
+import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
 import { isDark, toggleTheme } from '@/lib/theme'
 import { Loading } from '@/components/States'
@@ -106,6 +108,7 @@ function LayoutInner() {
 function Topbar() {
   const { tenant, tenants } = useTenant()
   const { user, logout } = useAuth()
+  const { isAdmin } = useAdmin()
   const navigate = useNavigate()
   const [dark, setDark] = useState(isDark())
 
@@ -125,6 +128,18 @@ function Topbar() {
       </Select>
 
       <div className="flex items-center gap-2">
+        {isAdmin ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            aria-label="Platform admin"
+            onClick={() => navigate('/admin')}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Admin
+          </Button>
+        ) : null}
         <Button
           variant="ghost"
           size="icon"

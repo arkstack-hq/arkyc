@@ -8,11 +8,14 @@ export class Role extends Model {
   protected static override table = 'roles'
 
   declare id: string
-  declare tenantId: string
+  /** Null for platform-admin roles (`admin: true`); set for tenant roles. */
+  declare tenantId: string | null
   declare name: string
   declare slug: string
   declare description: string | null
   declare isSystem: boolean
+  /** Platform-admin role (not tenant-scoped). */
+  declare admin: boolean
   declare createdAt: Date
   declare updatedAt: Date
 

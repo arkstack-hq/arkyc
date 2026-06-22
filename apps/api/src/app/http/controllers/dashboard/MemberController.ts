@@ -237,7 +237,9 @@ export default class MemberController extends BaseController {
     })
 
     // `exists` already 422s on an unknown permission; fetch it for its id.
-    const perm = await Permission.where({ name: data.permission }).firstOrFail()
+    // Platform-admin permissions belong to the `/admin` scope, never a tenant member.
+    const perm = await Permission.where({ name: data.permission, admin: false }).first()
+    RequestException.assertFound(perm, 'Unknown permission', 422)
 
     await UserPermission.query().firstOrCreate(
       { tenantId: member.tenantId, userId: member.userId, permissionId: perm.id },

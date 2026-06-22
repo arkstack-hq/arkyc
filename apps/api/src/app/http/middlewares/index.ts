@@ -1,5 +1,5 @@
 export { requestId, RequestIdMiddleware } from './RequestIdMiddleware'
 export { resolveTenant, ResolveTenantMiddleware } from './ResolveTenantMiddleware'
-export { can, AuthorizeMiddleware } from './AuthorizeMiddleware'
+export { can, AuthorizeMiddleware, canAdmin, AdminAuthorizeMiddleware } from './AuthorizeMiddleware'
 export { apiKeyAuth, ApiKeyMiddleware } from './ApiKeyMiddleware'
 export { clientTokenAuth, ClientTokenMiddleware } from './ClientTokenMiddleware'

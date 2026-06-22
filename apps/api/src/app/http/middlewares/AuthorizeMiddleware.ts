@@ -1,7 +1,7 @@
 import { RequestException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
 import { PermissionDeniedError, Permissions } from '@arkyc/permissions'
-import type { PermissionKey } from '@arkyc/types'
+import type { AdminPermissionKey, PermissionKey } from '@arkyc/types'
 import { permissionStore } from '@app/services/ArkormPermissionStore'
 
 const param = (value: string | string[] | undefined): string | undefined =>
@@ -47,3 +47,36 @@ export const can =
   (permission: PermissionKey) =>
   (req: Request, res: Response, next: NextFunction): Promise<void> =>
     new AuthorizeMiddleware(permission).handler(req, res, next)
+
+/**
+ * Enforces that the authenticated user holds a platform-admin `permission`. This
+ * is an entirely separate scope from {@link AuthorizeMiddleware}: there is NO
+ * tenant requirement, and a tenant role can never grant admin access. Run after
+ * `auth` only — no `resolveTenant`.
+ */
+export class AdminAuthorizeMiddleware {
+  constructor(private readonly permission: AdminPermissionKey) {}
+
+  async handler(req: Request, _res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = req.authUser
+      RequestException.assertFound(user, 'Unauthenticated', 401)
+
+      await Permissions.authorizeAdmin({ userId: user.id }, this.permission, permissionStore)
+      next()
+    } catch (error) {
+      if (error instanceof PermissionDeniedError) {
+        next(new RequestException(error.message, 403))
+
+        return
+      }
+      next(error)
+    }
+  }
+}
+
+/** Route guard factory for the platform-admin scope: `canAdmin('admin.settings.view')`. */
+export const canAdmin =
+  (permission: AdminPermissionKey) =>
+  (req: Request, res: Response, next: NextFunction): Promise<void> =>
+    new AdminAuthorizeMiddleware(permission).handler(req, res, next)

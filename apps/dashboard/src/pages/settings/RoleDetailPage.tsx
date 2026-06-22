@@ -156,25 +156,30 @@ function RoleEditor({
               <div key={group} className="flex flex-col gap-2">
                 <h4 className="text-sm font-semibold">{humanize(group)}</h4>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {perms.map((perm) => (
-                    <label key={perm.name} className="flex items-start gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="mt-0.5"
-                        checked={checked.has(perm.name)}
-                        disabled={readOnly}
-                        onChange={() => toggle(perm.name)}
-                      />
-                      <span>
-                        <span className="font-medium">{perm.name}</span>
-                        {perm.description ? (
-                          <span className="block text-xs text-muted-foreground">
-                            {perm.description}
-                          </span>
-                        ) : null}
-                      </span>
-                    </label>
-                  ))}
+                  {perms.map((perm) => {
+                    // The tenant catalogue only contains tenant permissions.
+                    const name = perm.name as PermissionKey
+
+                    return (
+                      <label key={name} className="flex items-start gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={checked.has(name)}
+                          disabled={readOnly}
+                          onChange={() => toggle(name)}
+                        />
+                        <span>
+                          <span className="font-medium">{perm.name}</span>
+                          {perm.description ? (
+                            <span className="block text-xs text-muted-foreground">
+                              {perm.description}
+                            </span>
+                          ) : null}
+                        </span>
+                      </label>
+                    )
+                  })}
                 </div>
               </div>
             ))}

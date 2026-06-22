@@ -1,14 +1,16 @@
 import { Model } from 'arkormx'
-import type { PermissionGroup, PermissionKey } from '@arkyc/types'
+import type { AnyPermissionGroup, AnyPermissionKey } from '@arkyc/types'
 import { RolePermission } from './RolePermission'
 
 export class Permission extends Model {
   protected static override table = 'permissions'
 
   declare id: string
-  declare name: PermissionKey
+  declare name: AnyPermissionKey
   declare description: string | null
-  declare group: PermissionGroup
+  declare group: AnyPermissionGroup
+  /** Platform-scope permission (gates the super-admin surface). */
+  declare admin: boolean
   declare createdAt: Date
   declare updatedAt: Date
 

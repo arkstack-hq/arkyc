@@ -1,4 +1,4 @@
-import type { PermissionKey, SystemRoleSlug } from '@arkyc/types'
+import type { AdminPermissionKey, AdminRoleSlug, PermissionKey, SystemRoleSlug } from '@arkyc/types'
 
 import { Catalogue } from './catalogue'
 
@@ -9,6 +9,14 @@ export interface DefaultRoleDefinition {
   description: string
   /** Resolved permission keys; `*` is expanded to the full catalogue. */
   permissions: readonly PermissionKey[]
+}
+
+/** Definition of a built-in platform-admin role (not tenant-scoped). */
+export interface AdminRoleDefinition {
+  slug: AdminRoleSlug
+  name: string
+  description: string
+  permissions: readonly AdminPermissionKey[]
 }
 
 const REVIEWER_PERMISSIONS: PermissionKey[] = [
@@ -92,6 +100,35 @@ export class DefaultRoles {
   static bySlug(slug: SystemRoleSlug): DefaultRoleDefinition {
     const role = DefaultRoles.ALL.find((r) => r.slug === slug)
     if (!role) throw new Error(`Unknown system role: ${slug}`)
+    return role
+  }
+}
+
+/** The built-in platform-admin roles, seeded once for the whole platform. */
+export class AdminRoles {
+  /**
+   * The platform-admin roles and their default permission sets. `platform-owner`
+   * receives the full admin catalogue and is granted to the first owner via
+   * `AdminPermission` ("sync ownership").
+   */
+  static readonly ALL: readonly AdminRoleDefinition[] = [
+    {
+      slug: 'platform-owner',
+      name: 'Platform Owner',
+      description: 'Full access to the platform admin surface',
+      permissions: Catalogue.ADMIN_KEYS,
+    },
+  ]
+
+  /**
+   * Look up a platform-admin role definition by slug.
+   *
+   * @param slug
+   * @returns
+   */
+  static bySlug(slug: AdminRoleSlug): AdminRoleDefinition {
+    const role = AdminRoles.ALL.find((r) => r.slug === slug)
+    if (!role) throw new Error(`Unknown admin role: ${slug}`)
     return role
   }
 }

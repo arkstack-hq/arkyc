@@ -5,6 +5,7 @@ import { UserTwoFactor } from './UserTwoFactor'
 import { UserFactory } from 'src/database/factories/UserFactory'
 import { ProjectMember } from './ProjectMember'
 import { UserPermission } from './UserPermission'
+import { AdminPermission } from './AdminPermission'
 import { Review } from './Review'
 import { Tenant } from './Tenant'
 
@@ -56,6 +57,11 @@ export class User extends BaseUser {
 
   directPermissions() {
     return this.hasMany(UserPermission, 'userId')
+  }
+
+  /** Platform-admin grants (roles and/or direct admin permissions). */
+  adminPermissions() {
+    return this.hasMany(AdminPermission, 'userId')
   }
 
   reviews() {

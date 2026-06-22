@@ -1,10 +1,26 @@
-import type { PermissionGroup, PermissionKey } from '@arkyc/types'
+import type {
+  AdminPermissionGroup,
+  AdminPermissionKey,
+  AnyPermissionGroup,
+  AnyPermissionKey,
+  PermissionGroup,
+  PermissionKey,
+} from '@arkyc/types'
 
 /** A single permission definition in the catalogue. */
 export interface PermissionDefinition {
-  name: PermissionKey
-  group: PermissionGroup
+  name: AnyPermissionKey
+  group: AnyPermissionGroup
   description: string
+  /** Platform-scope permission. Defaults to a tenant permission when omitted. */
+  admin?: boolean
+}
+
+/** A platform-admin permission definition (`admin: true`). */
+export interface AdminPermissionDefinition extends PermissionDefinition {
+  name: AdminPermissionKey
+  group: AdminPermissionGroup
+  admin: true
 }
 
 /** The catalogue of permissions Arkyc recognises and the keys derived from it. */
@@ -64,6 +80,75 @@ export class Catalogue {
     { name: 'billing.update', group: 'billing', description: 'Update billing' },
   ]
 
-  /** Every permission key, derived from the catalogue. */
-  static readonly KEYS: readonly PermissionKey[] = Catalogue.ALL.map((p) => p.name)
+  /** Every tenant permission key, derived from the catalogue. */
+  static readonly KEYS: readonly PermissionKey[] = Catalogue.ALL.map((p) => p.name as PermissionKey)
+
+  /**
+   * The catalogue of platform-admin permissions (the super-admin surface above
+   * tenants). Synced by `PermissionSync.adminPermissions`; every row carries
+   * `admin: true` and is granted only via `AdminPermission`.
+   */
+  static readonly ADMIN: readonly AdminPermissionDefinition[] = [
+    {
+      name: 'admin.tenants.view',
+      group: 'admin.tenants',
+      admin: true,
+      description: 'View all tenants',
+    },
+    {
+      name: 'admin.tenants.manage',
+      group: 'admin.tenants',
+      admin: true,
+      description: 'Create, suspend, and delete tenants',
+    },
+
+    {
+      name: 'admin.users.view',
+      group: 'admin.users',
+      admin: true,
+      description: 'View platform users',
+    },
+    {
+      name: 'admin.users.manage',
+      group: 'admin.users',
+      admin: true,
+      description: 'Manage platform users',
+    },
+
+    {
+      name: 'admin.settings.view',
+      group: 'admin.settings',
+      admin: true,
+      description: 'View global settings',
+    },
+    {
+      name: 'admin.settings.update',
+      group: 'admin.settings',
+      admin: true,
+      description: 'Update global settings',
+    },
+
+    {
+      name: 'admin.audit.view',
+      group: 'admin.audit',
+      admin: true,
+      description: 'View the platform audit log',
+    },
+
+    {
+      name: 'admin.billing.view',
+      group: 'admin.billing',
+      admin: true,
+      description: 'View platform billing',
+    },
+    {
+      name: 'admin.billing.update',
+      group: 'admin.billing',
+      admin: true,
+      description: 'Manage platform billing',
+    },
+  ]
+
+  /** Every platform-admin permission key, derived from the admin catalogue. */
+  static readonly ADMIN_KEYS: readonly AdminPermissionKey[] = Catalogue.ADMIN.map((p) => p.name)
 }

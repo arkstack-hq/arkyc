@@ -1,14 +1,19 @@
 import type {
+  AdminResolutionContext,
+  AdminResolverStore,
+  AdminRoleDefinition,
+  AdminSyncStore,
   DefaultRoleDefinition,
   PermissionDefinition,
   PermissionResolutionContext,
   PermissionResolverStore,
   PermissionSyncStore,
 } from '@arkyc/permissions'
-import type { PermissionKey } from '@arkyc/types'
+import type { AdminPermissionKey, AnyPermissionKey, PermissionKey } from '@arkyc/types'
 import { TenantMember } from '@app/models/TenantMember'
 import { ProjectMember } from '@app/models/ProjectMember'
 import { UserPermission } from '@app/models/UserPermission'
+import { AdminPermission } from '@app/models/AdminPermission'
 import { RolePermission } from '@app/models/RolePermission'
 import { Permission } from '@app/models/Permission'
 import { Role } from '@app/models/Role'
@@ -28,13 +33,15 @@ type Loaded = { getAttribute(key: string): unknown } | null | undefined
  * so the permission names come straight off the loaded relations — no id→name
  * round-trip, no N+1.
  */
-export class ArkormPermissionStore implements PermissionResolverStore, PermissionSyncStore {
+export class ArkormPermissionStore
+  implements PermissionResolverStore, PermissionSyncStore, AdminResolverStore, AdminSyncStore
+{
   async tenantRolePermissions(ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
     const member = await TenantMember.where({ userId: ctx.userId, tenantId: ctx.tenantId })
       .with('role.permissions')
       .first()
 
-    return this.roleNames(member?.getAttribute('role') as Loaded)
+    return this.roleNames(member?.getAttribute('role') as Loaded) as PermissionKey[]
   }
 
   async projectRolePermissions(ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
@@ -43,7 +50,7 @@ export class ArkormPermissionStore implements PermissionResolverStore, Permissio
       .with('role.permissions')
       .first()
 
-    return this.roleNames(member?.getAttribute('role') as Loaded)
+    return this.roleNames(member?.getAttribute('role') as Loaded) as PermissionKey[]
   }
 
   async directPermissions(ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
@@ -60,24 +67,60 @@ export class ArkormPermissionStore implements PermissionResolverStore, Permissio
   }
 
   /** Permission names off a role's eager-loaded `permissions` relation. */
-  private roleNames(role: Loaded): PermissionKey[] {
+  private roleNames(role: Loaded): AnyPermissionKey[] {
     return toArray(role?.getAttribute('permissions') as Iterable<Loaded>)
-      .map((p) => p?.getAttribute('name') as PermissionKey)
+      .map((p) => p?.getAttribute('name') as AnyPermissionKey)
+      .filter(Boolean)
+  }
+
+  // ── AdminResolverStore ────────────────────────────────────────────────────
+
+  async adminRolePermissions(ctx: AdminResolutionContext): Promise<AdminPermissionKey[]> {
+    const grants = toArray(
+      await AdminPermission.where({ userId: ctx.userId }).with('role.permissions').get(),
+    )
+
+    return (
+      grants
+        .map((g) => g.getAttribute('role') as Loaded)
+        // Only admin roles contribute admin access; a tenant role never can.
+        .filter((role) => role != null && role.getAttribute('admin') === true)
+        .flatMap((role) => this.roleNames(role) as AdminPermissionKey[])
+    )
+  }
+
+  async adminDirectPermissions(ctx: AdminResolutionContext): Promise<AdminPermissionKey[]> {
+    const grants = toArray(
+      await AdminPermission.where({ userId: ctx.userId }).with('permission').get(),
+    )
+
+    return grants
+      .filter((g) => g.roleId == null && g.permissionId != null)
+      .map(
+        (g) => (g.getAttribute('permission') as Loaded)?.getAttribute('name') as AdminPermissionKey,
+      )
       .filter(Boolean)
   }
 
   // ── PermissionSyncStore ───────────────────────────────────────────────────
 
   async upsertPermission(def: PermissionDefinition): Promise<void> {
+    const admin = def.admin ?? false
     const existing = await Permission.where({ name: def.name }).first()
     if (existing) {
       existing.description = def.description
       existing.group = def.group
+      existing.admin = admin
       await existing.save()
 
       return
     }
-    await Permission.create({ name: def.name, description: def.description, group: def.group })
+    await Permission.create({
+      name: def.name,
+      description: def.description,
+      group: def.group,
+      admin,
+    })
   }
 
   async upsertSystemRole(tenantId: string, role: DefaultRoleDefinition): Promise<string> {
@@ -101,7 +144,32 @@ export class ArkormPermissionStore implements PermissionResolverStore, Permissio
     return created.id
   }
 
-  async syncRolePermissions(roleId: string, permissions: readonly PermissionKey[]): Promise<void> {
+  async upsertAdminRole(role: AdminRoleDefinition): Promise<string> {
+    const existing = await Role.where({ slug: role.slug, admin: true }).first()
+    if (existing) {
+      existing.name = role.name
+      existing.description = role.description
+      existing.isSystem = true
+      await existing.save()
+
+      return existing.id
+    }
+    const created = await Role.create({
+      tenantId: null,
+      name: role.name,
+      slug: role.slug,
+      description: role.description,
+      isSystem: true,
+      admin: true,
+    })
+
+    return created.id
+  }
+
+  async syncRolePermissions(
+    roleId: string,
+    permissions: readonly AnyPermissionKey[],
+  ): Promise<void> {
     const all = toArray(await Permission.all())
     const idByName = new Map(all.map((p) => [p.name, p.id]))
     const existing = toArray(await RolePermission.where({ roleId }).get())
