@@ -1,13 +1,30 @@
 import { useState } from 'react'
-import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Building2, LogOut, Moon, ScrollText, Settings, ShieldCheck, Sun, Users } from 'lucide-react'
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import {
+  ArrowLeft,
+  Building2,
+  ChevronsUpDown,
+  LogOut,
+  Moon,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  Sun,
+  Users,
+} from 'lucide-react'
 import type { AdminPermissionKey } from '@arkyc/types'
 import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
 import { isDark, toggleTheme } from '@/lib/theme'
 import { Loading } from '@/components/States'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +33,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { cn } from '@/lib/utils'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarHeaderBar,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar'
 
 interface AdminNavItem {
   to: string
@@ -33,6 +64,16 @@ const NAV: AdminNavItem[] = [
   { to: 'audit-logs', label: 'Audit log', icon: ScrollText, perm: 'admin.audit.view' },
 ]
 
+function activeSegment(pathname: string): string {
+  // Path after `/admin/`.
+  return pathname.split('/').slice(2).join('/')
+}
+
+function isActiveItem(seg: string, item: AdminNavItem): boolean {
+  if (item.end) return seg === item.to || seg === ''
+  return seg === item.to || seg.startsWith(`${item.to}/`)
+}
+
 /**
  * The platform-admin shell (above tenants). Gated by `useAdmin()`: non-admins are
  * redirected back to the tenant app; the server enforces every endpoint regardless.
@@ -46,90 +87,144 @@ export function AdminLayout() {
   const items = NAV.filter((item) => can(item.perm))
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
-        <div className="flex h-16 items-center gap-2 px-6">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <ShieldCheck className="h-4 w-4" />
-          </span>
-          <span className="text-base font-semibold tracking-tight">Platform</span>
-        </div>
-        <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
-          <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
-            Administration
-          </p>
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground',
-                )
-              }
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AdminTopbar />
+    <SidebarProvider>
+      <AdminSidebar items={items} />
+      <SidebarInset>
+        <AdminHeader items={items} />
         <main className="flex-1 overflow-y-auto p-6 lg:p-8">
           <Outlet />
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
 
-function AdminTopbar() {
+function AdminSidebar({ items }: { items: AdminNavItem[] }) {
+  const location = useLocation()
+  const seg = activeSegment(location.pathname)
+
+  return (
+    <Sidebar>
+      <SidebarHeader>
+        <div className="flex items-center gap-2.5 px-3 py-2">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <ShieldCheck className="size-4" />
+          </span>
+          <span className="flex flex-1 flex-col leading-tight group-data-[state=collapsed]/sidebar:hidden">
+            <span className="text-sm font-semibold text-foreground">Platform</span>
+            <span className="text-xs text-muted-foreground">Administration</span>
+          </span>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Administration</SidebarGroupLabel>
+          <SidebarMenu>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.to}>
+                <SidebarMenuButton asChild isActive={isActiveItem(seg, item)} tooltip={item.label}>
+                  <Link to={item.to}>
+                    <item.icon />
+                    <span className="truncate group-data-[state=collapsed]/sidebar:hidden">{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenuButton asChild tooltip="Back to dashboard">
+          <Link to="/">
+            <ArrowLeft />
+            <span className="truncate group-data-[state=collapsed]/sidebar:hidden">Back to dashboard</span>
+          </Link>
+        </SidebarMenuButton>
+        <AdminUserMenu />
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
+
+function AdminUserMenu() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [dark, setDark] = useState(isDark())
 
   const email = user?.email ?? ''
-  const initial = (email[0] ?? 'U').toUpperCase()
+  const name = user?.name || email || 'Account'
+  const initial = (name[0] ?? 'U').toUpperCase()
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-background/80 px-6 backdrop-blur">
-      <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/')}>
-        <ArrowLeft className="h-4 w-4" />
-        Back to dashboard
-      </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <SidebarMenuButton size="lg" className="gap-2.5">
+          <Avatar className="size-8">
+            <AvatarFallback>{initial}</AvatarFallback>
+          </Avatar>
+          <span className="flex flex-1 flex-col text-left leading-tight group-data-[state=collapsed]/sidebar:hidden">
+            <span className="truncate text-sm font-medium text-foreground">{name}</span>
+            <span className="truncate text-xs text-muted-foreground">{email}</span>
+          </span>
+          <ChevronsUpDown className="ml-auto size-4 text-muted-foreground group-data-[state=collapsed]/sidebar:hidden" />
+        </SidebarMenuButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" side="top" className="w-56">
+        <DropdownMenuLabel className="truncate normal-case text-foreground">{email}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault()
+            setDark(toggleTheme())
+          }}
+        >
+          {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          {dark ? 'Light mode' : 'Dark mode'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => void logout().then(() => navigate('/login'))}>
+          <LogOut className="size-4" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
-      <div className="flex items-center gap-1.5">
-        <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={() => setDark(toggleTheme())}>
-          {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
+function AdminHeader({ items }: { items: AdminNavItem[] }) {
+  const location = useLocation()
+  const [dark, setDark] = useState(isDark())
+  const seg = activeSegment(location.pathname)
+  const current = items.find((item) => isActiveItem(seg, item))
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Account menu"
-            >
-              <Avatar>
-                <AvatarFallback>{initial}</AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel className="truncate normal-case text-foreground">{email}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => void logout().then(() => navigate('/login'))}>
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+  return (
+    <SidebarHeaderBar>
+      <SidebarTrigger />
+      <div className="mx-1 h-5 w-px bg-border" />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem className="hidden sm:inline-flex">
+            <BreadcrumbPage className="text-muted-foreground">Platform</BreadcrumbPage>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="hidden sm:inline-flex" />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{current?.label ?? 'Settings'}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Toggle theme"
+          onClick={() => setDark(toggleTheme())}
+          className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+        </button>
       </div>
-    </header>
+    </SidebarHeaderBar>
   )
 }

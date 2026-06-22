@@ -69,6 +69,28 @@ export default function OverviewPage() {
     return days
   }, [sessions])
 
+  // Week-over-week change per metric: trailing 7 days vs the 7 days before.
+  const deltas = useMemo(() => {
+    const now = Date.now()
+    const week = 7 * 24 * 60 * 60 * 1000
+    const inWindow = (created: string, start: number, end: number) => {
+      const t = new Date(created).getTime()
+      return t >= start && t < end
+    }
+    const pct = (cur: number, prev: number) => (prev === 0 ? (cur > 0 ? 100 : 0) : ((cur - prev) / prev) * 100)
+    const metric = (predicate: (s: (typeof sessions)[number]) => boolean) => {
+      const cur = sessions.filter((s) => predicate(s) && inWindow(s.created_at, now - week, now + 1)).length
+      const prev = sessions.filter((s) => predicate(s) && inWindow(s.created_at, now - 2 * week, now - week)).length
+      return pct(cur, prev)
+    }
+    return {
+      total: metric(() => true),
+      approved: metric((s) => s.status === 'approved'),
+      requires_review: metric((s) => s.status === 'requires_review'),
+      rejected: metric((s) => s.status === 'rejected'),
+    }
+  }, [sessions])
+
   const breakdown = BREAKDOWN.map((b) => ({ ...b, value: counts[b.key] })).filter((b) => b.value > 0)
 
   const recent = useMemo(
@@ -108,10 +130,30 @@ export default function OverviewPage() {
       <PageHeader title={title} description="Verification activity across this tenant." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total sessions" value={total ?? sessions.length} icon={<ScrollText />} />
-        <StatCard label="Approved" value={counts.approved} icon={<CheckCircle2 />} />
-        <StatCard label="Requires review" value={counts.requires_review} icon={<Clock />} />
-        <StatCard label="Rejected" value={counts.rejected} icon={<XCircle />} />
+        <StatCard
+          label="Total sessions"
+          value={total ?? sessions.length}
+          icon={<ScrollText />}
+          delta={{ value: deltas.total, label: 'from last week' }}
+        />
+        <StatCard
+          label="Approved"
+          value={counts.approved}
+          icon={<CheckCircle2 />}
+          delta={{ value: deltas.approved, label: 'from last week' }}
+        />
+        <StatCard
+          label="Requires review"
+          value={counts.requires_review}
+          icon={<Clock />}
+          delta={{ value: deltas.requires_review, label: 'from last week' }}
+        />
+        <StatCard
+          label="Rejected"
+          value={counts.rejected}
+          icon={<XCircle />}
+          delta={{ value: deltas.rejected, label: 'from last week' }}
+        />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">

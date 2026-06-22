@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm, usePagination } from 'alova/client'
 import type { ProjectEnvironment } from '@arkyc/types'
+import { Boxes } from 'lucide-react'
 import { Projects, errorMessage } from '@/lib/api'
 import { useTenant, useTenantId } from '@/contexts/tenant-context'
-import { humanize } from '@/lib/utils'
+import { formatDateTime, humanize } from '@/lib/utils'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,12 @@ import { Spinner } from '@/components/ui/spinner'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 const ENVIRONMENTS: ProjectEnvironment[] = ['production', 'staging', 'development']
+
+function statusVariant(status: string): 'success' | 'warning' | 'muted' {
+  if (status === 'active') return 'success'
+  if (status === 'disabled' || status === 'archived') return 'muted'
+  return 'warning'
+}
 
 export default function ProjectsPage() {
   const tenantId = useTenantId()
@@ -83,17 +90,25 @@ export default function ProjectsPage() {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
-              <Card key={project.id}>
+              <Card key={project.id} className="flex flex-col transition-colors hover:border-ring/40">
                 <CardHeader>
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle>{project.name}</CardTitle>
-                    <Badge variant="secondary">{humanize(project.environment)}</Badge>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Boxes className="size-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <CardTitle className="truncate text-base">{project.name}</CardTitle>
+                        <p className="text-xs text-muted-foreground">{humanize(project.environment)}</p>
+                      </div>
+                    </div>
+                    <Badge variant={statusVariant(project.status)}>{humanize(project.status)}</Badge>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Status: {humanize(project.status)}</p>
+                <CardContent className="flex-1">
+                  <p className="text-xs text-muted-foreground">Created {formatDateTime(project.created_at)}</p>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="border-t border-border pt-4">
                   <Link to={project.id} className="text-sm font-medium text-primary hover:underline">
                     Manage →
                   </Link>
