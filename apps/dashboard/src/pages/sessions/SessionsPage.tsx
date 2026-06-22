@@ -7,6 +7,7 @@ import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { StatusBadge, DecisionBadge } from '@/components/StatusBadge'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Select } from '@/components/ui/select'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { formatDateTime } from '@/lib/utils'
@@ -66,82 +67,86 @@ export default function SessionsPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <PageHeader title="Sessions" />
+      <PageHeader title="Sessions" description="Every verification session in this tenant." />
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Select
-          className="w-48"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          aria-label="Filter by status"
-        >
-          <option value="">All statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.replace(/_/g, ' ')}
-            </option>
-          ))}
-        </Select>
-
-        {canViewProjects ? (
+      <Card>
+        <CardHeader className="flex-row flex-wrap items-center gap-3 border-b border-border">
           <Select
-            className="w-56"
-            value={projectId}
-            onChange={(e) => setProjectId(e.target.value)}
-            aria-label="Filter by project"
+            className="w-48"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            aria-label="Filter by status"
           >
-            <option value="">All projects</option>
-            {projects.map((pr) => (
-              <option key={pr.id} value={pr.id}>
-                {pr.name}
+            <option value="">All statuses</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s.replace(/_/g, ' ')}
               </option>
             ))}
           </Select>
-        ) : null}
-      </div>
 
-      {error ? (
-        <ErrorState error={error} />
-      ) : sessions.length === 0 && loading ? (
-        <Loading />
-      ) : sessions.length === 0 ? (
-        <EmptyState title="No sessions" description="No verification sessions match these filters." />
-      ) : (
-        <>
-          <Table>
-            <THead>
-              <TR>
-                <TH>User reference</TH>
-                <TH>Status</TH>
-                <TH>Decision</TH>
-                <TH>Risk</TH>
-                <TH>Created</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {sessions.map((s) => (
-                <TR key={s.id}>
-                  <TD>
-                    <Link to={s.id} className="text-primary hover:underline">
-                      {s.user_reference ?? '—'}
-                    </Link>
-                  </TD>
-                  <TD>
-                    <StatusBadge status={s.status} />
-                  </TD>
-                  <TD>
-                    <DecisionBadge decision={s.final_decision ?? s.auto_decision} />
-                  </TD>
-                  <TD>{s.risk_score?.toFixed(2) ?? '—'}</TD>
-                  <TD className="text-muted-foreground">{formatDateTime(s.created_at)}</TD>
-                </TR>
+          {canViewProjects ? (
+            <Select
+              className="w-56"
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              aria-label="Filter by project"
+            >
+              <option value="">All projects</option>
+              {projects.map((pr) => (
+                <option key={pr.id} value={pr.id}>
+                  {pr.name}
+                </option>
               ))}
-            </TBody>
-          </Table>
+            </Select>
+          ) : null}
+        </CardHeader>
 
-          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
-        </>
-      )}
+        <CardContent className="px-2 pb-2">
+          {error ? (
+            <ErrorState error={error} />
+          ) : sessions.length === 0 && loading ? (
+            <Loading />
+          ) : sessions.length === 0 ? (
+            <EmptyState title="No sessions" description="No verification sessions match these filters." />
+          ) : (
+            <>
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>User reference</TH>
+                    <TH>Status</TH>
+                    <TH>Decision</TH>
+                    <TH>Risk</TH>
+                    <TH>Created</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {sessions.map((s) => (
+                    <TR key={s.id}>
+                      <TD>
+                        <Link to={s.id} className="text-primary hover:underline">
+                          {s.user_reference ?? '—'}
+                        </Link>
+                      </TD>
+                      <TD>
+                        <StatusBadge status={s.status} />
+                      </TD>
+                      <TD>
+                        <DecisionBadge decision={s.final_decision ?? s.auto_decision} />
+                      </TD>
+                      <TD>{s.risk_score?.toFixed(2) ?? '—'}</TD>
+                      <TD className="text-muted-foreground">{formatDateTime(s.created_at)}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
+
+              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
