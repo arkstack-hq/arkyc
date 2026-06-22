@@ -1,6 +1,6 @@
+import { CodeCard } from '@/components/CodeCard'
 import { Link } from 'react-router-dom'
 import { Prose } from '@/components/Prose'
-import { CodeCard } from '@/components/CodeCard'
 
 export function ServerSdk() {
   return (
@@ -57,7 +57,7 @@ try {
 
       <h2>Webhook verification</h2>
       <p>
-        The SDK also verifies signed webhook deliveries — see <Link to="/docs/webhooks">Webhooks</Link>.
+        The SDK also verifies signed webhook deliveries, see <Link to="/docs/webhooks">Webhooks</Link>.
       </p>
     </Prose>
   )

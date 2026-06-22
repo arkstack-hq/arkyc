@@ -1,12 +1,13 @@
-import { Prose } from '@/components/Prose'
+import { Link } from 'react-router-dom'
 import { CodeCard } from '@/components/CodeCard'
+import { Prose } from '@/components/Prose'
 
 export function Widget() {
   return (
     <Prose>
       <h1>Embed the widget</h1>
       <p>
-        The widget runs the guided capture flow — document, selfie and liveness — and talks only to Arkyc with the
+        The widget runs the guided capture flow document, selfie and liveness, and talks only to Arkyc with the
         short-lived client token from your server. It works in three modes: <strong>overlay</strong>,{' '}
         <strong>inline</strong>, and a <strong>hosted</strong> page.
       </p>
@@ -40,8 +41,16 @@ import { ArkycWidget } from '@arkyc/sdk/browser'
 
       <h2>Theming</h2>
       <p>
-        The widget is themed from your project’s branding — primary color, logo and corner radius — configured in the
+        The widget is themed from your project’s branding, primary color, logo and corner radius configured in the
         dashboard, so it matches your product without extra code.
+      </p>
+
+      <h2>Capture-only mode</h2>
+      <p>
+        Don’t need Arkyc’s decisioning? Run the widget purely to capture a high-quality document and selfie, then
+        forward the artifacts to your own KYC provider or banking-as-a-service partner. Your users get a flow they’ll
+        finish; you keep your existing verification. The captured images and data are available on the session — see the{' '}
+        <Link to="/docs/sdk">server SDK</Link> and <Link to="/docs/webhooks">webhooks</Link>.
       </p>
 
       <h2>Callbacks</h2>

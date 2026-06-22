@@ -1,5 +1,5 @@
-import { Prose } from '@/components/Prose'
 import { CodeCard } from '@/components/CodeCard'
+import { Prose } from '@/components/Prose'
 
 export function Webhooks() {
   return (
@@ -7,7 +7,7 @@ export function Webhooks() {
       <h1>Webhooks</h1>
       <p>
         Webhooks are your source of truth for the verification decision. Add an endpoint to your project in the
-        dashboard, choose which events to receive, and Arkyc delivers each one — HMAC-SHA256 signed, with automatic
+        dashboard, choose which events to receive, and Arkyc delivers each one, HMAC-SHA256 signed, with automatic
         retries and a deliveries log.
       </p>
 

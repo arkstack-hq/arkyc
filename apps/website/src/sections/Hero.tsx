@@ -52,8 +52,9 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.12 }}
             className="mt-6 max-w-xl text-lg leading-relaxed text-white/70"
           >
-            One API and an embeddable widget for document capture, liveness, face match and automated decisioning — with
-            a human review queue and signed webhooks. Start free, no sales call.
+            A beautiful, embeddable flow to capture documents and selfies — then verify end to end with liveness, face
+            match and decisioning, or simply hand the captured images off to your own KYC provider. Start free, no sales
+            call.
           </motion.p>
 
           <motion.div

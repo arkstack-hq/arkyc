@@ -1,6 +1,6 @@
+import { CodeCard } from '@/components/CodeCard'
 import { Link } from 'react-router-dom'
 import { Prose } from '@/components/Prose'
-import { CodeCard } from '@/components/CodeCard'
 import { links } from '@/lib/site'
 
 export function Quickstart() {
@@ -8,9 +8,9 @@ export function Quickstart() {
     <Prose>
       <h1>Getting started</h1>
       <p>
-        Arkyc verifies your users’ identities — document capture, liveness, face match and an automated decision —
-        behind one API and an embeddable widget. This guide integrates the <strong>hosted</strong> product in four
-        steps. Prefer to run it yourself? See the{' '}
+        Arkyc verifies your users’ identities, document capture, liveness, face match and an automated decision behind
+        one API and an embeddable widget. This guide integrates the <strong>hosted</strong> product in four steps.
+        Prefer to run it yourself? See the{' '}
         <a href={links.ossDocs} target="_blank" rel="noreferrer">
           self-hosting docs
         </a>
@@ -49,7 +49,7 @@ return { clientToken: session.clientToken }`}
       />
 
       <h2>4. Embed the widget (client)</h2>
-      <p>Open the widget with that token — your user completes capture and liveness.</p>
+      <p>Open the widget with that token, your user completes capture and liveness.</p>
       <CodeCard
         title="client.ts"
         code={`import { ArkycWidget } from '@arkyc/sdk/browser'
