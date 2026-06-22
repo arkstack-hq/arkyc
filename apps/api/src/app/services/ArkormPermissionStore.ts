@@ -34,8 +34,7 @@ type Loaded = { getAttribute(key: string): unknown } | null | undefined
  * round-trip, no N+1.
  */
 export class ArkormPermissionStore
-  implements PermissionResolverStore, PermissionSyncStore, AdminResolverStore, AdminSyncStore
-{
+  implements PermissionResolverStore, PermissionSyncStore, AdminResolverStore, AdminSyncStore {
   async tenantRolePermissions(ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
     const member = await TenantMember.where({ userId: ctx.userId, tenantId: ctx.tenantId })
       .with('role.permissions')
