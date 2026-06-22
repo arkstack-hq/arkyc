@@ -59,7 +59,12 @@ beforeAll(async () => {
   const s = Date.now()
   const reg = await request(app)
     .post('/api/v1/auth/register')
-    .send({ firstname: 'Wh Owner', lastname: 'Test', email: `wh-${s}@test.dev`, password: 'secret123' })
+    .send({
+      firstname: 'Wh Owner',
+      lastname: 'Test',
+      email: `wh-${s}@test.dev`,
+      password: 'secret123',
+    })
   fx.token = reg.body.token
 
   const tenant = await authed('post', '/tenants').send({ name: `Wh Co ${s}` })

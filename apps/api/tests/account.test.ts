@@ -52,7 +52,12 @@ describe('password reset', () => {
     // Create the user directly (no prior session token) so the post-reset login
     // is the user's first device session.
     const email = `reset-${Date.now()}@test.dev`
-    await User.create({ firstName: 'Acct', lastName: 'Test', email, password: await Hash.make('oldpass123') })
+    await User.create({
+      firstName: 'Acct',
+      lastName: 'Test',
+      email,
+      password: await Hash.make('oldpass123'),
+    })
 
     const forgot = await request(app).post('/api/v1/auth/forgot').send({ email })
     expect(forgot.status).toBe(201)

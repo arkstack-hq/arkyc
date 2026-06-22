@@ -84,7 +84,6 @@ describe('verification session lifecycle', () => {
     // Decision is async — completing only moves the session to `processing`.
     expect(complete.body.data.status).toBe('processing')
 
-
     const show = await publicApi('get', `sessions/${id}`)
     expect(show.body.data.status).toBe('approved')
     expect(show.body.data.final_decision).toBe('approved')

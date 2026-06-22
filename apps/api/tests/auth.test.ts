@@ -46,8 +46,18 @@ beforeAll(async () => {
   fx.ownerEmail = `owner-${s}@test.dev`
   fx.reviewerEmail = `reviewer-${s}@test.dev`
   fx.loginEmail = `login-${s}@test.dev`
-  const owner = await User.create({ firstName: 'Owner', lastName: 'Test', email: fx.ownerEmail, password })
-  const reviewer = await User.create({ firstName: 'Reviewer', lastName: 'Test', email: fx.reviewerEmail, password })
+  const owner = await User.create({
+    firstName: 'Owner',
+    lastName: 'Test',
+    email: fx.ownerEmail,
+    password,
+  })
+  const reviewer = await User.create({
+    firstName: 'Reviewer',
+    lastName: 'Test',
+    email: fx.reviewerEmail,
+    password,
+  })
   // A user with no prior token, reserved for exercising the login endpoint once.
   await User.create({ firstName: 'Login', lastName: 'Test', email: fx.loginEmail, password })
 

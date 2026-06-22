@@ -13,7 +13,12 @@ beforeAll(async () => {
   const s = Date.now()
   const reg = await request(app)
     .post('/api/v1/auth/register')
-    .send({ firstname: 'Dash Owner', lastname: 'Test', email: `dash-${s}@test.dev`, password: 'secret123' })
+    .send({
+      firstname: 'Dash Owner',
+      lastname: 'Test',
+      email: `dash-${s}@test.dev`,
+      password: 'secret123',
+    })
   ctx.token = reg.body.token
   ctx.userId = reg.body.data.id
 

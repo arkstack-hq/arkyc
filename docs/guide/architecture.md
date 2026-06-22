@@ -73,9 +73,9 @@ face match `0.75` — overridable per project.
 Heavy analysis runs off the request path via **`@arkstack/jobs`** + **`@arkstack/queue`**.
 Each unit of work is a `Job` class dispatched to a named queue:
 
-| Job (queue)        | Trigger                     | Work                                                  |
-| ------------------ | --------------------------- | ----------------------------------------------------- |
-| `OcrJob` (`ocr`)         | document front submitted    | run OCR driver + portrait extraction, persist results |
+| Job (queue)                  | Trigger                     | Work                                                  |
+| ---------------------------- | --------------------------- | ----------------------------------------------------- |
+| `OcrJob` (`ocr`)             | document front submitted    | run OCR driver + portrait extraction, persist results |
 | `BiometricJob` (`biometric`) | session enters `processing` | run face match + decision engine, land the verdict    |
 | `WebhookJob` (`webhook`)     | a transition emits an event | sign + POST the delivery, record the attempt          |
 

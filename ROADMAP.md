@@ -20,17 +20,17 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ## Tech Stack Recap
 
-| Layer             | Choice                                                                   |
-| ----------------- | ------------------------------------------------------------------------ |
-| Backend framework | Arkstack (Express driver, full template)                                 |
-| ORM / migrations  | Arkormˣ                                                                  |
-| Database          | PostgreSQL                                                               |
+| Layer             | Choice                                                                                                                            |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Backend framework | Arkstack (Express driver, full template)                                                                                          |
+| ORM / migrations  | Arkormˣ                                                                                                                           |
+| Database          | PostgreSQL                                                                                                                        |
 | Async work        | Arkstack queue + jobs (`@arkstack/queue` + `@arkstack/jobs`); `sync` inline in dev, `database`/`redis` + `ark queue:work` in prod |
-| Storage           | S3-compatible (local driver for dev)                                     |
-| Dashboard         | React + React Router + shadcn/ui + Tailwind                              |
-| SDK               | TypeScript (browser + server)                                            |
-| Widget            | Framework-agnostic embeddable (overlay / inline / hosted)                |
-| Monorepo          | pnpm workspaces (recursive `pnpm -r` scripts)                            |
+| Storage           | S3-compatible (local driver for dev)                                                                                              |
+| Dashboard         | React + React Router + shadcn/ui + Tailwind                                                                                       |
+| SDK               | TypeScript (browser + server)                                                                                                     |
+| Widget            | Framework-agnostic embeddable (overlay / inline / hosted)                                                                         |
+| Monorepo          | pnpm workspaces (recursive `pnpm -r` scripts)                                                                                     |
 
 ---
 
