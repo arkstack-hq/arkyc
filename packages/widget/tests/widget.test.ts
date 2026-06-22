@@ -245,8 +245,11 @@ describe('WidgetController flow', () => {
     await flush()
     clickText(el, 'Skip (demo)') // front capture (no camera → upload/skip)
     await flush()
-    // Active-liveness screen: no camera/recorder in the fake DOM → fallback finish.
-    clickText(el, 'I performed the steps')
+    // Active-liveness screen: capture_model='active' mandates a live camera, so
+    // there is NO "I performed the steps" fallback on the camera-less fake DOM —
+    // only the demo skip, which still submits the active challenge sequence.
+    expect(find(el, 'I performed the steps')).toBeFalsy()
+    clickText(el, 'Skip (demo)')
     await flush()
 
     expect(find(el, 'Verified')).toBeTruthy()

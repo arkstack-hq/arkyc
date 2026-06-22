@@ -144,9 +144,11 @@ class MediapipeFaceAnalyzer implements FaceAnalyzer {
     const chin = lm[CHIN]!
 
     // Turn: horizontal asymmetry of the nose between the two face edges.
+    // Signed so that turning the head left yields turn<0 and right yields turn>0
+    // from the user's perspective (the raw landmark x-axis runs the other way).
     const dLeft = nose.x - leftEdge.x
     const dRight = rightEdge.x - nose.x
-    const turn = (dLeft - dRight) / Math.max(1e-3, dLeft + dRight)
+    const turn = (dRight - dLeft) / Math.max(1e-3, dLeft + dRight)
 
     // Pitch proxy: nose vertical position between the eye line and the chin.
     const eyeY = (leftEye.y + rightEye.y) / 2
@@ -233,7 +235,13 @@ export const DEFAULT_TUNING: FaceTuning = {
   selfieMaxScale: 0.85,
 }
 
-/** Build a stateful detector for a single active-liveness challenge. */
+/**
+ * Build a stateful detector for a single active-liveness challenge.
+ *
+ * @param challenge
+ * @param t
+ * @returns
+ */
 export function makeChallengeDetector(challenge: LivenessChallenge, t: FaceTuning = DEFAULT_TUNING): ChallengeDetector {
   switch (challenge) {
     case 'blink': {

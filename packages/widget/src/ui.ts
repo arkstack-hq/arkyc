@@ -36,6 +36,12 @@ export interface ViewState {
   allowSkip?: boolean
   /** The challenge sequence to prompt for the active-liveness screen. */
   livenessChallenges?: LivenessChallenge[]
+  /**
+   * Capture model demands a live camera (`capture_model === 'active'`). When set,
+   * the active-liveness screen must NOT offer a manual/file fallback on
+   * unsupported devices — it shows an "unsupported device" message instead.
+   */
+  requireLiveCamera?: boolean
 }
 
 const DOCUMENT_LABELS: Record<DocumentType, string> = {
@@ -169,7 +175,7 @@ export class WidgetView {
       case 'selfie_capture':
         return this.renderCapture('Take a selfie', 'user', state.allowSkip, true)
       case 'active_liveness':
-        return this.renderActiveLiveness(state.livenessChallenges ?? [], state.allowSkip)
+        return this.renderActiveLiveness(state.livenessChallenges ?? [], state.allowSkip, state.requireLiveCamera)
       case 'ocr_processing':
         return this.renderProcessing('Reading your document…')
       case 'passive_liveness':
@@ -244,11 +250,16 @@ export class WidgetView {
         fileInput.click()
       })
 
-      if (selfie) this.runSelfieAutoCapture(video, hint, onCapture)
-      else this.runDocumentAutoCapture(video, hint)
-
-      // Manual capture always available as a fallback / override.
-      this.footer.appendChild(this.button('Capture', onCapture))
+      if (selfie) {
+        // Pure auto-capture: face detection grabs the frame when the user is
+        // framed. The manual button only appears if the detector can't load.
+        this.runSelfieAutoCapture(video, hint, onCapture)
+      } else {
+        this.runDocumentAutoCapture(video, hint)
+        // Document auto-capture rides a coarse brightness heuristic, so the
+        // manual button stays as a reliable override.
+        this.footer.appendChild(this.button('Capture', onCapture))
+      }
     } else {
       const upload = this.button('Upload photo', () => fileInput.click())
       this.footer.appendChild(upload)
@@ -298,8 +309,11 @@ export class WidgetView {
    */
   private runSelfieAutoCapture(video: HTMLVideoElement, hint: HTMLElement, capture: () => void): void {
     const analyzer = this.analyzer
+    const addManualCapture = () => this.footer.appendChild(this.button('Capture', capture))
     if (!analyzer) {
+      // No detector available — fall back to a manual capture button.
       hint.textContent = 'Center your face, then capture'
+      addManualCapture()
       return
     }
     hint.textContent = 'Starting camera…'
@@ -310,8 +324,9 @@ export class WidgetView {
     void analyzer.ready().then((ok) => {
       if (cancelled) return
       if (!ok) {
-        // No detector — guide with brightness and rely on manual capture.
+        // Detector failed to load — guide with brightness and offer manual capture.
         hint.textContent = 'Center your face, then capture'
+        addManualCapture()
         return
       }
       let streak = 0
@@ -343,7 +358,11 @@ export class WidgetView {
    * and a sequence of challenge prompts the user advances through. The performed
    * sequence (the prompts shown, in order) is submitted for the driver to verify.
    */
-  private renderActiveLiveness(challenges: LivenessChallenge[], allowSkip?: boolean): void {
+  private renderActiveLiveness(
+    challenges: LivenessChallenge[],
+    allowSkip?: boolean,
+    requireLiveCamera?: boolean,
+  ): void {
     this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Liveness check' }))
     const prompt = this.el('p', {
       class: 'arkyc-p',
@@ -354,6 +373,19 @@ export class WidgetView {
     const fileFallback = !this.camera.supported || !this.camera.canRecord
 
     if (fileFallback) {
+      if (requireLiveCamera) {
+        // capture_model = active: a live camera is mandatory. Do NOT offer a
+        // manual "I did it" path — surface the device as unsupported instead.
+        this.body.appendChild(this.el('div', { class: 'arkyc-badge err', html: '!' }))
+        prompt.textContent =
+          'This check needs camera access on a supported device. Please retry on a device with a working camera.'
+        if (allowSkip) {
+          const skip = this.button('Skip (demo)', () => this.handlers.onActiveLiveness(null, challenges))
+          skip.classList.add('arkyc-btn-ghost')
+          this.footer.appendChild(skip)
+        }
+        return
+      }
       // No camera/recorder — let the user finish (or skip) without a video.
       const finish = this.button('I performed the steps', () => this.handlers.onActiveLiveness(null, challenges))
       this.footer.appendChild(finish)
@@ -406,10 +438,15 @@ export class WidgetView {
       if (index === challenges.length - 1) advance.textContent = 'Finish'
     }
 
-    // Manual advance is always available as a fallback / accessibility path.
+    // Manual advance is only revealed as a fallback when detection can't run.
     const advance = this.button('Next', () => advanceStep())
     if (challenges.length <= 1) advance.textContent = 'Finish'
-    this.footer.appendChild(advance)
+    let manualShown = false
+    const showManualAdvance = () => {
+      if (manualShown) return
+      manualShown = true
+      this.footer.appendChild(advance)
+    }
 
     void this.camera
       .start(video, 'user')
@@ -418,15 +455,23 @@ export class WidgetView {
         showPrompt()
 
         // Real detection when available: auto-advance only when the prompted
-        // challenge is actually performed. Falls back to the manual button.
+        // challenge is actually performed. Reveals the manual button if the
+        // detector is absent or fails to load.
         const analyzer = this.analyzer
-        if (!analyzer) return
+        if (!analyzer) {
+          showManualAdvance()
+          return
+        }
         let cancelled = false
         this.cleanups.push(() => {
           cancelled = true
         })
         void analyzer.ready().then((ok) => {
-          if (cancelled || !ok) return
+          if (cancelled) return
+          if (!ok) {
+            showManualAdvance()
+            return
+          }
           const timer = setInterval(() => {
             if (index >= challenges.length) {
               clearInterval(timer)
@@ -444,6 +489,11 @@ export class WidgetView {
       })
       .catch(() => {
         video.classList.add('arkyc-hidden')
+        if (requireLiveCamera) {
+          // Mandatory live camera was denied — require a retry, don't fall back.
+          prompt.textContent = 'Camera access is required to continue. Please allow access and try again.'
+          return
+        }
         this.handlers.onActiveLiveness(null, challenges)
       })
 

@@ -78,6 +78,8 @@ export class WidgetController {
   private country: string | null = null
   private selfie: Blob | null = null
   private livenessMode: LivenessMode = 'passive'
+  /** The session's capture model; `active` mandates a live camera (no fallback). */
+  private captureModel: 'passive' | 'active' | 'both' = 'passive'
   private livenessChallenges: LivenessChallenge[] = []
   private result: WidgetResult | null = null
   private pendingError: Error | null = null
@@ -164,9 +166,11 @@ export class WidgetController {
   private resolveLiveness(session: ClientSession): void {
     this.livenessChallenges = session.liveness_challenges ?? []
     const model = session.capture_model ?? 'passive'
+    this.captureModel = model
     const wantsActive = model === 'active' || model === 'both'
-    // `active` is honoured even without a live camera (a file-fallback finish);
-    // `both` falls back to passive when the camera/recorder isn't available.
+    // `active` is honoured even without a live camera — the active-liveness
+    // screen then shows the device as unsupported (no fallback). `both` falls
+    // back to passive when the camera/recorder isn't available.
     this.livenessMode = wantsActive && (model === 'active' || this.view.cameraSupported) ? 'active' : 'passive'
   }
 
@@ -239,6 +243,7 @@ export class WidgetController {
       decision: this.result?.decision,
       allowSkip: !!this.config.signals,
       livenessChallenges: this.livenessChallenges,
+      requireLiveCamera: this.captureModel === 'active',
     })
   }
 
