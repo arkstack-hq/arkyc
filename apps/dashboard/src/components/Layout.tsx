@@ -111,6 +111,7 @@ export function TenantLayout() {
 
 function LayoutInner() {
   const { tenant, loading, notFound, can } = useTenant()
+  const [scrolled, setScrolled] = useState(false)
 
   if (loading) return <Loading />
   if (notFound || !tenant) {
@@ -127,10 +128,10 @@ function LayoutInner() {
   return (
     <SidebarProvider>
       <TenantSidebar can={can} />
-      <SidebarInset>
-        <TenantHeader can={can} />
+      <SidebarInset onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 12)}>
         <div className="px-3 pb-3 pt-3">
-          <main className="min-h-[calc(100svh-5.5rem)] rounded-xl border border-border bg-card">
+          <main className="min-h-[calc(100svh-1.5rem)] rounded-xl border border-border bg-card">
+            <TenantHeader can={can} scrolled={scrolled} />
             <Outlet />
           </main>
         </div>
@@ -259,7 +260,7 @@ function UserMenu() {
   )
 }
 
-function TenantHeader({ can }: { can: (perm: PermissionKey) => boolean }) {
+function TenantHeader({ can, scrolled }: { can: (perm: PermissionKey) => boolean; scrolled: boolean }) {
   const { tenant } = useTenant()
   const { logout } = useAuth()
   const navigate = useNavigate()
@@ -289,7 +290,7 @@ function TenantHeader({ can }: { can: (perm: PermissionKey) => boolean }) {
   }, [can, navigate, tenant?.slug, logout])
 
   return (
-    <SidebarHeaderBar>
+    <SidebarHeaderBar scrolled={scrolled}>
       <SidebarTrigger />
       <div className="mx-1 h-5 w-px bg-border" />
       <Breadcrumb>

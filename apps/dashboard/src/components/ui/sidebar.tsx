@@ -291,12 +291,28 @@ export function SidebarSeparator({ className, ...props }: ComponentProps<'div'>)
   return <div className={cn('mx-2 h-px bg-sidebar-border', className)} {...props} />
 }
 
-/** Convenience wrapper used by the header to host a breadcrumb beside the trigger. */
-export function SidebarHeaderBar({ children, className }: { children: ReactNode; className?: string }) {
+/**
+ * The page header, rendered as the first child of the content card. At rest it
+ * is part of the card (rounded top, card background). Once `scrolled`, it sticks
+ * to the top and breaks out of the card's gutter into a full-width glass bar
+ * that touches the sidebar and the scrollbar.
+ */
+export function SidebarHeaderBar({
+  children,
+  scrolled = false,
+  className,
+}: {
+  children: ReactNode
+  scrolled?: boolean
+  className?: string
+}) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-border/50 bg-sidebar/70 px-4 backdrop-blur-md',
+        'sticky top-0 z-30 flex h-16 items-center gap-2 border-b transition-colors',
+        scrolled
+          ? '-mx-3 rounded-none border-border/60 bg-sidebar/70 px-7 backdrop-blur-md'
+          : 'rounded-t-xl border-border bg-card px-4',
         className,
       )}
     >

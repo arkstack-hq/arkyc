@@ -80,6 +80,7 @@ function isActiveItem(seg: string, item: AdminNavItem): boolean {
  */
 export function AdminLayout() {
   const { isAdmin, can, loading } = useAdmin()
+  const [scrolled, setScrolled] = useState(false)
 
   if (loading) return <Loading />
   if (!isAdmin) return <Navigate to="/" replace />
@@ -89,11 +90,13 @@ export function AdminLayout() {
   return (
     <SidebarProvider>
       <AdminSidebar items={items} />
-      <SidebarInset>
-        <AdminHeader items={items} />
+      <SidebarInset onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 12)}>
         <div className="px-3 pb-3 pt-3">
-          <main className="min-h-[calc(100svh-5.5rem)] rounded-xl border border-border bg-card p-6 lg:p-8">
-            <Outlet />
+          <main className="min-h-[calc(100svh-1.5rem)] rounded-xl border border-border bg-card">
+            <AdminHeader items={items} scrolled={scrolled} />
+            <div className="p-6 lg:p-8">
+              <Outlet />
+            </div>
           </main>
         </div>
       </SidebarInset>
@@ -195,14 +198,14 @@ function AdminUserMenu() {
   )
 }
 
-function AdminHeader({ items }: { items: AdminNavItem[] }) {
+function AdminHeader({ items, scrolled }: { items: AdminNavItem[]; scrolled: boolean }) {
   const location = useLocation()
   const [dark, setDark] = useState(isDark())
   const seg = activeSegment(location.pathname)
   const current = items.find((item) => isActiveItem(seg, item))
 
   return (
-    <SidebarHeaderBar>
+    <SidebarHeaderBar scrolled={scrolled}>
       <SidebarTrigger />
       <div className="mx-1 h-5 w-px bg-border" />
       <Breadcrumb>
