@@ -437,17 +437,17 @@ liveness, offered per the admin's global capture-model setting.
 
 ## Phase 19 — Hosted Website & Custom Docs Theme ✅
 
-**Goal:** A public marketing + documentation website with a bespoke theme.
+**Goal:** Two distinct public properties — a branded **open-source / white-label docs** site, and a sleek **hosted-product marketing site** for the SaaS.
 
 **Scope**
 
-- [x] Custom VitePress theme (`docs/.vitepress/theme/`) layered over the Phase 14 docs: brand tokens (indigo/Inter/flat) mirroring the dashboard, applied across nav/links/buttons/search in light + dark, plus a brand mark (`public/logo.svg`) and GitHub social link.
-- [x] Bespoke marketing landing (`theme/components/Landing.vue` via a `layout: page` home): hero + CTAs, quickstart code card, 6-feature grid, CTA band, footer — links straight into `/guide` and `/api`, so landing → docs → first integration is one site.
-- [x] Build/deploy pipeline + SEO/analytics: GitHub Pages workflow (`.github/workflows/docs.yml`, base-path auto-derived), generated `sitemap.xml`, Open Graph + Twitter meta, and env-gated **GA4** (`GA_MEASUREMENT_ID`); origin/base are deploy-configurable (`DOCS_BASE` / `DOCS_SITE_URL`).
+- [x] **OSS / white-label docs** (`docs/`, VitePress): custom theme (`docs/.vitepress/theme/`) over the Phase 14 content — brand tokens (indigo/Inter) across nav/links/buttons/search in light + dark, brand mark + GitHub link, a `layout: page` landing, generated `sitemap.xml`, Open Graph/Twitter meta, env-gated **GA4**, and a GitHub Pages workflow (`.github/workflows/docs.yml`, base-path auto-derived; `DOCS_BASE`/`DOCS_SITE_URL`). Audience: developers self-hosting / white-labeling. _(The "current look is fine for white-label docs.")_
+- [x] **Hosted-product marketing site** (`apps/website`, Vite + React + Tailwind v4 + **motion**): didit.me-style, sleek and animated — sticky blur nav, dark gradient hero with a self-running verification "sprite", capability marquee, scroll-reveal feature rows, animated stat counters, how-it-works, pricing, FAQ accordion, CTA band, footer. Reduced-motion respected. **Log in / Start free** link into the dashboard (`VITE_DASHBOARD_URL`).
+- [x] **Customer-integration docs** on the hosted site (`apps/website/src/docs`): Getting started, Embed the widget, Server SDK, Webhooks — focused on a customer integrating the hosted product (not white-labeling). Separate from the OSS docs, which it links out to for self-hosting.
 
-**Deliverables:** A deployable public site combining marketing + docs under a custom theme.
+**Deliverables:** Branded VitePress OSS docs (deployable via Pages) + a new `apps/website` hosted-product marketing site with customer docs.
 
-**Exit criteria:** The site builds and deploys; a visitor can go landing → docs → first integration without leaving it. ✅ _(`pnpm --filter @arkyc/docs build` is clean — landing, restyled docs, sitemap, and SEO meta all emit; Pages workflow ready. Live deploy + the canonical domain/`GA_MEASUREMENT_ID` secret are set on first push to `main`. `REPO` in config + the `arkyc.dev` placeholder origin should be updated to the real values.)_
+**Exit criteria:** Both build clean; a hosted-product visitor can go landing → customer docs → sign up (dashboard), and a self-hoster lands in the OSS docs. ✅ _(`pnpm --filter @arkyc/docs build` and `pnpm --filter @arkyc/website build` both clean; website typechecks.)_ _Follow-ups: pick the marketing-site host/domain + `VITE_DASHBOARD_URL`; replace placeholder URLs (`arcstack/arkyc`, `api.arkyc.dev`, `cdn.arkyc.dev`, `arkyc.dev`)._
 
 ---
 
