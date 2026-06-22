@@ -408,7 +408,7 @@ liveness, offered per the admin's global capture-model setting.
 
 **Scope**
 
-- [x] New widget flow: guided **active liveness** (server-issued turn/blink/smile/nod/move-closer challenges, camera + recorded video) and improved document capture (live glare/brightness hints + auto-capture). _(Edge detection approximated by a brightness/glare heuristic.)_
+- [x] New widget flow: guided **active liveness** (server-issued turn/blink/smile/nod/move-closer challenges, camera + recorded video) and improved document capture (live glare/brightness hints + auto-capture). Document auto-capture uses a brightness/glare heuristic; **selfie auto-capture and active-liveness challenge detection use real in-browser face landmarks** (`src/face.ts` — MediaPipe FaceLandmarker, lazy-loaded from CDN, feature-detected, with the manual capture/Next as a fallback so the pure tests and unsupported browsers degrade cleanly).
 - [x] Keep the current passive flow; the offered model (`passive` | `active` | `both`) resolves from the global `capture.model` setting, overridable per project via `Project.settings.capture_model`.
 - [x] Client/Liveness API + provider contract carry the challenge/response signals — `submitLiveness` takes `mode`/`video`/`challenges`; the `mock` driver validates the performed sequence against the issued one (parity, no real provider needed).
 - [x] Branding/theming reused from Phase 12; mobile-first card UI. _(Full accessibility pass not audited.)_

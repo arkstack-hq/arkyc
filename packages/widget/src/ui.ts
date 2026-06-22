@@ -2,6 +2,7 @@ import type { DocumentType, LivenessChallenge, VerificationDecision, WidgetStep 
 
 import { Camera } from './capture'
 import type { Facing } from './capture'
+import { createDefaultFaceAnalyzer, isSelfieReady, makeChallengeDetector, type FaceAnalyzer } from './face'
 import { Theme } from './theme'
 
 /** High-level events the view raises back to the controller. */
@@ -68,16 +69,21 @@ export class WidgetView {
   private readonly body: HTMLElement
   private readonly footer: HTMLElement
   private readonly camera: Camera
+  private readonly analyzer: FaceAnalyzer | null
   /** Interval ids for live quality/recording timers, cleared on re-render. */
   private timers: ReturnType<typeof setInterval>[] = []
+  /** Extra teardown run on each re-render (cancels in-flight detection loops). */
+  private cleanups: (() => void)[] = []
 
   constructor(
     private readonly doc: Document,
     private readonly theme: Theme,
     private readonly handlers: ViewHandlers,
     nav: Navigator = globalThis.navigator,
+    analyzer: FaceAnalyzer | null = createDefaultFaceAnalyzer(),
   ) {
     this.camera = new Camera(doc, nav)
+    this.analyzer = analyzer
     this.root = this.el('div', { class: 'arkyc-root' })
 
     const style = this.el('style', { text: theme.stylesheet() })
@@ -125,6 +131,8 @@ export class WidgetView {
   destroy(): void {
     this.timers.forEach((id) => clearInterval(id))
     this.timers = []
+    this.cleanups.forEach((fn) => fn())
+    this.cleanups = []
     this.camera.stop()
   }
 
@@ -186,13 +194,13 @@ export class WidgetView {
     this.body.appendChild(country)
 
     const choices = this.el('div', { class: 'arkyc-choices' })
-    ;(Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
-      const btn = this.button(DOCUMENT_LABELS[type], () =>
-        this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
-      )
-      btn.classList.add('arkyc-btn-ghost')
-      choices.appendChild(btn)
-    })
+      ; (Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
+        const btn = this.button(DOCUMENT_LABELS[type], () =>
+          this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
+        )
+        btn.classList.add('arkyc-btn-ghost')
+        choices.appendChild(btn)
+      })
     this.body.appendChild(choices)
   }
 
@@ -214,9 +222,11 @@ export class WidgetView {
       }) as HTMLVideoElement
       this.body.appendChild(video)
 
-      // Live quality hint; documents auto-capture once quality is stable.
+      // Live guidance hint (quality for documents, framing for selfies).
       const hint = this.el('p', { class: 'arkyc-p arkyc-hint' }) as HTMLParagraphElement
       this.body.appendChild(hint)
+
+      const onCapture = () => void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
 
       void this.camera.start(video, facing).catch(() => {
         // Camera denied/unavailable — fall back to the file input.
@@ -224,33 +234,11 @@ export class WidgetView {
         fileInput.click()
       })
 
-      let goodStreak = 0
-      const timer = setInterval(() => {
-        const quality = this.camera.sampleQuality(video)
-        if (!quality) return
-        if (quality.tooDark) {
-          hint.textContent = 'Too dark — find better lighting'
-          goodStreak = 0
-        } else if (quality.glare) {
-          hint.textContent = 'Reduce glare on the document'
-          goodStreak = 0
-        } else {
-          hint.textContent = 'Looks good — hold steady'
-          goodStreak += 1
-        }
-        // Auto-capture a steady document after ~1.5s of good quality.
-        if (!selfie && goodStreak >= 5) {
-          clearInterval(timer)
-          void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
-        }
-      }, 300)
-      this.timers.push(timer)
+      if (selfie) this.runSelfieAutoCapture(video, hint, onCapture)
+      else this.runDocumentAutoCapture(video, hint)
 
-      this.footer.appendChild(
-        this.button('Capture', () => {
-          void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
-        }),
-      )
+      // Manual capture always available as a fallback / override.
+      this.footer.appendChild(this.button('Capture', onCapture))
     } else {
       const upload = this.button('Upload photo', () => fileInput.click())
       this.footer.appendChild(upload)
@@ -261,6 +249,83 @@ export class WidgetView {
       skip.classList.add('arkyc-btn-ghost')
       this.footer.appendChild(skip)
     }
+  }
+
+  /** Document capture: brightness/glare heuristic, auto-grab once steady. */
+  private runDocumentAutoCapture(video: HTMLVideoElement, hint: HTMLElement): void {
+    let goodStreak = 0
+    const timer = setInterval(() => {
+      const quality = this.camera.sampleQuality(video)
+      if (!quality) return
+      if (quality.tooDark) {
+        hint.textContent = 'Too dark — find better lighting'
+        goodStreak = 0
+      } else if (quality.glare) {
+        hint.textContent = 'Reduce glare on the document'
+        goodStreak = 0
+      } else {
+        hint.textContent = 'Looks good — hold steady'
+        goodStreak += 1
+      }
+      // Auto-capture a steady document after ~1.5s of good quality.
+      if (goodStreak >= 5) {
+        clearInterval(timer)
+        void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
+      }
+    }, 300)
+    this.timers.push(timer)
+  }
+
+  /**
+   * Selfie capture: when face detection is available, auto-grab once a centred
+   * face is held steady. Falls back to a brightness hint (manual capture) when
+   * the detector can't load (unsupported browser / offline / test host).
+   *
+   * @param video
+   * @param hint
+   * @param capture
+   * @returns
+   */
+  private runSelfieAutoCapture(video: HTMLVideoElement, hint: HTMLElement, capture: () => void): void {
+    const analyzer = this.analyzer
+    if (!analyzer) {
+      hint.textContent = 'Center your face, then capture'
+      return
+    }
+    hint.textContent = 'Starting camera…'
+    let cancelled = false
+    this.cleanups.push(() => {
+      cancelled = true
+    })
+    void analyzer.ready().then((ok) => {
+      if (cancelled) return
+      if (!ok) {
+        // No detector — guide with brightness and rely on manual capture.
+        hint.textContent = 'Center your face, then capture'
+        return
+      }
+      let streak = 0
+      const timer = setInterval(() => {
+        const sample = analyzer.analyze(video)
+        if (!sample || !sample.present) {
+          hint.textContent = 'Position your face in the circle'
+          streak = 0
+          return
+        }
+        if (isSelfieReady(sample)) {
+          hint.textContent = 'Hold still…'
+          streak += 1
+        } else {
+          hint.textContent = sample.scale <= 0.28 ? 'Move a little closer' : 'Center your face'
+          streak = 0
+        }
+        if (streak >= 4) {
+          clearInterval(timer)
+          capture()
+        }
+      }, 180)
+      this.timers.push(timer)
+    })
   }
 
   /**
@@ -295,39 +360,82 @@ export class WidgetView {
 
     let recording: { stop(): Promise<Blob> } | null = null
     let index = 0
-    const showPrompt = () => {
+    // The challenges the user actually completed, in order (detected or advanced).
+    const performed: LivenessChallenge[] = []
+    let detector = makeChallengeDetector(challenges[0] ?? 'blink')
+
+    const showPrompt = (done = false) => {
       const challenge = challenges[index]
-      prompt.textContent = challenge
-        ? `Step ${index + 1} of ${challenges.length}: ${CHALLENGE_LABELS[challenge]}`
-        : 'Hold still…'
+      if (!challenge) {
+        prompt.textContent = 'Hold still…'
+        return
+      }
+      prompt.textContent = done
+        ? `✓ ${CHALLENGE_LABELS[challenge]}`
+        : `Step ${index + 1} of ${challenges.length}: ${CHALLENGE_LABELS[challenge]}`
     }
+
+    const finish = () => {
+      advance.setAttribute('disabled', 'true')
+      void Promise.resolve(recording?.stop() ?? Promise.resolve(null)).then((blob) =>
+        this.handlers.onActiveLiveness(blob, performed),
+      )
+    }
+
+    const advanceStep = () => {
+      if (index >= challenges.length) return
+      const current = challenges[index]
+      if (current) performed.push(current)
+      index += 1
+      if (index >= challenges.length) {
+        finish()
+        return
+      }
+      detector = makeChallengeDetector(challenges[index]!)
+      showPrompt()
+      if (index === challenges.length - 1) advance.textContent = 'Finish'
+    }
+
+    // Manual advance is always available as a fallback / accessibility path.
+    const advance = this.button('Next', () => advanceStep())
+    if (challenges.length <= 1) advance.textContent = 'Finish'
+    this.footer.appendChild(advance)
 
     void this.camera
       .start(video, 'user')
       .then((stream) => {
         recording = this.camera.recordStart(stream)
         showPrompt()
+
+        // Real detection when available: auto-advance only when the prompted
+        // challenge is actually performed. Falls back to the manual button.
+        const analyzer = this.analyzer
+        if (!analyzer) return
+        let cancelled = false
+        this.cleanups.push(() => {
+          cancelled = true
+        })
+        void analyzer.ready().then((ok) => {
+          if (cancelled || !ok) return
+          const timer = setInterval(() => {
+            if (index >= challenges.length) {
+              clearInterval(timer)
+              return
+            }
+            const sample = analyzer.analyze(video)
+            if (!sample) return
+            if (detector.feed(sample)) {
+              showPrompt(true)
+              advanceStep()
+            }
+          }, 160)
+          this.timers.push(timer)
+        })
       })
       .catch(() => {
         video.classList.add('arkyc-hidden')
         this.handlers.onActiveLiveness(null, challenges)
       })
-
-    const advance = this.button('Next', () => {
-      index += 1
-      if (index < challenges.length) {
-        showPrompt()
-        if (index === challenges.length - 1) advance.textContent = 'Finish'
-        return
-      }
-      // Done — stop recording and submit the sequence we prompted.
-      advance.setAttribute('disabled', 'true')
-      void Promise.resolve(recording?.stop() ?? Promise.resolve(null)).then((blob) =>
-        this.handlers.onActiveLiveness(blob, challenges),
-      )
-    })
-    if (challenges.length <= 1) advance.textContent = 'Finish'
-    this.footer.appendChild(advance)
 
     if (allowSkip) {
       const skip = this.button('Skip (demo)', () => this.handlers.onActiveLiveness(null, challenges))
@@ -393,7 +501,7 @@ export class WidgetView {
       else if (key === 'text') node.textContent = value
       else if (key === 'html') node.innerHTML = value
       else if (key === 'value' || key === 'src' || key === 'type' || key === 'accept' || key === 'placeholder') {
-        ;(node as unknown as Record<string, string>)[key] = value
+        ; (node as unknown as Record<string, string>)[key] = value
       } else node.setAttribute(key, value)
     }
     return node

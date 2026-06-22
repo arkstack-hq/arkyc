@@ -8,6 +8,7 @@ import type {
   WidgetStep,
 } from '@arkyc/types'
 import { ArkycClient, type ClientSession, type ProviderSignalHints } from './client'
+import type { FaceAnalyzer } from './face'
 import { Flow } from './flow'
 import { Theme } from './theme'
 import { WidgetView, type ViewHandlers } from './ui'
@@ -37,6 +38,12 @@ export interface WidgetControllerConfig {
   doc?: Document
   win?: Window
   nav?: Navigator
+  /**
+   * Face analyzer powering selfie auto-capture + active-liveness detection.
+   * Defaults to the real MediaPipe-backed analyzer (loaded lazily from a CDN);
+   * pass `null` to disable detection and use the manual capture flow.
+   */
+  faceAnalyzer?: FaceAnalyzer | null
   /** Schedules a callback after `ms` (defaults to `setTimeout`). */
   scheduler?: (fn: () => void, ms: number) => void
   /** Cosmetic OCR-processing screen duration (ms). */
@@ -86,7 +93,7 @@ export class WidgetController {
       fetch: config.fetch,
     })
     const theme = new Theme(config.branding)
-    this.view = new WidgetView(doc, theme, this.handlers(), config.nav ?? globalThis.navigator)
+    this.view = new WidgetView(doc, theme, this.handlers(), config.nav ?? globalThis.navigator, config.faceAnalyzer)
 
     this.postToParent = config.postToParent ?? (!!win.parent && win.parent !== win)
     this.scheduler = config.scheduler ?? ((fn, ms) => setTimeout(fn, ms))

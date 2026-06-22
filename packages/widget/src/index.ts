@@ -20,6 +20,7 @@
 import type { ProjectBranding, WidgetResult } from '@arkyc/types'
 import { WidgetController } from './controller'
 import type { ProviderSignalHints } from './client'
+import type { FaceAnalyzer } from './face'
 
 export const PACKAGE_NAME = '@arkyc/widget'
 export const VERSION = '0.1.0'
@@ -43,6 +44,8 @@ export interface BaseWidgetOptions {
   doc?: Document
   win?: Window
   nav?: Navigator
+  /** Pass `null` to disable face detection (selfie auto-capture + active liveness). */
+  faceAnalyzer?: FaceAnalyzer | null
 }
 
 /** Options for {@link ArkycWidget.mount} (inline mode). */
@@ -78,6 +81,7 @@ function buildController(options: BaseWidgetOptions, onSettle: () => void): Widg
     doc: options.doc,
     win: options.win,
     nav: options.nav,
+    faceAnalyzer: options.faceAnalyzer,
   })
 }
 
@@ -129,4 +133,6 @@ export { Camera } from './capture'
 export type { Facing } from './capture'
 export { Flow } from './flow'
 export type { FlowContext } from './flow'
+export { createDefaultFaceAnalyzer } from './face'
+export type { FaceAnalyzer, FaceSample } from './face'
 export type { WidgetResult } from '@arkyc/types'
