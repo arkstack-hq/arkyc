@@ -435,19 +435,19 @@ liveness, offered per the admin's global capture-model setting.
 
 ---
 
-## Phase 19 — Hosted Website & Custom Docs Theme ⬜
+## Phase 19 — Hosted Website & Custom Docs Theme ✅
 
 **Goal:** A public marketing + documentation website with a bespoke theme.
 
 **Scope**
 
-- [ ] Custom VitePress theme (brand, landing components) layered over the Phase 14 docs content.
-- [ ] Marketing/landing pages + the integration documentation in one hosted site.
-- [ ] Build/deploy pipeline (static hosting); SEO and analytics hooks.
+- [x] Custom VitePress theme (`docs/.vitepress/theme/`) layered over the Phase 14 docs: brand tokens (indigo/Inter/flat) mirroring the dashboard, applied across nav/links/buttons/search in light + dark, plus a brand mark (`public/logo.svg`) and GitHub social link.
+- [x] Bespoke marketing landing (`theme/components/Landing.vue` via a `layout: page` home): hero + CTAs, quickstart code card, 6-feature grid, CTA band, footer — links straight into `/guide` and `/api`, so landing → docs → first integration is one site.
+- [x] Build/deploy pipeline + SEO/analytics: GitHub Pages workflow (`.github/workflows/docs.yml`, base-path auto-derived), generated `sitemap.xml`, Open Graph + Twitter meta, and env-gated **GA4** (`GA_MEASUREMENT_ID`); origin/base are deploy-configurable (`DOCS_BASE` / `DOCS_SITE_URL`).
 
 **Deliverables:** A deployable public site combining marketing + docs under a custom theme.
 
-**Exit criteria:** The site builds and deploys; a visitor can go landing → docs → first integration without leaving it.
+**Exit criteria:** The site builds and deploys; a visitor can go landing → docs → first integration without leaving it. ✅ _(`pnpm --filter @arkyc/docs build` is clean — landing, restyled docs, sitemap, and SEO meta all emit; Pages workflow ready. Live deploy + the canonical domain/`GA_MEASUREMENT_ID` secret are set on first push to `main`. `REPO` in config + the `arkyc.dev` placeholder origin should be updated to the real values.)_
 
 ---
 

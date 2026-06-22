@@ -1,14 +1,58 @@
-import { defineConfig } from 'vitepress'
+import { defineConfig, type HeadConfig } from 'vitepress'
+
+// Deploy-time configuration (all optional; sensible defaults for local dev):
+//  - DOCS_BASE         e.g. "/Arkyc/" for a GitHub Pages project site, "/" for a custom domain.
+//  - DOCS_SITE_URL     canonical origin, used for sitemap + Open Graph absolute URLs.
+//  - GA_MEASUREMENT_ID Google Analytics 4 id (e.g. "G-XXXXXXX"); analytics load only when set.
+// Normalize to a leading + trailing slash (VitePress requires both), so a raw
+// GitHub Pages base_path like "/Arkyc" works unchanged.
+const base = `/${(process.env.DOCS_BASE || '').replace(/^\/|\/$/g, '')}/`.replace(/^\/\/$/, '/')
+const siteUrl = (process.env.DOCS_SITE_URL || 'https://arkyc.dev').replace(/\/$/, '')
+const gaId = process.env.GA_MEASUREMENT_ID
+const repo = 'https://github.com/arcstack/arkyc'
+
+const description =
+  'Open-source, multi-tenant identity verification — document capture, OCR, liveness, face match, decisioning, reviews, webhooks, SDK and widget.'
+
+const head: HeadConfig[] = [
+  ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}logo.svg` }],
+  ['meta', { name: 'theme-color', content: '#4f46e5' }],
+  ['meta', { name: 'description', content: description }],
+  ['meta', { property: 'og:type', content: 'website' }],
+  ['meta', { property: 'og:site_name', content: 'Arkyc' }],
+  ['meta', { property: 'og:title', content: 'Arkyc — Open-source identity verification' }],
+  ['meta', { property: 'og:description', content: description }],
+  ['meta', { property: 'og:url', content: `${siteUrl}/` }],
+  ['meta', { name: 'twitter:card', content: 'summary' }],
+  ['meta', { name: 'twitter:title', content: 'Arkyc — Open-source identity verification' }],
+  ['meta', { name: 'twitter:description', content: description }],
+]
+
+// Google Analytics 4 — appended only when an id is configured (keeps dev/preview clean).
+if (gaId) {
+  head.push(
+    ['script', { async: '', src: `https://www.googletagmanager.com/gtag/js?id=${gaId}` }],
+    [
+      'script',
+      {},
+      `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`,
+    ],
+  )
+}
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'Arkyc',
-  description:
-    'Open-source, multi-tenant identity verification — document capture, OCR, liveness, face match, decisioning, reviews, webhooks, SDK and widget.',
+  description,
   lastUpdated: true,
   cleanUrls: true,
+  base,
+  head,
+  sitemap: { hostname: `${siteUrl}/` },
 
   themeConfig: {
+    logo: '/logo.svg',
+
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'API', link: '/api/' },
@@ -63,8 +107,7 @@ export default defineConfig({
       ],
     },
 
-    // Add the repository link once published:
-    // socialLinks: [{ icon: 'github', link: 'https://github.com/<org>/arkyc' }],
+    socialLinks: [{ icon: 'github', link: repo }],
 
     search: { provider: 'local' },
 
