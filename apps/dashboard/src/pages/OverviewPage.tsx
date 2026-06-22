@@ -1,23 +1,23 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { usePagination } from 'alova/client'
+import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
+import { CheckCircle2, Clock, ScrollText, XCircle } from 'lucide-react'
 import { Sessions, isForbidden } from '@/lib/api'
 import { useTenant, useTenantId } from '@/contexts/tenant-context'
-import { ErrorState, Loading, PageHeader } from '@/components/States'
+import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States'
+import { StatusBadge } from '@/components/StatusBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatDateTime, humanize } from '@/lib/utils'
+import { StatCard } from '@/components/ui/stat-card'
+import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
+import { formatDateTime } from '@/lib/utils'
 
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-semibold">{value}</p>
-      </CardContent>
-    </Card>
-  )
-}
+const BREAKDOWN = [
+  { key: 'approved', label: 'Approved', color: 'var(--chart-2)' },
+  { key: 'requires_review', label: 'Requires review', color: 'var(--chart-3)' },
+  { key: 'rejected', label: 'Rejected', color: 'var(--chart-4)' },
+  { key: 'pending', label: 'In progress', color: 'var(--chart-1)' },
+] as const
 
 export default function OverviewPage() {
   const tenantId = useTenantId()
@@ -37,74 +37,209 @@ export default function OverviewPage() {
     total: (res) => res.meta.total,
   })
 
+  const inProgress = (status: string) =>
+    !['approved', 'rejected', 'requires_review', 'expired', 'cancelled'].includes(status)
+
+  const counts = useMemo(() => {
+    const by = (predicate: (s: (typeof sessions)[number]) => boolean) => sessions.filter(predicate).length
+    return {
+      approved: by((s) => s.status === 'approved'),
+      requires_review: by((s) => s.status === 'requires_review'),
+      rejected: by((s) => s.status === 'rejected'),
+      pending: by((s) => inProgress(s.status)),
+    }
+  }, [sessions])
+
+  // Sessions created per day over the trailing two weeks.
+  const trend = useMemo(() => {
+    const days: { date: string; label: string; count: number }[] = []
+    const index = new Map<string, number>()
+    for (let i = 13; i >= 0; i -= 1) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const key = d.toISOString().slice(0, 10)
+      index.set(key, days.length)
+      days.push({ date: key, label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), count: 0 })
+    }
+    for (const s of sessions) {
+      const key = new Date(s.created_at).toISOString().slice(0, 10)
+      const i = index.get(key)
+      if (i !== undefined) days[i]!.count += 1
+    }
+    return days
+  }, [sessions])
+
+  const breakdown = BREAKDOWN.map((b) => ({ ...b, value: counts[b.key] })).filter((b) => b.value > 0)
+
+  const recent = useMemo(
+    () => [...sessions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 8),
+    [sessions],
+  )
+
   const title = `${tenant?.name ?? 'Tenant'} Overview`
 
   if (isForbidden(error)) {
     return (
-      <div className="p-6">
+      <div className="p-6 lg:p-8">
         <PageHeader title={title} />
         <p className="text-sm text-muted-foreground">You don&apos;t have access to session metrics.</p>
       </div>
     )
   }
-
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-6 lg:p-8">
         <PageHeader title={title} />
         <Loading />
       </div>
     )
   }
-
   if (error) {
     return (
-      <div className="p-6">
+      <div className="p-6 lg:p-8">
         <PageHeader title={title} />
         <ErrorState error={error} />
       </div>
     )
   }
 
-  const countBy = (status: string) => sessions.filter((s) => s.status === status).length
-
-  const recent = [...sessions]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 8)
-
   return (
-    <div className="p-6">
-      <PageHeader title={title} />
+    <div className="p-6 lg:p-8">
+      <PageHeader title={title} description="Verification activity across this tenant." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric label="Total sessions" value={total ?? sessions.length} />
-        <Metric label="Approved" value={countBy('approved')} />
-        <Metric label="Requires review" value={countBy('requires_review')} />
-        <Metric label="Rejected" value={countBy('rejected')} />
+        <StatCard label="Total sessions" value={total ?? sessions.length} icon={<ScrollText />} />
+        <StatCard label="Approved" value={counts.approved} icon={<CheckCircle2 />} />
+        <StatCard label="Requires review" value={counts.requires_review} icon={<Clock />} />
+        <StatCard label="Rejected" value={counts.rejected} icon={<XCircle />} />
       </div>
 
-      <Card className="mt-6">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Sessions over time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trend} margin={{ top: 8, right: 8, bottom: 0, left: -24 }}>
+                  <defs>
+                    <linearGradient id="sessions" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                    interval="preserveStartEnd"
+                    minTickGap={24}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: 'var(--border)' }}
+                    contentStyle={{
+                      background: 'var(--popover)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: 'var(--popover-foreground)',
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    name="Sessions"
+                    stroke="var(--chart-1)"
+                    strokeWidth={2}
+                    fill="url(#sessions)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Status breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {breakdown.length === 0 ? (
+              <p className="py-16 text-center text-sm text-muted-foreground">No sessions yet.</p>
+            ) : (
+              <>
+                <div className="h-44">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={breakdown}
+                        dataKey="value"
+                        nameKey="label"
+                        innerRadius={48}
+                        outerRadius={70}
+                        paddingAngle={2}
+                        strokeWidth={0}
+                      >
+                        {breakdown.map((b) => (
+                          <Cell key={b.key} fill={b.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <ul className="mt-3 flex flex-col gap-1.5">
+                  {breakdown.map((b) => (
+                    <li key={b.key} className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <span className="size-2.5 rounded-full" style={{ background: b.color }} />
+                        {b.label}
+                      </span>
+                      <span className="font-medium tabular-nums">{b.value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mt-4">
         <CardHeader>
           <CardTitle>Recent sessions</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2">
           {recent.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No sessions yet.</p>
+            <EmptyState title="No sessions yet" description="Sessions will appear here as they come in." />
           ) : (
-            <ul className="divide-y divide-border">
-              {recent.map((s) => (
-                <li key={s.id}>
-                  <Link
-                    to={`../sessions/${s.id}`}
-                    className="flex items-center justify-between gap-4 py-3 text-sm hover:opacity-80"
-                  >
-                    <span className="font-mono text-xs text-muted-foreground">{s.id.slice(0, 12)}</span>
-                    <span className="font-medium">{humanize(s.status)}</span>
-                    <span className="text-muted-foreground">{formatDateTime(s.created_at)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Session</TH>
+                  <TH>Status</TH>
+                  <TH className="text-right">Created</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {recent.map((s) => (
+                  <TR key={s.id}>
+                    <TD>
+                      <Link to={`../sessions/${s.id}`} className="font-mono text-xs text-primary hover:underline">
+                        {s.id.slice(0, 16)}
+                      </Link>
+                    </TD>
+                    <TD>
+                      <StatusBadge status={s.status} />
+                    </TD>
+                    <TD className="text-right whitespace-nowrap text-muted-foreground">
+                      {formatDateTime(s.created_at)}
+                    </TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
           )}
         </CardContent>
       </Card>
