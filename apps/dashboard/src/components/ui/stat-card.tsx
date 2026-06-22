@@ -11,7 +11,7 @@ export interface StatDelta {
 
 /**
  * A metric tile in the shadcn-uikit style: label + bare icon on top, a colored
- * percentage delta line, then a large value at the bottom. Subtle gradient/shadow.
+ * percentage delta line, then a large value at the bottom. Flat: border only.
  */
 export function StatCard({
   label,

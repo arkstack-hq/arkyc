@@ -129,9 +129,11 @@ function LayoutInner() {
       <TenantSidebar can={can} />
       <SidebarInset>
         <TenantHeader can={can} />
-        <main className="flex-1 overflow-y-auto">
-          <Outlet />
-        </main>
+        <div className="px-3 pb-3 pt-3">
+          <main className="min-h-[calc(100svh-5.5rem)] rounded-xl border border-border bg-card">
+            <Outlet />
+          </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )

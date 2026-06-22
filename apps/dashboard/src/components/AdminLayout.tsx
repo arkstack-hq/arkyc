@@ -91,9 +91,11 @@ export function AdminLayout() {
       <AdminSidebar items={items} />
       <SidebarInset>
         <AdminHeader items={items} />
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-          <Outlet />
-        </main>
+        <div className="px-3 pb-3 pt-3">
+          <main className="min-h-[calc(100svh-5.5rem)] rounded-xl border border-border bg-card p-6 lg:p-8">
+            <Outlet />
+          </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )

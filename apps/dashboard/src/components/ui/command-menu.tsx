@@ -100,7 +100,7 @@ export function CommandMenu({
       role="presentation"
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl"
+        className="w-full max-w-lg overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

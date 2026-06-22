@@ -50,7 +50,7 @@ export function ErrorState({ error }: { error: unknown }) {
 
 export function EmptyState({ title, description }: { title: string; description?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border py-16 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
       <Inbox className="h-8 w-8 text-muted-foreground" />
       <p className="font-medium">{title}</p>
       {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}

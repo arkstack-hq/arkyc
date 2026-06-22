@@ -109,7 +109,7 @@ export function SidebarProvider({ children, className, style, ...props }: Compon
     <SidebarContext.Provider value={value}>
       <TooltipProvider delayDuration={0}>
         <div
-          className={cn('group/sidebar-wrapper flex min-h-screen w-full bg-background', className)}
+          className={cn('group/sidebar-wrapper flex min-h-screen w-full bg-sidebar', className)}
           style={{ '--sidebar-width': '16rem', '--sidebar-width-icon': '3.25rem', ...style } as CSSProperties}
           {...props}
         >
@@ -152,7 +152,7 @@ export function Sidebar({ className, children, ...props }: ComponentProps<'div'>
     <div
       data-state={state}
       className={cn(
-        'group/sidebar sticky top-0 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-in-out md:flex',
+        'group/sidebar sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-in-out md:flex',
         state === 'expanded' ? 'w-(--sidebar-width)' : 'w-(--sidebar-width-icon)',
         className,
       )}
@@ -283,7 +283,8 @@ export function SidebarTrigger({ className, ...props }: ComponentProps<'button'>
 }
 
 export function SidebarInset({ className, ...props }: ComponentProps<'div'>) {
-  return <div className={cn('flex min-h-screen min-w-0 flex-1 flex-col', className)} {...props} />
+  // The vertical scroll container: header sticks inside it, content scrolls under.
+  return <div className={cn('h-svh min-w-0 flex-1 overflow-y-auto bg-sidebar', className)} {...props} />
 }
 
 export function SidebarSeparator({ className, ...props }: ComponentProps<'div'>) {
@@ -295,7 +296,7 @@ export function SidebarHeaderBar({ children, className }: { children: ReactNode;
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur',
+        'sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-border/50 bg-sidebar/70 px-4 backdrop-blur-md',
         className,
       )}
     >

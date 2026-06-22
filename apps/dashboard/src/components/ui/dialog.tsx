@@ -21,7 +21,7 @@ export function Dialog({
       role="presentation"
     >
       <div
-        className={cn('w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg', className)}
+        className={cn('w-full max-w-lg rounded-lg border border-border bg-card p-6', className)}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
