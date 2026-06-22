@@ -226,7 +226,8 @@ export const DEFAULT_TUNING: FaceTuning = {
   smile: 0.5,
   blinkClosed: 0.55,
   blinkOpen: 0.25,
-  hold: 3,
+  // ~1s of sustained hold at the 160ms detection loop — deliberate, not instant.
+  hold: 6,
   nodDown: 0.06,
   nodReturn: 0.02,
   closerFactor: 1.22,

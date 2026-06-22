@@ -52,12 +52,12 @@ const DOCUMENT_LABELS: Record<DocumentType, string> = {
 }
 
 const CHALLENGE_LABELS: Record<LivenessChallenge, string> = {
-  turn_left: 'Turn your head left',
-  turn_right: 'Turn your head right',
+  turn_left: 'Slowly turn your head to the left, and hold',
+  turn_right: 'Slowly turn your head to the right, and hold',
   blink: 'Blink slowly',
-  smile: 'Smile',
-  nod: 'Nod your head',
-  move_closer: 'Move closer to the camera',
+  smile: 'Smile, and hold it',
+  nod: 'Slowly nod your head',
+  move_closer: 'Slowly move closer to the camera',
 }
 
 interface ElProps {

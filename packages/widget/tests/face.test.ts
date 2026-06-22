@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { isSelfieReady, makeChallengeDetector, type FaceSample } from '../src/face'
+import { DEFAULT_TUNING, isSelfieReady, makeChallengeDetector, type FaceSample } from '../src/face'
+
+// Pin a small hold for the sustained-gesture tests so they stay independent of
+// the production default (which is tuned for a deliberate ~1s hold).
+const fast = { ...DEFAULT_TUNING, hold: 2 }
 
 const base: FaceSample = {
   present: true,
@@ -39,23 +43,22 @@ describe('makeChallengeDetector', () => {
   })
 
   it('smile: fires after a few sustained frames', () => {
-    const d = makeChallengeDetector('smile')
-    expect(d.feed(s({ smile: 0.7 }))).toBe(false)
+    const d = makeChallengeDetector('smile', fast)
     expect(d.feed(s({ smile: 0.7 }))).toBe(false)
     expect(d.feed(s({ smile: 0.7 }))).toBe(true)
   })
 
   it('smile: a dip in the streak resets it', () => {
-    const d = makeChallengeDetector('smile')
+    const d = makeChallengeDetector('smile', fast)
     d.feed(s({ smile: 0.7 }))
     d.feed(s({ smile: 0.1 })) // reset
     expect(d.feed(s({ smile: 0.7 }))).toBe(false)
   })
 
   it('turn_left / turn_right respond to the right sign', () => {
-    const left = makeChallengeDetector('turn_left')
-    expect(left.feed(s({ turn: -0.3 })) || left.feed(s({ turn: -0.3 })) || left.feed(s({ turn: -0.3 }))).toBe(true)
-    const right = makeChallengeDetector('turn_right')
+    const left = makeChallengeDetector('turn_left', fast)
+    expect(left.feed(s({ turn: -0.3 })) || left.feed(s({ turn: -0.3 }))).toBe(true)
+    const right = makeChallengeDetector('turn_right', fast)
     expect(right.feed(s({ turn: -0.3 }))).toBe(false)
   })
 
@@ -67,9 +70,8 @@ describe('makeChallengeDetector', () => {
   })
 
   it('move_closer: fires when the face grows past the baseline', () => {
-    const d = makeChallengeDetector('move_closer')
+    const d = makeChallengeDetector('move_closer', fast)
     expect(d.feed(s({ scale: 0.4 }))).toBe(false) // baseline
-    expect(d.feed(s({ scale: 0.6 }))).toBe(false)
     expect(d.feed(s({ scale: 0.6 }))).toBe(false)
     expect(d.feed(s({ scale: 0.6 }))).toBe(true)
   })
