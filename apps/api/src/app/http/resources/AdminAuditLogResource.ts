@@ -1,17 +1,23 @@
 import { Resource } from 'resora'
 
-/**
- * A platform audit-trail entry. Like the tenant {@link AuditLogResource} but
- * includes `tenant_id`, since the admin surface spans every tenant.
- */
+type Related = { getAttribute(key: string): unknown } | null | undefined
+
+/** A platform-admin audit entry, with the acting user (if still present). */
 export default class AdminAuditLogResource extends Resource {
   data() {
+    const actor = this.resource.getAttribute('actor') as Related
+
     return {
       id: this.id,
-      tenant_id: this.tenantId,
-      project_id: this.projectId ?? null,
       actor_id: this.actorId ?? null,
       actor_type: this.actorType,
+      actor: actor
+        ? {
+            id: actor.getAttribute('id'),
+            name: actor.getAttribute('name'),
+            email: actor.getAttribute('email'),
+          }
+        : null,
       action: this.action,
       entity_type: this.entityType,
       entity_id: this.entityId ?? null,

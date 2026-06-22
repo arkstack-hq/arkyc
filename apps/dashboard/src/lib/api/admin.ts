@@ -1,4 +1,4 @@
-import type { AdminPermissionKey, AuditLog, GlobalSettings, Tenant } from '@arkyc/types'
+import type { AdminPermissionKey, GlobalSettings, Metadata, Tenant } from '@arkyc/types'
 import { CACHE, type Paginated, alova, params, unwrap } from './client'
 
 /** The caller's platform-admin standing. */
@@ -30,12 +30,26 @@ interface AdminUserListParams {
   search?: string
 }
 
+/** A platform-admin audit entry (no tenant scope; actor is an admin user). */
+export interface PlatformAuditLog {
+  id: string
+  actor_id: string | null
+  actor_type: string
+  actor: { id: string; name: string; email: string } | null
+  action: string
+  entity_type: string
+  entity_id: string | null
+  metadata: Metadata | null
+  ip_address: string | null
+  user_agent: string | null
+  created_at: string
+}
+
 interface AdminAuditLogParams {
   page?: number
   limit?: number
   action?: string
   entity_type?: string
-  tenant_id?: string
 }
 
 /** Platform-admin surface (above tenants). Guarded server-side by `canAdmin(...)`. */
@@ -100,9 +114,9 @@ export class Admin {
     })
   }
 
-  /** Paginated platform-wide audit log (across all tenants), newest first. */
+  /** Paginated platform-admin audit log, newest first. */
   static auditLogs(query?: AdminAuditLogParams) {
-    return alova.Get<Paginated<AuditLog>>('/v1/admin/audit-logs', {
+    return alova.Get<Paginated<PlatformAuditLog>>('/v1/admin/audit-logs', {
       name: 'admin:auditLogs',
       cacheFor: CACHE,
       params: params(query as Record<string, unknown>),

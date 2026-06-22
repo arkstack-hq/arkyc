@@ -150,10 +150,17 @@ describe('admin audit log', () => {
     expect(res.status).toBe(403)
   })
 
-  it('lists audit entries across tenants for an admin', async () => {
+  it('records and lists platform-admin actions, with the acting user', async () => {
+    // The settings update earlier in this run wrote a platform audit entry.
     const res = await admin('get', '/audit-logs', ctx.ownerToken)
     expect(res.status).toBe(200)
     expect(Array.isArray(res.body.data)).toBe(true)
+
+    const entry = res.body.data.find(
+      (e: { action: string }) => e.action === 'platform.settings_updated',
+    )
+    expect(entry).toBeTruthy()
+    expect(entry.actor?.id).toBe(ctx.ownerId)
   })
 })
 
@@ -172,5 +179,10 @@ describe('admin user management', () => {
 
     const denied = await admin('get', '/settings', ctx.userToken)
     expect(denied.status).toBe(403)
+
+    // Both the grant and revoke were recorded in the platform audit log.
+    const audit = await admin('get', '/audit-logs?action=platform.admin_granted', ctx.ownerToken)
+    const granted = audit.body.data.find((e: { entity_id: string }) => e.entity_id === ctx.userId)
+    expect(granted?.actor?.id).toBe(ctx.ownerId)
   })
 })

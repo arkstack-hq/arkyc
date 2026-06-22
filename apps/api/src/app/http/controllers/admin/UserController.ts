@@ -5,6 +5,7 @@ import { BaseController } from '@controllers/BaseController'
 import AdminUserCollection from '@app/http/resources/AdminUserCollection'
 import EmptyResource from '@app/http/resources/EmptyResource'
 import { permissionStore } from '@app/services/ArkormPermissionStore'
+import { platformAudit } from '@app/services/PlatformAuditLogger'
 import { User } from '@app/models/User'
 import { Role } from '@app/models/Role'
 import { AdminPermission } from '@app/models/AdminPermission'
@@ -24,7 +25,7 @@ export default class UserController extends BaseController {
     const search = param(req.query.search)
     if (search) {
       query = query.whereRaw(
-        `LOWER("firstname") LIKE ? OR LOWER("lastname") LIKE ? OR LOWER("email") LIKE ?`,
+        'LOWER("firstname") LIKE ? OR LOWER("lastname") LIKE ? OR LOWER("email") LIKE ?',
         Array(3).fill(`%${search.toLowerCase()}%`),
       )
     }
@@ -57,6 +58,12 @@ export default class UserController extends BaseController {
       { permissionId: null },
     )
 
+    await platformAudit.recordForRequest(req, {
+      action: 'platform.admin_granted',
+      entityType: 'user',
+      entityId: user.id,
+    })
+
     return new EmptyResource({}).additional({
       status: 'success',
       message: 'Admin access granted',
@@ -70,6 +77,12 @@ export default class UserController extends BaseController {
     RequestException.assertFound(userId, 'User not found', 404)
 
     await AdminPermission.where({ userId }).delete()
+
+    await platformAudit.recordForRequest(req, {
+      action: 'platform.admin_revoked',
+      entityType: 'user',
+      entityId: userId,
+    })
 
     return new EmptyResource({}).additional({
       status: 'success',

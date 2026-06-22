@@ -1,7 +1,9 @@
+import { HttpContext } from 'clear-router/types/express'
 import { BaseController } from '@controllers/BaseController'
 import GlobalSettingsResource from '@app/http/resources/GlobalSettingsResource'
 import { settings } from '@app/services/GlobalSettingsService'
 import type { DeepPartial } from '@app/services/GlobalSettingsService'
+import { platformAudit } from '@app/services/PlatformAuditLogger'
 import type { GlobalSettings } from '@arkyc/types'
 
 /**
@@ -22,7 +24,7 @@ export default class SettingsController extends BaseController {
   }
 
   /** Deep-merge a partial patch into the global settings. */
-  async update() {
+  async update({ req }: HttpContext) {
     await this.validate({
       'platform.name': ['nullable', 'string', 'min:1'],
       'platform.support_email': ['nullable', 'email'],
@@ -35,7 +37,8 @@ export default class SettingsController extends BaseController {
 
     const platform: DeepPartial<GlobalSettings['platform']> = {}
     if (typeof body.platform?.name === 'string') platform.name = body.platform.name
-    if (body.platform?.support_email !== undefined) platform.support_email = body.platform.support_email
+    if (body.platform?.support_email !== undefined)
+      platform.support_email = body.platform.support_email
     if (typeof body.platform?.signups_enabled === 'boolean')
       platform.signups_enabled = body.platform.signups_enabled
     if (Object.keys(platform).length) patch.platform = platform
@@ -43,6 +46,13 @@ export default class SettingsController extends BaseController {
     if (body.realtime?.transport) patch.realtime = { transport: body.realtime.transport }
 
     const next = await settings.update(patch)
+
+    await platformAudit.recordForRequest(req, {
+      action: 'platform.settings_updated',
+      entityType: 'global_settings',
+      entityId: null,
+      metadata: { sections: Object.keys(patch) },
+    })
 
     return new GlobalSettingsResource(next).additional({
       status: 'success',

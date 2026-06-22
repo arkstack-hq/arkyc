@@ -9,7 +9,6 @@ import { formatDateTime, humanize } from '@/lib/utils'
 
 export default function AdminAuditLogsPage() {
   const [action, setAction] = useState('')
-  const [tenantId, setTenantId] = useState('')
 
   const {
     data: logs,
@@ -24,7 +23,6 @@ export default function AdminAuditLogsPage() {
         page: currentPage,
         limit: pageSize,
         action: action || undefined,
-        tenant_id: tenantId || undefined,
       }),
     {
       append: true,
@@ -32,13 +30,13 @@ export default function AdminAuditLogsPage() {
       initialPageSize: 20,
       data: (res) => res.data,
       total: (res) => res.meta.total,
-      watchingStates: [action, tenantId],
+      watchingStates: [action],
     },
   )
 
   return (
     <div>
-      <PageHeader title="Audit log" description="Activity across every tenant." />
+      <PageHeader title="Audit log" description="Platform-admin activity." />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Input
@@ -47,13 +45,6 @@ export default function AdminAuditLogsPage() {
           value={action}
           onChange={(e) => setAction(e.target.value)}
           aria-label="Filter by action"
-        />
-        <Input
-          className="w-72"
-          placeholder="Filter by tenant id…"
-          value={tenantId}
-          onChange={(e) => setTenantId(e.target.value)}
-          aria-label="Filter by tenant id"
         />
       </div>
 
@@ -69,7 +60,6 @@ export default function AdminAuditLogsPage() {
             <THead>
               <TR>
                 <TH>When</TH>
-                <TH>Tenant</TH>
                 <TH>Actor</TH>
                 <TH>Action</TH>
                 <TH>Entity</TH>
@@ -81,8 +71,7 @@ export default function AdminAuditLogsPage() {
                   <TD className="whitespace-nowrap text-muted-foreground">
                     {formatDateTime(log.created_at)}
                   </TD>
-                  <TD className="font-mono text-xs text-muted-foreground">{log.tenant_id}</TD>
-                  <TD>{`${log.actor_type} ${log.actor_id ?? ''}`.trim()}</TD>
+                  <TD>{log.actor ? log.actor.name || log.actor.email : '—'}</TD>
                   <TD>{humanize(log.action)}</TD>
                   <TD>{`${log.entity_type} ${log.entity_id ?? ''}`.trim()}</TD>
                 </TR>
