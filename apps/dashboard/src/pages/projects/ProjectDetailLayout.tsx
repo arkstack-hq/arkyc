@@ -27,7 +27,7 @@ export default function ProjectDetailLayout() {
   if (error) return <ErrorState error={error} />
 
   return (
-    <div className="p-8">
+    <div className="p-6 lg:p-8">
       <Link to="../" className="mb-3 inline-block text-sm text-muted-foreground hover:text-foreground">
         ← Projects
       </Link>

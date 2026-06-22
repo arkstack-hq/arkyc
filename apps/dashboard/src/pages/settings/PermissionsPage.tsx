@@ -25,7 +25,7 @@ export default function PermissionsPage() {
   }, [catalogue])
 
   return (
-    <div>
+    <div className="p-6 lg:p-8">
       <PageHeader
         title="Permission Catalog"
         description="All permissions recognized by Arkyc."

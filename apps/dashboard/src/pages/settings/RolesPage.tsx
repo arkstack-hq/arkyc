@@ -62,7 +62,7 @@ export default function RolesPage() {
   }
 
   return (
-    <div>
+    <div className="p-6 lg:p-8">
       <PageHeader
         title="Roles"
         description="Define roles and their permissions."

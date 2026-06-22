@@ -66,7 +66,7 @@ export default function ProjectsPage() {
   })
 
   return (
-    <div className="p-8">
+    <div className="p-6 lg:p-8">
       <PageHeader
         title="Projects"
         description="Applications and environments scoped to this tenant."

@@ -55,7 +55,7 @@ export default function MemberDetailPage() {
   if (error) return <ErrorState error={error} />
   if (!member) {
     return (
-      <div>
+      <div className="p-6 lg:p-8">
         <PageHeader
           title="Member"
           actions={

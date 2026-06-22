@@ -79,7 +79,7 @@ export default function MembersPage() {
   }
 
   return (
-    <div>
+    <div className="p-6 lg:p-8">
       <PageHeader
         title="Members"
         description="People with access to this organization."

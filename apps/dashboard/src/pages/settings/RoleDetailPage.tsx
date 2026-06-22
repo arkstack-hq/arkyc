@@ -81,7 +81,7 @@ function RoleEditor({
   }
 
   return (
-    <div>
+    <div className="p-6 lg:p-8">
       <PageHeader
         title={role.name}
         description={role.description ?? undefined}

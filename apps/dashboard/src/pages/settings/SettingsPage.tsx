@@ -26,7 +26,7 @@ export default function SettingsPage() {
   const canUpdate = can('settings.update')
 
   return (
-    <div>
+    <div className="p-6 lg:p-8">
       <PageHeader title="Settings" description="Manage your organization." />
 
       <div className="grid gap-4 md:grid-cols-2">

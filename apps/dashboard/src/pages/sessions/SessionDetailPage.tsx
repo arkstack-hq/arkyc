@@ -53,7 +53,7 @@ export default function SessionDetailPage() {
   const checks = data && isRecord(data.checks) ? data.checks : null
 
   return (
-    <div className="p-8">
+    <div className="p-6 lg:p-8">
       <PageHeader
         title="Session"
         actions={

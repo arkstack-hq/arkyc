@@ -59,7 +59,7 @@ export default function MemberPermissionsPage() {
   const available = catalogue.filter((p) => !directSet.has(p.name))
 
   return (
-    <div>
+    <div className="p-6 lg:p-8">
       <PageHeader
         title="Member Permissions"
         description="Role-derived and directly-assigned permissions."

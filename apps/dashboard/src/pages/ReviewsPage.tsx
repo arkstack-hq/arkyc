@@ -96,7 +96,7 @@ export default function ReviewsPage() {
   const sessionPath = (id: string) => (tenant ? `/t/${tenant.slug}/sessions/${id}` : `../sessions/${id}`)
 
   return (
-    <div className="p-8">
+    <div className="p-6 lg:p-8">
       <PageHeader title="Review Queue" />
 
       {error ? (
