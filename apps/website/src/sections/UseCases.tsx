@@ -1,7 +1,8 @@
 import { ArrowRight, Check, Send, ShieldCheck } from 'lucide-react'
+import { RevealGroup, RevealItem } from '@/components/Reveal'
+
 import { Container } from '@/components/Container'
 import { SectionHeading } from '@/components/SectionHeading'
-import { RevealGroup, RevealItem } from '@/components/Reveal'
 import { cn } from '@/lib/utils'
 
 const MODES = [
@@ -41,7 +42,7 @@ export function UseCases() {
               key={m.title}
               className={cn(
                 'flex flex-col rounded-2xl border p-8 transition-transform duration-300 hover:-translate-y-1',
-                m.accent ? 'border-brand-200 bg-gradient-to-br from-brand-50 to-white' : 'border-slate-200 bg-white',
+                m.accent ? 'border-brand-200 bg-linear-to-br from-brand-50 to-white' : 'border-slate-200 bg-white',
               )}
             >
               <span

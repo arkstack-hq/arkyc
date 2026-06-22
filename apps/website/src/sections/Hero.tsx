@@ -10,9 +10,9 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden bg-ink pt-28 pb-20 text-white sm:pt-32 lg:pb-28">
       {/* Animated gradient blobs */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-0 overflow-hidden">
-        <div className="absolute -left-24 top-0 size-[34rem] rounded-full bg-brand-600/30 blur-3xl animate-blob" />
-        <div className="absolute -right-16 top-24 size-[30rem] rounded-full bg-fuchsia-600/20 blur-3xl animate-blob [animation-delay:-6s]" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute -left-24 top-0 size-136 rounded-full bg-brand-600/30 blur-3xl animate-blob" />
+        <div className="absolute -right-16 top-24 size-120 rounded-full bg-fuchsia-600/20 blur-3xl animate-blob [animation-delay:-6s]" />
         <div
           className="absolute inset-0 opacity-[0.06]"
           style={{
