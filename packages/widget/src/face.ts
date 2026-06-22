@@ -190,6 +190,12 @@ export function createDefaultFaceAnalyzer(): FaceAnalyzer {
 /** A challenge detector: fed frame samples, returns `true` once satisfied. */
 export interface ChallengeDetector {
   feed(sample: FaceSample): boolean
+  /**
+   * 0–1 progress toward satisfying the challenge, updated on each `feed` — drives
+   * the UI's hold-progress ring. Multi-stage gestures (blink/nod) step through
+   * intermediate values; sustained gestures ramp with the hold streak.
+   */
+  readonly progress: number
 }
 
 /**
@@ -226,8 +232,7 @@ export const DEFAULT_TUNING: FaceTuning = {
   smile: 0.5,
   blinkClosed: 0.55,
   blinkOpen: 0.25,
-  // ~1s of sustained hold at the 160ms detection loop — deliberate, not instant.
-  hold: 6,
+  hold: 3,
   nodDown: 0.06,
   nodReturn: 0.02,
   closerFactor: 1.22,
@@ -245,61 +250,85 @@ export const DEFAULT_TUNING: FaceTuning = {
  * @returns
  */
 export function makeChallengeDetector(challenge: LivenessChallenge, t: FaceTuning = DEFAULT_TUNING): ChallengeDetector {
+  // A sustained gesture: a condition that must hold for `t.hold` frames. Progress
+  // ramps with the streak.
+  const sustained = (ok: (s: FaceSample) => boolean): ChallengeDetector => {
+    let n = 0
+    return {
+      feed(s) {
+        n = s.present && ok(s) ? n + 1 : 0
+        return n >= t.hold
+      },
+      get progress() {
+        return Math.min(1, n / Math.max(1, t.hold))
+      },
+    }
+  }
+
+  // A two-stage gesture: reach an extreme, then return. Progress is 0 → ~0.6 (mid)
+  // → 1 (done).
+  const twoStage = (
+    pick: (s: FaceSample) => number,
+    extreme: (v: number, base: number) => boolean,
+    settled: (v: number, base: number) => boolean,
+  ): ChallengeDetector => {
+    let base: number | null = null
+    let reached = false
+    let done = false
+    return {
+      feed(s) {
+        if (!s.present) return false
+        const v = pick(s)
+        if (base === null) {
+          base = v
+          return false
+        }
+        if (extreme(v, base)) reached = true
+        else if (reached && settled(v, base)) {
+          done = true
+          return true
+        }
+        return false
+      },
+      get progress() {
+        return done ? 1 : reached ? 0.6 : 0
+      },
+    }
+  }
+
   switch (challenge) {
     case 'blink': {
+      // No baseline: eyes must close (absolute) then re-open. Processed from the
+      // first frame, unlike the baseline-relative two-stage gestures.
       let closed = false
+      let done = false
       return {
         feed(s) {
           if (!s.present) return false
           if (s.blink > t.blinkClosed) closed = true
-          else if (closed && s.blink < t.blinkOpen) return true
-          return false
-        },
-      }
-    }
-    case 'smile': {
-      let n = 0
-      return {
-        feed(s) {
-          n = s.present && s.smile > t.smile ? n + 1 : 0
-          return n >= t.hold
-        },
-      }
-    }
-    case 'turn_left': {
-      let n = 0
-      return {
-        feed(s) {
-          n = s.present && s.turn < -t.turn ? n + 1 : 0
-          return n >= t.hold
-        },
-      }
-    }
-    case 'turn_right': {
-      let n = 0
-      return {
-        feed(s) {
-          n = s.present && s.turn > t.turn ? n + 1 : 0
-          return n >= t.hold
-        },
-      }
-    }
-    case 'nod': {
-      let base: number | null = null
-      let dipped = false
-      return {
-        feed(s) {
-          if (!s.present) return false
-          if (base === null) {
-            base = s.pitch
-            return false
+          else if (closed && s.blink < t.blinkOpen) {
+            done = true
+            return true
           }
-          if (s.pitch > base + t.nodDown) dipped = true
-          else if (dipped && s.pitch < base + t.nodReturn) return true
           return false
+        },
+        get progress() {
+          return done ? 1 : closed ? 0.6 : 0
         },
       }
     }
+    case 'smile':
+      return sustained((s) => s.smile > t.smile)
+    case 'turn_left':
+      return sustained((s) => s.turn < -t.turn)
+    case 'turn_right':
+      return sustained((s) => s.turn > t.turn)
+    case 'nod':
+      return twoStage(
+        (s) => s.pitch,
+        (v, base) => v > base + t.nodDown,
+        (v, base) => v < base + t.nodReturn,
+      )
     case 'move_closer': {
       let base: number | null = null
       let n = 0
@@ -312,6 +341,9 @@ export function makeChallengeDetector(challenge: LivenessChallenge, t: FaceTunin
           }
           n = s.scale > base * t.closerFactor ? n + 1 : 0
           return n >= t.hold
+        },
+        get progress() {
+          return Math.min(1, n / Math.max(1, t.hold))
         },
       }
     }

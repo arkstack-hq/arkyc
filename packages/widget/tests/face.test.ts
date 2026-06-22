@@ -75,4 +75,23 @@ describe('makeChallengeDetector', () => {
     expect(d.feed(s({ scale: 0.6 }))).toBe(false)
     expect(d.feed(s({ scale: 0.6 }))).toBe(true)
   })
+
+  it('progress: a sustained gesture ramps 0 → 1 with the hold streak', () => {
+    const d = makeChallengeDetector('smile', fast) // hold = 2
+    expect(d.progress).toBe(0)
+    d.feed(s({ smile: 0.7 }))
+    expect(d.progress).toBe(0.5)
+    d.feed(s({ smile: 0.7 }))
+    expect(d.progress).toBe(1)
+  })
+
+  it('progress: a two-stage gesture steps 0 → mid → 1', () => {
+    const d = makeChallengeDetector('blink')
+    expect(d.progress).toBe(0)
+    d.feed(s({ blink: 0.8 })) // closed
+    expect(d.progress).toBeGreaterThan(0)
+    expect(d.progress).toBeLessThan(1)
+    d.feed(s({ blink: 0.1 })) // re-opened
+    expect(d.progress).toBe(1)
+  })
 })

@@ -60,6 +60,48 @@ const CHALLENGE_LABELS: Record<LivenessChallenge, string> = {
   move_closer: 'Slowly move closer to the camera',
 }
 
+const SVG = (body: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`
+
+/** Per-challenge directional cue icons, animated via CSS over the preview. */
+const CUE_ICONS: Record<LivenessChallenge, string> = {
+  turn_right: SVG('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+  turn_left: SVG('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
+  nod: SVG('<path d="M12 5v14M6 13l6 6 6-6"/>'),
+  move_closer: SVG('<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'),
+  blink: SVG('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  smile: SVG('<path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/>'),
+}
+
+const CHECK_ICON = SVG('<path d="M20 6 9 17l-5-5"/>')
+
+/** Handles for driving the circular preview overlay (ring + cue + success check). */
+interface FaceStage {
+  stage: HTMLElement
+  /** 0–1 fill of the progress ring. */
+  setProgress(p: number): void
+  /** Visual state: searching, holding (green), or completed (check). */
+  setState(state: 'wait' | 'good' | 'done'): void
+  /** Show a challenge cue icon (or clear it with `null`). */
+  setCue(challenge: LivenessChallenge | null): void
+}
+
+/** Handles for driving the document preview overlay (bracket frame + scan line). */
+interface DocStage {
+  stage: HTMLElement
+  /** Tint the frame for the current capture quality. */
+  setQuality(quality: 'wait' | 'good' | 'bad'): void
+}
+
+/** Handles for driving the liveness step-progress dots. */
+interface StepDots {
+  el: HTMLElement
+  /** Mark the given step index as the active one. */
+  setActive(index: number): void
+  /** Mark the given step index as completed. */
+  markDone(index: number): void
+}
+
 interface ElProps {
   class?: string
   text?: string
@@ -236,7 +278,13 @@ export class WidgetView {
       const video = this.el('video', {
         class: `arkyc-preview${selfie ? ' selfie' : ''}`,
       }) as HTMLVideoElement
-      this.body.appendChild(video)
+
+      // Wrap the preview in its animated overlay (circular ring for selfies,
+      // bracket frame for documents).
+      const face = selfie ? this.buildFaceStage(video) : null
+      const doc = selfie ? null : this.buildDocStage(video)
+      const mount = face?.stage ?? doc!.stage
+      this.body.appendChild(mount)
 
       // Live guidance hint (quality for documents, framing for selfies).
       const hint = this.el('p', { class: 'arkyc-p arkyc-hint' }) as HTMLParagraphElement
@@ -246,16 +294,16 @@ export class WidgetView {
 
       void this.camera.start(video, facing).catch(() => {
         // Camera denied/unavailable — fall back to the file input.
-        video.classList.add('arkyc-hidden')
+        mount.classList.add('arkyc-hidden')
         fileInput.click()
       })
 
       if (selfie) {
         // Pure auto-capture: face detection grabs the frame when the user is
         // framed. The manual button only appears if the detector can't load.
-        this.runSelfieAutoCapture(video, hint, onCapture)
+        this.runSelfieAutoCapture(video, hint, onCapture, face!)
       } else {
-        this.runDocumentAutoCapture(video, hint)
+        this.runDocumentAutoCapture(video, hint, doc!)
         // Document auto-capture rides a coarse brightness heuristic, so the
         // manual button stays as a reliable override.
         this.footer.appendChild(this.button('Capture', onCapture))
@@ -273,7 +321,7 @@ export class WidgetView {
   }
 
   /** Document capture: brightness/glare heuristic, auto-grab once steady. */
-  private runDocumentAutoCapture(video: HTMLVideoElement, hint: HTMLElement): void {
+  private runDocumentAutoCapture(video: HTMLVideoElement, hint: HTMLElement, doc: DocStage): void {
     let goodStreak = 0
     const timer = setInterval(() => {
       const quality = this.camera.sampleQuality(video)
@@ -281,12 +329,15 @@ export class WidgetView {
       if (quality.tooDark) {
         hint.textContent = 'Too dark — find better lighting'
         goodStreak = 0
+        doc.setQuality('bad')
       } else if (quality.glare) {
         hint.textContent = 'Reduce glare on the document'
         goodStreak = 0
+        doc.setQuality('bad')
       } else {
         hint.textContent = 'Looks good — hold steady'
         goodStreak += 1
+        doc.setQuality('good')
       }
       // Auto-capture a steady document after ~1.5s of good quality.
       if (goodStreak >= 5) {
@@ -307,7 +358,7 @@ export class WidgetView {
    * @param capture
    * @returns
    */
-  private runSelfieAutoCapture(video: HTMLVideoElement, hint: HTMLElement, capture: () => void): void {
+  private runSelfieAutoCapture(video: HTMLVideoElement, hint: HTMLElement, capture: () => void, face: FaceStage): void {
     const analyzer = this.analyzer
     const addManualCapture = () => this.footer.appendChild(this.button('Capture', capture))
     if (!analyzer) {
@@ -329,23 +380,32 @@ export class WidgetView {
         addManualCapture()
         return
       }
+      const need = 4
       let streak = 0
       const timer = setInterval(() => {
         const sample = analyzer.analyze(video)
         if (!sample || !sample.present) {
           hint.textContent = 'Position your face in the circle'
           streak = 0
+          face.setState('wait')
+          face.setProgress(0)
           return
         }
         if (isSelfieReady(sample, this.tuning)) {
           hint.textContent = 'Hold still…'
           streak += 1
+          face.setState('good')
+          face.setProgress(streak / need)
         } else {
-          hint.textContent = sample.scale <= 0.28 ? 'Move a little closer' : 'Center your face'
+          hint.textContent = sample.scale <= this.tuning.selfieMinScale ? 'Move a little closer' : 'Center your face'
           streak = 0
+          face.setState('wait')
+          face.setProgress(0)
         }
-        if (streak >= 4) {
+        if (streak >= need) {
           clearInterval(timer)
+          face.setState('done')
+          face.setProgress(1)
           capture()
         }
       }, 180)
@@ -398,7 +458,10 @@ export class WidgetView {
     }
 
     const video = this.el('video', { class: 'arkyc-preview selfie' }) as HTMLVideoElement
-    this.body.appendChild(video)
+    const face = this.buildFaceStage(video)
+    const dots = this.buildDots(challenges.length)
+    if (challenges.length > 1) this.body.appendChild(dots.el)
+    this.body.appendChild(face.stage)
 
     let recording: { stop(): Promise<Blob> } | null = null
     let index = 0
@@ -417,6 +480,15 @@ export class WidgetView {
         : `Step ${index + 1} of ${challenges.length}: ${CHALLENGE_LABELS[challenge]}`
     }
 
+    // Arm the overlay for the current challenge: show its cue, reset the ring,
+    // and highlight the active step dot.
+    const armChallenge = () => {
+      face.setCue(challenges[index] ?? null)
+      face.setState('wait')
+      face.setProgress(0)
+      dots.setActive(index)
+    }
+
     const finish = () => {
       advance.setAttribute('disabled', 'true')
       void Promise.resolve(recording?.stop() ?? Promise.resolve(null)).then((blob) =>
@@ -428,6 +500,7 @@ export class WidgetView {
       if (index >= challenges.length) return
       const current = challenges[index]
       if (current) performed.push(current)
+      dots.markDone(index)
       index += 1
       if (index >= challenges.length) {
         finish()
@@ -435,6 +508,7 @@ export class WidgetView {
       }
       detector = makeChallengeDetector(challenges[index]!, this.tuning)
       showPrompt()
+      armChallenge()
       if (index === challenges.length - 1) advance.textContent = 'Finish'
     }
 
@@ -453,6 +527,7 @@ export class WidgetView {
       .then((stream) => {
         recording = this.camera.recordStart(stream)
         showPrompt()
+        armChallenge()
 
         // Real detection when available: auto-advance only when the prompted
         // challenge is actually performed. Reveals the manual button if the
@@ -472,23 +547,37 @@ export class WidgetView {
             showManualAdvance()
             return
           }
+          // While the success check is held, pause detection so the next cue
+          // doesn't flash in before the user sees the confirmation.
+          let flashing = false
           const timer = setInterval(() => {
             if (index >= challenges.length) {
               clearInterval(timer)
               return
             }
+            if (flashing) return
             const sample = analyzer.analyze(video)
             if (!sample) return
-            if (detector.feed(sample)) {
+            const hit = detector.feed(sample)
+            face.setProgress(detector.progress)
+            if (hit) {
+              face.setState('done')
               showPrompt(true)
-              advanceStep()
+              flashing = true
+              const to = setTimeout(() => {
+                flashing = false
+                advanceStep()
+              }, 650)
+              this.cleanups.push(() => clearTimeout(to))
+            } else {
+              face.setState(detector.progress > 0 ? 'good' : 'wait')
             }
           }, 160)
           this.timers.push(timer)
         })
       })
       .catch(() => {
-        video.classList.add('arkyc-hidden')
+        face.stage.classList.add('arkyc-hidden')
         if (requireLiveCamera) {
           // Mandatory live camera was denied — require a retry, don't fall back.
           prompt.textContent = 'Camera access is required to continue. Please allow access and try again.'
@@ -501,6 +590,84 @@ export class WidgetView {
       const skip = this.button('Skip (demo)', () => this.handlers.onActiveLiveness(null, challenges))
       skip.classList.add('arkyc-btn-ghost')
       this.footer.appendChild(skip)
+    }
+  }
+
+  /**
+   * Build the circular selfie/liveness preview overlay: an SVG progress ring, a
+   * gesture-cue layer, and a success checkmark — driven via the returned handles.
+   */
+  private buildFaceStage(video: HTMLVideoElement): FaceStage {
+    const stage = this.el('div', { class: 'arkyc-stage' })
+    stage.setAttribute('data-state', 'wait')
+    stage.appendChild(video)
+
+    const ring = this.el('div', {
+      class: 'arkyc-ring',
+      html: '<svg viewBox="0 0 100 100"><circle class="arkyc-ring-track" cx="50" cy="50" r="46"/><circle class="arkyc-ring-arc" cx="50" cy="50" r="46"/></svg>',
+    })
+    stage.appendChild(ring)
+    const cue = this.el('div', { class: 'arkyc-cue' })
+    stage.appendChild(cue)
+    stage.appendChild(this.el('div', { class: 'arkyc-check', html: CHECK_ICON }))
+
+    const arc = ring.querySelector('.arkyc-ring-arc') as SVGCircleElement | null
+    const circumference = 2 * Math.PI * 46
+    if (arc) {
+      arc.style.strokeDasharray = String(circumference)
+      arc.style.strokeDashoffset = String(circumference)
+    }
+
+    return {
+      stage,
+      setProgress: (p) => {
+        if (arc) arc.style.strokeDashoffset = String(circumference * (1 - Math.max(0, Math.min(1, p))))
+      },
+      setState: (state) => stage.setAttribute('data-state', state),
+      setCue: (challenge) => {
+        cue.className = 'arkyc-cue' + (challenge ? ` show arkyc-cue-${challenge}` : '')
+        cue.innerHTML = challenge ? CUE_ICONS[challenge] : ''
+      },
+    }
+  }
+
+  /** Build the liveness step-progress dots (one per challenge). */
+  private buildDots(count: number): StepDots {
+    const el = this.el('div', { class: 'arkyc-dots' })
+    const dots: HTMLElement[] = []
+    for (let i = 0; i < count; i += 1) {
+      const dot = this.el('div', { class: 'arkyc-dot' })
+      dots.push(dot)
+      el.appendChild(dot)
+    }
+    return {
+      el,
+      setActive: (index) =>
+        dots.forEach((d, i) => d.classList.toggle('active', i === index && !d.classList.contains('done'))),
+      markDone: (index) => {
+        const d = dots[index]
+        if (d) {
+          d.classList.remove('active')
+          d.classList.add('done')
+        }
+      },
+    }
+  }
+
+  /** Build the document preview overlay: corner brackets + an animated scan line. */
+  private buildDocStage(video: HTMLVideoElement): DocStage {
+    const stage = this.el('div', { class: 'arkyc-doc' })
+    stage.setAttribute('data-q', 'wait')
+    stage.appendChild(video)
+    const frame = this.el('div', { class: 'arkyc-doc-frame' })
+    for (const corner of ['tl', 'tr', 'bl', 'br']) {
+      frame.appendChild(this.el('span', { class: `arkyc-corner ${corner}` }))
+    }
+    stage.appendChild(frame)
+    stage.appendChild(this.el('div', { class: 'arkyc-scan' }))
+    return {
+      stage,
+      setQuality: (quality) => stage.setAttribute('data-q', quality),
     }
   }
 

@@ -91,6 +91,51 @@ export class Theme {
 .arkyc-badge.ok{background:#16a34a}
 .arkyc-badge.warn{background:#d97706}
 .arkyc-badge.err{background:#dc2626}
+/* --- Animated capture overlays --- */
+.arkyc-stage{position:relative;width:100%;max-width:280px;margin:0 auto}
+.arkyc-stage .arkyc-preview{display:block;width:100%;max-width:100%}
+.arkyc-ring{position:absolute;inset:0;pointer-events:none}
+.arkyc-ring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+.arkyc-ring-track{fill:none;stroke:rgba(125,130,150,.3);stroke-width:3}
+.arkyc-ring-arc{fill:none;stroke:var(--arkyc-primary);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .15s linear,stroke .25s}
+.arkyc-stage[data-state=wait] .arkyc-ring-track{animation:arkyc-pulse 1.5s ease-in-out infinite}
+.arkyc-stage[data-state=good] .arkyc-ring-arc,.arkyc-stage[data-state=done] .arkyc-ring-arc,.arkyc-stage[data-state=done] .arkyc-ring-track{stroke:#16a34a}
+.arkyc-cue{position:absolute;left:0;right:0;bottom:7%;display:flex;justify-content:center;align-items:center;pointer-events:none;opacity:0;transition:opacity .25s}
+.arkyc-cue.show{opacity:1}
+.arkyc-cue svg{width:36px;height:36px;color:#fff;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
+.arkyc-cue-turn_right svg{animation:arkyc-nudge-r 1.1s ease-in-out infinite}
+.arkyc-cue-turn_left svg{animation:arkyc-nudge-l 1.1s ease-in-out infinite}
+.arkyc-cue-nod svg{animation:arkyc-nudge-d 1.1s ease-in-out infinite}
+.arkyc-cue-move_closer svg{animation:arkyc-zoom 1.2s ease-in-out infinite}
+.arkyc-cue-blink svg,.arkyc-cue-smile svg{animation:arkyc-soft 1.3s ease-in-out infinite}
+.arkyc-check{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.5);transition:opacity .25s,transform .25s;pointer-events:none}
+.arkyc-check svg{width:56px;height:56px;color:#16a34a;background:rgba(255,255,255,.92);border-radius:50%;padding:10px;box-sizing:border-box}
+.arkyc-stage[data-state=done] .arkyc-check{opacity:1;transform:scale(1)}
+.arkyc-stage[data-state=done] .arkyc-cue{opacity:0}
+.arkyc-dots{display:flex;gap:8px;justify-content:center;margin:0 0 14px}
+.arkyc-dot{width:8px;height:8px;border-radius:50%;background:var(--arkyc-border);transition:background .3s,transform .3s}
+.arkyc-dot.active{background:var(--arkyc-primary);transform:scale(1.4);animation:arkyc-pulse 1.2s ease-in-out infinite}
+.arkyc-dot.done{background:#16a34a}
+.arkyc-doc{position:relative;width:100%;max-width:360px;margin:0 auto}
+.arkyc-doc .arkyc-preview{display:block;width:100%;max-width:100%}
+.arkyc-doc-frame{position:absolute;inset:5%;pointer-events:none}
+.arkyc-corner{position:absolute;width:24px;height:24px;border:3px solid rgba(255,255,255,.9);transition:border-color .3s}
+.arkyc-corner.tl{top:0;left:0;border-right:none;border-bottom:none;border-top-left-radius:6px}
+.arkyc-corner.tr{top:0;right:0;border-left:none;border-bottom:none;border-top-right-radius:6px}
+.arkyc-corner.bl{bottom:0;left:0;border-right:none;border-top:none;border-bottom-left-radius:6px}
+.arkyc-corner.br{bottom:0;right:0;border-left:none;border-top:none;border-bottom-right-radius:6px}
+.arkyc-scan{position:absolute;left:5%;right:5%;top:8%;height:2px;background:linear-gradient(90deg,transparent,var(--arkyc-primary),transparent);box-shadow:0 0 8px var(--arkyc-primary);animation:arkyc-scan 2.4s ease-in-out infinite}
+.arkyc-doc[data-q=good] .arkyc-corner{border-color:#16a34a}
+.arkyc-doc[data-q=good] .arkyc-scan{background:linear-gradient(90deg,transparent,#16a34a,transparent);box-shadow:0 0 8px #16a34a}
+.arkyc-doc[data-q=bad] .arkyc-corner{border-color:#f59e0b}
+@keyframes arkyc-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes arkyc-nudge-r{0%,100%{transform:translateX(-7px)}50%{transform:translateX(7px)}}
+@keyframes arkyc-nudge-l{0%,100%{transform:translateX(7px)}50%{transform:translateX(-7px)}}
+@keyframes arkyc-nudge-d{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
+@keyframes arkyc-zoom{0%,100%{transform:scale(.8)}50%{transform:scale(1.15)}}
+@keyframes arkyc-soft{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes arkyc-scan{0%,100%{top:8%}50%{top:88%}}
+@media (prefers-reduced-motion:reduce){.arkyc-ring-track,.arkyc-cue svg,.arkyc-scan,.arkyc-dot,.arkyc-spinner{animation:none!important}.arkyc-ring-arc{transition:none!important}}
 .arkyc-hidden{display:none}
 `.trim()
   }
