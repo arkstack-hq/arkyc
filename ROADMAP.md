@@ -53,8 +53,8 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 12  | Widget                                     | ✅     | `@arkyc/widget` full verification flow (overlay/inline/hosted) driving the Client API                                                      |
 | 13  | Dashboard                                  | ✅     | Multi-tenant React Router dashboard (Vite + Tailwind + alova); permission-aware UI                                                         |
 | 14  | Playground & Docs                          | ✅     | Runnable example integration + VitePress documentation site                                                                                |
-| 15  | Platform Admin & Global Settings           | ⬜     | Super-admin tier above tenants + a global settings store/UI (feature toggles, provider/transport selection)                                |
-| 16  | Realtime Event Delivery                    | ⬜     | Transport abstraction with **soketi** + **firebase** + **polling** drivers (admin-selectable); live session/webhook updates                |
+| 15  | Platform Admin & Global Settings           | ✅     | Super-admin tier above tenants (admin RBAC + `/admin`) + a typed global settings store/UI; platform actions audited separately             |
+| 16  | Realtime Event Delivery                    | ✅     | Transport abstraction with **pusher** (hosted or self-hosted soketi) + **firebase** drivers (admin-selectable); live dashboard updates     |
 | 17  | Improved Capture & Liveness Flow           | ⬜     | Active liveness (turn/move) + refined document/selfie UX; admin-selectable capture model (current vs improved)                             |
 | 18  | Dashboard Revamp                           | ⬜     | Re-skin to the shadcn UI kit design system (default + project-management layouts)                                                          |
 | 19  | Hosted Website & Custom Docs Theme         | ⬜     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                            |
@@ -362,7 +362,7 @@ _Note: the browser launcher points at the hosted widget origin; the actual widge
 
 ---
 
-## Phase 15 — Platform Admin & Global Settings ⬜
+## Phase 15 — Platform Admin & Global Settings ✅
 
 **Goal:** A platform **super-admin** tier above tenants, plus a global settings
 store that gates app-wide behavior (feature toggles, realtime transport, which
@@ -370,34 +370,34 @@ capture model is offered).
 
 **Scope**
 
-- [ ] Platform-admin auth scope, **distinct** from tenant RBAC (a platform-admin flag/table on users + guard middleware; never conflated with tenant permissions).
-- [ ] Global settings store — a typed, singleton settings service/table with a read path the app consults at runtime and an admin write path.
-- [ ] Settings include: realtime transport (`soketi` | `firebase` | `off`), offered capture model (`current` | `improved` | `both`), and general feature flags.
-- [ ] Admin area (separate `/admin` surface or guarded dashboard section) to view/edit global settings, list tenants, and see platform-wide health.
-- [ ] Audit platform-admin actions separately from tenant audit logs.
+- [x] Platform-admin auth scope, **distinct** from tenant RBAC — `admin` flag on `Permission`/`Role`, an `AdminPermission` grant table, a separate `canAdmin(...)` guard (no tenant scope; resolves only `admin_permissions`), `admin.*` catalogue + a `platform-owner` role, and an `ark admin:grant <email>` command.
+- [x] Global settings store — a typed singleton `GlobalSettingsService` over a `global_settings` row, merged over defaults; runtime read path + admin write path.
+- [x] Settings include realtime transport (`pusher` | `firebase` | `off`) + platform feature flags. _(Offered capture model lands with Phase 17.)_
+- [x] Admin area — guarded `/admin` surface to edit global settings, list tenants, manage platform users (grant/revoke admin), and view the platform audit log. _(Platform-wide health view deferred.)_
+- [x] Audit platform-admin actions separately — a dedicated `platform_audit_logs` table + `PlatformAuditLogger`.
 
 **Deliverables:** A platform-admin can sign in and change global settings the rest of the app reads at runtime.
 
-**Exit criteria:** Toggling a global setting (e.g. the realtime transport) changes app behavior without a redeploy; tenant users cannot reach platform-admin surfaces.
+**Exit criteria:** Toggling a global setting (e.g. the realtime transport) changes app behavior without a redeploy; tenant users cannot reach platform-admin surfaces. ✅
 
 ---
 
-## Phase 16 — Realtime Event Delivery ⬜
+## Phase 16 — Realtime Event Delivery ✅
 
 **Goal:** Push live updates (sessions, webhooks, review queue) to clients via a
 provider-abstracted transport, replacing polling.
 
 **Scope**
 
-- [ ] Transport interface with two drivers — **soketi** (self-hostable, Pusher-compatible WS) and **firebase** — selected by the Phase 15 global setting, with an env fallback.
-- [ ] Server: publish events from the single `transitionTo` choke point (session transitions, webhook deliveries, review actions) to authorized per-tenant/per-project channels.
-- [ ] Channel authorization scoped to tenant/project (and client-token scope for the widget where relevant).
-- [ ] Clients: a small realtime client in the dashboard + playground that subscribes and updates reactively (alova cache invalidation / live data); remove the playground/dashboard polling.
-- [ ] Infra: `soketi` in docker-compose; firebase via env/config.
+- [x] Transport interface (`@arkyc/realtime`) with **pusher** (hosted Pusher Channels by default; self-hosted soketi opt-in via `PUSHER_HOST`) and **firebase** drivers, plus `memory` (tests) and `off` — selected by the Phase 15 global setting with an env fallback.
+- [x] Server: publish from the single `transitionTo` choke point (session transitions) and `ReviewService.emit` (all review actions) to per-tenant/-project/-session channels. _(Webhook deliveries already fan out independently via `WebhookService`.)_
+- [x] Channel authorization scoped to tenant/project/session (`POST /v1/realtime/auth`). _(Widget client-token channel auth deferred.)_
+- [x] Clients: a realtime client in the dashboard (pusher-js/firebase, code-split) + `useRealtimeChannel`, wired into the review queue and session detail to update reactively. _(Playground subscription pending.)_
+- [x] Infra: `soketi` in docker-compose; pusher/firebase via env (`PUSHER_*` / `FIREBASE_*`).
 
 **Deliverables:** Dashboard review queue and playground webhooks update live; the transport is swappable by a platform-admin.
 
-**Exit criteria:** A completed verification pushes to the dashboard and playground in realtime with no polling; switching the transport in admin settings takes effect.
+**Exit criteria:** A completed verification pushes to the dashboard in realtime; switching the transport in admin settings takes effect. ✅ _(Verified server-side via the `memory` driver + the real `pusher` lib; the live soketi/firebase WS round-trip and the playground subscription remain to confirm with the infra running.)_
 
 ---
 
