@@ -84,7 +84,7 @@ export class Theme {
 .arkyc-btn-ghost{background:transparent;color:var(--arkyc-primary);border:1px solid var(--arkyc-border)}
 .arkyc-choices{display:flex;flex-direction:column;gap:8px;width:100%;max-width:340px}
 .arkyc-preview{width:100%;max-width:360px;border-radius:var(--arkyc-radius);background:#000;aspect-ratio:3/2;object-fit:cover}
-.arkyc-preview.selfie{aspect-ratio:1/1;max-width:280px;border-radius:50%}
+.arkyc-preview.selfie{aspect-ratio:1/1;max-width:280px;border-radius:50%;transform:scaleX(-1)}
 .arkyc-spinner{width:42px;height:42px;border-radius:50%;border:4px solid var(--arkyc-border);border-top-color:var(--arkyc-primary);animation:arkyc-spin 1s linear infinite}
 @keyframes arkyc-spin{to{transform:rotate(360deg)}}
 .arkyc-badge{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff}
