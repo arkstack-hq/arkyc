@@ -11,6 +11,7 @@ export type WidgetStep =
   | 'front_capture'
   | 'back_capture'
   | 'ocr_processing'
+  | 'active_liveness'
   | 'selfie_capture'
   | 'passive_liveness'
   | 'face_match'

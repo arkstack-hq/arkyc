@@ -2,16 +2,45 @@ import { describe, expect, it } from 'vitest'
 import { Flow } from '../src/flow'
 
 describe('Flow step machine', () => {
-  it('walks the full ordered flow for a two-sided document', () => {
+  const walk = (ctx: Parameters<typeof Flow.nextStep>[1]): string[] => {
     const visited = ['welcome']
     let step = 'welcome' as (typeof Flow.STEP_ORDER)[number]
     for (let i = 0; i < Flow.STEP_ORDER.length + 2; i++) {
-      const n = Flow.nextStep(step, { documentType: 'id_card' })
+      const n = Flow.nextStep(step, ctx)
       if (n === step) break
       visited.push(n)
       step = n
     }
-    expect(visited).toEqual(Flow.STEP_ORDER)
+    return visited
+  }
+
+  it('walks the passive two-sided flow (selfie + passive liveness)', () => {
+    expect(walk({ documentType: 'id_card', livenessMode: 'passive' })).toEqual([
+      'welcome',
+      'document_selection',
+      'front_capture',
+      'back_capture',
+      'ocr_processing',
+      'selfie_capture',
+      'passive_liveness',
+      'face_match',
+      'processing',
+      'result',
+    ])
+  })
+
+  it('walks the active two-sided flow (active liveness, no selfie)', () => {
+    expect(walk({ documentType: 'id_card', livenessMode: 'active' })).toEqual([
+      'welcome',
+      'document_selection',
+      'front_capture',
+      'back_capture',
+      'ocr_processing',
+      'active_liveness',
+      'face_match',
+      'processing',
+      'result',
+    ])
   })
 
   it('skips back_capture for single-sided passports', () => {

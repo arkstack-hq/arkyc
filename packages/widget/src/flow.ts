@@ -1,13 +1,10 @@
-import type {
-  DocumentType,
-  VerificationDecision,
-  VerificationStatus,
-  WidgetStep,
-} from '@arkyc/types'
+import type { DocumentType, LivenessMode, VerificationDecision, VerificationStatus, WidgetStep } from '@arkyc/types'
 
 /** Context that influences flow branching. */
 export interface FlowContext {
   documentType?: DocumentType | null
+  /** Which liveness flow this session runs (resolved from the capture model). */
+  livenessMode?: LivenessMode
 }
 
 /**
@@ -25,6 +22,7 @@ export class Flow {
     'front_capture',
     'back_capture',
     'ocr_processing',
+    'active_liveness',
     'selfie_capture',
     'passive_liveness',
     'face_match',
@@ -54,8 +52,23 @@ export class Flow {
   }
 
   /**
-   * The next screen after `current`, honouring branch rules (skip `back_capture`
-   * for single-sided documents). Returns `current` when already at the end.
+   * Whether a step runs for the given context. `back_capture` is skipped for
+   * single-sided documents; the liveness steps branch on the resolved mode —
+   * `active_liveness` only in active mode, `selfie_capture`/`passive_liveness`
+   * only in passive mode.
+   */
+  static isStepEnabled(step: WidgetStep, ctx: FlowContext = {}): boolean {
+    if (step === 'back_capture') return Flow.documentHasBack(ctx.documentType)
+    if (step === 'active_liveness') return ctx.livenessMode === 'active'
+    if (step === 'selfie_capture' || step === 'passive_liveness') {
+      return ctx.livenessMode !== 'active'
+    }
+    return true
+  }
+
+  /**
+   * The next enabled screen after `current`, honouring the branch rules. Returns
+   * `current` when already at the end.
    *
    * @param current
    * @param ctx
@@ -63,13 +76,12 @@ export class Flow {
    */
   static nextStep(current: WidgetStep, ctx: FlowContext = {}): WidgetStep {
     const idx = Flow.STEP_ORDER.indexOf(current)
-    if (idx < 0 || idx >= Flow.STEP_ORDER.length - 1) return current
-
-    const next = Flow.STEP_ORDER[idx + 1]!
-    if (next === 'back_capture' && !Flow.documentHasBack(ctx.documentType)) {
-      return Flow.STEP_ORDER[idx + 2] ?? next
+    if (idx < 0) return current
+    for (let i = idx + 1; i < Flow.STEP_ORDER.length; i += 1) {
+      const step = Flow.STEP_ORDER[i]!
+      if (Flow.isStepEnabled(step, ctx)) return step
     }
-    return next
+    return current
   }
 
   /**

@@ -49,6 +49,66 @@ export class Camera {
     this.stream = null
   }
 
+  /** Whether this environment can record video (active liveness). */
+  get canRecord(): boolean {
+    return typeof (globalThis as { MediaRecorder?: unknown }).MediaRecorder !== 'undefined'
+  }
+
+  /**
+   * Start recording the active stream. Returns a handle whose `stop()` resolves
+   * to the recorded `video/webm` blob — used by the active-liveness flow to record
+   * the user performing the challenge sequence.
+   *
+   * @param stream
+   * @returns
+   */
+  recordStart(stream: MediaStream): { stop(): Promise<Blob> } {
+    const chunks: BlobPart[] = []
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' })
+    recorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) chunks.push(event.data)
+    }
+    recorder.start()
+
+    return {
+      stop: () =>
+        new Promise<Blob>((resolve) => {
+          recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }))
+          recorder.stop()
+        }),
+    }
+  }
+
+  /**
+   * Sample the current frame's average luminance for basic quality hints (too
+   * dark / glare). A cheap proxy with no model — enough to guide the user and
+   * gate auto-capture.
+   *
+   * @param video
+   * @returns A 0–1 brightness plus `tooDark`/`glare` flags, or `null` if unreadable.
+   */
+  sampleQuality(video: HTMLVideoElement): { brightness: number; tooDark: boolean; glare: boolean } | null {
+    const canvas = this.doc.createElement('canvas')
+    // Downscale heavily — we only need an average, not detail.
+    canvas.width = 32
+    canvas.height = 32
+    const ctx = canvas.getContext('2d')
+    if (!ctx || !video.videoWidth) return null
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    let sum = 0
+    let bright = 0
+    const pixels = data.length / 4
+    for (let i = 0; i < data.length; i += 4) {
+      const lum = (0.299 * data[i]! + 0.587 * data[i + 1]! + 0.114 * data[i + 2]!) / 255
+      sum += lum
+      if (lum > 0.92) bright += 1
+    }
+    const brightness = sum / pixels
+    return { brightness, tooDark: brightness < 0.25, glare: bright / pixels > 0.15 }
+  }
+
   /**
    * Grab the current video frame as a JPEG `Blob` via an offscreen canvas.
    *

@@ -1,4 +1,4 @@
-import type { DocumentType, VerificationDecision, WidgetStep } from '@arkyc/types'
+import type { DocumentType, LivenessChallenge, VerificationDecision, WidgetStep } from '@arkyc/types'
 
 import { Camera } from './capture'
 import type { Facing } from './capture'
@@ -11,6 +11,8 @@ export interface ViewHandlers {
   onDocumentSelected(type: DocumentType, country: string): void
   /** A capture screen produced an image (or `null` when skipped in demo mode). */
   onImage(blob: Blob | null): void
+  /** Active liveness finished: the recorded video (or `null`) + the performed sequence. */
+  onActiveLiveness(video: Blob | null, performed: LivenessChallenge[]): void
   /** The result screen was acknowledged ("Done"). */
   onAcknowledge(): void
 }
@@ -24,6 +26,8 @@ export interface ViewState {
   errorMessage?: string
   /** Show a "Skip" affordance on capture screens (demo / mock-driver flows). */
   allowSkip?: boolean
+  /** The challenge sequence to prompt for the active-liveness screen. */
+  livenessChallenges?: LivenessChallenge[]
 }
 
 const DOCUMENT_LABELS: Record<DocumentType, string> = {
@@ -31,6 +35,15 @@ const DOCUMENT_LABELS: Record<DocumentType, string> = {
   id_card: 'ID Card',
   drivers_license: "Driver's License",
   residence_permit: 'Residence Permit',
+}
+
+const CHALLENGE_LABELS: Record<LivenessChallenge, string> = {
+  turn_left: 'Turn your head left',
+  turn_right: 'Turn your head right',
+  blink: 'Blink slowly',
+  smile: 'Smile',
+  nod: 'Nod your head',
+  move_closer: 'Move closer to the camera',
 }
 
 interface ElProps {
@@ -55,6 +68,8 @@ export class WidgetView {
   private readonly body: HTMLElement
   private readonly footer: HTMLElement
   private readonly camera: Camera
+  /** Interval ids for live quality/recording timers, cleared on re-render. */
+  private timers: ReturnType<typeof setInterval>[] = []
 
   constructor(
     private readonly doc: Document,
@@ -99,10 +114,17 @@ export class WidgetView {
     return this.root
   }
 
+  /** Whether live camera capture is available (drives the active-liveness branch). */
+  get cameraSupported(): boolean {
+    return this.camera.supported
+  }
+
   /**
-   * Release any active camera stream.
+   * Release any active camera stream and clear live timers.
    */
   destroy(): void {
+    this.timers.forEach((id) => clearInterval(id))
+    this.timers = []
     this.camera.stop()
   }
 
@@ -128,6 +150,8 @@ export class WidgetView {
         return this.renderCapture('Back of document', 'environment', state.allowSkip)
       case 'selfie_capture':
         return this.renderCapture('Take a selfie', 'user', state.allowSkip, true)
+      case 'active_liveness':
+        return this.renderActiveLiveness(state.livenessChallenges ?? [], state.allowSkip)
       case 'ocr_processing':
         return this.renderProcessing('Reading your document…')
       case 'passive_liveness':
@@ -174,18 +198,14 @@ export class WidgetView {
 
   private renderCapture(title: string, facing: Facing, allowSkip?: boolean, selfie = false): void {
     this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: title }))
-    this.body.appendChild(
-      this.el('p', { class: 'arkyc-p', text: 'Position it clearly in frame, then capture.' }),
-    )
+    this.body.appendChild(this.el('p', { class: 'arkyc-p', text: 'Position it clearly in frame, then capture.' }))
 
     const fileInput = this.el('input', {
       type: 'file',
       accept: 'image/*',
       class: 'arkyc-hidden',
     }) as HTMLInputElement
-    fileInput.addEventListener('change', () =>
-      this.handlers.onImage(Camera.fileFromInput(fileInput)),
-    )
+    fileInput.addEventListener('change', () => this.handlers.onImage(Camera.fileFromInput(fileInput)))
     this.body.appendChild(fileInput)
 
     if (this.camera.supported) {
@@ -193,11 +213,38 @@ export class WidgetView {
         class: `arkyc-preview${selfie ? ' selfie' : ''}`,
       }) as HTMLVideoElement
       this.body.appendChild(video)
+
+      // Live quality hint; documents auto-capture once quality is stable.
+      const hint = this.el('p', { class: 'arkyc-p arkyc-hint' }) as HTMLParagraphElement
+      this.body.appendChild(hint)
+
       void this.camera.start(video, facing).catch(() => {
         // Camera denied/unavailable — fall back to the file input.
         video.classList.add('arkyc-hidden')
         fileInput.click()
       })
+
+      let goodStreak = 0
+      const timer = setInterval(() => {
+        const quality = this.camera.sampleQuality(video)
+        if (!quality) return
+        if (quality.tooDark) {
+          hint.textContent = 'Too dark — find better lighting'
+          goodStreak = 0
+        } else if (quality.glare) {
+          hint.textContent = 'Reduce glare on the document'
+          goodStreak = 0
+        } else {
+          hint.textContent = 'Looks good — hold steady'
+          goodStreak += 1
+        }
+        // Auto-capture a steady document after ~1.5s of good quality.
+        if (!selfie && goodStreak >= 5) {
+          clearInterval(timer)
+          void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
+        }
+      }, 300)
+      this.timers.push(timer)
 
       this.footer.appendChild(
         this.button('Capture', () => {
@@ -211,6 +258,79 @@ export class WidgetView {
 
     if (allowSkip) {
       const skip = this.button('Skip (demo)', () => this.handlers.onImage(null))
+      skip.classList.add('arkyc-btn-ghost')
+      this.footer.appendChild(skip)
+    }
+  }
+
+  /**
+   * Guided active-liveness screen: live front-camera preview, a recorded video,
+   * and a sequence of challenge prompts the user advances through. The performed
+   * sequence (the prompts shown, in order) is submitted for the driver to verify.
+   */
+  private renderActiveLiveness(challenges: LivenessChallenge[], allowSkip?: boolean): void {
+    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Liveness check' }))
+    const prompt = this.el('p', {
+      class: 'arkyc-p',
+      text: 'Follow the on-screen prompts. Keep your face centred in the circle.',
+    })
+    this.body.appendChild(prompt)
+
+    const fileFallback = !this.camera.supported || !this.camera.canRecord
+
+    if (fileFallback) {
+      // No camera/recorder — let the user finish (or skip) without a video.
+      const finish = this.button('I performed the steps', () => this.handlers.onActiveLiveness(null, challenges))
+      this.footer.appendChild(finish)
+      if (allowSkip) {
+        const skip = this.button('Skip (demo)', () => this.handlers.onActiveLiveness(null, challenges))
+        skip.classList.add('arkyc-btn-ghost')
+        this.footer.appendChild(skip)
+      }
+      return
+    }
+
+    const video = this.el('video', { class: 'arkyc-preview selfie' }) as HTMLVideoElement
+    this.body.appendChild(video)
+
+    let recording: { stop(): Promise<Blob> } | null = null
+    let index = 0
+    const showPrompt = () => {
+      const challenge = challenges[index]
+      prompt.textContent = challenge
+        ? `Step ${index + 1} of ${challenges.length}: ${CHALLENGE_LABELS[challenge]}`
+        : 'Hold still…'
+    }
+
+    void this.camera
+      .start(video, 'user')
+      .then((stream) => {
+        recording = this.camera.recordStart(stream)
+        showPrompt()
+      })
+      .catch(() => {
+        video.classList.add('arkyc-hidden')
+        this.handlers.onActiveLiveness(null, challenges)
+      })
+
+    const advance = this.button('Next', () => {
+      index += 1
+      if (index < challenges.length) {
+        showPrompt()
+        if (index === challenges.length - 1) advance.textContent = 'Finish'
+        return
+      }
+      // Done — stop recording and submit the sequence we prompted.
+      advance.setAttribute('disabled', 'true')
+      void Promise.resolve(recording?.stop() ?? Promise.resolve(null)).then((blob) =>
+        this.handlers.onActiveLiveness(blob, challenges),
+      )
+    })
+    if (challenges.length <= 1) advance.textContent = 'Finish'
+    this.footer.appendChild(advance)
+
+    if (allowSkip) {
+      const skip = this.button('Skip (demo)', () => this.handlers.onActiveLiveness(null, challenges))
       skip.classList.add('arkyc-btn-ghost')
       this.footer.appendChild(skip)
     }
@@ -272,13 +392,7 @@ export class WidgetView {
       if (key === 'class') node.className = value
       else if (key === 'text') node.textContent = value
       else if (key === 'html') node.innerHTML = value
-      else if (
-        key === 'value' ||
-        key === 'src' ||
-        key === 'type' ||
-        key === 'accept' ||
-        key === 'placeholder'
-      ) {
+      else if (key === 'value' || key === 'src' || key === 'type' || key === 'accept' || key === 'placeholder') {
         ;(node as unknown as Record<string, string>)[key] = value
       } else node.setAttribute(key, value)
     }

@@ -204,6 +204,60 @@ describe('WidgetController flow', () => {
     })
   })
 
+  it('runs the active-liveness flow and submits the performed challenge sequence', async () => {
+    const challenges = ['blink', 'smile', 'nod']
+    const counts: Record<string, number> = {}
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? 'GET'
+      const path = String(url).replace(/^https?:\/\/[^/]+/, '')
+      const key = `${method} ${path}`
+      counts[key] = (counts[key] ?? 0) + 1
+      const status = path.endsWith('/session')
+        ? counts[key] === 1
+          ? 'started'
+          : 'approved'
+        : path.endsWith('/document/front')
+          ? 'document_submitted'
+          : path.endsWith('/liveness')
+            ? 'liveness_submitted'
+            : path.endsWith('/complete')
+              ? 'processing'
+              : 'started'
+      const data: Record<string, unknown> = { id: 's1', status, expires_at: '2099-01-01' }
+      if (path.endsWith('/session')) {
+        data.capture_model = 'active'
+        data.liveness_challenges = challenges
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ status: 'success', message: 'OK', code: 200, data }),
+      } as Response
+    })
+
+    const { controller } = makeController({ fetch: fetchMock as never })
+    const el = controller.element as unknown as FakeEl
+
+    controller.start()
+    clickText(el, 'Get started')
+    await flush()
+    clickText(el, 'Passport')
+    await flush()
+    clickText(el, 'Skip (demo)') // front capture (no camera → upload/skip)
+    await flush()
+    // Active-liveness screen: no camera/recorder in the fake DOM → fallback finish.
+    clickText(el, 'I performed the steps')
+    await flush()
+
+    expect(find(el, 'Verified')).toBeTruthy()
+
+    const livenessCall = fetchMock.mock.calls.find((c) => String(c[0]).includes('/liveness'))
+    expect(livenessCall).toBeTruthy()
+    const formBody = (livenessCall![1] as RequestInit).body as FormData
+    expect(formBody.get('mode')).toBe('active')
+    expect(JSON.parse(formBody.get('challenges') as string)).toEqual(challenges)
+  })
+
   it('captures the document back for two-sided documents', async () => {
     const { controller, fetchMock } = makeController()
     controller.start()

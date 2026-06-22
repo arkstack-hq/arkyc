@@ -1,10 +1,14 @@
-import type { DocumentType, VerificationStatus } from '@arkyc/types'
+import type { CaptureModel, DocumentType, LivenessChallenge, LivenessMode, VerificationStatus } from '@arkyc/types'
 
 /** The session view exposed by the Client/Widget API (`GET /v1/client/session`). */
 export interface ClientSession {
   id: string
   status: VerificationStatus
   expires_at: string
+  /** The capture flow this session runs (Phase 17). */
+  capture_model?: CaptureModel
+  /** The active-liveness challenge sequence to prompt the user through. */
+  liveness_challenges?: LivenessChallenge[]
 }
 
 /**
@@ -37,9 +41,15 @@ export interface DocumentBackInput {
   documentType?: DocumentType | null
 }
 
-/** Input for the liveness/selfie submission. */
+/** Input for the liveness submission (passive selfie or active challenge video). */
 export interface LivenessInput {
   selfie?: Blob | null
+  /** Recorded challenge video (active mode). */
+  video?: Blob | null
+  /** Passive (selfie) or active (challenge video). Defaults to passive. */
+  mode?: LivenessMode
+  /** The challenge sequence the user performed, in order (active mode). */
+  challenges?: LivenessChallenge[]
   signals?: ProviderSignalHints
 }
 
@@ -149,6 +159,9 @@ export class ArkycClient {
   submitLiveness(input: LivenessInput): Promise<ClientSession> {
     const form = new FormData()
     if (input.selfie) form.append('selfie', input.selfie, 'selfie.jpg')
+    if (input.video) form.append('video', input.video, 'liveness.webm')
+    if (input.mode) form.append('mode', input.mode)
+    if (input.challenges) form.append('challenges', JSON.stringify(input.challenges))
     appendSignals(form, input.signals)
     return this.request('POST', '/v1/client/liveness', form)
   }
@@ -163,11 +176,7 @@ export class ArkycClient {
     return this.request('POST', '/v1/client/complete', input.signals ?? {})
   }
 
-  private async request(
-    method: string,
-    path: string,
-    body?: FormData | object,
-  ): Promise<ClientSession> {
+  private async request(method: string, path: string, body?: FormData | object): Promise<ClientSession> {
     const headers: Record<string, string> = { 'X-Client-Token': this.token }
     let payload: BodyInit | undefined
 

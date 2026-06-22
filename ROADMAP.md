@@ -55,7 +55,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 14  | Playground & Docs                          | ✅     | Runnable example integration + VitePress documentation site                                                                                |
 | 15  | Platform Admin & Global Settings           | ✅     | Super-admin tier above tenants (admin RBAC + `/admin`) + a typed global settings store/UI; platform actions audited separately             |
 | 16  | Realtime Event Delivery                    | ✅     | Transport abstraction with **pusher** (hosted or self-hosted soketi) + **firebase** drivers (admin-selectable); live dashboard updates     |
-| 17  | Improved Capture & Liveness Flow           | ⬜     | Active liveness (turn/move) + refined document/selfie UX; admin-selectable capture model (current vs improved)                             |
+| 17  | Improved Capture & Liveness Flow           | ✅     | Server-issued active-liveness challenges + improved document capture (glare hints/auto-capture); capture model resolves project > global   |
 | 18  | Dashboard Revamp                           | ⬜     | Re-skin to the shadcn UI kit design system (default + project-management layouts)                                                          |
 | 19  | Hosted Website & Custom Docs Theme         | ⬜     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                            |
 | 20  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                   |
@@ -401,21 +401,21 @@ provider-abstracted transport, replacing polling.
 
 ---
 
-## Phase 17 — Improved Capture & Liveness Flow ⬜
+## Phase 17 — Improved Capture & Liveness Flow ✅
 
 **Goal:** A higher-quality, more spoof-resistant capture experience with **active**
 liveness, offered per the admin's global capture-model setting.
 
 **Scope**
 
-- [ ] New widget flow: guided **active liveness** (turn head, move closer, blink/smile challenges) and improved document capture (edge detection, glare/quality hints, auto-capture).
-- [ ] Keep the current passive flow; the offered model resolves from the global setting (`current` | `improved` | `both`), overridable per tenant/project.
-- [ ] Client/Liveness API + provider contract updates to carry richer challenge/response signals; `mock` driver parity so it's demoable without real providers.
-- [ ] Mobile-first, accessible UX; themed via project branding.
+- [x] New widget flow: guided **active liveness** (server-issued turn/blink/smile/nod/move-closer challenges, camera + recorded video) and improved document capture (live glare/brightness hints + auto-capture). _(Edge detection approximated by a brightness/glare heuristic.)_
+- [x] Keep the current passive flow; the offered model (`passive` | `active` | `both`) resolves from the global `capture.model` setting, overridable per project via `Project.settings.capture_model`.
+- [x] Client/Liveness API + provider contract carry the challenge/response signals — `submitLiveness` takes `mode`/`video`/`challenges`; the `mock` driver validates the performed sequence against the issued one (parity, no real provider needed).
+- [x] Branding/theming reused from Phase 12; mobile-first card UI. _(Full accessibility pass not audited.)_
 
 **Deliverables:** `@arkyc/widget` supports both flows; the admin toggle selects which is offered.
 
-**Exit criteria:** A user completes an active-liveness verification end-to-end; switching the offered model in admin settings changes the widget flow.
+**Exit criteria:** A user completes an active-liveness verification end-to-end; switching the offered model in admin settings changes the widget flow. ✅ _(Verified server-side + via the widget's fake-DOM unit tests; visual/in-browser UX not run here.)_
 
 ---
 

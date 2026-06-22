@@ -1,11 +1,13 @@
 import type {
   DocumentType,
+  LivenessChallenge,
+  LivenessMode,
   ProjectBranding,
   VerificationStatus,
   WidgetResult,
   WidgetStep,
 } from '@arkyc/types'
-import { ArkycClient, type ProviderSignalHints } from './client'
+import { ArkycClient, type ClientSession, type ProviderSignalHints } from './client'
 import { Flow } from './flow'
 import { Theme } from './theme'
 import { WidgetView, type ViewHandlers } from './ui'
@@ -66,6 +68,8 @@ export class WidgetController {
   private documentType: DocumentType | null = null
   private country: string | null = null
   private selfie: Blob | null = null
+  private livenessMode: LivenessMode = 'passive'
+  private livenessChallenges: LivenessChallenge[] = []
   private result: WidgetResult | null = null
   private pendingError: Error | null = null
   private settled = false
@@ -116,7 +120,8 @@ export class WidgetController {
       onClose: () => this.finishClose(),
       onStart: () =>
         void this.run(async () => {
-          await this.client.getSession()
+          const session = await this.client.getSession()
+          this.resolveLiveness(session)
           await this.enter(this.next())
         }),
       onDocumentSelected: (type, country) => {
@@ -125,8 +130,28 @@ export class WidgetController {
         void this.run(() => this.enter('front_capture'))
       },
       onImage: (blob) => void this.run(() => this.onImage(blob)),
+      onActiveLiveness: (video, performed) =>
+        void this.run(async () => {
+          await this.client.submitLiveness({
+            video,
+            mode: 'active',
+            challenges: performed,
+            signals: this.config.signals,
+          })
+          await this.enter(this.next())
+        }),
       onAcknowledge: () => this.finishResult(),
     }
+  }
+
+  /** Resolve which liveness flow to run from the session's capture model. */
+  private resolveLiveness(session: ClientSession): void {
+    this.livenessChallenges = session.liveness_challenges ?? []
+    const model = session.capture_model ?? 'passive'
+    const wantsActive = model === 'active' || model === 'both'
+    // `active` is honoured even without a live camera (a file-fallback finish);
+    // `both` falls back to passive when the camera/recorder isn't available.
+    this.livenessMode = wantsActive && (model === 'active' || this.view.cameraSupported) ? 'active' : 'passive'
   }
 
   private async onImage(blob: Blob | null): Promise<void> {
@@ -197,11 +222,15 @@ export class WidgetController {
       documentType: this.documentType,
       decision: this.result?.decision,
       allowSkip: !!this.config.signals,
+      livenessChallenges: this.livenessChallenges,
     })
   }
 
   private next(): WidgetStep {
-    return Flow.nextStep(this.step, { documentType: this.documentType })
+    return Flow.nextStep(this.step, {
+      documentType: this.documentType,
+      livenessMode: this.livenessMode,
+    })
   }
 
   private delay(ms: number): Promise<void> {
