@@ -37,6 +37,7 @@
     "@arkyc/liveness": "workspace:*",
     "@arkyc/ocr": "workspace:*",
     "@arkyc/permissions": "workspace:*",
+    "@arkyc/realtime": "workspace:*",
     "@arkyc/types": "workspace:*",
     "@arkyc/webhooks": "workspace:*",
     "@h3ravel/musket": "^2.2.0",

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import type { PermissionKey } from '@arkyc/types'
 import { TenantProvider, useTenant } from '@/contexts/tenant-context'
+import { RealtimeProvider } from '@/contexts/realtime-context'
 import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
 import { isDark, toggleTheme } from '@/lib/theme'
@@ -47,7 +48,9 @@ export function visibleNavItems(can: (perm: PermissionKey) => boolean): NavItem[
 export function TenantLayout() {
   return (
     <TenantProvider>
-      <LayoutInner />
+      <RealtimeProvider>
+        <LayoutInner />
+      </RealtimeProvider>
     </TenantProvider>
   )
 }
@@ -70,9 +73,7 @@ function LayoutInner() {
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card">
-        <div className="flex h-14 items-center px-5 text-lg font-semibold tracking-tight">
-          Arkyc
-        </div>
+        <div className="flex h-14 items-center px-5 text-lg font-semibold tracking-tight">Arkyc</div>
         <nav className="flex flex-1 flex-col gap-1 p-3">
           {visibleNavItems(can).map((item) => (
             <NavLink
@@ -140,20 +141,11 @@ function Topbar() {
             Admin
           </Button>
         ) : null}
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Toggle theme"
-          onClick={() => setDark(toggleTheme())}
-        >
+        <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={() => setDark(toggleTheme())}>
           {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
         <span className="hidden text-sm text-muted-foreground sm:inline">{user?.email}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void logout().then(() => navigate('/login'))}
-        >
+        <Button variant="outline" size="sm" onClick={() => void logout().then(() => navigate('/login'))}>
           Sign out
         </Button>
       </div>

@@ -4,6 +4,7 @@ import GlobalSettingsResource from '@app/http/resources/GlobalSettingsResource'
 import { settings } from '@app/services/GlobalSettingsService'
 import type { DeepPartial } from '@app/services/GlobalSettingsService'
 import { platformAudit } from '@app/services/PlatformAuditLogger'
+import { realtime } from '@app/services/RealtimeService'
 import type { GlobalSettings } from '@arkyc/types'
 
 /**
@@ -37,15 +38,16 @@ export default class SettingsController extends BaseController {
 
     const platform: DeepPartial<GlobalSettings['platform']> = {}
     if (typeof body.platform?.name === 'string') platform.name = body.platform.name
-    if (body.platform?.support_email !== undefined)
-      platform.support_email = body.platform.support_email
-    if (typeof body.platform?.signups_enabled === 'boolean')
-      platform.signups_enabled = body.platform.signups_enabled
+    if (body.platform?.support_email !== undefined) platform.support_email = body.platform.support_email
+    if (typeof body.platform?.signups_enabled === 'boolean') platform.signups_enabled = body.platform.signups_enabled
     if (Object.keys(platform).length) patch.platform = platform
 
     if (body.realtime?.transport) patch.realtime = { transport: body.realtime.transport }
 
     const next = await settings.update(patch)
+
+    // A transport change should take effect on the next broadcast, not after TTL.
+    if (patch.realtime) realtime.invalidate()
 
     await platformAudit.recordForRequest(req, {
       action: 'platform.settings_updated',

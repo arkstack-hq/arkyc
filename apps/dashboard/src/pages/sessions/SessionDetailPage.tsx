@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useRequest } from 'alova/client'
+import { realtimeChannels } from '@arkyc/types'
 import { Sessions } from '@/lib/api'
 import { useTenantId } from '@/contexts/tenant-context'
+import { useRealtimeChannel } from '@/contexts/realtime-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { StatusBadge, DecisionBadge } from '@/components/StatusBadge'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -41,9 +43,12 @@ export default function SessionDetailPage() {
   const tenantId = useTenantId()
   const { sessionId } = useParams()
 
-  const { data, loading, error } = useRequest(Sessions.get(tenantId, sessionId as string), {
+  const { data, loading, error, send } = useRequest(Sessions.get(tenantId, sessionId as string), {
     immediate: !!sessionId,
   })
+
+  // Live updates: refetch when this session transitions or is acted on.
+  useRealtimeChannel(sessionId ? realtimeChannels.session(sessionId) : null, () => void send())
 
   const checks = data && isRecord(data.checks) ? data.checks : null
 

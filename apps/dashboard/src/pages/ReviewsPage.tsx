@@ -1,21 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm, usePagination, useRequest } from 'alova/client'
+import { realtimeChannels } from '@arkyc/types'
 import { Sessions } from '@/lib/api'
 import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useRealtimeChannel } from '@/contexts/realtime-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Spinner } from '@/components/ui/spinner'
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { formatDateTime, humanize } from '@/lib/utils'
 
 type Action = 'approve' | 'reject' | 'retry'
@@ -73,6 +69,10 @@ export default function ReviewsPage() {
   })
   onActionError(() => setActingId(null))
 
+  // Live updates: any session transition or review action in this tenant reloads
+  // the queue, so reviewers see new/cleared items without a manual refresh.
+  useRealtimeChannel(realtimeChannels.tenant(tenantId), () => void refresh(page))
+
   const {
     form: noteForm,
     updateForm: updateNote,
@@ -93,8 +93,7 @@ export default function ReviewsPage() {
     void sendAction(id, act)
   }
 
-  const sessionPath = (id: string) =>
-    tenant ? `/t/${tenant.slug}/sessions/${id}` : `../sessions/${id}`
+  const sessionPath = (id: string) => (tenant ? `/t/${tenant.slug}/sessions/${id}` : `../sessions/${id}`)
 
   return (
     <div className="p-8">
@@ -185,11 +184,7 @@ export default function ReviewsPage() {
             </TBody>
           </Table>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
 

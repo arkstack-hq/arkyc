@@ -1,4 +1,5 @@
 import { defineConfig } from 'eslint/config'
+import eslintConfigPrettier from 'eslint-config-prettier'
 import { globalIgnores } from 'eslint/config'
 import js from '@eslint/js'
 import markdown from '@eslint/markdown'
@@ -68,4 +69,5 @@ export default defineConfig(
       ],
     },
   },
+  eslintConfigPrettier
 )

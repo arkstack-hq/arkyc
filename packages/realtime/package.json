@@ -1,0 +1,30 @@
+{
+  "name": "@arkyc/realtime",
+  "version": "0.0.0",
+  "description": "Server-side realtime event broadcasting (soketi/firebase) for Arkyc",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@arkyc/types": "workspace:*",
+    "firebase-admin": "^13.0.2",
+    "pusher": "^5.2.0"
+  }
+}

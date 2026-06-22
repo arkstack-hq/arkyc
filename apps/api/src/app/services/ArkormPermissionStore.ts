@@ -1,3 +1,4 @@
+import type { AdminPermissionKey, AnyPermissionKey, PermissionKey } from '@arkyc/types'
 import type {
   AdminResolutionContext,
   AdminResolverStore,
@@ -9,14 +10,14 @@ import type {
   PermissionResolverStore,
   PermissionSyncStore,
 } from '@arkyc/permissions'
-import type { AdminPermissionKey, AnyPermissionKey, PermissionKey } from '@arkyc/types'
-import { TenantMember } from '@app/models/TenantMember'
-import { ProjectMember } from '@app/models/ProjectMember'
-import { UserPermission } from '@app/models/UserPermission'
+
 import { AdminPermission } from '@app/models/AdminPermission'
-import { RolePermission } from '@app/models/RolePermission'
 import { Permission } from '@app/models/Permission'
+import { ProjectMember } from '@app/models/ProjectMember'
 import { Role } from '@app/models/Role'
+import { RolePermission } from '@app/models/RolePermission'
+import { TenantMember } from '@app/models/TenantMember'
+import { UserPermission } from '@app/models/UserPermission'
 
 function toArray<T>(collection: Iterable<T> | null | undefined): T[] {
   return collection ? Array.from(collection) : []
@@ -34,7 +35,8 @@ type Loaded = { getAttribute(key: string): unknown } | null | undefined
  * round-trip, no N+1.
  */
 export class ArkormPermissionStore
-  implements PermissionResolverStore, PermissionSyncStore, AdminResolverStore, AdminSyncStore {
+  implements PermissionResolverStore, PermissionSyncStore, AdminResolverStore, AdminSyncStore
+{
   async tenantRolePermissions(ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
     const member = await TenantMember.where({ userId: ctx.userId, tenantId: ctx.tenantId })
       .with('role.permissions')
@@ -54,9 +56,7 @@ export class ArkormPermissionStore
 
   async directPermissions(ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
     const grants = toArray(
-      await UserPermission.where({ userId: ctx.userId, tenantId: ctx.tenantId })
-        .with('permission')
-        .get(),
+      await UserPermission.where({ userId: ctx.userId, tenantId: ctx.tenantId }).with('permission').get(),
     )
 
     return grants
@@ -75,9 +75,7 @@ export class ArkormPermissionStore
   // ── AdminResolverStore ────────────────────────────────────────────────────
 
   async adminRolePermissions(ctx: AdminResolutionContext): Promise<AdminPermissionKey[]> {
-    const grants = toArray(
-      await AdminPermission.where({ userId: ctx.userId }).with('role.permissions').get(),
-    )
+    const grants = toArray(await AdminPermission.where({ userId: ctx.userId }).with('role.permissions').get())
 
     return (
       grants
@@ -89,15 +87,11 @@ export class ArkormPermissionStore
   }
 
   async adminDirectPermissions(ctx: AdminResolutionContext): Promise<AdminPermissionKey[]> {
-    const grants = toArray(
-      await AdminPermission.where({ userId: ctx.userId }).with('permission').get(),
-    )
+    const grants = toArray(await AdminPermission.where({ userId: ctx.userId }).with('permission').get())
 
     return grants
       .filter((g) => g.roleId == null && g.permissionId != null)
-      .map(
-        (g) => (g.getAttribute('permission') as Loaded)?.getAttribute('name') as AdminPermissionKey,
-      )
+      .map((g) => (g.getAttribute('permission') as Loaded)?.getAttribute('name') as AdminPermissionKey)
       .filter(Boolean)
   }
 
@@ -165,10 +159,7 @@ export class ArkormPermissionStore
     return created.id
   }
 
-  async syncRolePermissions(
-    roleId: string,
-    permissions: readonly AnyPermissionKey[],
-  ): Promise<void> {
+  async syncRolePermissions(roleId: string, permissions: readonly AnyPermissionKey[]): Promise<void> {
     const all = toArray(await Permission.all())
     const idByName = new Map(all.map((p) => [p.name, p.id]))
     const existing = toArray(await RolePermission.where({ roleId }).get())

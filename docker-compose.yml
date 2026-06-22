@@ -42,6 +42,20 @@ services:
     volumes:
       - arkyc_redis:/data
 
+  # Soketi — self-hostable, Pusher-compatible WebSocket server (Phase 16 realtime).
+  soketi:
+    image: quay.io/soketi/soketi:latest-16-alpine
+    restart: unless-stopped
+    ports:
+      - "6001:6001"
+    environment:
+      SOKETI_DEBUG: "1"
+      SOKETI_DEFAULT_APP_ID: arkyc
+      SOKETI_DEFAULT_APP_KEY: arkyc-key
+      SOKETI_DEFAULT_APP_SECRET: arkyc-secret
+      # Private channels are authorized by the API at /api/v1/realtime/auth.
+      SOKETI_DEFAULT_APP_ENABLE_CLIENT_MESSAGES: "false"
+
 volumes:
   arkyc_pg:
   arkyc_minio:

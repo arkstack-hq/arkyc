@@ -45,6 +45,9 @@ export default defineConfig({
       // reads in the shared test process (e.g. login reading a stale password
       // right after a reset).
       MAIL_TRANSPORT: 'file',
+      // Record realtime broadcasts in-memory (no live soketi/firebase) so tests
+      // can assert what was published. `memory` is an env-only hard override.
+      REALTIME_TRANSPORT: 'memory',
     },
   },
 })

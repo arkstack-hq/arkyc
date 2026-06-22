@@ -1,14 +1,18 @@
 import { RequestException } from '@arkstack/common'
-import type {
-  DecisionReason,
-  Metadata,
-  VerificationDecision,
-  VerificationStatus,
+import {
+  type DecisionReason,
+  type Metadata,
+  REALTIME_EVENT,
+  type ReviewActionEvent,
+  type VerificationDecision,
+  type VerificationStatus,
 } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { Review } from '@app/models/Review'
 import { ReviewNote } from '@app/models/ReviewNote'
 import { transitionTo } from 'src/support/session-transition'
+import { sessionChannels } from 'src/support/realtime-channels'
+import { realtime } from './RealtimeService'
 import { type AuditActor, audit } from './AuditLogger'
 
 /** What a reviewer is asking the user to redo. */
@@ -21,20 +25,12 @@ export type RetryKind = 'document' | 'selfie' | 'full'
  */
 export class ReviewService {
   /** Manually approve a session awaiting review. */
-  async approve(
-    session: VerificationSession,
-    actor: AuditActor,
-    reason?: string,
-  ): Promise<VerificationSession> {
+  async approve(session: VerificationSession, actor: AuditActor, reason?: string): Promise<VerificationSession> {
     return this.decide(session, actor, 'approved', 'MANUAL_APPROVAL', 'review.approved', reason)
   }
 
   /** Manually reject a session awaiting review. */
-  async reject(
-    session: VerificationSession,
-    actor: AuditActor,
-    reason?: string,
-  ): Promise<VerificationSession> {
+  async reject(session: VerificationSession, actor: AuditActor, reason?: string): Promise<VerificationSession> {
     return this.decide(session, actor, 'rejected', 'MANUAL_REJECTION', 'review.rejected', reason)
   }
 
@@ -60,11 +56,7 @@ export class ReviewService {
   }
 
   /** Assign the session to a reviewer (no status change). */
-  async assign(
-    session: VerificationSession,
-    actor: AuditActor,
-    assigneeId: string,
-  ): Promise<VerificationSession> {
+  async assign(session: VerificationSession, actor: AuditActor, assigneeId: string): Promise<VerificationSession> {
     session.assignedTo = assigneeId
     await session.save()
     await this.emit(session, actor, 'review.assigned', { assigneeId })
@@ -73,11 +65,7 @@ export class ReviewService {
   }
 
   /** Flag a session as suspicious — records a review row + audit, no status change. */
-  async markSuspicious(
-    session: VerificationSession,
-    actor: AuditActor,
-    reason?: string,
-  ): Promise<VerificationSession> {
+  async markSuspicious(session: VerificationSession, actor: AuditActor, reason?: string): Promise<VerificationSession> {
     await this.recordReview(session, actor, session.status, session.status, reason ?? 'suspicious')
     await this.emit(session, actor, 'review.suspicious', { reason: reason ?? null })
 
@@ -85,11 +73,7 @@ export class ReviewService {
   }
 
   /** Attach a reviewer note without changing the session's status. */
-  async addNote(
-    session: VerificationSession,
-    actor: AuditActor,
-    note: string,
-  ): Promise<ReviewNote> {
+  async addNote(session: VerificationSession, actor: AuditActor, note: string): Promise<ReviewNote> {
     const row = await ReviewNote.create({
       tenantId: session.tenantId,
       projectId: session.projectId,
@@ -173,6 +157,15 @@ export class ReviewService {
       ipAddress: actor.ipAddress,
       userAgent: actor.userAgent,
     })
+
+    const payload: ReviewActionEvent = {
+      session_id: session.id,
+      tenant_id: session.tenantId,
+      project_id: session.projectId,
+      action,
+      actor_id: actor.actorId,
+    }
+    await realtime.broadcast(sessionChannels(session), REALTIME_EVENT.reviewAction, payload)
   }
 }
 
