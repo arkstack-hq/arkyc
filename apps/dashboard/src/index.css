@@ -69,8 +69,8 @@
   --sidebar: #f8fafc;
   --sidebar-foreground: #334155;
   --sidebar-border: #e2e8f0;
-  --sidebar-accent: #eef2ff;
-  --sidebar-accent-foreground: #4338ca;
+  --sidebar-accent: #eef2f6;
+  --sidebar-accent-foreground: #0f172a;
   --chart-1: #4f46e5;
   --chart-2: #16a34a;
   --chart-3: #f59e0b;
@@ -120,7 +120,12 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family:
-    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    'Inter',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   margin: 0;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

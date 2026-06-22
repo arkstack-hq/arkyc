@@ -165,7 +165,7 @@ export function CommandMenuTrigger({ onClick, className }: { onClick: () => void
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm text-muted-foreground transition-colors hover:bg-accent/50 sm:w-64',
+        'inline-flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm text-muted-foreground transition-colors hover:bg-accent/50 sm:w-72 lg:w-96',
         className,
       )}
     >

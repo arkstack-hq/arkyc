@@ -160,7 +160,7 @@ function AdminUserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <SidebarMenuButton size="lg" className="gap-2.5">
+        <SidebarMenuButton size="lg" className="gap-2.5 focus-visible:ring-0 data-[state=open]:bg-sidebar-accent">
           <Avatar className="size-8">
             <AvatarFallback>{initial}</AvatarFallback>
           </Avatar>

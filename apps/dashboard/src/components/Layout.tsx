@@ -148,7 +148,7 @@ function TenantSidebar({ can }: { can: (perm: PermissionKey) => boolean }) {
       <SidebarHeader>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton size="lg" className="gap-2.5">
+            <SidebarMenuButton size="lg" className="gap-2.5 focus-visible:ring-0 data-[state=open]:bg-sidebar-accent">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
                 {(tenant?.name?.[0] ?? 'A').toUpperCase()}
               </span>
@@ -218,7 +218,7 @@ function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <SidebarMenuButton size="lg" className="gap-2.5">
+        <SidebarMenuButton size="lg" className="gap-2.5 focus-visible:ring-0 data-[state=open]:bg-sidebar-accent">
           <Avatar className="size-8">
             <AvatarFallback>{initial}</AvatarFallback>
           </Avatar>

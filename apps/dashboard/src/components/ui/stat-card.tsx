@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card } from './card'
 
@@ -10,7 +9,10 @@ export interface StatDelta {
   label?: string
 }
 
-/** A compact metric tile: label, large value, optional icon + trend delta/hint. */
+/**
+ * A metric tile in the shadcn-uikit style: label + bare icon on top, a colored
+ * percentage delta line, then a large value at the bottom. Subtle gradient/shadow.
+ */
 export function StatCard({
   label,
   value,
@@ -28,33 +30,23 @@ export function StatCard({
 }) {
   const up = delta ? delta.value >= 0 : false
   return (
-    <Card className={cn('p-5', className)}>
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        {icon ? (
-          <span className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:size-4">
-            {icon}
-          </span>
-        ) : null}
+    <Card className={cn('rounded-xl bg-linear-to-b from-muted/40 to-card p-6 shadow-sm', className)}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        {icon ? <span className="text-muted-foreground [&_svg]:size-5">{icon}</span> : null}
       </div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
       {delta ? (
-        <p className="mt-2 flex items-center gap-1 text-xs">
-          <span
-            className={cn(
-              'inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 font-medium tabular-nums',
-              up ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive',
-            )}
-          >
-            {up ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
+        <p className="mt-3 text-sm">
+          <span className={cn('font-medium tabular-nums', up ? 'text-success' : 'text-destructive')}>
             {up ? '+' : ''}
             {delta.value.toFixed(1)}%
-          </span>
+          </span>{' '}
           {delta.label ? <span className="text-muted-foreground">{delta.label}</span> : null}
         </p>
       ) : hint ? (
-        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{hint}</p>
       ) : null}
+      <p className="mt-3 text-3xl font-bold tracking-tight tabular-nums">{value}</p>
     </Card>
   )
 }
