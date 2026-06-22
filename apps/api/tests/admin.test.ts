@@ -21,7 +21,7 @@ const register = (s: number, tag: string) =>
       password: 'secret123',
     })
 
-const admin = (method: 'get' | 'patch', path: string, token: string) =>
+const admin = (method: 'get' | 'patch' | 'post' | 'delete', path: string, token: string) =>
   request(app)[method](`/api/v1/admin${path}`).set('Authorization', `Bearer ${token}`)
 
 /** Delete the singleton settings row (Arkormˣ forbids unconditional deletes). */
@@ -126,5 +126,51 @@ describe('admin tenants surface', () => {
   it('denies the tenants list for a non-admin user (403)', async () => {
     const res = await admin('get', '/tenants', ctx.userToken)
     expect(res.status).toBe(403)
+  })
+})
+
+describe('admin users', () => {
+  it('denies a non-admin (403)', async () => {
+    const res = await admin('get', '/users', ctx.userToken)
+    expect(res.status).toBe(403)
+  })
+
+  it('lists platform users for an admin', async () => {
+    const res = await admin('get', '/users', ctx.ownerToken)
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body.data)).toBe(true)
+    const owner = res.body.data.find((u: { id: string }) => u.id === ctx.ownerId)
+    expect(owner?.is_admin).toBe(true)
+  })
+})
+
+describe('admin audit log', () => {
+  it('denies a non-admin (403)', async () => {
+    const res = await admin('get', '/audit-logs', ctx.userToken)
+    expect(res.status).toBe(403)
+  })
+
+  it('lists audit entries across tenants for an admin', async () => {
+    const res = await admin('get', '/audit-logs', ctx.ownerToken)
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body.data)).toBe(true)
+  })
+})
+
+// Run last: this grants then revokes admin on the otherwise-non-admin user.
+describe('admin user management', () => {
+  it('grants and revokes platform admin for a user', async () => {
+    const grant = await admin('post', `/users/${ctx.userId}/admin`, ctx.ownerToken)
+    expect(grant.status).toBe(200)
+
+    // The newly-granted user can now reach a canAdmin route.
+    const allowed = await admin('get', '/settings', ctx.userToken)
+    expect(allowed.status).toBe(200)
+
+    const revoke = await admin('delete', `/users/${ctx.userId}/admin`, ctx.ownerToken)
+    expect(revoke.status).toBe(200)
+
+    const denied = await admin('get', '/settings', ctx.userToken)
+    expect(denied.status).toBe(403)
   })
 })

@@ -9,7 +9,7 @@
 
 export { ApiKeys } from './api-keys'
 export { Admin } from './admin'
-export type { AdminMe, AdminSettingsPatch } from './admin'
+export type { AdminMe, AdminSettingsPatch, AdminUser } from './admin'
 export { Auth } from './auth'
 export { AuditLogs } from './audit-logs'
 export { Members } from './members'

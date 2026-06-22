@@ -29,6 +29,8 @@ import RoleDetailPage from '@/pages/settings/RoleDetailPage'
 import PermissionsPage from '@/pages/settings/PermissionsPage'
 import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
 import AdminTenantsPage from '@/pages/admin/AdminTenantsPage'
+import AdminUsersPage from '@/pages/admin/AdminUsersPage'
+import AdminAuditLogsPage from '@/pages/admin/AdminAuditLogsPage'
 
 /** Send "/" to the first tenant's overview, or onboarding when none exist. */
 function RootRedirect() {
@@ -113,6 +115,8 @@ export default function App() {
         <Route index element={<Navigate to="settings" replace />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="tenants" element={<AdminTenantsPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="audit-logs" element={<AdminAuditLogsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

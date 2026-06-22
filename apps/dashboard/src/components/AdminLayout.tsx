@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
-import { Building2, Moon, Settings, ShieldCheck, Sun } from 'lucide-react'
+import { Building2, Moon, ScrollText, Settings, ShieldCheck, Sun, Users } from 'lucide-react'
 import type { AdminPermissionKey } from '@arkyc/types'
 import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
@@ -20,6 +20,8 @@ interface AdminNavItem {
 const NAV: AdminNavItem[] = [
   { to: 'settings', label: 'Settings', icon: Settings, perm: 'admin.settings.view', end: true },
   { to: 'tenants', label: 'Tenants', icon: Building2, perm: 'admin.tenants.view' },
+  { to: 'users', label: 'Users', icon: Users, perm: 'admin.users.view' },
+  { to: 'audit-logs', label: 'Audit log', icon: ScrollText, perm: 'admin.audit.view' },
 ]
 
 /**
