@@ -1,4 +1,4 @@
-import { DB, SchemaBuilder, Seeder } from '@arkstack/database'
+import { SchemaBuilder, Seeder } from '@arkstack/database'
 
 import { DefaultRoles } from '@arkyc/permissions'
 import { Permission } from 'src/app/models/Permission'
