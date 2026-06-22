@@ -189,22 +189,60 @@ export interface ChallengeDetector {
   feed(sample: FaceSample): boolean
 }
 
-const TURN_T = 0.18
-const SMILE_T = 0.5
-const BLINK_CLOSED = 0.55
-const BLINK_OPEN = 0.25
-const HOLD = 3
+/**
+ * Detection thresholds. These are the knobs to tune against a real camera —
+ * use the calibration harness (`playground/calibration.html`) to read live
+ * signal values and adjust. All are overridable per-widget via `faceTuning`.
+ */
+export interface FaceTuning {
+  /** |turn| asymmetry needed to count as a head turn. */
+  turn: number
+  /** Mouth-smile blendshape score needed to count as a smile. */
+  smile: number
+  /** Eye-blink score above which the eyes count as closed. */
+  blinkClosed: number
+  /** Eye-blink score below which they count as re-opened. */
+  blinkOpen: number
+  /** Consecutive frames a condition must hold before it fires. */
+  hold: number
+  /** Pitch increase (looking down) needed to arm a nod. */
+  nodDown: number
+  /** Pitch return delta (back up) that completes a nod. */
+  nodReturn: number
+  /** Face must grow past `baseline * closerFactor` for move-closer. */
+  closerFactor: number
+  /** Selfie framing tolerances (distance from frame centre / size window). */
+  selfieCenterTol: number
+  selfieCenterYTol: number
+  selfieMinScale: number
+  selfieMaxScale: number
+}
+
+export const DEFAULT_TUNING: FaceTuning = {
+  turn: 0.18,
+  smile: 0.5,
+  blinkClosed: 0.55,
+  blinkOpen: 0.25,
+  hold: 3,
+  nodDown: 0.06,
+  nodReturn: 0.02,
+  closerFactor: 1.22,
+  selfieCenterTol: 0.2,
+  selfieCenterYTol: 0.25,
+  selfieMinScale: 0.28,
+  selfieMaxScale: 0.85,
+}
 
 /** Build a stateful detector for a single active-liveness challenge. */
-export function makeChallengeDetector(challenge: LivenessChallenge): ChallengeDetector {
+export function makeChallengeDetector(challenge: LivenessChallenge, t: FaceTuning = DEFAULT_TUNING): ChallengeDetector {
   switch (challenge) {
     case 'blink': {
       let closed = false
       return {
         feed(s) {
           if (!s.present) return false
-          if (s.blink > BLINK_CLOSED) closed = true
-          else if (closed && s.blink < BLINK_OPEN) return true
+          if (s.blink > t.blinkClosed) closed = true
+          else if (closed && s.blink < t.blinkOpen) return true
           return false
         },
       }
@@ -213,8 +251,8 @@ export function makeChallengeDetector(challenge: LivenessChallenge): ChallengeDe
       let n = 0
       return {
         feed(s) {
-          n = s.present && s.smile > SMILE_T ? n + 1 : 0
-          return n >= HOLD
+          n = s.present && s.smile > t.smile ? n + 1 : 0
+          return n >= t.hold
         },
       }
     }
@@ -222,8 +260,8 @@ export function makeChallengeDetector(challenge: LivenessChallenge): ChallengeDe
       let n = 0
       return {
         feed(s) {
-          n = s.present && s.turn < -TURN_T ? n + 1 : 0
-          return n >= HOLD
+          n = s.present && s.turn < -t.turn ? n + 1 : 0
+          return n >= t.hold
         },
       }
     }
@@ -231,8 +269,8 @@ export function makeChallengeDetector(challenge: LivenessChallenge): ChallengeDe
       let n = 0
       return {
         feed(s) {
-          n = s.present && s.turn > TURN_T ? n + 1 : 0
-          return n >= HOLD
+          n = s.present && s.turn > t.turn ? n + 1 : 0
+          return n >= t.hold
         },
       }
     }
@@ -246,8 +284,8 @@ export function makeChallengeDetector(challenge: LivenessChallenge): ChallengeDe
             base = s.pitch
             return false
           }
-          if (s.pitch > base + 0.06) dipped = true
-          else if (dipped && s.pitch < base + 0.02) return true
+          if (s.pitch > base + t.nodDown) dipped = true
+          else if (dipped && s.pitch < base + t.nodReturn) return true
           return false
         },
       }
@@ -262,8 +300,8 @@ export function makeChallengeDetector(challenge: LivenessChallenge): ChallengeDe
             base = s.scale
             return false
           }
-          n = s.scale > base * 1.22 ? n + 1 : 0
-          return n >= HOLD
+          n = s.scale > base * t.closerFactor ? n + 1 : 0
+          return n >= t.hold
         },
       }
     }
@@ -271,14 +309,12 @@ export function makeChallengeDetector(challenge: LivenessChallenge): ChallengeDe
 }
 
 /** Whether a face is well-framed for a selfie (present, centred, right distance). */
-export function isSelfieReady(s: FaceSample): boolean {
+export function isSelfieReady(s: FaceSample, t: FaceTuning = DEFAULT_TUNING): boolean {
   return (
     s.present &&
-    s.centerX > 0.3 &&
-    s.centerX < 0.7 &&
-    s.centerY > 0.25 &&
-    s.centerY < 0.75 &&
-    s.scale > 0.28 &&
-    s.scale < 0.85
+    Math.abs(s.centerX - 0.5) < t.selfieCenterTol &&
+    Math.abs(s.centerY - 0.5) < t.selfieCenterYTol &&
+    s.scale > t.selfieMinScale &&
+    s.scale < t.selfieMaxScale
   )
 }

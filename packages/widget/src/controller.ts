@@ -8,7 +8,7 @@ import type {
   WidgetStep,
 } from '@arkyc/types'
 import { ArkycClient, type ClientSession, type ProviderSignalHints } from './client'
-import type { FaceAnalyzer } from './face'
+import type { FaceAnalyzer, FaceTuning } from './face'
 import { Flow } from './flow'
 import { Theme } from './theme'
 import { WidgetView, type ViewHandlers } from './ui'
@@ -44,6 +44,8 @@ export interface WidgetControllerConfig {
    * pass `null` to disable detection and use the manual capture flow.
    */
   faceAnalyzer?: FaceAnalyzer | null
+  /** Override face-detection thresholds (tune against a real camera). */
+  faceTuning?: FaceTuning
   /** Schedules a callback after `ms` (defaults to `setTimeout`). */
   scheduler?: (fn: () => void, ms: number) => void
   /** Cosmetic OCR-processing screen duration (ms). */
@@ -93,7 +95,14 @@ export class WidgetController {
       fetch: config.fetch,
     })
     const theme = new Theme(config.branding)
-    this.view = new WidgetView(doc, theme, this.handlers(), config.nav ?? globalThis.navigator, config.faceAnalyzer)
+    this.view = new WidgetView(
+      doc,
+      theme,
+      this.handlers(),
+      config.nav ?? globalThis.navigator,
+      config.faceAnalyzer,
+      config.faceTuning,
+    )
 
     this.postToParent = config.postToParent ?? (!!win.parent && win.parent !== win)
     this.scheduler = config.scheduler ?? ((fn, ms) => setTimeout(fn, ms))

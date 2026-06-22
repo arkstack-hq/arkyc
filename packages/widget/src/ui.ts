@@ -2,7 +2,14 @@ import type { DocumentType, LivenessChallenge, VerificationDecision, WidgetStep 
 
 import { Camera } from './capture'
 import type { Facing } from './capture'
-import { createDefaultFaceAnalyzer, isSelfieReady, makeChallengeDetector, type FaceAnalyzer } from './face'
+import {
+  createDefaultFaceAnalyzer,
+  DEFAULT_TUNING,
+  isSelfieReady,
+  makeChallengeDetector,
+  type FaceAnalyzer,
+  type FaceTuning,
+} from './face'
 import { Theme } from './theme'
 
 /** High-level events the view raises back to the controller. */
@@ -70,6 +77,7 @@ export class WidgetView {
   private readonly footer: HTMLElement
   private readonly camera: Camera
   private readonly analyzer: FaceAnalyzer | null
+  private readonly tuning: FaceTuning
   /** Interval ids for live quality/recording timers, cleared on re-render. */
   private timers: ReturnType<typeof setInterval>[] = []
   /** Extra teardown run on each re-render (cancels in-flight detection loops). */
@@ -81,9 +89,11 @@ export class WidgetView {
     private readonly handlers: ViewHandlers,
     nav: Navigator = globalThis.navigator,
     analyzer: FaceAnalyzer | null = createDefaultFaceAnalyzer(),
+    tuning: FaceTuning = DEFAULT_TUNING,
   ) {
     this.camera = new Camera(doc, nav)
     this.analyzer = analyzer
+    this.tuning = tuning
     this.root = this.el('div', { class: 'arkyc-root' })
 
     const style = this.el('style', { text: theme.stylesheet() })
@@ -194,13 +204,13 @@ export class WidgetView {
     this.body.appendChild(country)
 
     const choices = this.el('div', { class: 'arkyc-choices' })
-      ; (Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
-        const btn = this.button(DOCUMENT_LABELS[type], () =>
-          this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
-        )
-        btn.classList.add('arkyc-btn-ghost')
-        choices.appendChild(btn)
-      })
+    ;(Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
+      const btn = this.button(DOCUMENT_LABELS[type], () =>
+        this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
+      )
+      btn.classList.add('arkyc-btn-ghost')
+      choices.appendChild(btn)
+    })
     this.body.appendChild(choices)
   }
 
@@ -312,7 +322,7 @@ export class WidgetView {
           streak = 0
           return
         }
-        if (isSelfieReady(sample)) {
+        if (isSelfieReady(sample, this.tuning)) {
           hint.textContent = 'Hold still…'
           streak += 1
         } else {
@@ -362,7 +372,7 @@ export class WidgetView {
     let index = 0
     // The challenges the user actually completed, in order (detected or advanced).
     const performed: LivenessChallenge[] = []
-    let detector = makeChallengeDetector(challenges[0] ?? 'blink')
+    let detector = makeChallengeDetector(challenges[0] ?? 'blink', this.tuning)
 
     const showPrompt = (done = false) => {
       const challenge = challenges[index]
@@ -391,7 +401,7 @@ export class WidgetView {
         finish()
         return
       }
-      detector = makeChallengeDetector(challenges[index]!)
+      detector = makeChallengeDetector(challenges[index]!, this.tuning)
       showPrompt()
       if (index === challenges.length - 1) advance.textContent = 'Finish'
     }
@@ -501,7 +511,7 @@ export class WidgetView {
       else if (key === 'text') node.textContent = value
       else if (key === 'html') node.innerHTML = value
       else if (key === 'value' || key === 'src' || key === 'type' || key === 'accept' || key === 'placeholder') {
-        ; (node as unknown as Record<string, string>)[key] = value
+        ;(node as unknown as Record<string, string>)[key] = value
       } else node.setAttribute(key, value)
     }
     return node

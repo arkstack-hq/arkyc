@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arkyc widget — face detection calibration</title>
+    <style>
+      :root {
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0b1120;
+        color: #e2e8f0;
+        padding: 20px;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: #94a3b8;
+        font-size: 13px;
+        margin: 0 0 18px;
+      }
+      .grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 360px 1fr;
+        align-items: start;
+      }
+      @media (max-width: 820px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        border-radius: 12px;
+        padding: 16px;
+      }
+      video {
+        width: 100%;
+        border-radius: 10px;
+        background: #000;
+        transform: scaleX(-1);
+      }
+      .badge {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .ok {
+        background: #064e3b;
+        color: #6ee7b7;
+      }
+      .no {
+        background: #3f1d2e;
+        color: #fda4af;
+      }
+      h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #94a3b8;
+        margin: 0 0 12px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+      .row .k {
+        width: 90px;
+        color: #cbd5e1;
+      }
+      .row .v {
+        width: 64px;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        color: #fff;
+      }
+      .bar {
+        flex: 1;
+        height: 8px;
+        border-radius: 999px;
+        background: #1e293b;
+        overflow: hidden;
+      }
+      .bar > i {
+        display: block;
+        height: 100%;
+        background: #6366f1;
+        width: 0;
+      }
+      .bar.signed > i {
+        background: #f59e0b;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      button.chip {
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #e2e8f0;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button.chip.active {
+        border-color: #6366f1;
+        background: #312e81;
+      }
+      .status {
+        font-size: 14px;
+        font-weight: 700;
+        min-height: 22px;
+      }
+      .status.armed {
+        color: #fbbf24;
+      }
+      .status.hit {
+        color: #34d399;
+      }
+      label.opt {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 13px;
+        color: #cbd5e1;
+        margin: 6px 0;
+      }
+      .tune .row .k {
+        width: 130px;
+      }
+      .tune input[type='range'] {
+        flex: 1;
+      }
+      pre {
+        background: #020617;
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 12px;
+        overflow-x: auto;
+        color: #93c5fd;
+      }
+      .err {
+        color: #fda4af;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Face detection calibration</h1>
+    <p class="sub">
+      Perform each gesture, watch the live values, and adjust the sliders until detection is reliable. Then copy the
+      tuning JSON into <code>DEFAULT_TUNING</code> in <code>src/face.ts</code>. Serve this over localhost (camera needs
+      a secure context): e.g. <code>npx serve packages/widget</code> → open <code>/playground/calibration.html</code>.
+    </p>
+
+    <div id="error" class="err"></div>
+
+    <div class="grid">
+      <div class="panel">
+        <video id="video" playsinline muted></video>
+        <div id="selfie" class="badge no">selfie: —</div>
+      </div>
+
+      <div>
+        <div class="panel" style="margin-bottom: 18px">
+          <h2>Live signals</h2>
+          <div id="signals"></div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 18px">
+          <h2>Challenge tester</h2>
+          <div id="chips" class="chips"></div>
+          <div id="status" class="status">Pick a challenge, then perform it.</div>
+          <label class="opt"
+            ><input type="checkbox" id="invertTurn" /> Invert turn sign (if left/right are swapped on your
+            camera)</label
+          >
+        </div>
+
+        <div class="panel tune">
+          <h2>Tuning</h2>
+          <div id="tune"></div>
+          <pre id="json"></pre>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import {
+        createDefaultFaceAnalyzer,
+        makeChallengeDetector,
+        isSelfieReady,
+        DEFAULT_TUNING,
+      } from '../dist/index.mjs'
+
+      const CHALLENGES = ['blink', 'smile', 'turn_left', 'turn_right', 'nod', 'move_closer']
+      // Slider ranges per tuning key: [min, max, step].
+      const RANGES = {
+        turn: [0.05, 0.5, 0.01],
+        smile: [0.1, 0.9, 0.05],
+        blinkClosed: [0.3, 0.9, 0.05],
+        blinkOpen: [0.05, 0.5, 0.05],
+        hold: [1, 8, 1],
+        nodDown: [0.02, 0.2, 0.01],
+        nodReturn: [0.0, 0.1, 0.01],
+        closerFactor: [1.05, 1.6, 0.01],
+        selfieCenterTol: [0.1, 0.4, 0.02],
+        selfieCenterYTol: [0.1, 0.45, 0.02],
+        selfieMinScale: [0.1, 0.5, 0.02],
+        selfieMaxScale: [0.6, 1.0, 0.02],
+      }
+
+      const SIGNALS = [
+        ['present', false],
+        ['centerX', false],
+        ['centerY', false],
+        ['scale', false],
+        ['turn', true],
+        ['pitch', false],
+        ['blink', false],
+        ['smile', false],
+      ]
+
+      const tuning = { ...DEFAULT_TUNING }
+      const errorEl = document.getElementById('error')
+      const video = document.getElementById('video')
+
+      // --- Build signal rows ---
+      const sigRows = {}
+      const sigBox = document.getElementById('signals')
+      for (const [key, signed] of SIGNALS) {
+        const row = document.createElement('div')
+        row.className = 'row'
+        row.innerHTML = `<span class="k">${key}</span><span class="v" data-v></span><span class="bar ${signed ? 'signed' : ''}"><i data-bar></i></span>`
+        sigBox.appendChild(row)
+        sigRows[key] = { v: row.querySelector('[data-v]'), bar: row.querySelector('[data-bar]') }
+      }
+
+      // --- Build challenge chips ---
+      let activeChallenge = null
+      let detector = null
+      let hitUntil = 0
+      const statusEl = document.getElementById('status')
+      const chipsBox = document.getElementById('chips')
+      const chipEls = {}
+      for (const ch of CHALLENGES) {
+        const b = document.createElement('button')
+        b.className = 'chip'
+        b.textContent = ch
+        b.onclick = () => selectChallenge(ch)
+        chipsBox.appendChild(b)
+        chipEls[ch] = b
+      }
+      function selectChallenge(ch) {
+        activeChallenge = ch
+        detector = makeChallengeDetector(ch, tuning)
+        hitUntil = 0
+        for (const k in chipEls) chipEls[k].classList.toggle('active', k === ch)
+        statusEl.textContent = `Armed: perform "${ch}"`
+        statusEl.className = 'status armed'
+      }
+
+      // --- Build tuning sliders ---
+      const tuneBox = document.getElementById('tune')
+      const jsonEl = document.getElementById('json')
+      for (const key of Object.keys(tuning)) {
+        const [min, max, step] = RANGES[key] ?? [0, 1, 0.01]
+        const row = document.createElement('div')
+        row.className = 'row'
+        row.innerHTML = `<span class="k">${key}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${tuning[key]}"><span class="v" data-tv></span>`
+        const range = row.querySelector('input')
+        const tv = row.querySelector('[data-tv]')
+        tv.textContent = tuning[key]
+        range.oninput = () => {
+          tuning[key] = parseFloat(range.value)
+          tv.textContent = tuning[key]
+          if (activeChallenge) detector = makeChallengeDetector(activeChallenge, tuning)
+          renderJson()
+        }
+        tuneBox.appendChild(row)
+      }
+      function renderJson() {
+        jsonEl.textContent = 'DEFAULT_TUNING = ' + JSON.stringify(tuning, null, 2)
+      }
+      renderJson()
+
+      const invertTurn = document.getElementById('invertTurn')
+      const selfieEl = document.getElementById('selfie')
+
+      function setBar(key, value, signed) {
+        const r = sigRows[key]
+        if (!r) return
+        if (typeof value === 'boolean') {
+          r.v.textContent = value ? 'yes' : 'no'
+          r.bar.style.width = value ? '100%' : '0%'
+          return
+        }
+        r.v.textContent = value.toFixed(3)
+        const pct = signed ? Math.min(100, Math.abs(value) * 100) : Math.min(100, value * 100)
+        r.bar.style.width = pct + '%'
+      }
+
+      async function main() {
+        let stream
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+        } catch (e) {
+          errorEl.textContent = 'Camera unavailable: ' + e.message
+          return
+        }
+        video.srcObject = stream
+        await video.play().catch(() => {})
+
+        const analyzer = createDefaultFaceAnalyzer()
+        const ready = await analyzer.ready()
+        if (!ready) {
+          errorEl.textContent =
+            'Face model failed to load (needs WebGL2 + network access to the MediaPipe CDN). Detection unavailable.'
+          return
+        }
+
+        const now = () => performance.now()
+        setInterval(() => {
+          const raw = analyzer.analyze(video)
+          if (!raw) return
+          const s = invertTurn.checked ? { ...raw, turn: -raw.turn } : raw
+
+          for (const [key, signed] of SIGNALS) setBar(key, s[key], signed)
+
+          const ready = isSelfieReady(s, tuning)
+          selfieEl.textContent = 'selfie: ' + (ready ? 'READY ✓' : 'not framed')
+          selfieEl.className = 'badge ' + (ready ? 'ok' : 'no')
+
+          if (activeChallenge && detector) {
+            if (now() < hitUntil) return
+            if (detector.feed(s)) {
+              statusEl.textContent = `✓ detected "${activeChallenge}"`
+              statusEl.className = 'status hit'
+              hitUntil = now() + 1200
+              detector = makeChallengeDetector(activeChallenge, tuning) // re-arm
+            }
+          }
+        }, 120)
+      }
+      main()
+    </script>
+  </body>
+</html>
