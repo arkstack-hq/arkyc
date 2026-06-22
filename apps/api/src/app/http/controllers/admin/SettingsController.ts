@@ -31,6 +31,7 @@ export default class SettingsController extends BaseController {
       'platform.support_email': ['nullable', 'email'],
       'platform.signups_enabled': ['nullable', 'boolean'],
       'realtime.transport': ['nullable', 'in:pusher,firebase,off'],
+      'capture.model': ['nullable', 'in:passive,active,both'],
     })
 
     const body = (this.body ?? {}) as DeepPartial<GlobalSettings>
@@ -43,6 +44,7 @@ export default class SettingsController extends BaseController {
     if (Object.keys(platform).length) patch.platform = platform
 
     if (body.realtime?.transport) patch.realtime = { transport: body.realtime.transport }
+    if (body.capture?.model) patch.capture = { model: body.capture.model }
 
     const next = await settings.update(patch)
 

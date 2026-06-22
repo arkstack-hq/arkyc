@@ -16,6 +16,16 @@ export type VerificationStatus =
 /** The outcome of the decision engine (or a manual review). */
 export type VerificationDecision = 'approved' | 'requires_review' | 'rejected'
 
+/** Whether liveness is checked passively (a selfie) or actively (a challenge video). */
+export type LivenessMode = 'passive' | 'active'
+
+/**
+ * A single active-liveness challenge the user is prompted to perform. The server
+ * issues a randomized sequence per session; the widget records the user doing
+ * them and submits the sequence it performed for the driver to validate.
+ */
+export type LivenessChallenge = 'turn_left' | 'turn_right' | 'blink' | 'smile' | 'nod' | 'move_closer'
+
 /** Why a session reached its decision. */
 export type DecisionReason =
   | 'AUTO_APPROVED'

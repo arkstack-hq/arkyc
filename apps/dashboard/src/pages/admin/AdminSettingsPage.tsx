@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useForm, useRequest } from 'alova/client'
-import type { GlobalSettings, RealtimeTransport } from '@arkyc/types'
+import type { CaptureModel, GlobalSettings, RealtimeTransport } from '@arkyc/types'
 import { Admin, errorMessage } from '@/lib/api'
 import { ErrorState, Loading, PageHeader } from '@/components/States'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
 const TRANSPORTS: RealtimeTransport[] = ['off', 'pusher', 'firebase']
+const CAPTURE_MODELS: CaptureModel[] = ['passive', 'active', 'both']
 
 export default function AdminSettingsPage() {
   const { data, error } = useRequest(Admin.settings())
@@ -32,6 +33,7 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
           signups_enabled: formData.signupsEnabled,
         },
         realtime: { transport: formData.transport },
+        capture: { model: formData.captureModel },
       }),
     {
       initialForm: {
@@ -39,6 +41,7 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
         supportEmail: settings.platform.support_email ?? '',
         signupsEnabled: settings.platform.signups_enabled,
         transport: settings.realtime.transport,
+        captureModel: settings.capture.model,
       },
     },
   )
@@ -125,6 +128,25 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
                 ))}
               </Select>
               <FieldError errors={error?.list?.['realtime.transport']} />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="capture-model">Capture model</FieldLabel>
+              <Select
+                id="capture-model"
+                value={form.captureModel}
+                onChange={(e) => {
+                  updateForm({ captureModel: e.target.value as CaptureModel })
+                  dirtyReset()
+                }}
+              >
+                {CAPTURE_MODELS.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </Select>
+              <FieldError errors={error?.list?.['capture.model']} />
             </Field>
           </CardContent>
         </Card>

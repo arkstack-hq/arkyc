@@ -8,6 +8,13 @@ import type { Entity } from './common'
 export type RealtimeTransport = 'pusher' | 'firebase' | 'off'
 
 /**
+ * Which capture/liveness flow the widget offers (Phase 17). `passive` = the
+ * current selfie flow; `active` = guided active-liveness challenges; `both` =
+ * offer active, falling back to passive on failure/unsupported devices.
+ */
+export type CaptureModel = 'passive' | 'active' | 'both'
+
+/**
  * Platform-wide settings, managed by platform admins on the `/admin` surface and
  * read by the app at runtime. A single typed record (see {@link GlobalSetting}),
  * always merged over {@link DEFAULT_GLOBAL_SETTINGS} so every key is present.
@@ -23,6 +30,10 @@ export interface GlobalSettings {
   /** Realtime delivery configuration (consumed in Phase 16). */
   realtime: {
     transport: RealtimeTransport
+  }
+  /** Default capture/liveness flow offered to widgets (Phase 17). */
+  capture: {
+    model: CaptureModel
   }
 }
 
@@ -40,5 +51,8 @@ export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
   },
   realtime: {
     transport: 'off',
+  },
+  capture: {
+    model: 'passive',
   },
 }

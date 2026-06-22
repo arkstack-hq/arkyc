@@ -40,6 +40,7 @@ export class GlobalSettingsService {
     return {
       platform: { ...base.platform, ...(patch.platform ?? {}) },
       realtime: { ...base.realtime, ...(patch.realtime ?? {}) },
+      capture: { ...base.capture, ...(patch.capture ?? {}) },
     }
   }
 }

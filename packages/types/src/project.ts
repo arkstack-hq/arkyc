@@ -1,5 +1,6 @@
 import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped, TenantScoped } from './common'
 import type { MembershipStatus } from './tenant'
+import type { CaptureModel } from './settings'
 
 /** Deployment environment for a project. */
 export type ProjectEnvironment = 'production' | 'staging' | 'development'
@@ -32,6 +33,8 @@ export interface ProjectSettings extends Metadata {
   allowed_origins?: string[]
   /** Maximum verification attempts before a session is hard-failed. */
   max_retries?: number
+  /** Overrides the global capture model for this project (Phase 17). */
+  capture_model?: CaptureModel
 }
 
 /**

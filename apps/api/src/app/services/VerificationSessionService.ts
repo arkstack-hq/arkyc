@@ -1,14 +1,24 @@
 import { RequestException } from '@arkstack/common'
 import { SessionRules, StatusMachine } from '@arkyc/core'
 import { Token } from '@arkyc/auth'
+import { randomChallenges } from '@arkyc/liveness'
 import { type FileLike, Storage } from '@arkstack/filesystem'
-import type { DocumentType, Metadata, VerificationStatus } from '@arkyc/types'
+import type {
+  CaptureModel,
+  DocumentType,
+  LivenessChallenge,
+  LivenessMode,
+  Metadata,
+  VerificationStatus,
+} from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
+import { Project } from '@app/models/Project'
 import { DocumentCapture } from '@app/models/DocumentCapture'
 import { LivenessCheck } from '@app/models/LivenessCheck'
 import { sessionObjectKey } from 'src/support/storage'
 import { transitionTo } from 'src/support/session-transition'
 import { type ProviderSignals, livenessDriver } from './providers'
+import { settings } from './GlobalSettingsService'
 import { BiometricJob, OcrJob } from '@app/jobs'
 
 /** A verification session's lifetime — also bounds its client token. */
@@ -45,6 +55,12 @@ export class VerificationSessionService {
     input: { userReference?: string | null; metadata?: Metadata | null },
   ): Promise<{ session: VerificationSession; clientToken: string }> {
     const { token, tokenHash } = Token.createPair()
+    // Resolve the offered capture model now and issue an active-liveness
+    // challenge sequence up front when it applies, so the widget bootstrap can
+    // surface them and submissions are validated against a fixed order.
+    const captureModel = await this.resolveCaptureModel(scope.project_id)
+    const livenessChallenges = this.offersActiveLiveness(captureModel) ? randomChallenges(3) : null
+
     const session = await VerificationSession.create({
       tenantId: scope.tenant_id,
       projectId: scope.project_id,
@@ -53,9 +69,25 @@ export class VerificationSessionService {
       clientTokenHash: tokenHash,
       expiresAt: new Date(Date.now() + SESSION_TTL_MS),
       metadata: input.metadata ?? null,
+      captureModel,
+      livenessChallenges,
     })
 
     return { session, clientToken: token }
+  }
+
+  /** The capture model for a project: its own override, else the global default. */
+  private async resolveCaptureModel(projectId: string): Promise<CaptureModel> {
+    const project = await Project.where({ id: projectId }).first()
+    const override = project?.settings?.capture_model
+    if (override) return override
+
+    return (await settings.current()).capture.model
+  }
+
+  /** Whether a capture model offers the active-liveness flow. */
+  private offersActiveLiveness(model: CaptureModel): boolean {
+    return model === 'active' || model === 'both'
   }
 
   /** Move a freshly-opened session to `started` when the widget first loads. */
@@ -121,10 +153,16 @@ export class VerificationSessionService {
     return capture
   }
 
-  /** Persist a liveness/selfie check and advance to `liveness_submitted`. */
+  /** Persist a liveness check (passive selfie or active challenge video). */
   async submitLiveness(
     session: VerificationSession,
-    input: { selfie?: FileLike; signals?: ProviderSignals },
+    input: {
+      selfie?: FileLike
+      video?: FileLike
+      mode?: LivenessMode
+      performedChallenges?: LivenessChallenge[]
+      signals?: ProviderSignals
+    },
   ): Promise<LivenessCheck> {
     await this.ensureMutable(session)
     RequestException.abortIf(
@@ -143,8 +181,18 @@ export class VerificationSessionService {
     const selfiePath = sessionObjectKey(session, 'liveness/selfie.jpg')
     await Storage.disk().put(selfiePath, input.selfie ?? EMPTY_IMAGE, { visibility: 'private' })
 
+    let videoPath: string | null = null
+    if (input.video) {
+      videoPath = sessionObjectKey(session, 'liveness/video.webm')
+      await Storage.disk().put(videoPath, input.video, { visibility: 'private' })
+    }
+
     const result = await livenessDriver.check({
       selfie: input.selfie?.buffer ?? EMPTY_IMAGE,
+      video: input.video?.buffer ?? null,
+      mode: input.mode ?? 'passive',
+      challenges: session.livenessChallenges ?? undefined,
+      performedChallenges: input.performedChallenges,
       hints: {
         score: input.signals?.livenessScore,
         passed: input.signals?.livenessPassed,
@@ -156,6 +204,7 @@ export class VerificationSessionService {
       projectId: session.projectId,
       sessionId: session.id,
       selfieImagePath: selfiePath,
+      videoPath,
       score: result.score,
       passed: result.passed,
       spoofSignals: result.spoofSignals,
@@ -174,10 +223,7 @@ export class VerificationSessionService {
    * Finalise: require a document + liveness, move to `processing`, and enqueue
    * the biometric job (face match + decision). A worker lands the final outcome.
    */
-  async complete(
-    session: VerificationSession,
-    input: { signals?: ProviderSignals },
-  ): Promise<VerificationSession> {
+  async complete(session: VerificationSession, input: { signals?: ProviderSignals }): Promise<VerificationSession> {
     await this.ensureMutable(session)
 
     const capture = await DocumentCapture.where({ sessionId: session.id }).first()

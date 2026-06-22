@@ -1,6 +1,6 @@
 import { BaseController } from '@controllers/BaseController'
 import ClientSessionResource from '@app/http/resources/ClientSessionResource'
-import type { DocumentType } from '@arkyc/types'
+import type { DocumentType, LivenessChallenge, LivenessMode } from '@arkyc/types'
 import type { FileLike } from '@arkstack/filesystem'
 import { HttpContext } from 'clear-router/types/express'
 import type { ProviderSignals } from '@app/services/providers'
@@ -86,10 +86,14 @@ export default class ClientSessionController extends BaseController {
       .setStatusCode(201)
   }
 
-  /** Submit the liveness/selfie check. */
+  /** Submit the liveness check — passive (selfie) or active (challenge video). */
   async liveness({ req }: HttpContext) {
     const data = await this.validate({
       selfie: ['nullable', 'file', 'image', 'max:10240'],
+      video: ['nullable', 'file', 'max:51200'],
+      mode: ['nullable', 'string', 'in:passive,active'],
+      // JSON-encoded array of the challenges the widget performed (active mode).
+      challenges: ['nullable', 'string'],
       liveness_score: ['nullable', 'numeric', 'between:0,1'],
       liveness_passed: ['nullable', 'boolean'],
       multiple_faces: ['nullable', 'boolean'],
@@ -97,6 +101,9 @@ export default class ClientSessionController extends BaseController {
 
     await sessionService.submitLiveness(req.verificationSession!, {
       selfie: data.selfie as FileLike | undefined,
+      video: data.video as FileLike | undefined,
+      mode: (data.mode as LivenessMode) ?? undefined,
+      performedChallenges: this.parseChallenges(data.challenges as string | undefined),
       signals: this.signals(data),
     })
 
@@ -129,6 +136,17 @@ export default class ClientSessionController extends BaseController {
       })
       .response()
       .setStatusCode(202)
+  }
+
+  /** Parse the JSON-encoded performed-challenge array, ignoring malformed input. */
+  private parseChallenges(raw: string | undefined): LivenessChallenge[] | undefined {
+    if (!raw) return undefined
+    try {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? (parsed as LivenessChallenge[]) : undefined
+    } catch {
+      return undefined
+    }
   }
 
   /** Map validated body fields to provider signal hints. */

@@ -1,7 +1,9 @@
 import { Model } from 'arkormx'
 import type { CastMap } from 'arkormx'
 import type {
+  CaptureModel,
   DecisionReason,
+  LivenessChallenge,
   Metadata,
   VerificationDecision,
   VerificationStatus,
@@ -39,6 +41,10 @@ export class VerificationSession extends Model {
   declare reviewedBy: string | null
   declare assignedTo: string | null
   declare metadata: Metadata | null
+  /** Resolved capture flow for this session (project override > global setting). */
+  declare captureModel: CaptureModel | null
+  /** Randomized active-liveness challenge sequence issued at session creation. */
+  declare livenessChallenges: LivenessChallenge[] | null
   declare createdAt: Date
   declare updatedAt: Date
 
@@ -56,12 +62,15 @@ export class VerificationSession extends Model {
     reviewedAt: 'reviewed_at',
     reviewedBy: 'reviewed_by',
     assignedTo: 'assigned_to',
+    captureModel: 'capture_model',
+    livenessChallenges: 'liveness_challenges',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }
 
   protected override casts: CastMap = {
     metadata: 'json',
+    livenessChallenges: 'json',
   }
 
   /** The client token hash is internal and never serialised. */

@@ -12,8 +12,14 @@ import request from 'parasito'
 /** Phase 8 — verification session engine driven async via the queue + workers. */
 const fx = { tenantId: '', projectId: '', apiKeySecret: '' }
 
+/** A second project configured for the active-liveness flow (Phase 17). */
+const active = { projectId: '', apiKeySecret: '' }
+
 const publicApi = (method: 'get' | 'post', path: string) =>
   request(app)[method](`/api/v1/${path}`).set('Authorization', `Bearer ${fx.apiKeySecret}`)
+
+const activeApi = (method: 'get' | 'post', path: string) =>
+  request(app)[method](`/api/v1/${path}`).set('Authorization', `Bearer ${active.apiKeySecret}`)
 
 const clientApi = (method: 'get' | 'post', path: string, token: string) =>
   request(app)[method](`/api/v1/client/${path}`).set('X-Client-Token', token)
@@ -27,9 +33,7 @@ async function openSession(): Promise<{ id: string; token: string }> {
 }
 
 /** Walk a session through document + liveness, returning the started token/id. */
-async function toLiveness(
-  signals: Record<string, unknown> = {},
-): Promise<{ id: string; token: string }> {
+async function toLiveness(signals: Record<string, unknown> = {}): Promise<{ id: string; token: string }> {
   const { id, token } = await openSession()
   await clientApi('get', 'session', token)
   await clientApi('post', 'document/front', token).send({ document_type: 'passport', ...signals })
@@ -61,6 +65,27 @@ beforeAll(async () => {
     name: 'Sess key',
     keyPrefix: key.keyPrefix,
     keyHash: key.keyHash,
+  })
+
+  // A project that overrides the capture model to active liveness.
+  const activeProject = await Project.create({
+    tenantId: tenant.id,
+    name: 'Active Prod',
+    slug: `active-prod-${s}`,
+    environment: 'production',
+    settings: { capture_model: 'active' },
+    branding: {},
+    status: 'active',
+  })
+  active.projectId = activeProject.id
+  const activeKey = ApiKeyAuth.generate('live')
+  active.apiKeySecret = activeKey.secret
+  await ApiKey.create({
+    tenantId: tenant.id,
+    projectId: activeProject.id,
+    name: 'Active key',
+    keyPrefix: activeKey.keyPrefix,
+    keyHash: activeKey.keyHash,
   })
 })
 
@@ -95,15 +120,9 @@ describe('verification session lifecycle', () => {
   it('advances status through each step', async () => {
     const { token } = await openSession()
     expect((await clientApi('get', 'session', token)).body.data.status).toBe('started')
-    expect((await clientApi('post', 'document/front', token).send({})).body.data.status).toBe(
-      'document_submitted',
-    )
-    expect((await clientApi('post', 'liveness', token).send({})).body.data.status).toBe(
-      'liveness_submitted',
-    )
-    expect((await clientApi('post', 'complete', token).send({})).body.data.status).toBe(
-      'processing',
-    )
+    expect((await clientApi('post', 'document/front', token).send({})).body.data.status).toBe('document_submitted')
+    expect((await clientApi('post', 'liveness', token).send({})).body.data.status).toBe('liveness_submitted')
+    expect((await clientApi('post', 'complete', token).send({})).body.data.status).toBe('processing')
 
     expect((await clientApi('get', 'session', token)).body.data.status).toBe('approved')
   })
@@ -181,5 +200,62 @@ describe('verification session lifecycle', () => {
     expect((await clientApi('post', 'liveness', token).send({})).status).toBe(201) // 3
     const blocked = await clientApi('post', 'liveness', token).send({}) // 4 → over limit
     expect(blocked.status).toBe(429)
+  })
+
+  it('a passive project issues no liveness challenges', async () => {
+    const { token } = await openSession()
+    const boot = await clientApi('get', 'session', token)
+    expect(boot.body.data.capture_model).toBe('passive')
+    expect(boot.body.data.liveness_challenges).toEqual([])
+  })
+})
+
+describe('active liveness (Phase 17)', () => {
+  const openActive = async (): Promise<{ id: string; token: string }> => {
+    const res = await activeApi('post', 'sessions').send({})
+    expect(res.status).toBe(201)
+    return { id: res.body.data.id, token: res.body.client_token }
+  }
+
+  it('issues a randomized challenge sequence in the bootstrap', async () => {
+    const { token } = await openActive()
+    const boot = await clientApi('get', 'session', token)
+    expect(boot.body.data.capture_model).toBe('active')
+    expect(Array.isArray(boot.body.data.liveness_challenges)).toBe(true)
+    expect(boot.body.data.liveness_challenges).toHaveLength(3)
+  })
+
+  it('passes when the performed sequence matches the issued one', async () => {
+    const { id, token } = await openActive()
+    const boot = await clientApi('get', 'session', token)
+    const challenges = boot.body.data.liveness_challenges as string[]
+
+    await clientApi('post', 'document/front', token).send({ document_type: 'passport' })
+    const live = await clientApi('post', 'liveness', token).send({
+      mode: 'active',
+      challenges: JSON.stringify(challenges),
+    })
+    expect(live.status).toBe(201)
+    await clientApi('post', 'complete', token).send({})
+
+    const show = await activeApi('get', `sessions/${id}`)
+    expect(show.body.data.status).toBe('approved')
+  })
+
+  it('fails when the performed sequence does not match (replay)', async () => {
+    const { id, token } = await openActive()
+    await clientApi('get', 'session', token)
+    await clientApi('post', 'document/front', token).send({ document_type: 'passport' })
+
+    const live = await clientApi('post', 'liveness', token).send({
+      mode: 'active',
+      challenges: JSON.stringify(['blink', 'blink', 'blink']),
+    })
+    expect(live.status).toBe(201)
+    await clientApi('post', 'complete', token).send({})
+
+    const show = await activeApi('get', `sessions/${id}`)
+    expect(show.body.data.status).toBe('rejected')
+    expect(show.body.data.decision_reason).toMatch(/LIVENESS/)
   })
 })

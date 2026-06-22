@@ -11,6 +11,7 @@ export interface AdminMe {
 export interface AdminSettingsPatch {
   platform?: Partial<GlobalSettings['platform']>
   realtime?: Partial<GlobalSettings['realtime']>
+  capture?: Partial<GlobalSettings['capture']>
 }
 
 /** A platform user row in the admin users list. */
