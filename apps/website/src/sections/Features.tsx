@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react'
 import { Check } from 'lucide-react'
-import { Container } from '@/components/Container'
-import { SectionHeading } from '@/components/SectionHeading'
-import { Reveal } from '@/components/Reveal'
 import { CodeCard } from '@/components/CodeCard'
+import { Container } from '@/components/Container'
+import type { ReactNode } from 'react'
+import { Reveal } from '@/components/Reveal'
+import { SectionHeading } from '@/components/SectionHeading'
 import { cn } from '@/lib/utils'
 
 interface Feature {
@@ -18,7 +18,7 @@ const FEATURES: Feature[] = [
   {
     eyebrow: 'Embeddable widget',
     title: 'One widget, embedded your way',
-    body: 'Drop the verification flow into your product as an overlay, inline, or a hosted page — themed to your brand. Camera capture with quality hints, with a file-upload fallback.',
+    body: 'Drop the verification flow into your product as an overlay, inline, or a hosted page themed to your brand. Camera capture with quality hints, with a file-upload fallback.',
     points: ['Overlay, inline, or hosted', 'Your colors, logo and radius', 'Mobile-first, accessible flow'],
     visual: (
       <CodeCard
@@ -36,7 +36,7 @@ ArkycWidget.open({
   {
     eyebrow: 'Decisioning',
     title: 'Decisions you can tune',
-    body: 'Each signal — document authenticity, OCR confidence, liveness, face match — rolls into a risk score and an automated decision. Set the thresholds per project.',
+    body: 'Each signal document authenticity, OCR confidence, liveness, face match rolls into a risk score and an automated decision. Set the thresholds per project.',
     points: ['Per-project thresholds', 'Swappable provider drivers', 'approved · requires_review · rejected'],
     visual: (
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-lg">
@@ -125,7 +125,7 @@ export function Features() {
         <SectionHeading
           eyebrow="Built for product teams"
           title="A complete verification stack you don’t have to build"
-          subtitle="Server SDK, embeddable widget, decisioning, reviews and webhooks — wired together and ready to ship."
+          subtitle="Server SDK, embeddable widget, decisioning, reviews and webhook wired together and ready to ship."
         />
 
         <div className="mt-16 flex flex-col gap-20">

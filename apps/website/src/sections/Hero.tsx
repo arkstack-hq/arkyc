@@ -1,9 +1,10 @@
-import { motion } from 'motion/react'
+import { ButtonLink, ButtonRoute } from '@/components/Button'
+
 import { ArrowRight } from 'lucide-react'
 import { Container } from '@/components/Container'
-import { ButtonLink, ButtonRoute } from '@/components/Button'
 import { VerificationDemo } from '@/components/VerificationDemo'
 import { links } from '@/lib/site'
+import { motion } from 'motion/react'
 
 export function Hero() {
   return (
@@ -41,7 +42,7 @@ export function Hero() {
           >
             Verify who your users are.
             <br />
-            <span className="bg-gradient-to-r from-brand-300 to-fuchsia-300 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-brand-300 to-fuchsia-300 bg-clip-text text-transparent">
               In minutes, not weeks.
             </span>
           </motion.h1>
@@ -52,7 +53,7 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.12 }}
             className="mt-6 max-w-xl text-lg leading-relaxed text-white/70"
           >
-            A beautiful, embeddable flow to capture documents and selfies — then verify end to end with liveness, face
+            A beautiful, embeddable flow to capture documents and selfies then verify end to end with liveness, face
             match and decisioning, or simply hand the captured images off to your own KYC provider. Start free, no sales
             call.
           </motion.p>

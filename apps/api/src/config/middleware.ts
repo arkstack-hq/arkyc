@@ -19,10 +19,14 @@ export default (): MiddlewareConfig => {
         },
       }),
       express.urlencoded({ extended: true }),
-      cors({
-        origin: cConf.allowed_origins.length > 0 ? cConf.allowed_origins : true,
-        credentials: true,
-      }),
+      (req, res, next) => {
+        const bypass = req.headers.origin?.includes('192.168') || req.headers.origin?.includes('localhost')
+
+        return cors({
+          credentials: true,
+          origin: cConf.allowed_origins.length > 0 && !bypass ? cConf.allowed_origins : true,
+        })(req, res, next)
+      },
       formdata.any(),
     ],
     before: [

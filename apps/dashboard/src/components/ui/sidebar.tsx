@@ -311,7 +311,7 @@ export function SidebarHeaderBar({
       className={cn(
         'sticky top-0 z-30 flex h-16 items-center gap-2 border-b transition-colors',
         scrolled
-          ? '-mx-3 rounded-none border-border/60 bg-sidebar/70 px-7 backdrop-blur-md'
+          ? 'rounded-none border-border/60 bg-sidebar/70 px-7 backdrop-blur-md'
           : 'rounded-t-xl border-border bg-card px-4',
         className,
       )}

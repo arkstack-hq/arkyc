@@ -1,18 +1,19 @@
-import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Plus } from 'lucide-react'
+
 import { Container } from '@/components/Container'
+import { Plus } from 'lucide-react'
 import { SectionHeading } from '@/components/SectionHeading'
 import { cn } from '@/lib/utils'
+import { useState } from 'react'
 
 const FAQS = [
   {
     q: 'What is Arkyc?',
-    a: 'Arkyc is hosted identity verification. You create a session, embed our widget, and your user completes document capture, liveness and a selfie. We run OCR, liveness and face match, score the risk, and return an automated decision — with a review queue and signed webhooks.',
+    a: 'Arkyc is hosted identity verification. You create a session, embed our widget, and your user completes document capture, liveness and a selfie. We run OCR, liveness and face match, score the risk, and return an automated decision with a review queue and signed webhooks.',
   },
   {
     q: 'Can I use my own KYC provider?',
-    a: 'Yes — run Arkyc capture-only. Your users complete the polished document and selfie flow, and you hand the captured images and data off to your existing KYC provider or banking-as-a-service partner. Or let Arkyc verify end to end. You choose per project.',
+    a: 'Yes, run Arkyc capture-only. Your users complete the polished document and selfie flow, and you hand the captured images and data off to your existing KYC provider or banking-as-a-service partner. Or let Arkyc verify end to end. You choose per project.',
   },
   {
     q: 'How long does integration take?',
@@ -20,7 +21,7 @@ const FAQS = [
   },
   {
     q: 'Can I self-host instead?',
-    a: 'Yes. Arkyc has an open-source core — the hosted product is the same engine we run for you. If you’d rather operate it yourself, the project documentation covers self-hosting and white-labeling.',
+    a: 'Yes. Arkyc has an open-source core, the hosted product is the same engine we run for you. If you’d rather operate it yourself, the project documentation covers self-hosting and white-labeling.',
   },
   {
     q: 'How does billing work?',
@@ -32,7 +33,7 @@ const FAQS = [
   },
   {
     q: 'How is my users’ data handled?',
-    a: 'Everything is scoped per tenant and project. You control which projects exist, who can access them, and retention — with a full audit trail of every action taken in the dashboard.',
+    a: 'You control which projects exist, who can access them, and retention with a full audit trail of every action taken in the dashboard.',
   },
 ]
 
