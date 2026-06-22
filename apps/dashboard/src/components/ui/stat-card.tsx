@@ -30,7 +30,7 @@ export function StatCard({
 }) {
   const up = delta ? delta.value >= 0 : false
   return (
-    <Card className={cn('rounded-xl bg-linear-to-b from-muted/40 to-card p-6 shadow-sm', className)}>
+    <Card className={cn('rounded-xl p-6', className)}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-foreground">{label}</p>
         {icon ? <span className="text-muted-foreground [&_svg]:size-5">{icon}</span> : null}
