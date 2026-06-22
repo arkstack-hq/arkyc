@@ -39,6 +39,12 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       VERBOSITY: '0',
+      // Use the file mail transport in tests — no SMTP socket. The default
+      // `smtp` transport fires un-awaited background connects (via fire-and-forget
+      // `sendMail`) to a non-existent server, which races with subsequent DB
+      // reads in the shared test process (e.g. login reading a stale password
+      // right after a reset).
+      MAIL_TRANSPORT: 'file',
     },
   },
 })
