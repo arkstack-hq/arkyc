@@ -46,10 +46,10 @@ beforeAll(async () => {
   fx.ownerEmail = `owner-${s}@test.dev`
   fx.reviewerEmail = `reviewer-${s}@test.dev`
   fx.loginEmail = `login-${s}@test.dev`
-  const owner = await User.create({ name: 'Owner', email: fx.ownerEmail, password })
-  const reviewer = await User.create({ name: 'Reviewer', email: fx.reviewerEmail, password })
+  const owner = await User.create({ firstName: 'Owner', lastName: 'Test', email: fx.ownerEmail, password })
+  const reviewer = await User.create({ firstName: 'Reviewer', lastName: 'Test', email: fx.reviewerEmail, password })
   // A user with no prior token, reserved for exercising the login endpoint once.
-  await User.create({ name: 'Login', email: fx.loginEmail, password })
+  await User.create({ firstName: 'Login', lastName: 'Test', email: fx.loginEmail, password })
 
   await TenantMember.create({
     tenantId: tenant.id,
@@ -124,7 +124,7 @@ describe('dashboard auth (Arkstack built-in)', () => {
     const email = `new-${Date.now()}@test.dev`
     const res = await request(app)
       .post('/api/v1/auth/register')
-      .send({ name: 'New', email, password: PASSWORD })
+      .send({ firstname: 'New', lastname: 'Test', email, password: PASSWORD })
     expect(res.status).toBe(201)
     expect(res.body.data.email).toBe(email)
     expect(res.body.token).toBeTruthy()
@@ -134,7 +134,7 @@ describe('dashboard auth (Arkstack built-in)', () => {
   it('rejects duplicate registration (kanun unique rule)', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
-      .send({ name: 'Dup', email: fx.ownerEmail, password: PASSWORD })
+      .send({ firstname: 'Dup', lastname: 'Test', email: fx.ownerEmail, password: PASSWORD })
     expect(res.status).toBe(422)
   })
 
@@ -184,7 +184,7 @@ describe('tenant scope + permissions', () => {
     // Register issues the user's session token; reuse it rather than re-logging in.
     const reg = await request(app)
       .post('/api/v1/auth/register')
-      .send({ name: 'Out', email, password: PASSWORD })
+      .send({ firstname: 'Out', lastname: 'Test', email, password: PASSWORD })
     const res = await request(app)
       .get(`/api/v1/dashboard/tenants/${fx.tenantId}`)
       .set('Authorization', `Bearer ${reg.body.token}`)

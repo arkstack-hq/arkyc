@@ -16,7 +16,7 @@ beforeAll(async () => {
   const s = Date.now()
   const reg = await request(app)
     .post('/api/v1/auth/register')
-    .send({ name: 'PM Owner', email: `pm-${s}@test.dev`, password: 'secret123' })
+    .send({ firstname: 'PM Owner', lastname: 'Test', email: `pm-${s}@test.dev`, password: 'secret123' })
   ctx.token = reg.body.token
   ctx.ownerId = reg.body.data.id
 
