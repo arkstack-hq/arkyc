@@ -143,12 +143,13 @@ class MediapipeFaceAnalyzer implements FaceAnalyzer {
     const rightEdge = lm[RIGHT_EDGE]!
     const chin = lm[CHIN]!
 
-    // Turn: horizontal asymmetry of the nose between the two face edges.
-    // Computed on the raw (unmirrored) frame — the preview's CSS mirror is purely
-    // visual and does not affect these landmark coordinates.
+    // Turn: horizontal asymmetry of the nose between the two face edges. Signed
+    // (empirically, against a real front camera) so that turning the head right
+    // yields turn>0 and left yields turn<0 — matching the turn_left/turn_right
+    // prompts. Computed on the raw frame; the preview's CSS mirror is cosmetic.
     const dLeft = nose.x - leftEdge.x
     const dRight = rightEdge.x - nose.x
-    const turn = (dLeft - dRight) / Math.max(1e-3, dLeft + dRight)
+    const turn = (dRight - dLeft) / Math.max(1e-3, dLeft + dRight)
 
     // Pitch proxy: nose vertical position between the eye line and the chin.
     const eyeY = (leftEye.y + rightEye.y) / 2
