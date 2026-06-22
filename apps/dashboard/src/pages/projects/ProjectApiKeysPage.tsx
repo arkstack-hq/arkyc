@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Spinner } from '@/components/ui/spinner'
+import { Card, CardContent } from '@/components/ui/card'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
@@ -96,51 +97,55 @@ export default function ProjectApiKeysPage() {
         {can('api_keys.create') ? <Button onClick={() => setOpen(true)}>Create key</Button> : null}
       </div>
 
-      {error ? (
-        <ErrorState error={error} />
-      ) : keys.length === 0 && loading ? (
-        <Loading />
-      ) : keys.length === 0 ? (
-        <EmptyState title="No API keys" description="Create a key to authenticate server-side requests." />
-      ) : (
-        <>
-          <Table>
-            <THead>
-              <TR>
-                <TH>Name</TH>
-                <TH>Prefix</TH>
-                <TH>Last used</TH>
-                <TH>Created</TH>
-                <TH />
-              </TR>
-            </THead>
-            <TBody>
-              {keys.map((key) => (
-                <TR key={key.id}>
-                  <TD className="font-medium">{key.name}</TD>
-                  <TD className="font-mono text-xs">{key.key_prefix}</TD>
-                  <TD>{formatDateTime(key.last_used_at)}</TD>
-                  <TD>{formatDateTime(key.created_at)}</TD>
-                  <TD className="text-right">
-                    {can('api_keys.revoke') ? (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={revoking}
-                        onClick={() => void revokeKey(key.id)}
-                      >
-                        Revoke
-                      </Button>
-                    ) : null}
-                  </TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+      <Card>
+        <CardContent className="px-2 pb-2">
+          {error ? (
+            <ErrorState error={error} />
+          ) : keys.length === 0 && loading ? (
+            <Loading />
+          ) : keys.length === 0 ? (
+            <EmptyState title="No API keys" description="Create a key to authenticate server-side requests." />
+          ) : (
+            <>
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Name</TH>
+                    <TH>Prefix</TH>
+                    <TH>Last used</TH>
+                    <TH>Created</TH>
+                    <TH />
+                  </TR>
+                </THead>
+                <TBody>
+                  {keys.map((key) => (
+                    <TR key={key.id}>
+                      <TD className="font-medium">{key.name}</TD>
+                      <TD className="font-mono text-xs">{key.key_prefix}</TD>
+                      <TD>{formatDateTime(key.last_used_at)}</TD>
+                      <TD>{formatDateTime(key.created_at)}</TD>
+                      <TD className="text-right">
+                        {can('api_keys.revoke') ? (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={revoking}
+                            onClick={() => void revokeKey(key.id)}
+                          >
+                            Revoke
+                          </Button>
+                        ) : null}
+                      </TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
 
-          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
-        </>
-      )}
+              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={open} onClose={closeDialog}>
         {secret ? (

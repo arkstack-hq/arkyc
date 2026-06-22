@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
@@ -76,42 +77,50 @@ export default function RolesPage() {
         }
       />
 
-      {error ? (
-        <ErrorState error={error} />
-      ) : roles.length === 0 && loading ? (
-        <Loading />
-      ) : roles.length === 0 ? (
-        <EmptyState title="No roles" description="Create a role to get started." />
-      ) : (
-        <>
-          <Table>
-            <THead>
-              <TR>
-                <TH>Name</TH>
-                <TH>Description</TH>
-                <TH>Type</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {roles.map((role) => (
-                <TR key={role.id}>
-                  <TD>
-                    <Link to={role.id} className="font-medium text-primary hover:underline">
-                      {role.name}
-                    </Link>
-                  </TD>
-                  <TD className="text-muted-foreground">{role.description ?? '—'}</TD>
-                  <TD>
-                    {role.is_system ? <Badge variant="muted">System</Badge> : <Badge variant="secondary">Custom</Badge>}
-                  </TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+      <Card>
+        <CardContent className="px-2 pb-2">
+          {error ? (
+            <ErrorState error={error} />
+          ) : roles.length === 0 && loading ? (
+            <Loading />
+          ) : roles.length === 0 ? (
+            <EmptyState title="No roles" description="Create a role to get started." />
+          ) : (
+            <>
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Name</TH>
+                    <TH>Description</TH>
+                    <TH>Type</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {roles.map((role) => (
+                    <TR key={role.id}>
+                      <TD>
+                        <Link to={role.id} className="font-medium text-primary hover:underline">
+                          {role.name}
+                        </Link>
+                      </TD>
+                      <TD className="text-muted-foreground">{role.description ?? '—'}</TD>
+                      <TD>
+                        {role.is_system ? (
+                          <Badge variant="muted">System</Badge>
+                        ) : (
+                          <Badge variant="secondary">Custom</Badge>
+                        )}
+                      </TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
 
-          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
-        </>
-      )}
+              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={open} onClose={closeDialog}>
         <DialogHeader>

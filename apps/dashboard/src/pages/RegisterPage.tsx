@@ -34,7 +34,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex size-9 items-center justify-center rounded-md bg-primary text-base font-bold text-primary-foreground">
+          A
+        </span>
+        <span className="text-lg font-semibold tracking-tight">Arkyc</span>
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Create an account</CardTitle>

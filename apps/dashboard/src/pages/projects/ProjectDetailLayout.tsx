@@ -2,8 +2,9 @@ import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
 import { useRequest } from 'alova/client'
 import { Projects } from '@/lib/api'
 import { useTenantId } from '@/contexts/tenant-context'
-import { cn } from '@/lib/utils'
+import { cn, humanize } from '@/lib/utils'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
+import { Badge } from '@/components/ui/badge'
 
 const TABS = [
   { to: '', label: 'Settings', end: true },
@@ -31,7 +32,10 @@ export default function ProjectDetailLayout() {
       <Link to="../" className="mb-3 inline-block text-sm text-muted-foreground hover:text-foreground">
         ← Projects
       </Link>
-      <PageHeader title={project?.name ?? 'Project'} />
+      <PageHeader
+        title={project?.name ?? 'Project'}
+        actions={project ? <Badge variant="secondary">{humanize(project.environment)}</Badge> : null}
+      />
 
       <nav className="mb-6 flex gap-1 border-b border-border">
         {TABS.map((tab) => (

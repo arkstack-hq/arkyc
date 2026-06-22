@@ -8,6 +8,7 @@ import { useRealtimeChannel } from '@/contexts/realtime-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Spinner } from '@/components/ui/spinner'
@@ -97,96 +98,100 @@ export default function ReviewsPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <PageHeader title="Review Queue" />
+      <PageHeader title="Review Queue" description="Sessions flagged for a manual decision." />
 
-      {error ? (
-        <ErrorState error={error} />
-      ) : sessions.length === 0 && loading ? (
-        <Loading />
-      ) : sessions.length === 0 ? (
-        <EmptyState title="No sessions awaiting review" />
-      ) : (
-        <>
-          <Table>
-            <THead>
-              <TR>
-                <TH>User reference</TH>
-                <TH>Reason</TH>
-                <TH>Risk</TH>
-                <TH>Created</TH>
-                <TH className="text-right">Actions</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {sessions.map((s) => {
-                const pending = actingId === s.id
-                return (
-                  <TR key={s.id}>
-                    <TD>
-                      <Link to={sessionPath(s.id)} className="text-primary hover:underline">
-                        {s.user_reference ?? '—'}
-                      </Link>
-                    </TD>
-                    <TD>{humanize(s.decision_reason)}</TD>
-                    <TD>{s.risk_score?.toFixed(2) ?? '—'}</TD>
-                    <TD className="text-muted-foreground">{formatDateTime(s.created_at)}</TD>
-                    <TD>
-                      <div className="flex items-center justify-end gap-2">
-                        {pending ? <Spinner /> : null}
-                        {can('reviews.approve') ? (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            disabled={pending}
-                            onClick={() => runAction(s.id, 'approve')}
-                          >
-                            Approve
-                          </Button>
-                        ) : null}
-                        {can('reviews.reject') ? (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            disabled={pending}
-                            onClick={() => runAction(s.id, 'reject')}
-                          >
-                            Reject
-                          </Button>
-                        ) : null}
-                        {can('reviews.request_retry') ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={pending}
-                            onClick={() => runAction(s.id, 'retry')}
-                          >
-                            Retry
-                          </Button>
-                        ) : null}
-                        {can('reviews.note') ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={pending}
-                            onClick={() => {
-                              setNoteFor(s.id)
-                              updateNote({ body: '' })
-                            }}
-                          >
-                            Note
-                          </Button>
-                        ) : null}
-                      </div>
-                    </TD>
+      <Card>
+        <CardContent className="px-2 pb-2">
+          {error ? (
+            <ErrorState error={error} />
+          ) : sessions.length === 0 && loading ? (
+            <Loading />
+          ) : sessions.length === 0 ? (
+            <EmptyState title="No sessions awaiting review" />
+          ) : (
+            <>
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>User reference</TH>
+                    <TH>Reason</TH>
+                    <TH>Risk</TH>
+                    <TH>Created</TH>
+                    <TH className="text-right">Actions</TH>
                   </TR>
-                )
-              })}
-            </TBody>
-          </Table>
+                </THead>
+                <TBody>
+                  {sessions.map((s) => {
+                    const pending = actingId === s.id
+                    return (
+                      <TR key={s.id}>
+                        <TD>
+                          <Link to={sessionPath(s.id)} className="text-primary hover:underline">
+                            {s.user_reference ?? '—'}
+                          </Link>
+                        </TD>
+                        <TD>{humanize(s.decision_reason)}</TD>
+                        <TD>{s.risk_score?.toFixed(2) ?? '—'}</TD>
+                        <TD className="text-muted-foreground">{formatDateTime(s.created_at)}</TD>
+                        <TD>
+                          <div className="flex items-center justify-end gap-2">
+                            {pending ? <Spinner /> : null}
+                            {can('reviews.approve') ? (
+                              <Button
+                                size="sm"
+                                variant="default"
+                                disabled={pending}
+                                onClick={() => runAction(s.id, 'approve')}
+                              >
+                                Approve
+                              </Button>
+                            ) : null}
+                            {can('reviews.reject') ? (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={pending}
+                                onClick={() => runAction(s.id, 'reject')}
+                              >
+                                Reject
+                              </Button>
+                            ) : null}
+                            {can('reviews.request_retry') ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={pending}
+                                onClick={() => runAction(s.id, 'retry')}
+                              >
+                                Retry
+                              </Button>
+                            ) : null}
+                            {can('reviews.note') ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={pending}
+                                onClick={() => {
+                                  setNoteFor(s.id)
+                                  updateNote({ body: '' })
+                                }}
+                              >
+                                Note
+                              </Button>
+                            ) : null}
+                          </div>
+                        </TD>
+                      </TR>
+                    )
+                  })}
+                </TBody>
+              </Table>
 
-          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
-        </>
-      )}
+              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={noteFor !== null} onClose={() => setNoteFor(null)}>
         <DialogHeader>

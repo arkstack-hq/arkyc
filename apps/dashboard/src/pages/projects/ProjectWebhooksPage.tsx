@@ -14,6 +14,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
+import { Card, CardContent } from '@/components/ui/card'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
@@ -125,67 +126,71 @@ export default function ProjectWebhooksPage() {
         {can('webhooks.create') ? <Button onClick={() => setOpen(true)}>Add endpoint</Button> : null}
       </div>
 
-      {error ? (
-        <ErrorState error={error} />
-      ) : webhooks.length === 0 && loading ? (
-        <Loading />
-      ) : webhooks.length === 0 ? (
-        <EmptyState title="No webhook endpoints" description="Add an endpoint to receive verification events." />
-      ) : (
-        <>
-          <Table>
-            <THead>
-              <TR>
-                <TH>URL</TH>
-                <TH>Events</TH>
-                <TH>Status</TH>
-                <TH>Created</TH>
-                <TH />
-              </TR>
-            </THead>
-            <TBody>
-              {webhooks.map((webhook) => (
-                <TR key={webhook.id}>
-                  <TD className="font-mono text-xs">{webhook.url}</TD>
-                  <TD className="text-xs text-muted-foreground">{webhook.events.join(', ')}</TD>
-                  <TD>
-                    <Badge variant={webhook.status === 'active' ? 'success' : 'muted'}>
-                      {humanize(webhook.status)}
-                    </Badge>
-                  </TD>
-                  <TD>{formatDateTime(webhook.created_at)}</TD>
-                  <TD className="text-right">
-                    <div className="flex justify-end gap-2">
-                      {can('webhooks.test') ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={testing}
-                          onClick={() => void testWebhook(webhook.id)}
-                        >
-                          Test
-                        </Button>
-                      ) : null}
-                      {can('webhooks.delete') ? (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={deleting}
-                          onClick={() => void deleteWebhook(webhook.id)}
-                        >
-                          Delete
-                        </Button>
-                      ) : null}
-                    </div>
-                  </TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+      <Card>
+        <CardContent className="px-2 pb-2">
+          {error ? (
+            <ErrorState error={error} />
+          ) : webhooks.length === 0 && loading ? (
+            <Loading />
+          ) : webhooks.length === 0 ? (
+            <EmptyState title="No webhook endpoints" description="Add an endpoint to receive verification events." />
+          ) : (
+            <>
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>URL</TH>
+                    <TH>Events</TH>
+                    <TH>Status</TH>
+                    <TH>Created</TH>
+                    <TH />
+                  </TR>
+                </THead>
+                <TBody>
+                  {webhooks.map((webhook) => (
+                    <TR key={webhook.id}>
+                      <TD className="font-mono text-xs">{webhook.url}</TD>
+                      <TD className="text-xs text-muted-foreground">{webhook.events.join(', ')}</TD>
+                      <TD>
+                        <Badge variant={webhook.status === 'active' ? 'success' : 'muted'}>
+                          {humanize(webhook.status)}
+                        </Badge>
+                      </TD>
+                      <TD>{formatDateTime(webhook.created_at)}</TD>
+                      <TD className="text-right">
+                        <div className="flex justify-end gap-2">
+                          {can('webhooks.test') ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={testing}
+                              onClick={() => void testWebhook(webhook.id)}
+                            >
+                              Test
+                            </Button>
+                          ) : null}
+                          {can('webhooks.delete') ? (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={deleting}
+                              onClick={() => void deleteWebhook(webhook.id)}
+                            >
+                              Delete
+                            </Button>
+                          ) : null}
+                        </div>
+                      </TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
 
-          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
-        </>
-      )}
+              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={open} onClose={closeDialog}>
         {secret ? (

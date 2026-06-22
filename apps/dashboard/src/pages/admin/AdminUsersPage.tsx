@@ -6,6 +6,7 @@ import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatDateTime } from '@/lib/utils'
@@ -56,63 +57,67 @@ export default function AdminUsersPage() {
     <div>
       <PageHeader title="Users" description="Everyone with an Arkyc account." />
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Input
-          className="w-64"
-          placeholder="Search by name or email…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search users"
-        />
-      </div>
+      <Card>
+        <CardHeader className="flex-row flex-wrap items-center gap-3 border-b border-border">
+          <Input
+            className="w-64"
+            placeholder="Search by name or email…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search users"
+          />
+        </CardHeader>
 
-      {error ? (
-        <ErrorState error={error} />
-      ) : users.length === 0 && loading ? (
-        <Loading />
-      ) : users.length === 0 ? (
-        <EmptyState title="No users" description="No users match this search." />
-      ) : (
-        <>
-          <Table>
-            <THead>
-              <TR>
-                <TH>Name</TH>
-                <TH>Email</TH>
-                <TH>Last login</TH>
-                <TH>Platform admin</TH>
-                <TH className="text-right">Actions</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {users.map((user) => (
-                <TR key={user.id}>
-                  <TD className="font-medium">{user.name || '—'}</TD>
-                  <TD className="text-muted-foreground">{user.email}</TD>
-                  <TD className="whitespace-nowrap text-muted-foreground">
-                    {user.last_login_at ? formatDateTime(user.last_login_at) : '—'}
-                  </TD>
-                  <TD>{user.is_admin ? <Badge>Admin</Badge> : <span className="text-muted-foreground">—</span>}</TD>
-                  <TD className="text-right">
-                    {canManage ? (
-                      <Button
-                        variant={user.is_admin ? 'outline' : 'default'}
-                        size="sm"
-                        disabled={busyId === user.id}
-                        onClick={() => void toggleAdmin(user)}
-                      >
-                        {busyId === user.id ? '…' : user.is_admin ? 'Revoke admin' : 'Make admin'}
-                      </Button>
-                    ) : null}
-                  </TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+        <CardContent className="px-2 pb-2">
+          {error ? (
+            <ErrorState error={error} />
+          ) : users.length === 0 && loading ? (
+            <Loading />
+          ) : users.length === 0 ? (
+            <EmptyState title="No users" description="No users match this search." />
+          ) : (
+            <>
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Name</TH>
+                    <TH>Email</TH>
+                    <TH>Last login</TH>
+                    <TH>Platform admin</TH>
+                    <TH className="text-right">Actions</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {users.map((user) => (
+                    <TR key={user.id}>
+                      <TD className="font-medium">{user.name || '—'}</TD>
+                      <TD className="text-muted-foreground">{user.email}</TD>
+                      <TD className="whitespace-nowrap text-muted-foreground">
+                        {user.last_login_at ? formatDateTime(user.last_login_at) : '—'}
+                      </TD>
+                      <TD>{user.is_admin ? <Badge>Admin</Badge> : <span className="text-muted-foreground">—</span>}</TD>
+                      <TD className="text-right">
+                        {canManage ? (
+                          <Button
+                            variant={user.is_admin ? 'outline' : 'default'}
+                            size="sm"
+                            disabled={busyId === user.id}
+                            onClick={() => void toggleAdmin(user)}
+                          >
+                            {busyId === user.id ? '…' : user.is_admin ? 'Revoke admin' : 'Make admin'}
+                          </Button>
+                        ) : null}
+                      </TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
 
-          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
-        </>
-      )}
+              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

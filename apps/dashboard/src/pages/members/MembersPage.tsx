@@ -12,6 +12,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { formatDateTime, humanize } from '@/lib/utils'
@@ -86,46 +87,50 @@ export default function MembersPage() {
         actions={can('members.invite') ? <Button onClick={() => setOpen(true)}>Invite</Button> : null}
       />
 
-      {error ? (
-        <ErrorState error={error} />
-      ) : members.length === 0 && loading ? (
-        <Loading />
-      ) : members.length === 0 ? (
-        <EmptyState title="No members yet" description="Invite teammates to collaborate." />
-      ) : (
-        <>
-          <Table>
-            <THead>
-              <TR>
-                <TH>Name</TH>
-                <TH>Email</TH>
-                <TH>Role</TH>
-                <TH>Status</TH>
-                <TH>Joined</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {members.map((member) => (
-                <TR key={member.id}>
-                  <TD>
-                    <Link to={member.id} className="font-medium text-primary hover:underline">
-                      {member.user?.name ?? '—'}
-                    </Link>
-                  </TD>
-                  <TD className="text-muted-foreground">{member.user?.email ?? '—'}</TD>
-                  <TD>{member.role?.name ?? '—'}</TD>
-                  <TD>
-                    <Badge variant={statusVariant(member.status)}>{humanize(member.status)}</Badge>
-                  </TD>
-                  <TD className="text-muted-foreground">{formatDateTime(member.joined_at ?? member.created_at)}</TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+      <Card>
+        <CardContent className="px-2 pb-2">
+          {error ? (
+            <ErrorState error={error} />
+          ) : members.length === 0 && loading ? (
+            <Loading />
+          ) : members.length === 0 ? (
+            <EmptyState title="No members yet" description="Invite teammates to collaborate." />
+          ) : (
+            <>
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Name</TH>
+                    <TH>Email</TH>
+                    <TH>Role</TH>
+                    <TH>Status</TH>
+                    <TH>Joined</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {members.map((member) => (
+                    <TR key={member.id}>
+                      <TD>
+                        <Link to={member.id} className="font-medium text-primary hover:underline">
+                          {member.user?.name ?? '—'}
+                        </Link>
+                      </TD>
+                      <TD className="text-muted-foreground">{member.user?.email ?? '—'}</TD>
+                      <TD>{member.role?.name ?? '—'}</TD>
+                      <TD>
+                        <Badge variant={statusVariant(member.status)}>{humanize(member.status)}</Badge>
+                      </TD>
+                      <TD className="text-muted-foreground">{formatDateTime(member.joined_at ?? member.created_at)}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
 
-          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
-        </>
-      )}
+              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={open} onClose={closeDialog}>
         <DialogHeader>
