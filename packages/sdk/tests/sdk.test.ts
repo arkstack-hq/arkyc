@@ -92,11 +92,7 @@ describe('Arkyc server client', () => {
     const body = JSON.stringify({ event: 'verification.approved' })
     const signature = WebhookSigner.sign(body, secret, ts)
 
-    expect(arkyc.webhooks.verify({ payload: body, secret, signature, timestamp: ts, now })).toBe(
-      true,
-    )
-    expect(arkyc.webhooks.verify({ payload: '{}', secret, signature, timestamp: ts, now })).toBe(
-      false,
-    )
+    expect(arkyc.webhooks.verify({ payload: body, secret, signature, timestamp: ts, now })).toBe(true)
+    expect(arkyc.webhooks.verify({ payload: '{}', secret, signature, timestamp: ts, now })).toBe(false)
   })
 })

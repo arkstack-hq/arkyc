@@ -61,6 +61,7 @@ export default class RealtimeController extends BaseController {
 
   private async userTenantIds(userId: string): Promise<string[]> {
     const members = toArray(await TenantMember.where({ userId }).get())
+
     return members.map((m) => m.tenantId)
   }
 
@@ -69,6 +70,7 @@ export default class RealtimeController extends BaseController {
     if (scope.kind === 'project') return tenantIds.has(scope.tenantId)
     // session: the session must belong to one of the caller's tenants.
     const session = await VerificationSession.where({ id: scope.sessionId }).first()
+
     return !!session && tenantIds.has(session.tenantId)
   }
 }

@@ -87,20 +87,11 @@ function AdminTopbar() {
       </Button>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Toggle theme"
-          onClick={() => setDark(toggleTheme())}
-        >
+        <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={() => setDark(toggleTheme())}>
           {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
         <span className="hidden text-sm text-muted-foreground sm:inline">{user?.email}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void logout().then(() => navigate('/login'))}
-        >
+        <Button variant="outline" size="sm" onClick={() => void logout().then(() => navigate('/login'))}>
           Sign out
         </Button>
       </div>

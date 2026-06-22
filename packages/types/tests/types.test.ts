@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type {
-  DecisionReason,
-  PermissionKey,
-  VerificationSession,
-  VerificationStatus,
-} from '../src/index'
+import type { DecisionReason, PermissionKey, VerificationSession, VerificationStatus } from '../src/index'
 
 /**
  * `@arkyc/types` is type-only, so these tests double as compile-time shape

@@ -1,9 +1,4 @@
-import type {
-  DecisionReason,
-  Metadata,
-  VerificationDecision,
-  VerificationStatus,
-} from '@arkyc/types'
+import type { DecisionReason, Metadata, VerificationDecision, VerificationStatus } from '@arkyc/types'
 
 /** A verification session as returned by the public API (snake_case JSON). */
 export interface VerificationSession {

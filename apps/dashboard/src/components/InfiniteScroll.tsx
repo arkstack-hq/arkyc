@@ -38,11 +38,7 @@ export function InfiniteScroll({ onLoadMore, isLast, loading }: InfiniteScrollPr
       {loading ? (
         <Spinner />
       ) : (
-        <button
-          type="button"
-          onClick={onLoadMore}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
+        <button type="button" onClick={onLoadMore} className="text-sm text-muted-foreground hover:text-foreground">
           Load more
         </button>
       )}

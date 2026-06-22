@@ -149,22 +149,16 @@ describe('dashboard auth (Arkstack built-in)', () => {
   })
 
   it('logs in with valid credentials and rejects invalid ones', async () => {
-    const ok = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ email: fx.loginEmail, password: PASSWORD })
+    const ok = await request(app).post('/api/v1/auth/login').send({ email: fx.loginEmail, password: PASSWORD })
     expect(ok.status).toBe(200)
     expect(ok.body.token).toBeTruthy()
 
-    const bad = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ email: fx.loginEmail, password: 'wrong' })
+    const bad = await request(app).post('/api/v1/auth/login').send({ email: fx.loginEmail, password: 'wrong' })
     expect(bad.status).toBe(422)
   })
 
   it('returns the current user with a token, 401 without', async () => {
-    const me = await request(app)
-      .get('/api/v1/auth/me')
-      .set('Authorization', `Bearer ${fx.ownerToken}`)
+    const me = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${fx.ownerToken}`)
     expect(me.status).toBe(200)
     expect(me.body.data.email).toBe(fx.ownerEmail)
 
@@ -204,24 +198,17 @@ describe('tenant scope + permissions', () => {
 
 describe('public API-key surface', () => {
   it('authenticates a valid key and rejects a bad one', async () => {
-    const ok = await request(app)
-      .get('/api/v1/ping/project')
-      .set('Authorization', `Bearer ${fx.apiKeySecret}`)
+    const ok = await request(app).get('/api/v1/ping/project').set('Authorization', `Bearer ${fx.apiKeySecret}`)
     expect(ok.status).toBe(200)
     expect(ok.body.data.tenant_id).toBe(fx.tenantId)
 
-    await request(app)
-      .get('/api/v1/ping/project')
-      .set('Authorization', 'Bearer sk_live_bogus')
-      .expect(401)
+    await request(app).get('/api/v1/ping/project').set('Authorization', 'Bearer sk_live_bogus').expect(401)
   })
 })
 
 describe('client-token surface', () => {
   it('resolves a session from a valid token and rejects a bad one', async () => {
-    const ok = await request(app)
-      .get('/api/v1/client/session')
-      .set('X-Client-Token', fx.clientToken)
+    const ok = await request(app).get('/api/v1/client/session').set('X-Client-Token', fx.clientToken)
     expect(ok.status).toBe(201)
     expect(ok.body.data.id).toBe(fx.sessionId)
 

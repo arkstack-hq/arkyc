@@ -14,10 +14,7 @@ const client = (method: 'get' | 'post', path: string, token: string) =>
 
 /** Open a session and walk it to `requires_review` (low document quality). */
 async function reviewableSession(): Promise<string> {
-  const open = await request(app)
-    .post('/api/v1/sessions')
-    .set('Authorization', `Bearer ${fx.apiKeySecret}`)
-    .send({})
+  const open = await request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send({})
   const { id } = open.body.data
   const token = open.body.client_token
 
@@ -50,10 +47,9 @@ beforeAll(async () => {
   })
   fx.projectId = project.body.data.id
 
-  const key = await authed(
-    'post',
-    `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`,
-  ).send({ name: 'Rev key' })
+  const key = await authed('post', `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`).send({
+    name: 'Rev key',
+  })
   fx.apiKeySecret = key.body.secret
 })
 
@@ -98,9 +94,9 @@ describe('review queue + actions', () => {
   it('sends a session back for a document retry', async () => {
     const id = await reviewableSession()
 
-    const retry = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/request-retry`).send(
-      { kind: 'document' },
-    )
+    const retry = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/request-retry`).send({
+      kind: 'document',
+    })
     expect(retry.body.data.status).toBe('started')
   })
 

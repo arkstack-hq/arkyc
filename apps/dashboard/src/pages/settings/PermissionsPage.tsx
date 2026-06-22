@@ -12,11 +12,7 @@ import { humanize } from '@/lib/utils'
 export default function PermissionsPage() {
   const tenantId = useTenantId()
 
-  const {
-    data: catalogue,
-    loading,
-    error,
-  } = useRequest(Permissions.list(tenantId), { initialData: [] })
+  const { data: catalogue, loading, error } = useRequest(Permissions.list(tenantId), { initialData: [] })
 
   const grouped = useMemo(() => {
     const map = new Map<string, Permission[]>()

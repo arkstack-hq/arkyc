@@ -80,8 +80,7 @@ async function showResult(sessionId: string): Promise<void> {
 function createWebhookEl(hook: ReceivedWebhook): HTMLDetailsElement {
   const event = hook.event as { event?: string; status?: string } | string
   const name = typeof event === 'object' && event.event ? event.event : 'webhook'
-  const verified =
-    hook.verified === null ? 'unverified' : hook.verified ? 'verified ✓' : 'invalid ✗'
+  const verified = hook.verified === null ? 'unverified' : hook.verified ? 'verified ✓' : 'invalid ✗'
 
   const wrap = document.createElement('details')
   wrap.className = 'webhook'

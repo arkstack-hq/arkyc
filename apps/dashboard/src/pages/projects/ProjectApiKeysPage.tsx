@@ -12,13 +12,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Spinner } from '@/components/ui/spinner'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 export default function ProjectApiKeysPage() {
   const tenantId = useTenantId()
@@ -34,8 +28,7 @@ export default function ProjectApiKeysPage() {
     update,
     reload: refreshKeys,
   } = usePagination(
-    (currentPage, pageSize) =>
-      ApiKeys.list(tenantId, projectId!, { page: currentPage, limit: pageSize }),
+    (currentPage, pageSize) => ApiKeys.list(tenantId, projectId!, { page: currentPage, limit: pageSize }),
     {
       append: true,
       initialPage: 1,
@@ -108,10 +101,7 @@ export default function ProjectApiKeysPage() {
       ) : keys.length === 0 && loading ? (
         <Loading />
       ) : keys.length === 0 ? (
-        <EmptyState
-          title="No API keys"
-          description="Create a key to authenticate server-side requests."
-        />
+        <EmptyState title="No API keys" description="Create a key to authenticate server-side requests." />
       ) : (
         <>
           <Table>
@@ -148,11 +138,7 @@ export default function ProjectApiKeysPage() {
             </TBody>
           </Table>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
 
@@ -161,9 +147,7 @@ export default function ProjectApiKeysPage() {
           <>
             <DialogHeader>
               <DialogTitle>API key created</DialogTitle>
-              <DialogDescription>
-                Copy this secret now — it will not be shown again.
-              </DialogDescription>
+              <DialogDescription>Copy this secret now — it will not be shown again.</DialogDescription>
             </DialogHeader>
             <div className="rounded-md border border-warning bg-warning/10 p-3">
               <code className="block break-all font-mono text-sm">{secret}</code>
@@ -209,9 +193,7 @@ export default function ProjectApiKeysPage() {
               <FieldError errors={createError?.list?.name} />
             </Field>
             {createError && !createError.errors ? (
-              <FieldError className="mt-3">
-                {errorMessage(createError, 'Failed to create key.')}
-              </FieldError>
+              <FieldError className="mt-3">{errorMessage(createError, 'Failed to create key.')}</FieldError>
             ) : null}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>

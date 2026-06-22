@@ -86,10 +86,7 @@ export function getApiUrl(defaultValue: string): string {
  * @param def
  * @returns
  */
-export const env = <X = string, Y = undefined>(
-  env: string,
-  defaultValue?: Y,
-): Y extends undefined ? X : Y => {
+export const env = <X = string, Y = undefined>(env: string, defaultValue?: Y): Y extends undefined ? X : Y => {
   if (!!env && env.includes('VITE_API_URL')) {
     return getApiUrl(defaultValue as never) as never
   }

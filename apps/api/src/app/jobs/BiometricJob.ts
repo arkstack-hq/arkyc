@@ -86,10 +86,7 @@ export class BiometricJob extends Job {
     }
 
     const project = await Project.where({ id: session.projectId }).first()
-    const { decision, reason, riskScore } = DecisionEngine.decide(
-      decisionInput,
-      project?.settings?.thresholds,
-    )
+    const { decision, reason, riskScore } = DecisionEngine.decide(decisionInput, project?.settings?.thresholds)
 
     session.autoDecision = decision
     session.decisionReason = reason

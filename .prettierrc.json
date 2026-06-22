@@ -1,7 +1,5 @@
 {
-  "plugins": [
-    "prettier-plugin-brace-style"
-  ],
+  "plugins": ["prettier-plugin-brace-style"],
   "semi": false,
   "singleQuote": true,
   "trailingComma": "all",

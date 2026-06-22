@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { FaceMatchResultData, LivenessResultData, OcrResultData } from '@arkyc/types'
-import {
-  Normalize,
-  Risk,
-  SessionRules,
-  TenantContext,
-  TenantScopeError,
-  type SessionSignals,
-} from '../src/index'
+import { Normalize, Risk, SessionRules, TenantContext, TenantScopeError, type SessionSignals } from '../src/index'
 
 const NOW = '2026-06-20T00:00:00.000Z'
 
@@ -98,12 +91,7 @@ describe('tenant/project context', () => {
   })
 
   it('builds canonical session storage paths', () => {
-    const path = TenantContext.storagePath(
-      { tenantId: 't1', projectId: 'p1' },
-      's1',
-      'documents',
-      'front.jpg',
-    )
+    const path = TenantContext.storagePath({ tenantId: 't1', projectId: 'p1' }, 's1', 'documents', 'front.jpg')
     expect(path).toBe('tenants/t1/projects/p1/sessions/s1/documents/front.jpg')
   })
 })

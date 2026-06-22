@@ -29,9 +29,7 @@ export default function AdminTenantsPage() {
               <TR key={tenant.id}>
                 <TD className="font-medium">{tenant.name}</TD>
                 <TD className="text-muted-foreground">{tenant.slug}</TD>
-                <TD className="text-muted-foreground">
-                  {new Date(tenant.created_at).toLocaleDateString()}
-                </TD>
+                <TD className="text-muted-foreground">{new Date(tenant.created_at).toLocaleDateString()}</TD>
               </TR>
             ))}
           </TBody>

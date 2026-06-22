@@ -1,10 +1,4 @@
-import type {
-  FaceMatchResultData,
-  IsoDateTime,
-  LivenessResultData,
-  OcrResultData,
-  WebhookChecks,
-} from '@arkyc/types'
+import type { FaceMatchResultData, IsoDateTime, LivenessResultData, OcrResultData, WebhookChecks } from '@arkyc/types'
 
 import type { DecisionInput } from './decision'
 import { SessionRules } from './session'

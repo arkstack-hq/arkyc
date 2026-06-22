@@ -1,11 +1,6 @@
 import { type VerifyWebhookInput, WebhookSigner } from '@arkyc/webhooks'
 import { ArkycApiError } from './errors'
-import type {
-  ArkycOptions,
-  CreateSessionParams,
-  CreatedSession,
-  VerificationSession,
-} from './types'
+import type { ArkycOptions, CreateSessionParams, CreatedSession, VerificationSession } from './types'
 
 const DEFAULT_BASE_URL = 'https://api.arkyc.dev'
 
@@ -97,11 +92,7 @@ export class Arkyc {
    * @param body
    * @returns
    */
-  private async request(
-    method: string,
-    path: string,
-    body?: unknown,
-  ): Promise<Record<string, unknown>> {
+  private async request(method: string, path: string, body?: unknown): Promise<Record<string, unknown>> {
     const response = await this.fetchImpl(`${this.baseUrl}/api${path}`, {
       method,
       headers: {

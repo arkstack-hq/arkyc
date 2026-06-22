@@ -24,8 +24,7 @@ export default function AdminUsersPage() {
     error,
     update,
   } = usePagination(
-    (currentPage, pageSize) =>
-      Admin.users({ page: currentPage, limit: pageSize, search: search || undefined }),
+    (currentPage, pageSize) => Admin.users({ page: currentPage, limit: pageSize, search: search || undefined }),
     {
       append: true,
       initialPage: 1,
@@ -93,13 +92,7 @@ export default function AdminUsersPage() {
                   <TD className="whitespace-nowrap text-muted-foreground">
                     {user.last_login_at ? formatDateTime(user.last_login_at) : '—'}
                   </TD>
-                  <TD>
-                    {user.is_admin ? (
-                      <Badge>Admin</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TD>
+                  <TD>{user.is_admin ? <Badge>Admin</Badge> : <span className="text-muted-foreground">—</span>}</TD>
                   <TD className="text-right">
                     {canManage ? (
                       <Button
@@ -117,11 +110,7 @@ export default function AdminUsersPage() {
             </TBody>
           </Table>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
     </div>

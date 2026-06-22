@@ -42,12 +42,9 @@ export default function MemberDetailPage() {
     loading: assigning,
     error: assignError,
     onSuccess: onAssignSuccess,
-  } = useRequest(
-    (nextRoleId: string) => Members.assignRole(tenantId, memberId, { role_id: nextRoleId }),
-    {
-      immediate: false,
-    },
-  )
+  } = useRequest((nextRoleId: string) => Members.assignRole(tenantId, memberId, { role_id: nextRoleId }), {
+    immediate: false,
+  })
 
   onAssignSuccess(() => {
     setSaved(true)
@@ -145,16 +142,12 @@ export default function MemberDetailPage() {
                   </Button>
                 </div>
                 {assignError ? (
-                  <p className="text-sm text-destructive">
-                    {errorMessage(assignError, 'Failed to change role.')}
-                  </p>
+                  <p className="text-sm text-destructive">{errorMessage(assignError, 'Failed to change role.')}</p>
                 ) : null}
                 {saved ? <p className="text-sm text-success">Role updated.</p> : null}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                You don't have permission to change this member's role.
-              </p>
+              <p className="text-sm text-muted-foreground">You don't have permission to change this member's role.</p>
             )}
 
             <Link to="permissions">

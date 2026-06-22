@@ -3,8 +3,7 @@ import type { NextFunction, Request, Response } from 'express'
 import { Tenant } from '@app/models/Tenant'
 import { TenantMember } from '@app/models/TenantMember'
 
-const param = (v: string | string[] | undefined): string | undefined =>
-  Array.isArray(v) ? v[0] : v
+const param = (v: string | string[] | undefined): string | undefined => (Array.isArray(v) ? v[0] : v)
 
 /**
  * Resolves the active tenant from the route (`:tenantId`) and verifies that the
@@ -26,11 +25,7 @@ export class ResolveTenantMiddleware {
         tenantId: tenant.id,
       }).first()
       RequestException.assertFound(member, 'You are not a member of this tenant', 403)
-      RequestException.abortIf(
-        member.status !== 'active',
-        'You are not a member of this tenant',
-        403,
-      )
+      RequestException.abortIf(member.status !== 'active', 'You are not a member of this tenant', 403)
 
       req.tenant = tenant
       req.tenantMember = member

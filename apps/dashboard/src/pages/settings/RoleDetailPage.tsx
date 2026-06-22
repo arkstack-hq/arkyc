@@ -16,17 +16,9 @@ export default function RoleDetailPage() {
   const { roleId = '' } = useParams()
   const tenantId = useTenantId()
 
-  const {
-    data: role,
-    loading: roleLoading,
-    error: roleError,
-  } = useRequest(Roles.get(tenantId, roleId))
+  const { data: role, loading: roleLoading, error: roleError } = useRequest(Roles.get(tenantId, roleId))
 
-  const {
-    data: catalogue,
-    loading: catalogueLoading,
-    error: catalogueError,
-  } = useRequest(Permissions.list(tenantId))
+  const { data: catalogue, loading: catalogueLoading, error: catalogueError } = useRequest(Permissions.list(tenantId))
 
   if (roleLoading || catalogueLoading) return <Loading />
   if (roleError) return <ErrorState error={roleError} />
@@ -172,9 +164,7 @@ function RoleEditor({
                         <span>
                           <span className="font-medium">{perm.name}</span>
                           {perm.description ? (
-                            <span className="block text-xs text-muted-foreground">
-                              {perm.description}
-                            </span>
+                            <span className="block text-xs text-muted-foreground">{perm.description}</span>
                           ) : null}
                         </span>
                       </label>
@@ -188,9 +178,7 @@ function RoleEditor({
 
         {!readOnly ? (
           <div className="flex items-center justify-end gap-3">
-            {error && !error.errors ? (
-              <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError>
-            ) : null}
+            {error && !error.errors ? <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError> : null}
             {saved ? <p className="text-sm text-success">Role saved.</p> : null}
             <Button onClick={() => void send()} disabled={loading}>
               {loading ? 'Saving…' : 'Save'}

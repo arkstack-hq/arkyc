@@ -82,9 +82,7 @@ export default class MemberController extends BaseController {
     const role = member.getAttribute('role')
     const user = member.getAttribute('user')!
 
-    const role_permissions = toArray(role?.getAttribute('permissions')).map((p) =>
-      p?.getAttribute('name'),
-    )
+    const role_permissions = toArray(role?.getAttribute('permissions')).map((p) => p?.getAttribute('name'))
     const direct_permissions = toArray(user.getAttribute('directPermissions') as any)
       .map((up: any) => (up?.getAttribute('permission') as any)?.getAttribute('name'))
       .filter(Boolean)
@@ -166,9 +164,7 @@ export default class MemberController extends BaseController {
     const role = member.getAttribute('role')
     const user = member.getAttribute('user')!
 
-    const role_permissions = toArray(role?.getAttribute('permissions')).map((p) =>
-      p?.getAttribute('name'),
-    )
+    const role_permissions = toArray(role?.getAttribute('permissions')).map((p) => p?.getAttribute('name'))
 
     const direct_permissions = toArray(user.getAttribute('directPermissions') as any)
       .map((up: any) => (up?.getAttribute('permission') as any)?.getAttribute('name'))

@@ -30,16 +30,7 @@ export default defineConfig(
       'markdown/no-missing-label-refs': 'off',
     },
   },
-  [
-    globalIgnores([
-      'docs/.vitepress/**',
-      'bin/**',
-      'dist/**',
-      'build/**',
-      '.arkstack/**',
-      'node_modules/**',
-    ]),
-  ],
+  [globalIgnores(['docs/.vitepress/**', 'bin/**', 'dist/**', 'build/**', '.arkstack/**', 'node_modules/**'])],
   {
     rules: {
       'brace-style': ['error', '1tbs', { allowSingleLine: false }],
@@ -69,5 +60,5 @@ export default defineConfig(
       ],
     },
   },
-  eslintConfigPrettier
+  eslintConfigPrettier,
 )

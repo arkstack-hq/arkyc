@@ -68,9 +68,7 @@ export default function AdminAuditLogsPage() {
             <TBody>
               {logs.map((log) => (
                 <TR key={log.id}>
-                  <TD className="whitespace-nowrap text-muted-foreground">
-                    {formatDateTime(log.created_at)}
-                  </TD>
+                  <TD className="whitespace-nowrap text-muted-foreground">{formatDateTime(log.created_at)}</TD>
                   <TD>{log.actor ? log.actor.name || log.actor.email : '—'}</TD>
                   <TD>{humanize(log.action)}</TD>
                   <TD>{`${log.entity_type} ${log.entity_id ?? ''}`.trim()}</TD>
@@ -79,11 +77,7 @@ export default function AdminAuditLogsPage() {
             </TBody>
           </Table>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
     </div>

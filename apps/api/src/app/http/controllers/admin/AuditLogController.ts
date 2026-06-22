@@ -4,8 +4,7 @@ import { BaseController } from '@controllers/BaseController'
 import { PlatformAuditLog } from '@app/models/PlatformAuditLog'
 import AdminAuditLogCollection from '@app/http/resources/AdminAuditLogCollection'
 
-const param = (value: unknown): string | undefined =>
-  (Array.isArray(value) ? value[0] : value) as string | undefined
+const param = (value: unknown): string | undefined => (Array.isArray(value) ? value[0] : value) as string | undefined
 
 /** Platform-admin audit log. Gated by `admin.audit.view`. */
 export default class AuditLogController extends BaseController {

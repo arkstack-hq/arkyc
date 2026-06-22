@@ -28,10 +28,7 @@ export default function ProjectDetailLayout() {
 
   return (
     <div className="p-8">
-      <Link
-        to="../"
-        className="mb-3 inline-block text-sm text-muted-foreground hover:text-foreground"
-      >
+      <Link to="../" className="mb-3 inline-block text-sm text-muted-foreground hover:text-foreground">
         ← Projects
       </Link>
       <PageHeader title={project?.name ?? 'Project'} />

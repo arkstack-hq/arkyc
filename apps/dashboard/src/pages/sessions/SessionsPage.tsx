@@ -105,10 +105,7 @@ export default function SessionsPage() {
       ) : sessions.length === 0 && loading ? (
         <Loading />
       ) : sessions.length === 0 ? (
-        <EmptyState
-          title="No sessions"
-          description="No verification sessions match these filters."
-        />
+        <EmptyState title="No sessions" description="No verification sessions match these filters." />
       ) : (
         <>
           <Table>
@@ -142,11 +139,7 @@ export default function SessionsPage() {
             </TBody>
           </Table>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
     </div>

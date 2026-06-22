@@ -4,8 +4,7 @@ import { PermissionDeniedError, Permissions } from '@arkyc/permissions'
 import type { AdminPermissionKey, PermissionKey } from '@arkyc/types'
 import { permissionStore } from '@app/services/ArkormPermissionStore'
 
-const param = (value: string | string[] | undefined): string | undefined =>
-  Array.isArray(value) ? value[0] : value
+const param = (value: string | string[] | undefined): string | undefined => (Array.isArray(value) ? value[0] : value)
 
 /**
  * Enforces that the authenticated user holds `permission` in the active
@@ -25,11 +24,7 @@ export class AuthorizeMiddleware {
       RequestException.assertFound(tenantId, 'Missing tenant scope', 400)
       const projectId = param(req.params.projectId) ?? null
 
-      await Permissions.authorize(
-        { userId: user.id, tenantId, projectId },
-        this.permission,
-        permissionStore,
-      )
+      await Permissions.authorize({ userId: user.id, tenantId, projectId }, this.permission, permissionStore)
       next()
     } catch (error) {
       if (error instanceof PermissionDeniedError) {

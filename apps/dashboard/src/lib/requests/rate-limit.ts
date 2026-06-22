@@ -2,8 +2,7 @@ import type { Method } from 'alova'
 import { SecureStorage } from '@/lib/Storage/SecureStorage'
 
 const rateLimitPreferencePrefix = 'requestRateLimit:'
-const toPreferenceKey = (rateLimitKey: string) =>
-  `${rateLimitPreferencePrefix}${encodeURIComponent(rateLimitKey)}`
+const toPreferenceKey = (rateLimitKey: string) => `${rateLimitPreferencePrefix}${encodeURIComponent(rateLimitKey)}`
 const toRateLimitKey = (methodType: string, url: string) => `${methodType.toUpperCase()} ${url}`
 
 export function buildRateLimitKey(methodType: string, url: string) {
@@ -26,11 +25,7 @@ export async function setStoredRateLimit(rateLimitKey: string, seconds: number) 
   await SecureStorage.set(preferenceKey, String(Date.now() + seconds * 1000))
 }
 
-export async function setStoredRateLimitForRequest(
-  methodType: string,
-  url: string,
-  seconds: number,
-) {
+export async function setStoredRateLimitForRequest(methodType: string, url: string, seconds: number) {
   await setStoredRateLimit(buildRateLimitKey(methodType, url), seconds)
 }
 
@@ -57,10 +52,7 @@ export async function getStoredRateLimitForRequest(methodType: string, url: stri
   return getStoredRateLimit(buildRateLimitKey(methodType, url))
 }
 
-export async function persistRateLimitFromResponse(
-  method: Pick<Method, 'type' | 'url'>,
-  headers?: Headers,
-) {
+export async function persistRateLimitFromResponse(method: Pick<Method, 'type' | 'url'>, headers?: Headers) {
   const seconds = getRetryAfterSeconds(headers)
   if (!seconds) {
     return

@@ -61,10 +61,7 @@ export class DecisionEngine {
    * @param thresholds
    * @returns
    */
-  static decide(
-    input: DecisionInput,
-    thresholds?: Partial<VerificationThresholds>,
-  ): DecisionResult {
+  static decide(input: DecisionInput, thresholds?: Partial<VerificationThresholds>): DecisionResult {
     const t = Thresholds.resolve(thresholds)
     const riskScore = Risk.score(input)
     const verdict = (decision: VerificationDecision, reason: DecisionReason): DecisionResult => ({

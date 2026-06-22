@@ -15,13 +15,7 @@ import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 const ENVIRONMENTS: ProjectEnvironment[] = ['production', 'staging', 'development']
 
@@ -37,16 +31,13 @@ export default function ProjectsPage() {
     error,
     update,
     reload,
-  } = usePagination(
-    (currentPage, pageSize) => Projects.list(tenantId, { page: currentPage, limit: pageSize }),
-    {
-      append: true,
-      initialPage: 1,
-      initialPageSize: 15,
-      data: (res) => res.data,
-      total: (res) => res.meta.total,
-    },
-  )
+  } = usePagination((currentPage, pageSize) => Projects.list(tenantId, { page: currentPage, limit: pageSize }), {
+    append: true,
+    initialPage: 1,
+    initialPageSize: 15,
+    data: (res) => res.data,
+    total: (res) => res.meta.total,
+  })
 
   const [open, setOpen] = useState(false)
 
@@ -79,9 +70,7 @@ export default function ProjectsPage() {
       <PageHeader
         title="Projects"
         description="Applications and environments scoped to this tenant."
-        actions={
-          can('projects.create') ? <Button onClick={() => setOpen(true)}>New project</Button> : null
-        }
+        actions={can('projects.create') ? <Button onClick={() => setOpen(true)}>New project</Button> : null}
       />
 
       {error ? (
@@ -89,10 +78,7 @@ export default function ProjectsPage() {
       ) : projects.length === 0 && loading ? (
         <Loading />
       ) : projects.length === 0 ? (
-        <EmptyState
-          title="No projects yet"
-          description="Create your first project to start verifying users."
-        />
+        <EmptyState title="No projects yet" description="Create your first project to start verifying users." />
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -105,15 +91,10 @@ export default function ProjectsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Status: {humanize(project.status)}
-                  </p>
+                  <p className="text-sm text-muted-foreground">Status: {humanize(project.status)}</p>
                 </CardContent>
                 <CardFooter>
-                  <Link
-                    to={project.id}
-                    className="text-sm font-medium text-primary hover:underline"
-                  >
+                  <Link to={project.id} className="text-sm font-medium text-primary hover:underline">
                     Manage →
                   </Link>
                 </CardFooter>
@@ -121,11 +102,7 @@ export default function ProjectsPage() {
             ))}
           </div>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
 

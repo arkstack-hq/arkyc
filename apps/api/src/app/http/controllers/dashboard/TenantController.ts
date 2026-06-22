@@ -47,11 +47,7 @@ export default class TenantController extends BaseController {
     })
 
     const slug = (data.slug || Str.slug(data.name)).toLowerCase()
-    RequestException.abortIf(
-      await Tenant.where({ slug }).first(),
-      'A tenant with this slug already exists',
-      409,
-    )
+    RequestException.abortIf(await Tenant.where({ slug }).first(), 'A tenant with this slug already exists', 409)
 
     const tenant = await Tenant.create({ name: data.name, slug, settings: {} })
 

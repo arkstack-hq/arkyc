@@ -1,10 +1,4 @@
-import type {
-  DecisionReason,
-  VerificationStatus,
-  WebhookChecks,
-  WebhookEvent,
-  WebhookEventName,
-} from '@arkyc/types'
+import type { DecisionReason, VerificationStatus, WebhookChecks, WebhookEvent, WebhookEventName } from '@arkyc/types'
 
 /** The data needed to assemble a {@link WebhookEvent} body. */
 export interface BuildWebhookPayloadInput {

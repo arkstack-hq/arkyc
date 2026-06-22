@@ -14,31 +14,15 @@ Router.group('/v1/admin', () => {
   Router.get('/me', [AdminController, 'me'], [auth])
 
   Router.get('/settings', [SettingsController, 'show'], [auth, canAdmin('admin.settings.view')])
-  Router.patch(
-    '/settings',
-    [SettingsController, 'update'],
-    [auth, canAdmin('admin.settings.update')],
-  )
+  Router.patch('/settings', [SettingsController, 'update'], [auth, canAdmin('admin.settings.update')])
 
   Router.get('/tenants', [AdminTenantController, 'index'], [auth, canAdmin('admin.tenants.view')])
 
   Router.get('/users', [AdminUserController, 'index'], [auth, canAdmin('admin.users.view')])
-  Router.post(
-    '/users/:userId/admin',
-    [AdminUserController, 'grantAdmin'],
-    [auth, canAdmin('admin.users.manage')],
-  )
-  Router.delete(
-    '/users/:userId/admin',
-    [AdminUserController, 'revokeAdmin'],
-    [auth, canAdmin('admin.users.manage')],
-  )
+  Router.post('/users/:userId/admin', [AdminUserController, 'grantAdmin'], [auth, canAdmin('admin.users.manage')])
+  Router.delete('/users/:userId/admin', [AdminUserController, 'revokeAdmin'], [auth, canAdmin('admin.users.manage')])
 
-  Router.get(
-    '/audit-logs',
-    [AdminAuditLogController, 'index'],
-    [auth, canAdmin('admin.audit.view')],
-  )
+  Router.get('/audit-logs', [AdminAuditLogController, 'index'], [auth, canAdmin('admin.audit.view')])
 })
 
 export default () => {}

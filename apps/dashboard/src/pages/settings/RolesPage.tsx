@@ -10,13 +10,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
 import { Badge } from '@/components/ui/badge'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 export default function RolesPage() {
   const tenantId = useTenantId()
@@ -32,16 +26,13 @@ export default function RolesPage() {
     error,
     update,
     reload: refreshRoles,
-  } = usePagination(
-    (currentPage, pageSize) => Roles.list(tenantId, { page: currentPage, limit: pageSize }),
-    {
-      append: true,
-      initialPage: 1,
-      initialPageSize: 15,
-      data: (res) => res.data,
-      total: (res) => res.meta.total,
-    },
-  )
+  } = usePagination((currentPage, pageSize) => Roles.list(tenantId, { page: currentPage, limit: pageSize }), {
+    append: true,
+    initialPage: 1,
+    initialPageSize: 15,
+    data: (res) => res.data,
+    total: (res) => res.meta.total,
+  })
 
   const {
     form,
@@ -80,9 +71,7 @@ export default function RolesPage() {
             <Link to="../" className="text-sm text-primary hover:underline">
               ← Settings
             </Link>
-            {can('settings.update') ? (
-              <Button onClick={() => setOpen(true)}>New role</Button>
-            ) : null}
+            {can('settings.update') ? <Button onClick={() => setOpen(true)}>New role</Button> : null}
           </div>
         }
       />
@@ -113,22 +102,14 @@ export default function RolesPage() {
                   </TD>
                   <TD className="text-muted-foreground">{role.description ?? '—'}</TD>
                   <TD>
-                    {role.is_system ? (
-                      <Badge variant="muted">System</Badge>
-                    ) : (
-                      <Badge variant="secondary">Custom</Badge>
-                    )}
+                    {role.is_system ? <Badge variant="muted">System</Badge> : <Badge variant="secondary">Custom</Badge>}
                   </TD>
                 </TR>
               ))}
             </TBody>
           </Table>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
 

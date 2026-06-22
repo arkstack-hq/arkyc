@@ -1,12 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useForm, useRequest } from 'alova/client'
-import type {
-  Project,
-  ProjectBranding,
-  ProjectSettings,
-  VerificationThresholds,
-} from '@arkyc/types'
+import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
 import { Projects, errorMessage } from '@/lib/api'
 import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { Loading, ErrorState } from '@/components/States'
@@ -43,18 +38,12 @@ function formFromProject(project: Project): FormState {
     name: project.name ?? '',
     primaryColor: project.branding?.primary_color ?? '#000000',
     theme: project.branding?.theme ?? 'light',
-    borderRadius:
-      project.branding?.border_radius != null ? String(project.branding.border_radius) : '',
+    borderRadius: project.branding?.border_radius != null ? String(project.branding.border_radius) : '',
     documentQualityThreshold:
-      thresholds.documentQualityThreshold != null
-        ? String(thresholds.documentQualityThreshold)
-        : '',
-    ocrConfidenceThreshold:
-      thresholds.ocrConfidenceThreshold != null ? String(thresholds.ocrConfidenceThreshold) : '',
-    livenessThreshold:
-      thresholds.livenessThreshold != null ? String(thresholds.livenessThreshold) : '',
-    faceMatchThreshold:
-      thresholds.faceMatchThreshold != null ? String(thresholds.faceMatchThreshold) : '',
+      thresholds.documentQualityThreshold != null ? String(thresholds.documentQualityThreshold) : '',
+    ocrConfidenceThreshold: thresholds.ocrConfidenceThreshold != null ? String(thresholds.ocrConfidenceThreshold) : '',
+    livenessThreshold: thresholds.livenessThreshold != null ? String(thresholds.livenessThreshold) : '',
+    faceMatchThreshold: thresholds.faceMatchThreshold != null ? String(thresholds.faceMatchThreshold) : '',
     allowedOrigins: (project.settings?.allowed_origins ?? []).join(', '),
   }
 }
@@ -84,12 +73,9 @@ function ProjectSettingsForm({ project }: { project: Project }) {
       const thresholds: Partial<VerificationThresholds> = {}
       if (f.documentQualityThreshold.trim() !== '')
         thresholds.documentQualityThreshold = Number(f.documentQualityThreshold)
-      if (f.ocrConfidenceThreshold.trim() !== '')
-        thresholds.ocrConfidenceThreshold = Number(f.ocrConfidenceThreshold)
-      if (f.livenessThreshold.trim() !== '')
-        thresholds.livenessThreshold = Number(f.livenessThreshold)
-      if (f.faceMatchThreshold.trim() !== '')
-        thresholds.faceMatchThreshold = Number(f.faceMatchThreshold)
+      if (f.ocrConfidenceThreshold.trim() !== '') thresholds.ocrConfidenceThreshold = Number(f.ocrConfidenceThreshold)
+      if (f.livenessThreshold.trim() !== '') thresholds.livenessThreshold = Number(f.livenessThreshold)
+      if (f.faceMatchThreshold.trim() !== '') thresholds.faceMatchThreshold = Number(f.faceMatchThreshold)
 
       const allowed_origins = f.allowedOrigins
         .split(',')
@@ -172,11 +158,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           </Field>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="theme">Theme</Label>
-            <Select
-              id="theme"
-              value={form.theme}
-              onChange={(e) => set('theme', e.target.value as 'light' | 'dark')}
-            >
+            <Select id="theme" value={form.theme} onChange={(e) => set('theme', e.target.value as 'light' | 'dark')}>
               <option value="light">Light</option>
               <option value="dark">Dark</option>
             </Select>
@@ -221,9 +203,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
       <Card>
         <CardHeader>
           <CardTitle>Allowed origins</CardTitle>
-          <CardDescription>
-            Comma-separated list of origins permitted to embed the widget.
-          </CardDescription>
+          <CardDescription>Comma-separated list of origins permitted to embed the widget.</CardDescription>
         </CardHeader>
         <CardContent>
           <Field>
@@ -248,9 +228,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           </Button>
         ) : null}
         {saved ? <span className="text-sm text-success">Saved.</span> : null}
-        {error && !error.errors ? (
-          <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError>
-        ) : null}
+        {error && !error.errors ? <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError> : null}
       </div>
     </form>
   )

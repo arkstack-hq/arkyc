@@ -4,8 +4,7 @@ import { BaseController } from '@controllers/BaseController'
 import { AuditLog } from '@app/models/AuditLog'
 import AuditLogCollection from '@app/http/resources/AuditLogCollection'
 
-const param = (value: unknown): string | undefined =>
-  (Array.isArray(value) ? value[0] : value) as string | undefined
+const param = (value: unknown): string | undefined => (Array.isArray(value) ? value[0] : value) as string | undefined
 
 /** Tenant audit-log read API (Phase 9). Gated by `audit_logs.view`. */
 export default class AuditLogController extends BaseController {

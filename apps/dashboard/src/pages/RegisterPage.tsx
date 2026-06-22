@@ -1,12 +1,5 @@
 import { Auth, errorMessage } from '@/lib/api'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldError, FieldLabel, FieldSet } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Link, useNavigate } from 'react-router-dom'
@@ -21,17 +14,14 @@ export default function RegisterPage() {
   const { setUser } = useAuth()
   const navigate = useNavigate()
 
-  const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
-    (formData) => Auth.register(formData),
-    {
-      initialForm: {
-        firstname: '',
-        lastname: '',
-        email: '',
-        password: '',
-      },
+  const { form, updateForm, send, loading, error, update, onSuccess } = useForm((formData) => Auth.register(formData), {
+    initialForm: {
+      firstname: '',
+      lastname: '',
+      email: '',
+      password: '',
     },
-  )
+  })
 
   onSuccess(({ data }) => {
     setUser(data.user)

@@ -45,12 +45,7 @@ export class Tenants {
     return alova.Get(`${t(tenantId)}/me`, {
       name: 'tenant:me',
       cacheFor: CACHE,
-      hitSource: [
-        'member:assignRole',
-        'member:addPermission',
-        'member:removePermission',
-        'role:update',
-      ],
+      hitSource: ['member:assignRole', 'member:addPermission', 'member:removePermission', 'role:update'],
       transform: unwrap<MemberPermissions>,
     })
   }

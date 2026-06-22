@@ -8,14 +8,7 @@ import { Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 
 export default function SettingsPage() {
   const tenantId = useTenantId()
@@ -62,16 +55,11 @@ export default function SettingsPage() {
               </InputGroup>
               <FieldError errors={error?.list?.name} />
             </Field>
-            {error && !error.errors ? (
-              <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError>
-            ) : null}
+            {error && !error.errors ? <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError> : null}
             {saved ? <p className="text-sm text-success">Settings saved.</p> : null}
           </CardContent>
           <CardFooter className="justify-end">
-            <Button
-              onClick={() => void send()}
-              disabled={!canUpdate || loading || form.name.trim() === ''}
-            >
+            <Button onClick={() => void send()} disabled={!canUpdate || loading || form.name.trim() === ''}>
               {loading ? 'Saving…' : 'Save'}
             </Button>
           </CardFooter>

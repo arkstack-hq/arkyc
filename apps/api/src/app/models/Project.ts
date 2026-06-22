@@ -1,11 +1,6 @@
 import { Model } from 'arkormx'
 import type { CastMap } from 'arkormx'
-import type {
-  ProjectBranding,
-  ProjectEnvironment,
-  ProjectSettings,
-  ProjectStatus,
-} from '@arkyc/types'
+import type { ProjectBranding, ProjectEnvironment, ProjectSettings, ProjectStatus } from '@arkyc/types'
 import { Tenant } from './Tenant'
 import { ProjectMember } from './ProjectMember'
 import { ApiKey } from './ApiKey'

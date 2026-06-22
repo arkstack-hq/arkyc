@@ -29,9 +29,7 @@ export default class WebhookEndpointController extends BaseController {
   /** List a project's webhook endpoints (secret never included). */
   async index({ req }: HttpContext) {
     const project = await this.scopedProject(req)
-    const endpoints = await WebhookEndpoint.where({ projectId: project.id }).paginate(
-      perPage(req.query),
-    )
+    const endpoints = await WebhookEndpoint.where({ projectId: project.id }).paginate(perPage(req.query))
 
     return new WebhookEndpointCollection(endpoints).additional({
       status: 'success',
@@ -72,8 +70,7 @@ export default class WebhookEndpointController extends BaseController {
     return new WebhookEndpointResource(endpoint)
       .additional({
         status: 'success',
-        message:
-          'Webhook endpoint created — store the signing secret now; it will not be shown again',
+        message: 'Webhook endpoint created — store the signing secret now; it will not be shown again',
         code: 201,
         secret,
       })

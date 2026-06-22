@@ -32,10 +32,7 @@ export class SessionRules {
    * @param now
    * @returns
    */
-  static isDocumentExpired(
-    expiryDate: IsoDate | null | undefined,
-    now: IsoDateTime | Date,
-  ): boolean {
+  static isDocumentExpired(expiryDate: IsoDate | null | undefined, now: IsoDateTime | Date): boolean {
     if (!expiryDate) return false
     const expiryEndOfDay = new Date(`${expiryDate}T23:59:59.999Z`).getTime()
     if (Number.isNaN(expiryEndOfDay)) return false
@@ -51,11 +48,7 @@ export class SessionRules {
    * @param now
    * @returns
    */
-  static shouldExpire(
-    status: VerificationStatus,
-    expiresAt: IsoDateTime | Date,
-    now: IsoDateTime | Date,
-  ): boolean {
+  static shouldExpire(status: VerificationStatus, expiresAt: IsoDateTime | Date, now: IsoDateTime | Date): boolean {
     if (StatusMachine.isTerminal(status)) return false
     return SessionRules.isSessionExpired(expiresAt, now)
   }

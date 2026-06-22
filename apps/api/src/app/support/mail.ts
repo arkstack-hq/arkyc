@@ -12,12 +12,7 @@ import { Notification } from '@arkstack/notifications'
  * @param data      Template variables to interpolate.
  * @returns         Nothing; the send runs in the background.
  */
-export function sendMail(
-  recipient: string,
-  message: string,
-  subject: string,
-  data: Record<string, unknown>,
-): void {
+export function sendMail(recipient: string, message: string, subject: string, data: Record<string, unknown>): void {
   void Notification.email()
     .recipient(recipient)
     .send(message, subject, undefined, data)

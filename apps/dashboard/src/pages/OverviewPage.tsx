@@ -43,9 +43,7 @@ export default function OverviewPage() {
     return (
       <div className="p-6">
         <PageHeader title={title} />
-        <p className="text-sm text-muted-foreground">
-          You don&apos;t have access to session metrics.
-        </p>
+        <p className="text-sm text-muted-foreground">You don&apos;t have access to session metrics.</p>
       </div>
     )
   }
@@ -100,9 +98,7 @@ export default function OverviewPage() {
                     to={`../sessions/${s.id}`}
                     className="flex items-center justify-between gap-4 py-3 text-sm hover:opacity-80"
                   >
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {s.id.slice(0, 12)}
-                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">{s.id.slice(0, 12)}</span>
                     <span className="font-medium">{humanize(s.status)}</span>
                     <span className="text-muted-foreground">{formatDateTime(s.created_at)}</span>
                   </Link>

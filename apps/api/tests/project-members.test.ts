@@ -9,8 +9,7 @@ const ctx = { token: '', ownerId: '', tenantId: '', projectId: '', roleId: '' }
 const authed = (method: 'get' | 'post' | 'patch' | 'delete', path: string) =>
   request(app)[method](`/api/v1/dashboard${path}`).set('Authorization', `Bearer ${ctx.token}`)
 
-const members = (suffix = '') =>
-  `/tenants/${ctx.tenantId}/projects/${ctx.projectId}/members${suffix}`
+const members = (suffix = '') => `/tenants/${ctx.tenantId}/projects/${ctx.projectId}/members${suffix}`
 
 beforeAll(async () => {
   const s = Date.now()

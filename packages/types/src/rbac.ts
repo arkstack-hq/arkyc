@@ -77,12 +77,7 @@ export type AdminPermissionKey =
   | 'admin.billing.update'
 
 /** The domain groups platform-admin permissions are organised under. */
-export type AdminPermissionGroup =
-  | 'admin.tenants'
-  | 'admin.users'
-  | 'admin.settings'
-  | 'admin.audit'
-  | 'admin.billing'
+export type AdminPermissionGroup = 'admin.tenants' | 'admin.users' | 'admin.settings' | 'admin.audit' | 'admin.billing'
 
 /** Any permission string, tenant- or platform-scope. */
 export type AnyPermissionKey = PermissionKey | AdminPermissionKey

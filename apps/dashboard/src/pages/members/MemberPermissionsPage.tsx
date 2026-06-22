@@ -18,12 +18,7 @@ export default function MemberPermissionsPage() {
   const canUpdate = can('members.update')
   const [toAdd, setToAdd] = useState('')
 
-  const {
-    data: perms,
-    loading,
-    error,
-    send: refreshPerms,
-  } = useRequest(Members.permissions(tenantId, memberId))
+  const { data: perms, loading, error, send: refreshPerms } = useRequest(Members.permissions(tenantId, memberId))
 
   const { data: catalogue, loading: catalogueLoading } = useRequest(Permissions.list(tenantId), {
     immediate: canUpdate,
@@ -35,12 +30,9 @@ export default function MemberPermissionsPage() {
     loading: adding,
     error: addError,
     onSuccess: onAddSuccess,
-  } = useRequest(
-    (permission: PermissionKey) => Members.addPermission(tenantId, memberId, { permission }),
-    {
-      immediate: false,
-    },
-  )
+  } = useRequest((permission: PermissionKey) => Members.addPermission(tenantId, memberId, { permission }), {
+    immediate: false,
+  })
 
   onAddSuccess(() => {
     setToAdd('')
@@ -52,12 +44,9 @@ export default function MemberPermissionsPage() {
     loading: removing,
     error: removeError,
     onSuccess: onRemoveSuccess,
-  } = useRequest(
-    (permission: PermissionKey) => Members.removePermission(tenantId, memberId, permission),
-    {
-      immediate: false,
-    },
-  )
+  } = useRequest((permission: PermissionKey) => Members.removePermission(tenantId, memberId, permission), {
+    immediate: false,
+  })
 
   onRemoveSuccess(() => {
     void refreshPerms()
@@ -138,11 +127,7 @@ export default function MemberPermissionsPage() {
               <div className="flex flex-col gap-1.5 border-t border-border pt-4">
                 <span className="text-sm font-medium">Add direct permission</span>
                 <div className="flex gap-2">
-                  <Select
-                    value={toAdd}
-                    onChange={(e) => setToAdd(e.target.value)}
-                    disabled={catalogueLoading}
-                  >
+                  <Select value={toAdd} onChange={(e) => setToAdd(e.target.value)} disabled={catalogueLoading}>
                     <option value="" disabled>
                       {catalogueLoading ? 'Loading…' : 'Select a permission'}
                     </option>
@@ -152,10 +137,7 @@ export default function MemberPermissionsPage() {
                       </option>
                     ))}
                   </Select>
-                  <Button
-                    disabled={!toAdd || adding}
-                    onClick={() => void addPermission(toAdd as PermissionKey)}
-                  >
+                  <Button disabled={!toAdd || adding} onClick={() => void addPermission(toAdd as PermissionKey)}>
                     {adding ? 'Adding…' : 'Add'}
                   </Button>
                 </div>

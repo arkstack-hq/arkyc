@@ -27,27 +27,21 @@ export class StatusMachine {
    * `requires_review` can move to a terminal decision (manual) or back for a
    * retry. `expired` and `cancelled` are reachable from any non-terminal state.
    */
-  static readonly TRANSITIONS: Readonly<Record<VerificationStatus, readonly VerificationStatus[]>> =
-    {
-      pending: ['started', 'expired', 'cancelled'],
-      started: ['document_submitted', 'expired', 'cancelled'],
-      document_submitted: ['liveness_submitted', 'processing', 'expired', 'cancelled'],
-      liveness_submitted: ['processing', 'expired', 'cancelled'],
-      processing: ['approved', 'rejected', 'requires_review', 'expired', 'cancelled'],
-      requires_review: ['approved', 'rejected', 'started', 'document_submitted', 'cancelled'],
-      approved: [],
-      rejected: [],
-      expired: [],
-      cancelled: [],
-    }
+  static readonly TRANSITIONS: Readonly<Record<VerificationStatus, readonly VerificationStatus[]>> = {
+    pending: ['started', 'expired', 'cancelled'],
+    started: ['document_submitted', 'expired', 'cancelled'],
+    document_submitted: ['liveness_submitted', 'processing', 'expired', 'cancelled'],
+    liveness_submitted: ['processing', 'expired', 'cancelled'],
+    processing: ['approved', 'rejected', 'requires_review', 'expired', 'cancelled'],
+    requires_review: ['approved', 'rejected', 'started', 'document_submitted', 'cancelled'],
+    approved: [],
+    rejected: [],
+    expired: [],
+    cancelled: [],
+  }
 
   /** Statuses from which no further transition is possible. */
-  static readonly TERMINAL: readonly VerificationStatus[] = [
-    'approved',
-    'rejected',
-    'expired',
-    'cancelled',
-  ]
+  static readonly TERMINAL: readonly VerificationStatus[] = ['approved', 'rejected', 'expired', 'cancelled']
 
   /**
    * Whether `status` is terminal (no further transitions allowed).

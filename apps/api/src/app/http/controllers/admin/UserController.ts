@@ -10,8 +10,7 @@ import { User } from '@app/models/User'
 import { Role } from '@app/models/Role'
 import { AdminPermission } from '@app/models/AdminPermission'
 
-const param = (value: unknown): string | undefined =>
-  (Array.isArray(value) ? value[0] : value) as string | undefined
+const param = (value: unknown): string | undefined => (Array.isArray(value) ? value[0] : value) as string | undefined
 
 /** Platform users management. Gated by `canAdmin('admin.users.*')`. */
 export default class UserController extends BaseController {
@@ -53,10 +52,7 @@ export default class UserController extends BaseController {
     }).first()
     RequestException.assertFound(role, 'platform-owner admin role missing', 500)
 
-    await AdminPermission.query().firstOrCreate(
-      { userId: user.id, roleId: role.id },
-      { permissionId: null },
-    )
+    await AdminPermission.query().firstOrCreate({ userId: user.id, roleId: role.id }, { permissionId: null })
 
     await platformAudit.recordForRequest(req, {
       action: 'platform.admin_granted',

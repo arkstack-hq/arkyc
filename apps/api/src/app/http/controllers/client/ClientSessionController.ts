@@ -143,6 +143,7 @@ export default class ClientSessionController extends BaseController {
     if (!raw) return undefined
     try {
       const parsed = JSON.parse(raw)
+
       return Array.isArray(parsed) ? (parsed as LivenessChallenge[]) : undefined
     } catch {
       return undefined

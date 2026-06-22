@@ -60,9 +60,7 @@ describe('roles & permissions', () => {
   it('seeds the five system roles', async () => {
     const res = await authed('get', `/tenants/${ctx.tenantId}/roles`)
     const slugs = res.body.data.map((r: { slug: string }) => r.slug)
-    expect(slugs).toEqual(
-      expect.arrayContaining(['owner', 'admin', 'reviewer', 'developer', 'readonly']),
-    )
+    expect(slugs).toEqual(expect.arrayContaining(['owner', 'admin', 'reviewer', 'developer', 'readonly']))
   })
 
   it('creates a custom role with a permission set', async () => {
@@ -71,9 +69,7 @@ describe('roles & permissions', () => {
       permissions: ['sessions.view', 'audit_logs.view'],
     })
     expect(res.status).toBe(201)
-    expect(res.body.permissions).toEqual(
-      expect.arrayContaining(['sessions.view', 'audit_logs.view']),
-    )
+    expect(res.body.permissions).toEqual(expect.arrayContaining(['sessions.view', 'audit_logs.view']))
   })
 })
 
@@ -98,10 +94,7 @@ describe('projects & api keys', () => {
   })
 
   it('mints an API key (secret shown once) and revokes it', async () => {
-    const create = await authed(
-      'post',
-      `/tenants/${ctx.tenantId}/projects/${projectId}/api-keys`,
-    ).send({
+    const create = await authed('post', `/tenants/${ctx.tenantId}/projects/${projectId}/api-keys`).send({
       name: 'Default key',
     })
     expect(create.status).toBe(201)
@@ -113,10 +106,7 @@ describe('projects & api keys', () => {
     // The list never exposes the secret hash.
     expect(JSON.stringify(list.body)).not.toContain('keyHash')
 
-    const revoke = await authed(
-      'delete',
-      `/tenants/${ctx.tenantId}/projects/${projectId}/api-keys/${keyId}`,
-    )
+    const revoke = await authed('delete', `/tenants/${ctx.tenantId}/projects/${projectId}/api-keys/${keyId}`)
     expect(revoke.status).toBe(200)
     expect(revoke.body.data.revoked_at).toBeTruthy()
   })
@@ -161,10 +151,7 @@ describe('members & permissions', () => {
     expect(before.body.data.direct_permissions).not.toContain('billing.update')
 
     // Owner already has billing.update via role; grant a direct perm to a fresh reviewer instead.
-    const grant = await authed(
-      'post',
-      `/tenants/${ctx.tenantId}/members/${memberId}/permissions`,
-    ).send({
+    const grant = await authed('post', `/tenants/${ctx.tenantId}/members/${memberId}/permissions`).send({
       permission: 'sessions.export',
     })
     expect(grant.status).toBe(200)
@@ -177,10 +164,7 @@ describe('members & permissions', () => {
     const members = await authed('get', `/tenants/${ctx.tenantId}/members`)
     const memberId = members.body.data[0].id
 
-    const res = await authed(
-      'post',
-      `/tenants/${ctx.tenantId}/members/${memberId}/permissions`,
-    ).send({
+    const res = await authed('post', `/tenants/${ctx.tenantId}/members/${memberId}/permissions`).send({
       permission: 'not.a.real.permission',
     })
     expect(res.status).toBe(422)

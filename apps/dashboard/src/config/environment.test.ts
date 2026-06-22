@@ -18,8 +18,6 @@ describe('validateAppEnvironment', () => {
   })
 
   it('fails fast when required configuration is missing', () => {
-    expect(() => validateAppEnvironment({})).toThrow(
-      'Missing required environment variable: VITE_API_ENV',
-    )
+    expect(() => validateAppEnvironment({})).toThrow('Missing required environment variable: VITE_API_ENV')
   })
 })

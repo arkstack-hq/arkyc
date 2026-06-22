@@ -26,10 +26,7 @@ const client = (method: 'get' | 'post', path: string, token: string) =>
 
 /** Open + complete a clean session; the sync queue runs ocr → biometric → webhook inline. */
 async function completeSession(): Promise<string> {
-  const open = await request(app)
-    .post('/api/v1/sessions')
-    .set('Authorization', `Bearer ${fx.apiKeySecret}`)
-    .send({})
+  const open = await request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send({})
   const id = open.body.data.id
   const token = open.body.client_token
   await client('get', 'session', token)
@@ -73,10 +70,7 @@ beforeAll(async () => {
     name: 'Wh Prod',
   })
   fx.projectId = project.body.data.id
-  const key = await authed(
-    'post',
-    `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`,
-  ).send({ name: 'Wh key' })
+  const key = await authed('post', `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`).send({ name: 'Wh key' })
   fx.apiKeySecret = key.body.secret
 })
 
@@ -85,8 +79,7 @@ afterAll(async () => {
   if (fx.tenantId) await Tenant.destroy(fx.tenantId)
 })
 
-const webhooks = (suffix = '') =>
-  `/tenants/${fx.tenantId}/projects/${fx.projectId}/webhooks${suffix}`
+const webhooks = (suffix = '') => `/tenants/${fx.tenantId}/projects/${fx.projectId}/webhooks${suffix}`
 
 describe('webhook endpoints', () => {
   it('returns the signing secret once on create, then hides it', async () => {
@@ -150,9 +143,7 @@ describe('webhook endpoints', () => {
 
     await completeSession()
 
-    const deliveries = Array.from(
-      await WebhookDelivery.where({ webhookEndpointId: endpointId }).get(),
-    )
+    const deliveries = Array.from(await WebhookDelivery.where({ webhookEndpointId: endpointId }).get())
     expect(deliveries.length).toBeGreaterThan(0)
     expect(deliveries.every((d) => d.status === 'failed')).toBe(true)
     expect(deliveries[0].attempts).toBeGreaterThanOrEqual(1)

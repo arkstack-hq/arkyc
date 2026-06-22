@@ -6,8 +6,7 @@ function envelope(data: unknown, init: { ok?: boolean; status?: number; message?
   return {
     ok: init.ok ?? true,
     status,
-    text: async () =>
-      JSON.stringify({ status: 'success', message: init.message ?? 'OK', code: status, data }),
+    text: async () => JSON.stringify({ status: 'success', message: init.message ?? 'OK', code: status, data }),
   } as Response
 }
 
@@ -17,9 +16,7 @@ describe('ArkycClient', () => {
   })
 
   it('sends the client token and unwraps the envelope on getSession', async () => {
-    const fetchMock = vi.fn(async () =>
-      envelope({ id: 's1', status: 'started', expires_at: '2099-01-01' }),
-    )
+    const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'started', expires_at: '2099-01-01' }))
     const client = new ArkycClient({
       token: 'ct_abc',
       baseUrl: 'https://api.test/',
@@ -36,9 +33,7 @@ describe('ArkycClient', () => {
   })
 
   it('posts the document front as multipart form data with hints', async () => {
-    const fetchMock = vi.fn(async () =>
-      envelope({ id: 's1', status: 'document_submitted', expires_at: 'x' }),
-    )
+    const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'document_submitted', expires_at: 'x' }))
     const client = new ArkycClient({ token: 'ct', fetch: fetchMock as never })
 
     await client.submitDocumentFront({
@@ -62,9 +57,7 @@ describe('ArkycClient', () => {
   })
 
   it('posts complete as JSON', async () => {
-    const fetchMock = vi.fn(async () =>
-      envelope({ id: 's1', status: 'processing', expires_at: 'x' }),
-    )
+    const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'processing', expires_at: 'x' }))
     const client = new ArkycClient({ token: 'ct', fetch: fetchMock as never })
 
     await client.complete({ signals: { face_similarity: 0.8 } })
@@ -75,9 +68,7 @@ describe('ArkycClient', () => {
   })
 
   it('throws a typed WidgetApiError on a non-2xx response', async () => {
-    const fetchMock = vi.fn(async () =>
-      envelope(null, { ok: false, status: 401, message: 'Session expired' }),
-    )
+    const fetchMock = vi.fn(async () => envelope(null, { ok: false, status: 401, message: 'Session expired' }))
     const client = new ArkycClient({ token: 'ct', fetch: fetchMock as never })
 
     await expect(client.getSession()).rejects.toMatchObject({

@@ -11,10 +11,7 @@ export default class PermissionController extends BaseController {
    * @returns A PermissionCollection of the tenant permissions.
    */
   async index() {
-    const permissions = await Permission.query()
-      .where({ admin: false })
-      .orderBy({ group: 'asc' })
-      .get()
+    const permissions = await Permission.query().where({ admin: false }).orderBy({ group: 'asc' }).get()
 
     return new PermissionCollection(permissions).additional({
       status: 'success',

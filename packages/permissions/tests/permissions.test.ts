@@ -37,13 +37,7 @@ describe('default roles', () => {
   })
 
   it('seeds the five system roles', () => {
-    expect(DefaultRoles.ALL.map((r) => r.slug)).toEqual([
-      'owner',
-      'admin',
-      'reviewer',
-      'developer',
-      'readonly',
-    ])
+    expect(DefaultRoles.ALL.map((r) => r.slug)).toEqual(['owner', 'admin', 'reviewer', 'developer', 'readonly'])
   })
 
   it('throws for an unknown role', () => {

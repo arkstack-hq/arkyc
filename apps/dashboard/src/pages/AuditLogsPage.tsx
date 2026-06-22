@@ -81,21 +81,14 @@ export default function AuditLogsPage() {
             <TBody>
               {logs.map((log) => {
                 const metadata =
-                  log.metadata && Object.keys(log.metadata).length > 0
-                    ? JSON.stringify(log.metadata)
-                    : null
+                  log.metadata && Object.keys(log.metadata).length > 0 ? JSON.stringify(log.metadata) : null
                 return (
                   <TR key={log.id}>
-                    <TD className="text-muted-foreground whitespace-nowrap">
-                      {formatDateTime(log.created_at)}
-                    </TD>
+                    <TD className="text-muted-foreground whitespace-nowrap">{formatDateTime(log.created_at)}</TD>
                     <TD>{`${log.actor_type} ${log.actor_id ?? ''}`.trim()}</TD>
                     <TD>{humanize(log.action)}</TD>
                     <TD>{`${log.entity_type} ${log.entity_id ?? ''}`.trim()}</TD>
-                    <TD
-                      className="max-w-xs truncate text-xs text-muted-foreground"
-                      title={metadata ?? undefined}
-                    >
+                    <TD className="max-w-xs truncate text-xs text-muted-foreground" title={metadata ?? undefined}>
                       {metadata ?? '—'}
                     </TD>
                   </TR>
@@ -104,11 +97,7 @@ export default function AuditLogsPage() {
             </TBody>
           </Table>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
     </div>

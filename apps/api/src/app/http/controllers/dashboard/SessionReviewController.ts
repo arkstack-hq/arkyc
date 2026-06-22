@@ -7,8 +7,7 @@ import SessionCollection from '@app/http/resources/SessionCollection'
 import { audit } from '@app/services/AuditLogger'
 import { type RetryKind, reviewService } from '@app/services/ReviewService'
 
-const param = (value: unknown): string | undefined =>
-  (Array.isArray(value) ? value[0] : value) as string | undefined
+const param = (value: unknown): string | undefined => (Array.isArray(value) ? value[0] : value) as string | undefined
 
 /**
  * Review queue + reviewer actions (Phase 9). All routes run after `resolveTenant`
@@ -96,11 +95,7 @@ export default class SessionReviewController extends BaseController {
   async markSuspicious({ req }: HttpContext) {
     const data = await this.validate({ reason: ['nullable', 'string'] })
     const session = await this.scoped(req)
-    await reviewService.markSuspicious(
-      session,
-      audit.actorFromRequest(req),
-      data.reason ?? undefined,
-    )
+    await reviewService.markSuspicious(session, audit.actorFromRequest(req), data.reason ?? undefined)
 
     return this.session(session, 'Session flagged as suspicious')
   }

@@ -52,9 +52,7 @@ export default class NewPasswordController extends BaseController {
     }).validate()
 
     const pr = await PasswordReset.fromToken(token).catch(() => null)
-    const delta = pr
-      ? Hash.otp(6, pr.email ?? pr.phone!, RESET_TTL_SECONDS).validate({ token: pr.token })
-      : null
+    const delta = pr ? Hash.otp(6, pr.email ?? pr.phone!, RESET_TTL_SECONDS).validate({ token: pr.token }) : null
 
     if (delta === null) {
       if (pr) await pr.delete()
@@ -88,9 +86,7 @@ export default class NewPasswordController extends BaseController {
     ).validate()
 
     const pr = await PasswordReset.fromToken(data.token).catch(() => null)
-    const delta = pr
-      ? Hash.otp(6, pr.email ?? pr.phone!, RESET_TTL_SECONDS).validate({ token: pr.token })
-      : null
+    const delta = pr ? Hash.otp(6, pr.email ?? pr.phone!, RESET_TTL_SECONDS).validate({ token: pr.token }) : null
 
     if (delta === null || pr === null) {
       if (pr) await pr.delete()

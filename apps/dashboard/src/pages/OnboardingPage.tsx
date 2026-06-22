@@ -6,14 +6,7 @@ import { Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
@@ -38,9 +31,7 @@ export default function OnboardingPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Create your organization</CardTitle>
-          <CardDescription>
-            Organizations group your projects, sessions, and team members.
-          </CardDescription>
+          <CardDescription>Organizations group your projects, sessions, and team members.</CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="flex flex-col gap-4">

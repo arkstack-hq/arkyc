@@ -55,15 +55,7 @@ export class TenantContext {
    * @returns
    */
   static storagePath(ctx: TenantProjectContext, sessionId: Id, ...parts: string[]): string {
-    const segments = [
-      'tenants',
-      ctx.tenantId,
-      'projects',
-      ctx.projectId,
-      'sessions',
-      sessionId,
-      ...parts,
-    ]
+    const segments = ['tenants', ctx.tenantId, 'projects', ctx.projectId, 'sessions', sessionId, ...parts]
     return segments.join('/')
   }
 }

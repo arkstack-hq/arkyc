@@ -21,16 +21,8 @@ export default class InvitationController extends BaseController {
     const invitation = await TenantInvitation.where({ tokenHash: Token.hash(data.token) })
       .whereNull('acceptedAt')
       .firstOrFail()
-    RequestException.abortIf(
-      new Date(invitation.expiresAt).getTime() <= Date.now(),
-      'Invitation has expired',
-      410,
-    )
-    RequestException.abortIf(
-      invitation.email !== user.email,
-      'This invitation is for a different email',
-      403,
-    )
+    RequestException.abortIf(new Date(invitation.expiresAt).getTime() <= Date.now(), 'Invitation has expired', 410)
+    RequestException.abortIf(invitation.email !== user.email, 'This invitation is for a different email', 403)
 
     await TenantMember.query().firstOrCreate(
       { userId: user.id, tenantId: invitation.tenantId },

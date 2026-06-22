@@ -15,13 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 const EVENT_NAMES: WebhookEventName[] = [
   'verification.started',
@@ -49,8 +43,7 @@ export default function ProjectWebhooksPage() {
     update,
     reload: refreshWebhooks,
   } = usePagination(
-    (currentPage, pageSize) =>
-      Webhooks.list(tenantId, projectId!, { page: currentPage, limit: pageSize }),
+    (currentPage, pageSize) => Webhooks.list(tenantId, projectId!, { page: currentPage, limit: pageSize }),
     {
       append: true,
       initialPage: 1,
@@ -73,12 +66,9 @@ export default function ProjectWebhooksPage() {
     update: clearCreateError,
     reset,
     onSuccess: onCreateSuccess,
-  } = useForm(
-    (f) => Webhooks.create(tenantId, projectId!, { url: f.url.trim(), events: f.events }),
-    {
-      initialForm: { url: '', events: [] as WebhookEventName[] },
-    },
-  )
+  } = useForm((f) => Webhooks.create(tenantId, projectId!, { url: f.url.trim(), events: f.events }), {
+    initialForm: { url: '', events: [] as WebhookEventName[] },
+  })
 
   onCreateSuccess(({ data }) => {
     setSecret(data.secret)
@@ -115,9 +105,7 @@ export default function ProjectWebhooksPage() {
     // overload is typed but not implemented (it spreads the function, a no-op).
     // Compute from the current reactive `form.events` and pass a partial.
     updateForm({
-      events: form.events.includes(event)
-        ? form.events.filter((e) => e !== event)
-        : [...form.events, event],
+      events: form.events.includes(event) ? form.events.filter((e) => e !== event) : [...form.events, event],
     })
   }
 
@@ -134,9 +122,7 @@ export default function ProjectWebhooksPage() {
   return (
     <div>
       <div className="mb-4 flex justify-end">
-        {can('webhooks.create') ? (
-          <Button onClick={() => setOpen(true)}>Add endpoint</Button>
-        ) : null}
+        {can('webhooks.create') ? <Button onClick={() => setOpen(true)}>Add endpoint</Button> : null}
       </div>
 
       {error ? (
@@ -144,10 +130,7 @@ export default function ProjectWebhooksPage() {
       ) : webhooks.length === 0 && loading ? (
         <Loading />
       ) : webhooks.length === 0 ? (
-        <EmptyState
-          title="No webhook endpoints"
-          description="Add an endpoint to receive verification events."
-        />
+        <EmptyState title="No webhook endpoints" description="Add an endpoint to receive verification events." />
       ) : (
         <>
           <Table>
@@ -200,11 +183,7 @@ export default function ProjectWebhooksPage() {
             </TBody>
           </Table>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
 
@@ -213,9 +192,7 @@ export default function ProjectWebhooksPage() {
           <>
             <DialogHeader>
               <DialogTitle>Endpoint created</DialogTitle>
-              <DialogDescription>
-                Copy this signing secret now — it will not be shown again.
-              </DialogDescription>
+              <DialogDescription>Copy this signing secret now — it will not be shown again.</DialogDescription>
             </DialogHeader>
             <div className="rounded-md border border-warning bg-warning/10 p-3">
               <code className="block break-all font-mono text-sm">{secret}</code>
@@ -286,10 +263,7 @@ export default function ProjectWebhooksPage() {
               <Button type="button" variant="outline" onClick={closeDialog}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={creating || !form.url.trim() || form.events.length === 0}
-              >
+              <Button type="submit" disabled={creating || !form.url.trim() || form.events.length === 0}>
                 {creating ? <Spinner /> : null}
                 Create
               </Button>

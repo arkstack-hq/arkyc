@@ -111,7 +111,5 @@ export const isForbidden = (error: unknown): boolean => errorStatus(error) === 4
  * @param fallback
  * @returns
  */
-export const errorMessage = (
-  error: unknown,
-  fallback = 'Something went wrong. Please try again.',
-): string => (error instanceof RequestException ? error.message : fallback)
+export const errorMessage = (error: unknown, fallback = 'Something went wrong. Please try again.'): string =>
+  error instanceof RequestException ? error.message : fallback

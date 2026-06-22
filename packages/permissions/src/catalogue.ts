@@ -3,7 +3,6 @@ import type {
   AdminPermissionKey,
   AnyPermissionGroup,
   AnyPermissionKey,
-  PermissionGroup,
   PermissionKey,
 } from '@arkyc/types'
 

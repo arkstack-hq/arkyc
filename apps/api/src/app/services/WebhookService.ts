@@ -1,11 +1,6 @@
 import { WebhookPayload, WebhookSigner } from '@arkyc/webhooks'
 import { SessionRules } from '@arkyc/core'
-import type {
-  VerificationStatus,
-  WebhookChecks,
-  WebhookEvent,
-  WebhookEventName,
-} from '@arkyc/types'
+import type { VerificationStatus, WebhookChecks, WebhookEvent, WebhookEventName } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
 import { WebhookDelivery } from '@app/models/WebhookDelivery'
@@ -180,8 +175,7 @@ export class WebhookService {
     if (liveness) checks.liveness = { passed: liveness.passed, score: liveness.score }
 
     const faceMatch = await FaceMatchCheck.where({ sessionId: session.id }).first()
-    if (faceMatch)
-      checks.face_match = { passed: faceMatch.passed, similarity_score: faceMatch.similarityScore }
+    if (faceMatch) checks.face_match = { passed: faceMatch.passed, similarity_score: faceMatch.similarityScore }
 
     return checks
   }

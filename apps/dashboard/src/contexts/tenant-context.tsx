@@ -26,10 +26,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     initialData: [],
   })
 
-  const tenant = useMemo(
-    () => tenants.find((x) => x.slug === tenantSlug) ?? null,
-    [tenants, tenantSlug],
-  )
+  const tenant = useMemo(() => tenants.find((x) => x.slug === tenantSlug) ?? null, [tenants, tenantSlug])
 
   // Effective permissions depend on the active tenant id (reactive state).
   // `immediate` must be true when a tenant is already resolved on mount (warm

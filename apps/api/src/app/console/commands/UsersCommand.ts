@@ -84,16 +84,13 @@ export class UsersCommand extends Command {
     if (userId) {
       const user = await User.query().where({ id: userId }).firstOrFail()
 
-      const action = await this.choice(
-        `Selected user: ${user.getAttribute('name')}. Choose an action:`,
-        [
-          { name: 'Details', value: 'view' },
-          { name: 'Edit', value: 'edit' },
-          { name: 'Send Notification', value: 'notify' },
-          { name: 'Delete User', value: 'delete' },
-          { name: Logger.log('✖ Exit', 'red', false), value: 'exit' },
-        ],
-      )
+      const action = await this.choice(`Selected user: ${user.getAttribute('name')}. Choose an action:`, [
+        { name: 'Details', value: 'view' },
+        { name: 'Edit', value: 'edit' },
+        { name: 'Send Notification', value: 'notify' },
+        { name: 'Delete User', value: 'delete' },
+        { name: Logger.log('✖ Exit', 'red', false), value: 'exit' },
+      ])
 
       if (action === 'view') {
         await this.viewUser(user)
@@ -190,10 +187,7 @@ export class UsersCommand extends Command {
       ['Phone', String(user.phone || 'N/A')],
       ['Avatar URL', String(user.getAttribute('avatarUrl') || 'N/A')],
       ['Two-Factor Method', String(twoFa?.method || 'N/A')],
-      [
-        'Two-Factor Enabled At',
-        twoFa?.enabledAt ? dayjs(twoFa.enabledAt).format('YYYY-MM-DD h:mm A') : 'N/A',
-      ],
+      ['Two-Factor Enabled At', twoFa?.enabledAt ? dayjs(twoFa.enabledAt).format('YYYY-MM-DD h:mm A') : 'N/A'],
       ['Created At', dayjs(user.createdAt).format('YYYY-MM-DD h:mm A')],
       ['Last Login', dayjs(session?.lastUsedAt ?? new Date()).format('YYYY-MM-DD h:mm A')],
     ]

@@ -45,14 +45,8 @@ export default function App() {
 
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={user && !loading ? <Navigate to="/" replace /> : <LoginPage />}
-      />
-      <Route
-        path="/register"
-        element={user && !loading ? <Navigate to="/" replace /> : <RegisterPage />}
-      />
+      <Route path="/login" element={user && !loading ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/register" element={user && !loading ? <Navigate to="/" replace /> : <RegisterPage />} />
 
       <Route
         path="/"

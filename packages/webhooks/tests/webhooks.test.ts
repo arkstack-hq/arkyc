@@ -10,9 +10,7 @@ describe('webhooks — signing', () => {
     const body = JSON.stringify({ event: 'verification.approved' })
     const signature = WebhookSigner.sign(body, SECRET, ts)
 
-    expect(
-      WebhookSigner.verify({ payload: body, secret: SECRET, signature, timestamp: ts, now }),
-    ).toBe(true)
+    expect(WebhookSigner.verify({ payload: body, secret: SECRET, signature, timestamp: ts, now })).toBe(true)
   })
 
   it('rejects a tampered body', () => {
@@ -20,9 +18,7 @@ describe('webhooks — signing', () => {
     const ts = Math.floor(now / 1000)
     const signature = WebhookSigner.sign('{"a":1}', SECRET, ts)
 
-    expect(
-      WebhookSigner.verify({ payload: '{"a":2}', secret: SECRET, signature, timestamp: ts, now }),
-    ).toBe(false)
+    expect(WebhookSigner.verify({ payload: '{"a":2}', secret: SECRET, signature, timestamp: ts, now })).toBe(false)
   })
 
   it('rejects the wrong secret', () => {
@@ -31,9 +27,7 @@ describe('webhooks — signing', () => {
     const body = '{"a":1}'
     const signature = WebhookSigner.sign(body, SECRET, ts)
 
-    expect(
-      WebhookSigner.verify({ payload: body, secret: 'nope', signature, timestamp: ts, now }),
-    ).toBe(false)
+    expect(WebhookSigner.verify({ payload: body, secret: 'nope', signature, timestamp: ts, now })).toBe(false)
   })
 
   it('rejects a stale timestamp', () => {
@@ -42,9 +36,7 @@ describe('webhooks — signing', () => {
     const body = '{"a":1}'
     const signature = WebhookSigner.sign(body, SECRET, ts)
 
-    expect(
-      WebhookSigner.verify({ payload: body, secret: SECRET, signature, timestamp: ts, now }),
-    ).toBe(false)
+    expect(WebhookSigner.verify({ payload: body, secret: SECRET, signature, timestamp: ts, now })).toBe(false)
   })
 })
 

@@ -27,10 +27,7 @@ export class ClientToken {
    * @param now
    * @returns
    */
-  static create(
-    ttlSeconds: number = ClientToken.DEFAULT_TTL_SECONDS,
-    now: Date = new Date(),
-  ): IssuedClientToken {
+  static create(ttlSeconds: number = ClientToken.DEFAULT_TTL_SECONDS, now: Date = new Date()): IssuedClientToken {
     const { token, tokenHash } = Token.createPair(32)
     const expiresAt = new Date(now.getTime() + ttlSeconds * 1000).toISOString()
     return { token, tokenHash, expiresAt }
@@ -46,12 +43,7 @@ export class ClientToken {
    * @param now
    * @returns
    */
-  static isValid(
-    token: string,
-    tokenHash: string,
-    expiresAt: IsoDateTime,
-    now: Date = new Date(),
-  ): boolean {
+  static isValid(token: string, tokenHash: string, expiresAt: IsoDateTime, now: Date = new Date()): boolean {
     if (now.getTime() >= new Date(expiresAt).getTime()) return false
     return Token.verify(token, tokenHash)
   }

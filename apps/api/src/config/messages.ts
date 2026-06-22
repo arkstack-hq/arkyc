@@ -57,8 +57,7 @@ const config = () => {
           template: 'Your {app_name} two-factor setup code is {code}. It expires in 10 minutes.',
         },
         login: {
-          template:
-            'Your {app_name} sign-in verification code is {code}. It expires in 10 minutes.',
+          template: 'Your {app_name} sign-in verification code is {code}. It expires in 10 minutes.',
         },
       },
     },

@@ -214,6 +214,7 @@ describe('active liveness (Phase 17)', () => {
   const openActive = async (): Promise<{ id: string; token: string }> => {
     const res = await activeApi('post', 'sessions').send({})
     expect(res.status).toBe(201)
+
     return { id: res.body.data.id, token: res.body.client_token }
   }
 

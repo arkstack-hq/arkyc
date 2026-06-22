@@ -13,18 +13,10 @@ Router.group('/v1/dashboard/tenants/:tenantId', () => {
   Router.get('/members', [MemberController, 'index'], scoped('members.view'))
   Router.post('/invitations', [MemberController, 'invite'], scoped('members.invite'))
 
-  Router.get(
-    '/members/:memberId/permissions',
-    [MemberController, 'showPermissions'],
-    scoped('members.view'),
-  )
+  Router.get('/members/:memberId/permissions', [MemberController, 'showPermissions'], scoped('members.view'))
   Router.get('/members/:memberId', [MemberController, 'show'], scoped('members.view'))
   Router.patch('/members/:memberId', [MemberController, 'assignRole'], scoped('members.update'))
-  Router.post(
-    '/members/:memberId/permissions',
-    [MemberController, 'addPermission'],
-    scoped('members.update'),
-  )
+  Router.post('/members/:memberId/permissions', [MemberController, 'addPermission'], scoped('members.update'))
   Router.delete(
     '/members/:memberId/permissions/:permission',
     [MemberController, 'removePermission'],

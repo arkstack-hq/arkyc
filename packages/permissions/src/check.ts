@@ -37,10 +37,7 @@ export class Permissions {
    * @param store
    * @returns
    */
-  static async resolve(
-    ctx: PermissionResolutionContext,
-    store: PermissionResolverStore,
-  ): Promise<PermissionKey[]> {
+  static async resolve(ctx: PermissionResolutionContext, store: PermissionResolverStore): Promise<PermissionKey[]> {
     const [tenantRole, projectRole, direct] = await Promise.all([
       store.tenantRolePermissions(ctx),
       ctx.projectId ? store.projectRolePermissions(ctx) : Promise.resolve([] as PermissionKey[]),
@@ -128,14 +125,8 @@ export class Permissions {
    * @param store
    * @returns
    */
-  static async resolveAdmin(
-    ctx: AdminResolutionContext,
-    store: AdminResolverStore,
-  ): Promise<AdminPermissionKey[]> {
-    const [role, direct] = await Promise.all([
-      store.adminRolePermissions(ctx),
-      store.adminDirectPermissions(ctx),
-    ])
+  static async resolveAdmin(ctx: AdminResolutionContext, store: AdminResolverStore): Promise<AdminPermissionKey[]> {
+    const [role, direct] = await Promise.all([store.adminRolePermissions(ctx), store.adminDirectPermissions(ctx)])
 
     return [...new Set([...role, ...direct])]
   }

@@ -13,13 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { formatDateTime, humanize } from '@/lib/utils'
 
 function statusVariant(status: string): 'success' | 'warning' | 'muted' {
@@ -45,16 +39,13 @@ export default function MembersPage() {
     error,
     update,
     reload: refreshMembers,
-  } = usePagination(
-    (currentPage, pageSize) => Members.list(tenantId, { page: currentPage, limit: pageSize }),
-    {
-      append: true,
-      initialPage: 1,
-      initialPageSize: 15,
-      data: (res) => res.data,
-      total: (res) => res.meta.total,
-    },
-  )
+  } = usePagination((currentPage, pageSize) => Members.list(tenantId, { page: currentPage, limit: pageSize }), {
+    append: true,
+    initialPage: 1,
+    initialPageSize: 15,
+    data: (res) => res.data,
+    total: (res) => res.meta.total,
+  })
 
   // Fetch role options eagerly when permitted (TenantLayout blocks rendering
   // until permissions resolve, so `canSeeRoles` is accurate at mount). Gating on
@@ -92,9 +83,7 @@ export default function MembersPage() {
       <PageHeader
         title="Members"
         description="People with access to this organization."
-        actions={
-          can('members.invite') ? <Button onClick={() => setOpen(true)}>Invite</Button> : null
-        }
+        actions={can('members.invite') ? <Button onClick={() => setOpen(true)}>Invite</Button> : null}
       />
 
       {error ? (
@@ -128,19 +117,13 @@ export default function MembersPage() {
                   <TD>
                     <Badge variant={statusVariant(member.status)}>{humanize(member.status)}</Badge>
                   </TD>
-                  <TD className="text-muted-foreground">
-                    {formatDateTime(member.joined_at ?? member.created_at)}
-                  </TD>
+                  <TD className="text-muted-foreground">{formatDateTime(member.joined_at ?? member.created_at)}</TD>
                 </TR>
               ))}
             </TBody>
           </Table>
 
-          <InfiniteScroll
-            onLoadMore={() => update({ page: page + 1 })}
-            isLast={isLastPage}
-            loading={loading}
-          />
+          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
         </>
       )}
 
@@ -154,9 +137,7 @@ export default function MembersPage() {
           <>
             <div className="rounded-md border border-border bg-muted/40 p-4 text-sm">
               <p className="font-medium text-success">Invitation sent.</p>
-              <p className="mt-1 text-muted-foreground">
-                The invitee will receive an email with a link to join.
-              </p>
+              <p className="mt-1 text-muted-foreground">The invitee will receive an email with a link to join.</p>
             </div>
             <DialogFooter>
               <Button onClick={closeDialog}>Done</Button>

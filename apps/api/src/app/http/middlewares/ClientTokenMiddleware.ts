@@ -28,11 +28,7 @@ export class ClientTokenMiddleware {
         clientTokenHash: Token.hash(token),
       }).first()
       RequestException.assertFound(session, 'Invalid client token', 401)
-      RequestException.abortIf(
-        new Date(session.expiresAt).getTime() <= Date.now(),
-        'Session expired',
-        401,
-      )
+      RequestException.abortIf(new Date(session.expiresAt).getTime() <= Date.now(), 'Session expired', 401)
 
       req.verificationSession = session
       next()

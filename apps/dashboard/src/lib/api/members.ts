@@ -58,10 +58,8 @@ export class Members {
 
   /** Revoke a direct permission from a member. */
   static removePermission(tenantId: string, memberId: string, permission: PermissionKey) {
-    return alova.Delete<unknown>(
-      `${t(tenantId)}/members/${memberId}/permissions/${permission}`,
-      undefined,
-      { name: 'member:removePermission' },
-    )
+    return alova.Delete<unknown>(`${t(tenantId)}/members/${memberId}/permissions/${permission}`, undefined, {
+      name: 'member:removePermission',
+    })
   }
 }

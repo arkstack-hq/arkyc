@@ -1,8 +1,6 @@
 import { RequestException } from './RequestException'
 
-export type ApiException =
-  | (RequestException & { errors?: never; flat?: never; list?: never })
-  | ValidationException
+export type ApiException = (RequestException & { errors?: never; flat?: never; list?: never }) | ValidationException
 
 export class ValidationException extends RequestException {
   public flat: Record<string, string>
@@ -52,10 +50,7 @@ export class ValidationException extends RequestException {
    * @param handler
    * @returns
    */
-  delete(
-    key: string,
-    handler?: (args: { error: ValidationException }) => void,
-  ): ValidationException {
+  delete(key: string, handler?: (args: { error: ValidationException }) => void): ValidationException {
     const errors = { ...this.errors }
     delete errors[key]
     const error = new ValidationException(this.message, errors, this.statusCode)

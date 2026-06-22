@@ -19,10 +19,7 @@ function normaliseErrorPayload(payload: any, response: Response): GenericApiResp
   return {
     status: typeof payload?.status === 'string' ? payload.status : 'error',
     code: typeof payload?.code === 'number' ? payload.code : response.status,
-    message:
-      typeof payload?.message === 'string'
-        ? payload.message
-        : response.statusText || 'Request failed',
+    message: typeof payload?.message === 'string' ? payload.message : response.statusText || 'Request failed',
     errors: payload?.errors,
   }
 }

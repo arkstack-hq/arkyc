@@ -34,9 +34,7 @@ describe('Permissions.resolve', () => {
       direct: ['api_keys.view', 'reviews.view'],
     })
     const perms = await Permissions.resolve({ ...CTX, projectId: 'p1' }, store)
-    expect(perms.sort()).toEqual(
-      ['api_keys.view', 'reviews.view', 'sessions.create', 'sessions.view'].sort(),
-    )
+    expect(perms.sort()).toEqual(['api_keys.view', 'reviews.view', 'sessions.create', 'sessions.view'].sort())
     // deduplicated
     expect(perms.length).toBe(new Set(perms).size)
   })
@@ -86,9 +84,7 @@ describe('permission checks', () => {
   it('authorize resolves then allows or denies', async () => {
     const store = resolverStore({ tenantRole: ['sessions.view'] })
     await expect(Permissions.authorize(CTX, 'sessions.view', store)).resolves.toBeUndefined()
-    await expect(Permissions.authorize(CTX, 'sessions.cancel', store)).rejects.toBeInstanceOf(
-      PermissionDeniedError,
-    )
+    await expect(Permissions.authorize(CTX, 'sessions.cancel', store)).rejects.toBeInstanceOf(PermissionDeniedError)
   })
 })
 
@@ -121,13 +117,7 @@ describe('sync', () => {
   it('PermissionSync.roles creates the five roles with their grants', async () => {
     const store = new FakeSyncStore()
     await PermissionSync.roles('t1', store)
-    expect(store.roles.map((r) => r.slug)).toEqual([
-      'owner',
-      'admin',
-      'reviewer',
-      'developer',
-      'readonly',
-    ])
+    expect(store.roles.map((r) => r.slug)).toEqual(['owner', 'admin', 'reviewer', 'developer', 'readonly'])
     // owner receives the full catalogue
     expect(store.rolePerms.get('t1_role_owner')).toHaveLength(Catalogue.ALL.length)
     // reviewer is scoped
