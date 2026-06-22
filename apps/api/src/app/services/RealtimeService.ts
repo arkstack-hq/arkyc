@@ -1,3 +1,4 @@
+import { env } from '@arkstack/common'
 import {
   type ChannelAuthResponse,
   type RealtimeConfig,
@@ -8,34 +9,37 @@ import {
 import type { RealtimeTransport } from '@arkyc/types'
 import { settings } from './GlobalSettingsService'
 
-const env = process.env
-
 /** Build a full driver config (credentials from env) for the named transport. */
 function buildConfig(driver: RealtimeDriverName): RealtimeConfig {
+  // `pusher` targets hosted Pusher Channels via `cluster`; setting `PUSHER_HOST`
+  // opts into a self-hosted soketi instead (TLS defaults off for local soketi).
+  const host = env('PUSHER_HOST', '') || undefined
+
   return {
     driver,
-    soketi: {
-      appId: env.SOKETI_APP_ID ?? 'arkyc',
-      key: env.SOKETI_APP_KEY ?? 'arkyc-key',
-      secret: env.SOKETI_APP_SECRET ?? 'arkyc-secret',
-      host: env.SOKETI_HOST ?? '127.0.0.1',
-      port: Number(env.SOKETI_PORT ?? 6001),
-      useTLS: env.SOKETI_USE_TLS === 'true',
+    pusher: {
+      appId: env('PUSHER_APP_ID', 'arkyc'),
+      key: env('PUSHER_APP_KEY', 'arkyc-key'),
+      secret: env('PUSHER_APP_SECRET', 'arkyc-secret'),
+      cluster: env('PUSHER_CLUSTER', 'mt1'),
+      useTLS: env('PUSHER_USE_TLS', host ? 'false' : 'true') === 'true',
+      host,
+      port: Number(env('PUSHER_PORT', 6001)),
     },
     firebase: {
-      projectId: env.FIREBASE_PROJECT_ID ?? '',
-      clientEmail: env.FIREBASE_CLIENT_EMAIL ?? '',
-      privateKey: (env.FIREBASE_PRIVATE_KEY ?? '').replace(/\\n/g, '\n'),
-      databaseURL: env.FIREBASE_DATABASE_URL ?? '',
-      apiKey: env.FIREBASE_API_KEY ?? '',
-      authDomain: env.FIREBASE_AUTH_DOMAIN ?? '',
+      projectId: env('FIREBASE_PROJECT_ID', ''),
+      clientEmail: env('FIREBASE_CLIENT_EMAIL', ''),
+      privateKey: env('FIREBASE_PRIVATE_KEY', '').replace(/\\n/g, '\n'),
+      databaseURL: env('FIREBASE_DATABASE_URL', ''),
+      apiKey: env('FIREBASE_API_KEY', ''),
+      authDomain: env('FIREBASE_AUTH_DOMAIN', ''),
     },
   }
 }
 
 /** The env-configured transport. `memory` is a dev/test-only hard override. */
 function envTransport(): RealtimeDriverName {
-  return (env.REALTIME_TRANSPORT as RealtimeDriverName) ?? 'off'
+  return env('REALTIME_TRANSPORT', 'off') as RealtimeDriverName
 }
 
 const CACHE_TTL_MS = 10_000
@@ -68,6 +72,7 @@ export class RealtimeService {
     } catch {
       // Settings unavailable (e.g. pre-migration) — fall back to env.
     }
+
     return setting !== 'off' ? setting : envT
   }
 
@@ -78,11 +83,13 @@ export class RealtimeService {
     const transport = await this.resolveTransport()
     if (this.cached?.transport === transport) {
       this.cached.at = now
+
       return this.cached.driver
     }
 
     const driver = RealtimeDriverFactory.create(buildConfig(transport))
     this.cached = { transport, driver, at: now }
+
     return driver
   }
 
@@ -100,18 +107,21 @@ export class RealtimeService {
   /** Sign a private-channel subscription (Pusher protocol), or null if N/A. */
   async authorizeChannel(socketId: string, channel: string): Promise<ChannelAuthResponse | null> {
     const driver = await this.driver()
+
     return driver.authorizeChannel ? driver.authorizeChannel({ socketId, channel }) : null
   }
 
   /** The active transport name + public client connection params. */
   async clientConfig(): Promise<{ transport: RealtimeDriverName } & Record<string, unknown>> {
     const driver = await this.driver()
+
     return { transport: driver.name, ...driver.clientConfig() }
   }
 
   /** Mint a per-user client credential (Firebase custom token), or null. */
   async mintClientToken(uid: string, claims: Record<string, unknown>): Promise<string | null> {
     const driver = await this.driver()
+
     return driver.mintClientToken ? driver.mintClientToken(uid, claims) : null
   }
 }

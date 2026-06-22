@@ -30,7 +30,7 @@ export default class SettingsController extends BaseController {
       'platform.name': ['nullable', 'string', 'min:1'],
       'platform.support_email': ['nullable', 'email'],
       'platform.signups_enabled': ['nullable', 'boolean'],
-      'realtime.transport': ['nullable', 'in:soketi,firebase,off'],
+      'realtime.transport': ['nullable', 'in:pusher,firebase,off'],
     })
 
     const body = (this.body ?? {}) as DeepPartial<GlobalSettings>

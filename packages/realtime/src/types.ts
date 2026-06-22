@@ -1,14 +1,20 @@
 /** Identifier for a registered realtime driver. */
-export type RealtimeDriverName = 'soketi' | 'firebase' | 'memory' | 'off'
+export type RealtimeDriverName = 'pusher' | 'firebase' | 'memory' | 'off'
 
-/** Soketi (Pusher-compatible) connection parameters. */
-export interface SoketiConfig {
+/**
+ * Pusher connection parameters. By default addresses hosted Pusher Channels via
+ * `cluster`; setting `host` opts into a self-hosted soketi instance (host/port).
+ */
+export interface PusherConfig {
   appId: string
   key: string
   secret: string
-  host: string
-  port: number
   useTLS: boolean
+  /** Hosted Pusher cluster (e.g. `eu`, `us2`). Ignored when `host` is set. */
+  cluster: string
+  /** Self-hosted soketi host (opt-in). When set, addressing uses host/port. */
+  host?: string
+  port?: number
 }
 
 /** Firebase (Realtime Database) connection parameters. */
@@ -25,7 +31,7 @@ export interface FirebaseConfig {
 /** Configuration selecting + parameterising the active realtime driver. */
 export interface RealtimeConfig {
   driver: RealtimeDriverName
-  soketi?: SoketiConfig
+  pusher?: PusherConfig
   firebase?: FirebaseConfig
 }
 
@@ -43,7 +49,7 @@ export interface ChannelAuthResponse {
 
 /**
  * A pluggable realtime broadcaster. The API publishes events through this; the
- * concrete driver (soketi/firebase) is chosen at runtime by the global setting.
+ * concrete driver (pusher/firebase) is chosen at runtime by the global setting.
  */
 export interface RealtimeDriver {
   readonly name: RealtimeDriverName

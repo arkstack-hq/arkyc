@@ -41,20 +41,25 @@ export async function createRealtimeClient(
   config: RealtimeConnectionConfig,
   options: ClientOptions,
 ): Promise<RealtimeClient | null> {
-  if (config.transport === 'soketi') return createSoketiClient(config, options)
+  if (config.transport === 'pusher') return createPusherClient(config, options)
   if (config.transport === 'firebase') return createFirebaseClient(config)
   return null
 }
 
-async function createSoketiClient(config: RealtimeConnectionConfig, options: ClientOptions): Promise<RealtimeClient> {
+async function createPusherClient(config: RealtimeConnectionConfig, options: ClientOptions): Promise<RealtimeClient> {
   const { default: Pusher } = await import('pusher-js')
+  // Hosted Pusher connects via `cluster`; self-hosted soketi adds a `wsHost`.
   const pusher = new Pusher(config.key ?? '', {
-    wsHost: config.wsHost,
-    wsPort: config.wsPort,
-    wssPort: config.wssPort ?? config.wsPort,
-    forceTLS: config.forceTLS ?? false,
-    enabledTransports: (config.enabledTransports as ('ws' | 'wss')[]) ?? ['ws', 'wss'],
     cluster: config.cluster ?? 'mt1',
+    forceTLS: config.forceTLS ?? false,
+    ...(config.wsHost
+      ? {
+          wsHost: config.wsHost,
+          wsPort: config.wsPort,
+          wssPort: config.wssPort ?? config.wsPort,
+          enabledTransports: (config.enabledTransports as ('ws' | 'wss')[]) ?? ['ws', 'wss'],
+        }
+      : {}),
     channelAuthorization: {
       transport: 'ajax',
       endpoint: options.authEndpoint,

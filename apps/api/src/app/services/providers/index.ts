@@ -1,3 +1,4 @@
+import { env } from '@arkstack/common'
 import { type OcrDriverName, OcrDriverFactory } from '@arkyc/ocr'
 import { type LivenessDriverName, LivenessDriverFactory } from '@arkyc/liveness'
 import { type FaceMatchDriverName, FaceMatchDriverFactory } from '@arkyc/face-match'
@@ -12,8 +13,6 @@ import { type FaceMatchDriverName, FaceMatchDriverFactory } from '@arkyc/face-ma
  * handled by Arkstack's `Storage` (see `config/filesystem`).
  */
 
-const env = process.env
-
 /** Optional steering hints for the mock drivers (ignored by real drivers). */
 export interface ProviderSignals {
   qualityScore?: number
@@ -27,19 +26,19 @@ export interface ProviderSignals {
 }
 
 export const ocrDriver = OcrDriverFactory.create({
-  driver: (env.OCR_DRIVER as OcrDriverName) ?? 'mock',
-  endpoint: env.OCR_ENDPOINT,
-  apiKey: env.OCR_API_KEY,
+  driver: env('OCR_DRIVER', 'mock') as OcrDriverName,
+  endpoint: env('OCR_ENDPOINT'),
+  apiKey: env('OCR_API_KEY'),
 })
 
 export const livenessDriver = LivenessDriverFactory.create({
-  driver: (env.LIVENESS_DRIVER as LivenessDriverName) ?? 'mock',
-  endpoint: env.LIVENESS_ENDPOINT,
-  apiKey: env.LIVENESS_API_KEY,
+  driver: env('LIVENESS_DRIVER', 'mock') as LivenessDriverName,
+  endpoint: env('LIVENESS_ENDPOINT'),
+  apiKey: env('LIVENESS_API_KEY'),
 })
 
 export const faceMatchDriver = FaceMatchDriverFactory.create({
-  driver: (env.FACE_MATCH_DRIVER as FaceMatchDriverName) ?? 'mock',
-  endpoint: env.FACE_MATCH_ENDPOINT,
-  apiKey: env.FACE_MATCH_API_KEY,
+  driver: env('FACE_MATCH_DRIVER', 'mock') as FaceMatchDriverName,
+  endpoint: env('FACE_MATCH_ENDPOINT'),
+  apiKey: env('FACE_MATCH_API_KEY'),
 })

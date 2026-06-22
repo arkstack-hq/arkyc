@@ -1,6 +1,8 @@
 import type { ChannelAuthRequest, ChannelAuthResponse, RealtimeDriver } from '../types'
 
-/** A no-op driver. Realtime is disabled; `publish` does nothing. */
+/**
+ * A no-op driver. Realtime is disabled; `publish` does nothing.
+ */
 export class OffRealtimeDriver implements RealtimeDriver {
   readonly name = 'off' as const
 

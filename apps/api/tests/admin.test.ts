@@ -91,16 +91,16 @@ describe('global settings', () => {
   it('deep-merges and persists a partial update', async () => {
     const upd = await admin('patch', '/settings', ctx.ownerToken).send({
       platform: { name: 'My Platform', signups_enabled: false },
-      realtime: { transport: 'soketi' },
+      realtime: { transport: 'pusher' },
     })
     expect(upd.status).toBe(200)
     expect(upd.body.data.platform.name).toBe('My Platform')
     expect(upd.body.data.platform.signups_enabled).toBe(false)
-    expect(upd.body.data.realtime.transport).toBe('soketi')
+    expect(upd.body.data.realtime.transport).toBe('pusher')
 
     const again = await admin('get', '/settings', ctx.ownerToken)
     expect(again.body.data.platform.name).toBe('My Platform')
-    expect(again.body.data.realtime.transport).toBe('soketi')
+    expect(again.body.data.realtime.transport).toBe('pusher')
   })
 
   it('rejects an invalid realtime transport (422)', async () => {
@@ -156,9 +156,7 @@ describe('admin audit log', () => {
     expect(res.status).toBe(200)
     expect(Array.isArray(res.body.data)).toBe(true)
 
-    const entry = res.body.data.find(
-      (e: { action: string }) => e.action === 'platform.settings_updated',
-    )
+    const entry = res.body.data.find((e: { action: string }) => e.action === 'platform.settings_updated')
     expect(entry).toBeTruthy()
     expect(entry.actor?.id).toBe(ctx.ownerId)
   })

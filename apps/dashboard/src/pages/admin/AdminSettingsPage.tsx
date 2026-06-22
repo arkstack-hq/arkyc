@@ -7,16 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
-const TRANSPORTS: RealtimeTransport[] = ['off', 'soketi', 'firebase']
+const TRANSPORTS: RealtimeTransport[] = ['off', 'pusher', 'firebase']
 
 export default function AdminSettingsPage() {
   const { data, error } = useRequest(Admin.settings())
@@ -138,9 +131,7 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
       </div>
 
       <div className="mt-4 flex items-center justify-end gap-3">
-        {error && !error.errors ? (
-          <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError>
-        ) : null}
+        {error && !error.errors ? <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError> : null}
         {saved ? <p className="text-sm text-success">Settings saved.</p> : null}
         <Button onClick={() => void send()} disabled={loading || form.name.trim() === ''}>
           {loading ? 'Saving…' : 'Save'}

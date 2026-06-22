@@ -1,7 +1,7 @@
 import type { RealtimeConfig, RealtimeDriver } from './types'
 import { OffRealtimeDriver } from './drivers/off'
 import { MemoryRealtimeDriver } from './drivers/memory'
-import { SoketiRealtimeDriver } from './drivers/soketi'
+import { PusherRealtimeDriver } from './drivers/pusher'
 import { FirebaseRealtimeDriver } from './drivers/firebase'
 
 /** Selects a realtime driver from config. */
@@ -16,8 +16,8 @@ export class RealtimeDriverFactory {
    */
   static create(config: RealtimeConfig): RealtimeDriver {
     switch (config.driver) {
-      case 'soketi':
-        return config.soketi ? new SoketiRealtimeDriver(config.soketi) : new OffRealtimeDriver()
+      case 'pusher':
+        return config.pusher ? new PusherRealtimeDriver(config.pusher) : new OffRealtimeDriver()
       case 'firebase':
         return config.firebase ? new FirebaseRealtimeDriver(config.firebase) : new OffRealtimeDriver()
       case 'memory':

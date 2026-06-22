@@ -43,6 +43,7 @@ services:
       - arkyc_redis:/data
 
   # Soketi — self-hostable, Pusher-compatible WebSocket server (Phase 16 realtime).
+  # Opt-in alternative to hosted Pusher: set PUSHER_HOST=127.0.0.1 in the API env.
   soketi:
     image: quay.io/soketi/soketi:latest-16-alpine
     restart: unless-stopped

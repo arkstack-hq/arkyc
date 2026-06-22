@@ -1,7 +1,11 @@
 import type { Entity } from './common'
 
-/** Realtime transport for verification events (Phase 16). */
-export type RealtimeTransport = 'soketi' | 'firebase' | 'off'
+/**
+ * Realtime transport for verification events (Phase 16). `pusher` covers both
+ * hosted Pusher Channels (default, via a cluster) and self-hosted soketi (opt-in,
+ * via a host) — they share the Pusher protocol.
+ */
+export type RealtimeTransport = 'pusher' | 'firebase' | 'off'
 
 /**
  * Platform-wide settings, managed by platform admins on the `/admin` surface and
