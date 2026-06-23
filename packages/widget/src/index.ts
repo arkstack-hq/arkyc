@@ -20,6 +20,7 @@
 import type { ProjectBranding, WidgetResult } from '@arkyc/types'
 import { WidgetController } from './controller'
 import type { ProviderSignalHints } from './client'
+import type { DocumentAnalyzer, DocumentTuning } from './document'
 import type { FaceAnalyzer, FaceTuning } from './face'
 
 export const PACKAGE_NAME = '@arkyc/widget'
@@ -48,6 +49,10 @@ export interface BaseWidgetOptions {
   faceAnalyzer?: FaceAnalyzer | null
   /** Override face-detection thresholds (tune against a real camera). */
   faceTuning?: FaceTuning
+  /** Pass `null` to disable document detection (falls back to the brightness heuristic). */
+  documentAnalyzer?: DocumentAnalyzer | null
+  /** Override document-detection thresholds (tune against a real camera). */
+  documentTuning?: DocumentTuning
 }
 
 /** Options for {@link ArkycWidget.mount} (inline mode). */
@@ -85,6 +90,8 @@ function buildController(options: BaseWidgetOptions, onSettle: () => void): Widg
     nav: options.nav,
     faceAnalyzer: options.faceAnalyzer,
     faceTuning: options.faceTuning,
+    documentAnalyzer: options.documentAnalyzer,
+    documentTuning: options.documentTuning,
   })
 }
 
@@ -138,4 +145,12 @@ export { Flow } from './flow'
 export type { FlowContext } from './flow'
 export { createDefaultFaceAnalyzer, DEFAULT_TUNING, makeChallengeDetector, isSelfieReady } from './face'
 export type { FaceAnalyzer, FaceSample, FaceTuning, ChallengeDetector } from './face'
+export {
+  createDefaultDocumentAnalyzer,
+  DEFAULT_DOCUMENT_TUNING,
+  analyzeDocumentGray,
+  documentGuidance,
+  isDocumentReady,
+} from './document'
+export type { DocumentAnalyzer, DocumentSample, DocumentTuning, DocRect } from './document'
 export type { WidgetResult } from '@arkyc/types'

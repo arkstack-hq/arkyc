@@ -11,30 +11,7 @@ import { settings } from './GlobalSettingsService'
 
 /** Build a full driver config (credentials from env) for the named transport. */
 function buildConfig(driver: RealtimeDriverName): RealtimeConfig {
-  // `pusher` targets hosted Pusher Channels via `cluster`; setting `PUSHER_HOST`
-  // opts into a self-hosted soketi instead (TLS defaults off for local soketi).
-  const host = env('PUSHER_HOST', '') || undefined
-
-  return {
-    driver,
-    pusher: {
-      appId: env('PUSHER_APP_ID', 'arkyc'),
-      key: env('PUSHER_APP_KEY', 'arkyc-key'),
-      secret: env('PUSHER_APP_SECRET', 'arkyc-secret'),
-      cluster: env('PUSHER_CLUSTER', 'mt1'),
-      useTLS: env('PUSHER_USE_TLS', host ? 'false' : 'true') === 'true',
-      host,
-      port: Number(env('PUSHER_PORT', 6001)),
-    },
-    firebase: {
-      projectId: env('FIREBASE_PROJECT_ID', ''),
-      clientEmail: env('FIREBASE_CLIENT_EMAIL', ''),
-      privateKey: env('FIREBASE_PRIVATE_KEY', '').replace(/\\n/g, '\n'),
-      databaseURL: env('FIREBASE_DATABASE_URL', ''),
-      apiKey: env('FIREBASE_API_KEY', ''),
-      authDomain: env('FIREBASE_AUTH_DOMAIN', ''),
-    },
-  }
+  return { ...config('realtime'), driver }
 }
 
 /** The env-configured transport. `memory` is a dev/test-only hard override. */

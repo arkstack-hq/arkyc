@@ -8,6 +8,7 @@ import type {
   WidgetStep,
 } from '@arkyc/types'
 import { ArkycClient, type ClientSession, type ProviderSignalHints } from './client'
+import type { DocumentAnalyzer, DocumentTuning } from './document'
 import type { FaceAnalyzer, FaceTuning } from './face'
 import { Flow } from './flow'
 import { Theme } from './theme'
@@ -46,6 +47,14 @@ export interface WidgetControllerConfig {
   faceAnalyzer?: FaceAnalyzer | null
   /** Override face-detection thresholds (tune against a real camera). */
   faceTuning?: FaceTuning
+  /**
+   * Document analyzer powering document auto-capture (real edge-projection
+   * detection). Defaults to the built-in canvas detector; pass `null` to disable
+   * it and fall back to the brightness/glare heuristic.
+   */
+  documentAnalyzer?: DocumentAnalyzer | null
+  /** Override document-detection thresholds (tune against a real camera). */
+  documentTuning?: DocumentTuning
   /** Schedules a callback after `ms` (defaults to `setTimeout`). */
   scheduler?: (fn: () => void, ms: number) => void
   /** Cosmetic OCR-processing screen duration (ms). */
@@ -104,6 +113,8 @@ export class WidgetController {
       config.nav ?? globalThis.navigator,
       config.faceAnalyzer,
       config.faceTuning,
+      config.documentAnalyzer,
+      config.documentTuning,
     )
 
     this.postToParent = config.postToParent ?? (!!win.parent && win.parent !== win)

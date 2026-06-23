@@ -118,7 +118,7 @@ export class Theme {
 .arkyc-dot.done{background:#16a34a}
 .arkyc-doc{position:relative;width:100%;max-width:360px;margin:0 auto}
 .arkyc-doc .arkyc-preview{display:block;width:100%;max-width:100%}
-.arkyc-doc-frame{position:absolute;inset:5%;pointer-events:none}
+.arkyc-doc-frame{position:absolute;inset:5%;pointer-events:none;transition:left .18s ease,top .18s ease,width .18s ease,height .18s ease}
 .arkyc-corner{position:absolute;width:24px;height:24px;border:3px solid rgba(255,255,255,.9);transition:border-color .3s}
 .arkyc-corner.tl{top:0;left:0;border-right:none;border-bottom:none;border-top-left-radius:6px}
 .arkyc-corner.tr{top:0;right:0;border-left:none;border-bottom:none;border-top-right-radius:6px}

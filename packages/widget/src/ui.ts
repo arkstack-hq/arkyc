@@ -3,6 +3,14 @@ import type { DocumentType, LivenessChallenge, VerificationDecision, WidgetStep 
 import { Camera } from './capture'
 import type { Facing } from './capture'
 import {
+  createDefaultDocumentAnalyzer,
+  DEFAULT_DOCUMENT_TUNING,
+  documentGuidance,
+  type DocRect,
+  type DocumentAnalyzer,
+  type DocumentTuning,
+} from './document'
+import {
   createDefaultFaceAnalyzer,
   DEFAULT_TUNING,
   isSelfieReady,
@@ -91,6 +99,8 @@ interface DocStage {
   stage: HTMLElement
   /** Tint the frame for the current capture quality. */
   setQuality(quality: 'wait' | 'good' | 'bad'): void
+  /** Snap the bracket frame onto a detected document (or reset with `null`). */
+  setFrame(rect: DocRect | null): void
 }
 
 /** Handles for driving the liveness step-progress dots. */
@@ -126,6 +136,8 @@ export class WidgetView {
   private readonly camera: Camera
   private readonly analyzer: FaceAnalyzer | null
   private readonly tuning: FaceTuning
+  private readonly docAnalyzer: DocumentAnalyzer | null
+  private readonly docTuning: DocumentTuning
   /** Interval ids for live quality/recording timers, cleared on re-render. */
   private timers: ReturnType<typeof setInterval>[] = []
   /** Extra teardown run on each re-render (cancels in-flight detection loops). */
@@ -138,10 +150,14 @@ export class WidgetView {
     nav: Navigator = globalThis.navigator,
     analyzer: FaceAnalyzer | null = createDefaultFaceAnalyzer(),
     tuning: FaceTuning = DEFAULT_TUNING,
+    docAnalyzer: DocumentAnalyzer | null = createDefaultDocumentAnalyzer(),
+    docTuning: DocumentTuning = DEFAULT_DOCUMENT_TUNING,
   ) {
     this.camera = new Camera(doc, nav)
     this.analyzer = analyzer
     this.tuning = tuning
+    this.docAnalyzer = docAnalyzer
+    this.docTuning = docTuning
     this.root = this.el('div', { class: 'arkyc-root' })
 
     const style = this.el('style', { text: theme.stylesheet() })
@@ -320,8 +336,55 @@ export class WidgetView {
     }
   }
 
-  /** Document capture: brightness/glare heuristic, auto-grab once steady. */
+  /**
+   * Document capture: detect a real, well-framed, in-focus document (edge
+   * projection) and auto-grab only once it's been held steady. Falls back to the
+   * brightness/glare heuristic when the detector can't run.
+   */
   private runDocumentAutoCapture(video: HTMLVideoElement, hint: HTMLElement, doc: DocStage): void {
+    const analyzer = this.docAnalyzer
+    if (!analyzer) return this.runDocumentBrightnessCapture(video, hint, doc)
+
+    hint.textContent = 'Starting camera…'
+    let cancelled = false
+    this.cleanups.push(() => {
+      cancelled = true
+    })
+    void analyzer.ready().then((ok) => {
+      if (cancelled) return
+      if (!ok) {
+        // No detector — fall back to the coarse brightness heuristic.
+        this.runDocumentBrightnessCapture(video, hint, doc)
+        return
+      }
+      let goodStreak = 0
+      const timer = setInterval(() => {
+        const sample = analyzer.analyze(video)
+        if (!sample) return
+        const { ready, hint: message } = documentGuidance(sample, this.docTuning)
+        hint.textContent = message
+        doc.setFrame(sample.present ? sample.rect : null)
+        doc.setQuality(ready ? 'good' : sample.present ? 'wait' : 'bad')
+        goodStreak = ready ? goodStreak + 1 : 0
+        // Auto-capture once a framed, focused document has held for ~1.25s.
+        if (goodStreak >= this.docTuning.hold) {
+          clearInterval(timer)
+          doc.setQuality('good')
+          void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
+        }
+      }, 250)
+      this.timers.push(timer)
+    })
+  }
+
+  /**
+   * Coarse fallback: brightness/glare heuristic, used when detection can't run.
+   *
+   * @param video
+   * @param hint
+   * @param doc
+   */
+  private runDocumentBrightnessCapture(video: HTMLVideoElement, hint: HTMLElement, doc: DocStage): void {
     let goodStreak = 0
     const timer = setInterval(() => {
       const quality = this.camera.sampleQuality(video)
@@ -631,7 +694,13 @@ export class WidgetView {
     }
   }
 
-  /** Build the liveness step-progress dots (one per challenge). */
+  /**
+   * Build the liveness step-progress dots (one per challenge).
+   *
+   * @param video
+   * @param hint
+   * @param doc
+   */
   private buildDots(count: number): StepDots {
     const el = this.el('div', { class: 'arkyc-dots' })
     const dots: HTMLElement[] = []
@@ -668,6 +737,19 @@ export class WidgetView {
     return {
       stage,
       setQuality: (quality) => stage.setAttribute('data-q', quality),
+      setFrame: (rect) => {
+        if (!rect) {
+          // Reset to the default CSS inset guide.
+          frame.style.inset = ''
+          frame.style.left = frame.style.top = frame.style.width = frame.style.height = ''
+          return
+        }
+        frame.style.inset = 'auto'
+        frame.style.left = `${rect.x * 100}%`
+        frame.style.top = `${rect.y * 100}%`
+        frame.style.width = `${rect.w * 100}%`
+        frame.style.height = `${rect.h * 100}%`
+      },
     }
   }
 
