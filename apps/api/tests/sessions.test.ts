@@ -3,14 +3,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ApiKey } from '../src/app/models/ApiKey'
 import { Project } from '../src/app/models/Project'
 import { Storage } from '@arkstack/filesystem'
-import { Tenant } from '../src/app/models/Tenant'
+import { Organization } from '../src/app/models/Organization'
 import { VerificationSession } from '../src/app/models/VerificationSession'
 import { app } from '../src/core/bootstrap'
 import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import request from 'parasito'
 
 /** Phase 8 — verification session engine driven async via the queue + workers. */
-const fx = { tenantId: '', projectId: '', apiKeySecret: '' }
+const fx = { organizationId: '', projectId: '', apiKeySecret: '' }
 
 /** A second project configured for the active-liveness flow (Phase 17). */
 const active = { projectId: '', apiKeySecret: '' }
@@ -44,10 +44,10 @@ async function toLiveness(signals: Record<string, unknown> = {}): Promise<{ id: 
 
 beforeAll(async () => {
   const s = Date.now()
-  const tenant = await Tenant.create({ name: 'Sess Co', slug: `sess-${s}`, settings: {} })
-  fx.tenantId = tenant.id
+  const organization = await Organization.create({ name: 'Sess Co', slug: `sess-${s}`, settings: {} })
+  fx.organizationId = organization.id
   const project = await Project.create({
-    tenantId: tenant.id,
+    organizationId: organization.id,
     name: 'Sess Prod',
     slug: `sess-prod-${s}`,
     environment: 'production',
@@ -63,7 +63,7 @@ beforeAll(async () => {
   const key = ApiKeyAuth.generate('live')
   fx.apiKeySecret = key.secret
   await ApiKey.create({
-    tenantId: tenant.id,
+    organizationId: organization.id,
     projectId: project.id,
     name: 'Sess key',
     keyPrefix: key.keyPrefix,
@@ -72,7 +72,7 @@ beforeAll(async () => {
 
   // A project that overrides the capture model to active liveness.
   const activeProject = await Project.create({
-    tenantId: tenant.id,
+    organizationId: organization.id,
     name: 'Active Prod',
     slug: `active-prod-${s}`,
     environment: 'production',
@@ -84,7 +84,7 @@ beforeAll(async () => {
   const activeKey = ApiKeyAuth.generate('live')
   active.apiKeySecret = activeKey.secret
   await ApiKey.create({
-    tenantId: tenant.id,
+    organizationId: organization.id,
     projectId: activeProject.id,
     name: 'Active key',
     keyPrefix: activeKey.keyPrefix,
@@ -93,7 +93,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  if (fx.tenantId) await Tenant.destroy(fx.tenantId)
+  if (fx.organizationId) await Organization.destroy(fx.organizationId)
 })
 
 describe('verification session lifecycle', () => {
@@ -183,7 +183,7 @@ describe('verification session lifecycle', () => {
     form.append('image', new Blob([bytes], { type: 'image/jpeg' }), 'front.jpg')
     await clientApi('post', 'document/front', token).send(form)
 
-    const key = `tenants/${fx.tenantId}/projects/${fx.projectId}/sessions/${id}/documents/front.jpg`
+    const key = `organizations/${fx.organizationId}/projects/${fx.projectId}/sessions/${id}/documents/front.jpg`
     expect(await Storage.disk().exists(key)).toBe(true)
     expect(Buffer.from(await Storage.disk().getBytes(key)).equals(bytes)).toBe(true)
   })
@@ -236,12 +236,12 @@ describe('verification session lifecycle', () => {
     })
     expect(foreign.status).toBe(403)
 
-    // A tenant channel is never client-signable, even one's own tenant.
-    const tenant = await clientApi('post', 'realtime/auth', token).send({
+    // A organization channel is never client-signable, even one's own organization.
+    const organization = await clientApi('post', 'realtime/auth', token).send({
       socket_id: '123.456',
-      channel_name: 'private-tenant-x',
+      channel_name: 'private-organization-x',
     })
-    expect(tenant.status).toBe(403)
+    expect(organization.status).toBe(403)
 
     // The session's own channel passes scope and is signed.
     const own = await clientApi('post', 'realtime/auth', token).send({

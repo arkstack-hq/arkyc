@@ -1,7 +1,7 @@
 import { Model } from 'arkormx'
 import type { CastMap } from 'arkormx'
 import type { ProjectBranding, ProjectEnvironment, ProjectSettings, ProjectStatus } from '@arkyc/types'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { ProjectMember } from './ProjectMember'
 import { ApiKey } from './ApiKey'
 import { VerificationSession } from './VerificationSession'
@@ -14,7 +14,7 @@ export class Project extends Model {
   protected static override factoryClass = ProjectFactory
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare name: string
   declare slug: string
   declare environment: ProjectEnvironment
@@ -25,7 +25,7 @@ export class Project extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }
@@ -35,8 +35,8 @@ export class Project extends Model {
     branding: 'json',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   members() {

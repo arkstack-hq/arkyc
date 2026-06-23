@@ -4,7 +4,7 @@ export default class RoleResource extends Resource {
   data() {
     return {
       id: this.id,
-      tenant_id: this.tenantId,
+      organization_id: this.organizationId,
       name: this.name,
       slug: this.slug,
       description: this.description ?? null,

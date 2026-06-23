@@ -2,14 +2,14 @@ import { BaseController } from '@controllers/BaseController'
 import EmptyResource from '@app/http/resources/EmptyResource'
 import { HttpContext } from 'clear-router/types/express'
 import { RequestException } from '@arkstack/common'
-import { TenantInvitation } from '@app/models/TenantInvitation'
-import { TenantMember } from '@app/models/TenantMember'
+import { OrganizationInvitation } from '@app/models/OrganizationInvitation'
+import { OrganizationMember } from '@app/models/OrganizationMember'
 import { Token } from '@arkyc/auth'
 
-/** Accept a tenant invitation as the authenticated user. */
+/** Accept an organization invitation as the authenticated user. */
 export default class InvitationController extends BaseController {
   /**
-   * Accept an invitation by its raw token and join the tenant.
+   * Accept an invitation by its raw token and join the organization.
    *
    * @param   ctx  The HTTP context (the accepting user is `req.user`).
    * @returns      An EmptyResource confirming acceptance.
@@ -18,14 +18,14 @@ export default class InvitationController extends BaseController {
     const data = await this.validate({ token: ['required', 'string'] })
     const user = req.user!
 
-    const invitation = await TenantInvitation.where({ tokenHash: Token.hash(data.token) })
+    const invitation = await OrganizationInvitation.where({ tokenHash: Token.hash(data.token) })
       .whereNull('acceptedAt')
       .firstOrFail()
     RequestException.abortIf(new Date(invitation.expiresAt).getTime() <= Date.now(), 'Invitation has expired', 410)
     RequestException.abortIf(invitation.email !== user.email, 'This invitation is for a different email', 403)
 
-    await TenantMember.query().firstOrCreate(
-      { userId: user.id, tenantId: invitation.tenantId },
+    await OrganizationMember.query().firstOrCreate(
+      { userId: user.id, organizationId: invitation.organizationId },
       {
         roleId: invitation.roleId,
         status: 'active',

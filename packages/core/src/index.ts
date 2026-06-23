@@ -3,7 +3,7 @@
  *
  * Pure, infrastructure-free domain logic: the decision engine, status-transition
  * rules, session/document expiry, risk scoring, result normalization, and
- * tenant/project context helpers (Phase 1). No Arkstack or DB dependencies.
+ * organization/project context helpers (Phase 1). No Arkstack or DB dependencies.
  */
 export * from './thresholds'
 export * from './status'

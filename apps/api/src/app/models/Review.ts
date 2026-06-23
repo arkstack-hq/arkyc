@@ -1,6 +1,6 @@
 import { Model } from 'arkormx'
 import type { VerificationStatus } from '@arkyc/types'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Project } from './Project'
 import { VerificationSession } from './VerificationSession'
 import { User } from './User'
@@ -9,7 +9,7 @@ export class Review extends Model {
   protected static override table = 'reviews'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare projectId: string
   declare sessionId: string
   declare reviewerId: string | null
@@ -21,7 +21,7 @@ export class Review extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     projectId: 'project_id',
     sessionId: 'session_id',
     reviewerId: 'reviewer_id',
@@ -31,8 +31,8 @@ export class Review extends Model {
     updatedAt: 'updated_at',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   project() {

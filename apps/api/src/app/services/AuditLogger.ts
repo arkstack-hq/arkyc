@@ -4,7 +4,7 @@ import { AuditLog } from '@app/models/AuditLog'
 
 /** A single audit-trail entry to persist. */
 export interface AuditEntry {
-  tenantId: string
+  organizationId: string
   projectId?: string | null
   actorId?: string | null
   actorType: ActorType
@@ -33,7 +33,7 @@ export class AuditLogger {
   /** Persist an audit entry. */
   async record(entry: AuditEntry): Promise<void> {
     await AuditLog.create({
-      tenantId: entry.tenantId,
+      organizationId: entry.organizationId,
       projectId: entry.projectId ?? null,
       actorId: entry.actorId ?? null,
       actorType: entry.actorType,
@@ -47,8 +47,8 @@ export class AuditLogger {
   }
 
   /**
-   * Record an entry for a tenant-scoped dashboard request — pulls `tenantId`
-   * from `req.tenant` and the actor/IP/UA from the request.
+   * Record an entry for an organization-scoped dashboard request — pulls `organizationId`
+   * from `req.organization` and the actor/IP/UA from the request.
    */
   async recordForRequest(
     req: HttpContext['req'],
@@ -62,7 +62,7 @@ export class AuditLogger {
   ): Promise<void> {
     const actor = this.actorFromRequest(req)
     await this.record({
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
       projectId: entry.projectId ?? null,
       actorId: actor.actorId,
       actorType: actor.actorType,

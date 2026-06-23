@@ -1,7 +1,7 @@
 import { Model } from 'arkormx'
 import type { CastMap } from 'arkormx'
 import type { WebhookEndpointStatus, WebhookEventName } from '@arkyc/types'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Project } from './Project'
 import { WebhookDelivery } from './WebhookDelivery'
 
@@ -9,7 +9,7 @@ export class WebhookEndpoint extends Model {
   protected static override table = 'webhook_endpoints'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare projectId: string
   declare url: string
   declare secretHash: string
@@ -19,7 +19,7 @@ export class WebhookEndpoint extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     projectId: 'project_id',
     secretHash: 'secret_hash',
     createdAt: 'created_at',
@@ -33,8 +33,8 @@ export class WebhookEndpoint extends Model {
   /** The signing secret hash is never serialised. */
   protected override hidden = ['secretHash']
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   project() {

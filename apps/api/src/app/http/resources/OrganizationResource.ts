@@ -1,6 +1,6 @@
 import { Resource } from 'resora'
 
-export default class TenantResource extends Resource {
+export default class OrganizationResource extends Resource {
   data() {
     return {
       id: this.id,

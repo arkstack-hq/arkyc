@@ -1,61 +1,61 @@
-import type { Id, TenantScoped } from '@arkyc/types'
+import type { Id, OrganizationScoped } from '@arkyc/types'
 
-/** Identifies the tenant + project a request or entity belongs to. */
-export interface TenantProjectContext {
-  tenantId: Id
+/** Identifies the organization + project a request or entity belongs to. */
+export interface OrganizationProjectContext {
+  organizationId: Id
   projectId: Id
 }
 
 /**
- * Thrown when an entity is accessed outside its tenant/project scope.
+ * Thrown when an entity is accessed outside its organization/project scope.
  */
-export class TenantScopeError extends Error {
-  constructor(message = 'Entity is outside the active tenant scope') {
+export class OrganizationScopeError extends Error {
+  constructor(message = 'Entity is outside the active organization scope') {
     super(message)
-    this.name = 'TenantScopeError'
+    this.name = 'OrganizationScopeError'
   }
 }
 
-/** Tenant/project scoping and storage-path helpers. */
-export class TenantContext {
+/** Organization/project scoping and storage-path helpers. */
+export class OrganizationContext {
   /**
-   * Whether `entity` belongs to the given tenant.
+   * Whether `entity` belongs to the given organization.
    *
    * @param entity
-   * @param tenantId
+   * @param organizationId
    * @returns
    */
-  static belongsTo(entity: TenantScoped, tenantId: Id): boolean {
-    return entity.tenant_id === tenantId
+  static belongsTo(entity: OrganizationScoped, organizationId: Id): boolean {
+    return entity.organization_id === organizationId
   }
 
   /**
-   * Assert that `entity` belongs to `tenantId`, throwing {@link TenantScopeError}
+   * Assert that `entity` belongs to `organizationId`, throwing {@link OrganizationScopeError}
    * otherwise. Returns the entity (narrowed) for inline use.
    *
    * @param entity
-   * @param tenantId
+   * @param organizationId
    * @returns
    */
-  static assertScope<T extends TenantScoped>(entity: T, tenantId: Id): T {
-    if (!TenantContext.belongsTo(entity, tenantId)) {
-      throw new TenantScopeError()
+  static assertScope<T extends OrganizationScoped>(entity: T, organizationId: Id): T {
+    if (!OrganizationContext.belongsTo(entity, organizationId)) {
+      throw new OrganizationScopeError()
     }
     return entity
   }
 
   /**
-   * Build the canonical, tenant/project-scoped storage key for a session object.
+   * Build the canonical, organization/project-scoped storage key for a session object.
    *
-   * e.g. `tenants/t1/projects/p1/sessions/s1/documents/front.jpg`
+   * e.g. `organizations/t1/projects/p1/sessions/s1/documents/front.jpg`
    *
    * @param ctx
    * @param sessionId
    * @param parts
    * @returns
    */
-  static storagePath(ctx: TenantProjectContext, sessionId: Id, ...parts: string[]): string {
-    const segments = ['tenants', ctx.tenantId, 'projects', ctx.projectId, 'sessions', sessionId, ...parts]
+  static storagePath(ctx: OrganizationProjectContext, sessionId: Id, ...parts: string[]): string {
+    const segments = ['organizations', ctx.organizationId, 'projects', ctx.projectId, 'sessions', sessionId, ...parts]
     return segments.join('/')
   }
 }

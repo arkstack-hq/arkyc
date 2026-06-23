@@ -6,8 +6,8 @@ import { Hash } from '@arkstack/common'
 import { PermissionSync } from '@arkyc/permissions'
 import { Project } from '../src/app/models/Project'
 import { Role } from '../src/app/models/Role'
-import { Tenant } from '../src/app/models/Tenant'
-import { TenantMember } from '../src/app/models/TenantMember'
+import { Organization } from '../src/app/models/Organization'
+import { OrganizationMember } from '../src/app/models/OrganizationMember'
 import { User } from '../src/app/models/User'
 import { VerificationSession } from '../src/app/models/VerificationSession'
 import { app } from '../src/core/bootstrap'
@@ -17,7 +17,7 @@ import request from 'parasito'
 const PASSWORD = 'secret123'
 
 const fx = {
-  tenantId: '',
+  organizationId: '',
   ownerEmail: '',
   reviewerEmail: '',
   loginEmail: '',
@@ -30,17 +30,17 @@ const fx = {
   sessionId: '',
 }
 
-/** Create an isolated tenant with system roles, members, an API key, and a session. */
+/** Create an isolated organization with system roles, members, an API key, and a session. */
 beforeAll(async () => {
   const s = Date.now()
   await PermissionSync.permissions(permissionStore)
 
-  const tenant = await Tenant.create({ name: 'Test Co', slug: `test-${s}`, settings: {} })
-  fx.tenantId = tenant.id
-  await PermissionSync.roles(tenant.id, permissionStore)
+  const organization = await Organization.create({ name: 'Test Co', slug: `test-${s}`, settings: {} })
+  fx.organizationId = organization.id
+  await PermissionSync.roles(organization.id, permissionStore)
 
-  const ownerRole = await Role.where({ tenantId: tenant.id, slug: 'owner' }).first()
-  const reviewerRole = await Role.where({ tenantId: tenant.id, slug: 'reviewer' }).first()
+  const ownerRole = await Role.where({ organizationId: organization.id, slug: 'owner' }).first()
+  const reviewerRole = await Role.where({ organizationId: organization.id, slug: 'reviewer' }).first()
   const password = await Hash.make(PASSWORD)
 
   fx.ownerEmail = `owner-${s}@test.dev`
@@ -61,15 +61,15 @@ beforeAll(async () => {
   // A user with no prior token, reserved for exercising the login endpoint once.
   await User.create({ firstName: 'Login', lastName: 'Test', email: fx.loginEmail, password })
 
-  await TenantMember.create({
-    tenantId: tenant.id,
+  await OrganizationMember.create({
+    organizationId: organization.id,
     userId: owner.id,
     roleId: ownerRole!.id,
     status: 'active',
     joinedAt: new Date(),
   })
-  await TenantMember.create({
-    tenantId: tenant.id,
+  await OrganizationMember.create({
+    organizationId: organization.id,
     userId: reviewer.id,
     roleId: reviewerRole!.id,
     status: 'active',
@@ -77,7 +77,7 @@ beforeAll(async () => {
   })
 
   const project = await Project.create({
-    tenantId: tenant.id,
+    organizationId: organization.id,
     name: 'Prod',
     slug: `prod-${s}`,
     environment: 'production',
@@ -89,7 +89,7 @@ beforeAll(async () => {
   const key = ApiKeyAuth.generate('live')
   fx.apiKeySecret = key.secret
   await ApiKey.create({
-    tenantId: tenant.id,
+    organizationId: organization.id,
     projectId: project.id,
     name: 'Test key',
     keyPrefix: key.keyPrefix,
@@ -99,7 +99,7 @@ beforeAll(async () => {
   const ct = ClientToken.create(900)
   fx.clientToken = ct.token
   const session = await VerificationSession.create({
-    tenantId: tenant.id,
+    organizationId: organization.id,
     projectId: project.id,
     status: 'started',
     clientTokenHash: ct.tokenHash,
@@ -114,7 +114,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  if (fx.tenantId) await Tenant.destroy(fx.tenantId)
+  if (fx.organizationId) await Organization.destroy(fx.organizationId)
 })
 
 async function login(email: string, password: string): Promise<string> {
@@ -166,18 +166,18 @@ describe('dashboard auth (Arkstack built-in)', () => {
   })
 })
 
-describe('tenant scope + permissions', () => {
-  it('allows a member with the permission (owner has tenants.view)', async () => {
+describe('organization scope + permissions', () => {
+  it('allows a member with the permission (owner has organizations.view)', async () => {
     const res = await request(app)
-      .get(`/api/v1/dashboard/tenants/${fx.tenantId}`)
+      .get(`/api/v1/dashboard/organizations/${fx.organizationId}`)
       .set('Authorization', `Bearer ${fx.ownerToken}`)
     expect(res.status).toBe(200)
-    expect(res.body.data.id).toBe(fx.tenantId)
+    expect(res.body.data.id).toBe(fx.organizationId)
   })
 
-  it('denies a member lacking the permission (reviewer has no tenants.view)', async () => {
+  it('denies a member lacking the permission (reviewer has no organizations.view)', async () => {
     const res = await request(app)
-      .get(`/api/v1/dashboard/tenants/${fx.tenantId}`)
+      .get(`/api/v1/dashboard/organizations/${fx.organizationId}`)
       .set('Authorization', `Bearer ${fx.reviewerToken}`)
     expect(res.status).toBe(403)
     expect(res.body.message).toContain('Permission denied')
@@ -190,7 +190,7 @@ describe('tenant scope + permissions', () => {
       .post('/api/v1/auth/register')
       .send({ firstname: 'Out', lastname: 'Test', email, password: PASSWORD })
     const res = await request(app)
-      .get(`/api/v1/dashboard/tenants/${fx.tenantId}`)
+      .get(`/api/v1/dashboard/organizations/${fx.organizationId}`)
       .set('Authorization', `Bearer ${reg.body.token}`)
     expect(res.status).toBe(403)
   })
@@ -200,7 +200,7 @@ describe('public API-key surface', () => {
   it('authenticates a valid key and rejects a bad one', async () => {
     const ok = await request(app).get('/api/v1/ping/project').set('Authorization', `Bearer ${fx.apiKeySecret}`)
     expect(ok.status).toBe(200)
-    expect(ok.body.data.tenant_id).toBe(fx.tenantId)
+    expect(ok.body.data.organization_id).toBe(fx.organizationId)
 
     await request(app).get('/api/v1/ping/project').set('Authorization', 'Bearer sk_live_bogus').expect(401)
   })
@@ -216,21 +216,21 @@ describe('client-token surface', () => {
   })
 })
 
-describe('tenant me (effective permissions)', () => {
+describe('organization me (effective permissions)', () => {
   it('returns the full effective permission set for an owner', async () => {
     const res = await request(app)
-      .get(`/api/v1/dashboard/tenants/${fx.tenantId}/me`)
+      .get(`/api/v1/dashboard/organizations/${fx.organizationId}/me`)
       .set('Authorization', `Bearer ${fx.ownerToken}`)
     expect(res.status).toBe(200)
-    expect(res.body.data.effective_permissions).toContain('tenants.view')
+    expect(res.body.data.effective_permissions).toContain('organizations.view')
   })
 
-  it('reflects a narrower set for a reviewer (no tenants.view)', async () => {
+  it('reflects a narrower set for a reviewer (no organizations.view)', async () => {
     const res = await request(app)
-      .get(`/api/v1/dashboard/tenants/${fx.tenantId}/me`)
+      .get(`/api/v1/dashboard/organizations/${fx.organizationId}/me`)
       .set('Authorization', `Bearer ${fx.reviewerToken}`)
     expect(res.status).toBe(200)
     expect(res.body.data.effective_permissions).toContain('reviews.view')
-    expect(res.body.data.effective_permissions).not.toContain('tenants.view')
+    expect(res.body.data.effective_permissions).not.toContain('organizations.view')
   })
 })

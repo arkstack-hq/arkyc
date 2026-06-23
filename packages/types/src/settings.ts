@@ -26,7 +26,7 @@ export interface GlobalSettings {
   platform: {
     name: string
     support_email: string | null
-    /** Whether new tenant sign-ups are accepted. */
+    /** Whether new organization sign-ups are accepted. */
     signups_enabled: boolean
   }
   /** Realtime delivery configuration (consumed in Phase 16). */

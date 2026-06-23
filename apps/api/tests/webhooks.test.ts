@@ -4,7 +4,7 @@ import { AddressInfo } from 'node:net'
 import request from 'parasito'
 import { WebhookSigner } from '@arkyc/webhooks'
 import { app } from '../src/core/bootstrap'
-import { Tenant } from '../src/app/models/Tenant'
+import { Organization } from '../src/app/models/Organization'
 import { WebhookDelivery } from '../src/app/models/WebhookDelivery'
 
 interface Captured {
@@ -13,7 +13,7 @@ interface Captured {
   timestamp: number
 }
 
-const fx = { token: '', tenantId: '', projectId: '', apiKeySecret: '' }
+const fx = { token: '', organizationId: '', projectId: '', apiKeySecret: '' }
 const received: Captured[] = []
 let server: http.Server
 let receiverUrl = ''
@@ -64,22 +64,22 @@ beforeAll(async () => {
     })
   fx.token = reg.body.token
 
-  const tenant = await authed('post', '/tenants').send({ name: `Wh Co ${s}` })
-  fx.tenantId = tenant.body.data.id
-  const project = await authed('post', `/tenants/${fx.tenantId}/projects`).send({
+  const organization = await authed('post', '/organizations').send({ name: `Wh Co ${s}` })
+  fx.organizationId = organization.body.data.id
+  const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({
     name: 'Wh Prod',
   })
   fx.projectId = project.body.data.id
-  const key = await authed('post', `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`).send({ name: 'Wh key' })
+  const key = await authed('post', `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`).send({ name: 'Wh key' })
   fx.apiKeySecret = key.body.secret
 })
 
 afterAll(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()))
-  if (fx.tenantId) await Tenant.destroy(fx.tenantId)
+  if (fx.organizationId) await Organization.destroy(fx.organizationId)
 })
 
-const webhooks = (suffix = '') => `/tenants/${fx.tenantId}/projects/${fx.projectId}/webhooks${suffix}`
+const webhooks = (suffix = '') => `/organizations/${fx.organizationId}/projects/${fx.projectId}/webhooks${suffix}`
 
 describe('webhook endpoints', () => {
   it('returns the signing secret once on create, then hides it', async () => {

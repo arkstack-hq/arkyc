@@ -36,7 +36,7 @@ export interface WebhookChecks {
 export interface WebhookEvent {
   event: WebhookEventName
   session_id: Id
-  tenant_id: Id
+  organization_id: Id
   project_id: Id
   user_reference: string | null
   status: VerificationStatus

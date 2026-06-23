@@ -2,7 +2,7 @@ import { Migration, SchemaBuilder } from 'arkormx'
 
 /**
  * Append-only audit trail for platform-admin actions (Phase 15). Separate from
- * the tenant `audit_logs` because platform actions aren't tenant-scoped. The
+ * the organization `audit_logs` because platform actions aren't organization-scoped. The
  * `actor_id` FK is `set null` on delete so history survives user removal.
  */
 export default class CreatePlatformAuditLogsTableMigration extends Migration {

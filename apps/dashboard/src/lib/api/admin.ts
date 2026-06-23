@@ -1,4 +1,4 @@
-import type { AdminPermissionKey, GlobalSettings, Metadata, Tenant } from '@arkyc/types'
+import type { AdminPermissionKey, GlobalSettings, Metadata, Organization } from '@arkyc/types'
 import { CACHE, type Paginated, alova, params, unwrap } from './client'
 
 /** The caller's platform-admin standing. */
@@ -31,7 +31,7 @@ interface AdminUserListParams {
   search?: string
 }
 
-/** A platform-admin audit entry (no tenant scope; actor is an admin user). */
+/** A platform-admin audit entry (no organization scope; actor is an admin user). */
 export interface PlatformAuditLog {
   id: string
   actor_id: string | null
@@ -53,7 +53,7 @@ interface AdminAuditLogParams {
   entity_type?: string
 }
 
-/** Platform-admin surface (above tenants). Guarded server-side by `canAdmin(...)`. */
+/** Platform-admin surface (above organizations). Guarded server-side by `canAdmin(...)`. */
 export class Admin {
   /** The current user's effective admin permissions (empty for non-admins). */
   static me() {
@@ -82,12 +82,12 @@ export class Admin {
     })
   }
 
-  /** List every tenant on the platform. */
-  static tenants() {
-    return alova.Get('/v1/admin/tenants', {
-      name: 'admin:tenants',
+  /** List every organization on the platform. */
+  static organizations() {
+    return alova.Get('/v1/admin/organizations', {
+      name: 'admin:organizations',
       cacheFor: CACHE,
-      transform: unwrap<Tenant[]>,
+      transform: unwrap<Organization[]>,
     })
   }
 

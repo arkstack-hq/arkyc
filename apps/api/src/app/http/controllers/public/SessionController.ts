@@ -28,7 +28,7 @@ export default class SessionController extends BaseController {
     })
 
     await audit.record({
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       actorId: req.projectContext!.api_key_id,
       actorType: 'api_key',

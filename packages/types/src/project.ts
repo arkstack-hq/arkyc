@@ -1,5 +1,5 @@
-import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped, TenantScoped } from './common'
-import type { MembershipStatus } from './tenant'
+import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped, OrganizationScoped } from './common'
+import type { MembershipStatus } from './organization'
 import type { CaptureModel } from './settings'
 
 /** Deployment environment for a project. */
@@ -63,9 +63,9 @@ export interface ProjectSettings extends Metadata {
 
 /**
  * A specific application, environment, or product integration owned by a
- * tenant. Sessions, API keys, and webhooks are scoped to a project.
+ * organization. Sessions, API keys, and webhooks are scoped to a project.
  */
-export interface Project extends Entity, TenantScoped {
+export interface Project extends Entity, OrganizationScoped {
   name: string
   slug: string
   environment: ProjectEnvironment
@@ -74,7 +74,7 @@ export interface Project extends Entity, TenantScoped {
   status: ProjectStatus
 }
 
-/** Links a user to a project with a role (narrower than tenant membership). */
+/** Links a user to a project with a role (narrower tha organization membership). */
 export interface ProjectMember extends Entity, ProjectScoped {
   user_id: Id
   role_id: Id
@@ -101,9 +101,9 @@ export interface ApiKeyWithSecret {
   secret: string
 }
 
-/** Resolves the tenant + project + (optionally) acting user for a request. */
+/** Resolves the organization + project + (optionally) acting user for a request. */
 export interface ProjectContext {
-  tenant_id: Id
+  organization_id: Id
   project_id: Id
   api_key_id?: Id
 }

@@ -4,7 +4,7 @@ import { useForm, useRequest } from 'alova/client'
 import type { Permission, PermissionKey } from '@arkyc/types'
 import type { RoleWithPermissions } from '@/lib/api'
 import { Permissions, Roles, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -14,37 +14,37 @@ import { humanize } from '@/lib/utils'
 
 export default function RoleDetailPage() {
   const { roleId = '' } = useParams()
-  const tenantId = useTenantId()
+  const organizationId = useOrganizationId()
 
-  const { data: role, loading: roleLoading, error: roleError } = useRequest(Roles.get(tenantId, roleId))
+  const { data: role, loading: roleLoading, error: roleError } = useRequest(Roles.get(organizationId, roleId))
 
-  const { data: catalogue, loading: catalogueLoading, error: catalogueError } = useRequest(Permissions.list(tenantId))
+  const { data: catalogue, loading: catalogueLoading, error: catalogueError } = useRequest(Permissions.list(organizationId))
 
   if (roleLoading || catalogueLoading) return <Loading />
   if (roleError) return <ErrorState error={roleError} />
   if (catalogueError) return <ErrorState error={catalogueError} />
   if (!role) return <ErrorState error={new Error('Role not found.')} />
 
-  return <RoleEditor role={role} catalogue={catalogue} tenantId={tenantId} roleId={roleId} />
+  return <RoleEditor role={role} catalogue={catalogue} organizationId={organizationId} roleId={roleId} />
 }
 
 function RoleEditor({
   role,
   catalogue,
-  tenantId,
+  organizationId,
   roleId,
 }: {
   role: RoleWithPermissions
   catalogue: Permission[]
-  tenantId: string
+  organizationId: string
   roleId: string
 }) {
-  const { can } = useTenant()
+  const { can } = useOrganization()
   const [saved, setSaved] = useState(false)
 
   const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
     (formData) =>
-      Roles.update(tenantId, roleId, {
+      Roles.update(organizationId, roleId, {
         name: formData.name,
         description: formData.description,
         permissions: formData.permissions as PermissionKey[],
@@ -149,7 +149,7 @@ function RoleEditor({
                 <h4 className="text-sm font-semibold">{humanize(group)}</h4>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {perms.map((perm) => {
-                    // The tenant catalogue only contains tenant permissions.
+                    // The organization catalogue only contains organization permissions.
                     const name = perm.name as PermissionKey
 
                     return (

@@ -22,13 +22,13 @@ export class Permissions {
   }
 
   /**
-   * Resolve the effective permission set for a user within a tenant (and,
+   * Resolve the effective permission set for a user within an organization (and,
    * optionally, a project).
    *
    * The result is the deduplicated union of:
-   *   - permissions from the tenant role
+   *   - permissions from the organization role
    *   - permissions from the project role (only when `projectId` is set)
-   *   - direct tenant-level user permissions
+   *   - direct organization-level user permissions
    *   - direct project-level user permissions
    *
    * i.e. `effective_permissions = role_permissions + direct_user_permissions`.
@@ -38,13 +38,13 @@ export class Permissions {
    * @returns
    */
   static async resolve(ctx: PermissionResolutionContext, store: PermissionResolverStore): Promise<PermissionKey[]> {
-    const [tenantRole, projectRole, direct] = await Promise.all([
-      store.tenantRolePermissions(ctx),
+    const [organizationRole, projectRole, direct] = await Promise.all([
+      store.organizationRolePermissions(ctx),
       ctx.projectId ? store.projectRolePermissions(ctx) : Promise.resolve([] as PermissionKey[]),
       store.directPermissions(ctx),
     ])
 
-    return Permissions.dedupe([...tenantRole, ...projectRole, ...direct])
+    return Permissions.dedupe([...organizationRole, ...projectRole, ...direct])
   }
 
   /**
@@ -100,7 +100,7 @@ export class Permissions {
    * Resolve the user's effective permissions for the context and assert they
    * include `required`, throwing {@link PermissionDeniedError} otherwise.
    *
-   * e.g. `await Permissions.authorize({ userId, tenantId }, 'sessions.view', store)`.
+   * e.g. `await Permissions.authorize({ userId, organizationId }, 'sessions.view', store)`.
    *
    * @param ctx
    * @param required
@@ -118,7 +118,7 @@ export class Permissions {
   /**
    * Resolve a user's effective platform-admin permission set: the deduplicated
    * union of their admin role permissions and direct admin grants. This is an
-   * entirely separate path from tenant {@link resolve} — a tenant role can never
+   * entirely separate path from organization {@link resolve} — an organization role can never
    * contribute admin access.
    *
    * @param ctx

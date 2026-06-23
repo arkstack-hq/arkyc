@@ -1,4 +1,4 @@
-import type { Entity, Id, TenantScoped } from './common'
+import type { Entity, Id, OrganizationScoped } from './common'
 
 /**
  * The full catalogue of permission strings recognised by Arkyc.
@@ -8,9 +8,9 @@ import type { Entity, Id, TenantScoped } from './common'
  * permissions (see `@arkyc/permissions`).
  */
 export type PermissionKey =
-  | 'tenants.view'
-  | 'tenants.update'
-  | 'tenants.delete'
+  | 'organizations.view'
+  | 'organizations.update'
+  | 'organizations.delete'
   | 'members.view'
   | 'members.invite'
   | 'members.update'
@@ -46,7 +46,7 @@ export type PermissionKey =
 
 /** The domain groups permissions are organised under. */
 export type PermissionGroup =
-  | 'tenants'
+  | 'organizations'
   | 'members'
   | 'projects'
   | 'api_keys'
@@ -57,17 +57,17 @@ export type PermissionGroup =
   | 'settings'
   | 'billing'
 
-/** The built-in system roles seeded for every tenant. */
+/** The built-in system roles seeded for every organization. */
 export type SystemRoleSlug = 'owner' | 'admin' | 'reviewer' | 'developer' | 'readonly'
 
 /**
- * Platform-scope permission strings, distinct from tenant {@link PermissionKey}.
- * These gate the super-admin surface above tenants and are only ever granted
- * through {@link AdminPermission} (never a tenant role). Rows carry `admin: true`.
+ * Platform-scope permission strings, distinct from organization {@link PermissionKey}.
+ * These gate the super-admin surface above organizations and are only ever granted
+ * through {@link AdminPermission} (never an organization role). Rows carry `admin: true`.
  */
 export type AdminPermissionKey =
-  | 'admin.tenants.view'
-  | 'admin.tenants.manage'
+  | 'admin.organizations.view'
+  | 'admin.organizations.manage'
   | 'admin.users.view'
   | 'admin.users.manage'
   | 'admin.settings.view'
@@ -77,18 +77,18 @@ export type AdminPermissionKey =
   | 'admin.billing.update'
 
 /** The domain groups platform-admin permissions are organised under. */
-export type AdminPermissionGroup = 'admin.tenants' | 'admin.users' | 'admin.settings' | 'admin.audit' | 'admin.billing'
+export type AdminPermissionGroup = 'admin.organizations' | 'admin.users' | 'admin.settings' | 'admin.audit' | 'admin.billing'
 
-/** Any permission string, tenant- or platform-scope. */
+/** Any permission string, organization- or platform-scope. */
 export type AnyPermissionKey = PermissionKey | AdminPermissionKey
 
-/** Any permission group, tenant- or platform-scope. */
+/** Any permission group, organization- or platform-scope. */
 export type AnyPermissionGroup = PermissionGroup | AdminPermissionGroup
 
 /** The built-in platform-admin role slug. */
 export type AdminRoleSlug = 'platform-owner'
 
-/** A permission definition row. Permissions are global (not tenant-scoped). */
+/** A permission definition row. Permissions are global (not organization-scoped). */
 export interface Permission extends Entity {
   /** The permission string, e.g. `sessions.view` or `admin.settings.view`. */
   name: AnyPermissionKey
@@ -99,17 +99,17 @@ export interface Permission extends Entity {
 }
 
 /**
- * A role within a tenant. System roles (`is_system`) are seeded and cannot be
- * deleted; tenants may also define custom roles.
+ * A role within an organization. System roles (`is_system`) are seeded and cannot be
+ * deleted; organizations may also define custom roles.
  */
 export interface Role extends Entity {
-  /** Null for platform-admin roles (`admin: true`); set for tenant roles. */
-  tenant_id: Id | null
+  /** Null for platform-admin roles (`admin: true`); set for organization roles. */
+  organization_id: Id | null
   name: string
   slug: string
   description: string | null
   is_system: boolean
-  /** Platform-admin role (not tenant-scoped). */
+  /** Platform-admin role (not organization-scoped). */
   admin: boolean
 }
 
@@ -121,9 +121,9 @@ export interface RolePermission extends Entity {
 
 /**
  * A permission assigned directly to a user, on top of their role permissions.
- * `project_id` is null for tenant-level grants, set for project-level grants.
+ * `project_id` is null for organization-level grants, set for project-level grants.
  */
-export interface UserPermission extends Entity, TenantScoped {
+export interface UserPermission extends Entity, OrganizationScoped {
   project_id: Id | null
   user_id: Id
   permission_id: Id
@@ -131,7 +131,7 @@ export interface UserPermission extends Entity, TenantScoped {
 
 /**
  * A platform-admin grant to a user. Mirrors {@link UserPermission} but without
- * tenant/project scope. A row is EITHER a role grant (`role_id` set) or a direct
+ * organization/project scope. A row is EITHER a role grant (`role_id` set) or a direct
  * permission grant (`permission_id` set). Effective admin access is the union of
  * both, resolved by `@arkyc/permissions`.
  */

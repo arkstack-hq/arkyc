@@ -3,7 +3,7 @@
  *
  * These are intentionally light: they document intent at call sites without
  * adding runtime weight. IDs are strings (prefixed identifiers like
- * `kyc_sess_…`, `tenant_…`, `project_…`); timestamps are ISO-8601 strings.
+ * `kyc_sess_…`, `organization_…`, `project_…`); timestamps are ISO-8601 strings.
  */
 
 /** A unique identifier (typically a prefixed, URL-safe string). */
@@ -29,12 +29,12 @@ export interface Entity extends Timestamps {
   id: Id
 }
 
-/** Scoping columns present on every tenant-owned entity. */
-export interface TenantScoped {
-  tenant_id: Id
+/** Scoping columns present on every organization-owned entity. */
+export interface OrganizationScoped {
+  organization_id: Id
 }
 
 /** Scoping columns present on every project-owned entity. */
-export interface ProjectScoped extends TenantScoped {
+export interface ProjectScoped extends OrganizationScoped {
   project_id: Id
 }

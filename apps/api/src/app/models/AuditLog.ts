@@ -1,14 +1,14 @@
 import { Model } from 'arkormx'
 import type { CastMap } from 'arkormx'
 import type { ActorType, Metadata } from '@arkyc/types'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Project } from './Project'
 
 export class AuditLog extends Model {
   protected static override table = 'audit_logs'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare projectId: string | null
   declare actorId: string | null
   declare actorType: ActorType
@@ -22,7 +22,7 @@ export class AuditLog extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     projectId: 'project_id',
     actorId: 'actor_id',
     actorType: 'actor_type',
@@ -38,8 +38,8 @@ export class AuditLog extends Model {
     metadata: 'json',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   project() {

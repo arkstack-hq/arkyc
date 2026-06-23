@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'alova/client'
-import { Tenants, errorMessage } from '@/lib/api'
+import { Organizations, errorMessage } from '@/lib/api'
 import { Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -12,12 +12,12 @@ export default function OnboardingPage() {
   const navigate = useNavigate()
 
   const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
-    (formData) => Tenants.create({ name: formData.name.trim() }),
+    (formData) => Organizations.create({ name: formData.name.trim() }),
     { initialForm: { name: '' } },
   )
 
   onSuccess(({ data }) => {
-    navigate(`/t/${data.slug}/overview`)
+    navigate(`/o/${data.slug}/overview`)
   })
 
   function onSubmit(e: FormEvent) {

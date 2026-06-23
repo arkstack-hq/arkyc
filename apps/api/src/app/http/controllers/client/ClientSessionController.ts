@@ -69,7 +69,7 @@ export default class ClientSessionController extends BaseController {
   /**
    * Pusher channel-auth for the widget's client token. Unlike the dashboard
    * authorizer, a client token may sign ONLY its own session's private channel —
-   * never a tenant/project channel. Returns the raw Pusher `{ auth }` object.
+   * never an organization/project channel. Returns the raw Pusher `{ auth }` object.
    */
   async realtimeAuth({ req, res }: HttpContext) {
     const session = req.verificationSession!

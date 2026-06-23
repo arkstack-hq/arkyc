@@ -4,7 +4,7 @@ import { useForm, usePagination } from 'alova/client'
 import type { ProjectEnvironment } from '@arkyc/types'
 import { Boxes } from 'lucide-react'
 import { Projects, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { formatDateTime, humanize } from '@/lib/utils'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
@@ -27,8 +27,8 @@ function statusVariant(status: string): 'success' | 'warning' | 'muted' {
 }
 
 export default function ProjectsPage() {
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
 
   const {
     data: projects,
@@ -38,7 +38,7 @@ export default function ProjectsPage() {
     error,
     update,
     reload,
-  } = usePagination((currentPage, pageSize) => Projects.list(tenantId, { page: currentPage, limit: pageSize }), {
+  } = usePagination((currentPage, pageSize) => Projects.list(organizationId, { page: currentPage, limit: pageSize }), {
     append: true,
     initialPage: 1,
     initialPageSize: 15,
@@ -59,7 +59,7 @@ export default function ProjectsPage() {
     onSuccess,
   } = useForm(
     (formData) =>
-      Projects.create(tenantId, {
+      Projects.create(organizationId, {
         name: formData.name.trim(),
         environment: formData.environment,
       }),
@@ -76,7 +76,7 @@ export default function ProjectsPage() {
     <div className="p-6 lg:p-8">
       <PageHeader
         title="Projects"
-        description="Applications and environments scoped to this tenant."
+        description="Applications and environments scoped to this organization."
         actions={can('projects.create') ? <Button onClick={() => setOpen(true)}>New project</Button> : null}
       />
 

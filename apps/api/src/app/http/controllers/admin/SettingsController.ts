@@ -9,7 +9,7 @@ import type { GlobalSettings } from '@arkyc/types'
 
 /**
  * Platform-wide settings. Guarded by `canAdmin('admin.settings.*')` — entirely
- * separate from tenant scope. Reads/writes go through the typed singleton
+ * separate from organization scope. Reads/writes go through the typed singleton
  * `GlobalSettingsService`, which merges over defaults.
  */
 export default class SettingsController extends BaseController {

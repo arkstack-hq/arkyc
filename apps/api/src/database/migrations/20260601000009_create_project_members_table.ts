@@ -5,12 +5,12 @@ export default class CreateProjectMembersTableMigration extends Migration {
     schema.createTable('project_members', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('projectMembers')
       table
         .uuid('projectId')
@@ -38,7 +38,7 @@ export default class CreateProjectMembersTableMigration extends Migration {
         .inverseAlias('projectMembers')
       table.string('status')
       table.timestamps('camel', 'snake')
-      table.index(['tenantId'])
+      table.index(['organizationId'])
       table.index(['projectId'])
       table.unique(['projectId', 'userId'])
     })

@@ -52,7 +52,7 @@ export default class WebhookEndpointController extends BaseController {
 
     const secret = `whsec_${randomBytes(24).toString('hex')}`
     const endpoint = await WebhookEndpoint.create({
-      tenantId: project.tenantId,
+      organizationId: project.organizationId,
       projectId: project.id,
       url: data.url,
       secretHash: secret,
@@ -150,8 +150,8 @@ export default class WebhookEndpointController extends BaseController {
     })
   }
 
-  /** Resolve the route's project, scoped to the active tenant (404 otherwise). */
+  /** Resolve the route's project, scoped to the active organization (404 otherwise). */
   private scopedProject(req: HttpContext['req']) {
-    return Project.where({ id: req.params.projectId, tenantId: req.tenant!.id }).firstOrFail()
+    return Project.where({ id: req.params.projectId, organizationId: req.organization!.id }).firstOrFail()
   }
 }

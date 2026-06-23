@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AdminAuditLogsPage from '@/pages/admin/AdminAuditLogsPage'
 import { AdminLayout } from '@/components/AdminLayout'
 import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
-import AdminTenantsPage from '@/pages/admin/AdminTenantsPage'
+import AdminOrganizationsPage from '@/pages/admin/AdminOrganizationsPage'
 import AdminUsersPage from '@/pages/admin/AdminUsersPage'
 import AuditLogsPage from '@/pages/AuditLogsPage'
 import { Loading } from '@/components/States'
@@ -27,18 +27,18 @@ import RolesPage from '@/pages/settings/RolesPage'
 import SessionDetailPage from '@/pages/sessions/SessionDetailPage'
 import SessionsPage from '@/pages/sessions/SessionsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
-import { TenantLayout } from '@/components/Layout'
-import { Tenants } from '@/lib/api'
+import { OrganizationLayout } from '@/components/Layout'
+import { Organizations } from '@/lib/api'
 import VerifyPage from '@/pages/VerifyPage'
 import { useAuth } from '@/contexts/auth-context'
 import { useRequest } from 'alova/client'
 
-/** Send "/" to the first tenant's overview, or onboarding when none exist. */
+/** Send "/" to the first organization's overview, or onboarding when none exist. */
 function RootRedirect() {
-  const { data: tenants = [], loading } = useRequest(Tenants.list(), { initialData: [] })
+  const { data: organizations = [], loading } = useRequest(Organizations.list(), { initialData: [] })
   if (loading) return <Loading />
-  const first = tenants[0]
-  return <Navigate to={first ? `/t/${first.slug}/overview` : '/onboarding'} replace />
+  const first = organizations[0]
+  return <Navigate to={first ? `/o/${first.slug}/overview` : '/onboarding'} replace />
 }
 
 export default function App() {
@@ -68,10 +68,10 @@ export default function App() {
       />
 
       <Route
-        path="/t/:tenantSlug"
+        path="/o/:organizationSlug"
         element={
           <ProtectedRoute>
-            <TenantLayout />
+            <OrganizationLayout />
           </ProtectedRoute>
         }
       >
@@ -110,7 +110,7 @@ export default function App() {
       >
         <Route index element={<Navigate to="settings" replace />} />
         <Route path="settings" element={<AdminSettingsPage />} />
-        <Route path="tenants" element={<AdminTenantsPage />} />
+        <Route path="organizations" element={<AdminOrganizationsPage />} />
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="audit-logs" element={<AdminAuditLogsPage />} />
       </Route>

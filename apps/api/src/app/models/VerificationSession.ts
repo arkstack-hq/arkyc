@@ -8,7 +8,7 @@ import type {
   VerificationDecision,
   VerificationStatus,
 } from '@arkyc/types'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Project } from './Project'
 import { User } from './User'
 import { DocumentCapture } from './DocumentCapture'
@@ -26,7 +26,7 @@ export class VerificationSession extends Model {
   protected static override factoryClass = VerificationSessionFactory
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare projectId: string
   declare userReference: string | null
   declare status: VerificationStatus
@@ -49,7 +49,7 @@ export class VerificationSession extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     projectId: 'project_id',
     userReference: 'user_reference',
     autoDecision: 'auto_decision',
@@ -76,8 +76,8 @@ export class VerificationSession extends Model {
   /** The client token hash is internal and never serialised. */
   protected override hidden = ['clientTokenHash']
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   project() {

@@ -8,9 +8,9 @@ const param = (value: string | string[] | undefined): string | undefined => (Arr
 
 /**
  * Enforces that the authenticated user holds `permission` in the active
- * tenant/project scope. Resolves effective permissions via the Arkormˣ store
- * and denies with 403 when missing. Run after `auth` (+ `resolveTenant` for the
- * tenant scope).
+ * organization/project scope. Resolves effective permissions via the Arkormˣ store
+ * and denies with 403 when missing. Run after `auth` (+ `resolveOrganization` for the
+ * organization scope).
  */
 export class AuthorizeMiddleware {
   constructor(private readonly permission: PermissionKey) {}
@@ -20,11 +20,11 @@ export class AuthorizeMiddleware {
       const user = req.authUser
       RequestException.assertFound(user, 'Unauthenticated', 401)
 
-      const tenantId = req.tenant?.id ?? param(req.params.tenantId)
-      RequestException.assertFound(tenantId, 'Missing tenant scope', 400)
+      const organizationId = req.organization?.id ?? param(req.params.organizationId)
+      RequestException.assertFound(organizationId, 'Missing organization scope', 400)
       const projectId = param(req.params.projectId) ?? null
 
-      await Permissions.authorize({ userId: user.id, tenantId, projectId }, this.permission, permissionStore)
+      await Permissions.authorize({ userId: user.id, organizationId, projectId }, this.permission, permissionStore)
       next()
     } catch (error) {
       if (error instanceof PermissionDeniedError) {
@@ -46,8 +46,8 @@ export const can =
 /**
  * Enforces that the authenticated user holds a platform-admin `permission`. This
  * is an entirely separate scope from {@link AuthorizeMiddleware}: there is NO
- * tenant requirement, and a tenant role can never grant admin access. Run after
- * `auth` only — no `resolveTenant`.
+ * organization requirement, and an organization role can never grant admin access. Run after
+ * `auth` only — no `resolveOrganization`.
  */
 export class AdminAuthorizeMiddleware {
   constructor(private readonly permission: AdminPermissionKey) {}

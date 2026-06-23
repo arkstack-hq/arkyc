@@ -62,7 +62,7 @@ export class WebhookService {
     const payload = await this.buildPayload(session, event)
     for (const endpoint of endpoints) {
       const delivery = await WebhookDelivery.create({
-        tenantId: session.tenantId,
+        organizationId: session.organizationId,
         projectId: session.projectId,
         webhookEndpointId: endpoint.id,
         event,
@@ -130,7 +130,7 @@ export class WebhookService {
     const payload = WebhookPayload.build({
       event: 'verification.completed',
       sessionId: '00000000-0000-0000-0000-000000000000',
-      tenantId: endpoint.tenantId,
+      organizationId: endpoint.organizationId,
       projectId: endpoint.projectId,
       userReference: 'test',
       status: 'approved',
@@ -139,7 +139,7 @@ export class WebhookService {
       createdAt: new Date().toISOString(),
     })
     const delivery = await WebhookDelivery.create({
-      tenantId: endpoint.tenantId,
+      organizationId: endpoint.organizationId,
       projectId: endpoint.projectId,
       webhookEndpointId: endpoint.id,
       event: 'verification.completed',
@@ -158,7 +158,7 @@ export class WebhookService {
     return WebhookPayload.build({
       event,
       sessionId: session.id,
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       userReference: session.userReference,
       status: session.status,

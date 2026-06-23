@@ -1,7 +1,7 @@
 import { Model } from 'arkormx'
 import type { CastMap } from 'arkormx'
 import type { WebhookDeliveryStatus, WebhookEvent, WebhookEventName } from '@arkyc/types'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Project } from './Project'
 import { WebhookEndpoint } from './WebhookEndpoint'
 
@@ -9,7 +9,7 @@ export class WebhookDelivery extends Model {
   protected static override table = 'webhook_deliveries'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare projectId: string
   declare webhookEndpointId: string
   declare event: WebhookEventName
@@ -23,7 +23,7 @@ export class WebhookDelivery extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     projectId: 'project_id',
     webhookEndpointId: 'webhook_endpoint_id',
     responseStatus: 'response_status',
@@ -37,8 +37,8 @@ export class WebhookDelivery extends Model {
     payload: 'json',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   project() {

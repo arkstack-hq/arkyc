@@ -49,10 +49,10 @@ export interface Paginated<T> {
  */
 export const unwrap = <T>(envelope: Envelope<T>): T => envelope.data as T
 
-/** Dashboard tenant base path. */
-export const t = (tenantId: string) => `/v1/dashboard/tenants/${tenantId}`
+/** Dashboard organization base path. */
+export const t = (organizationId: string) => `/v1/dashboard/organizations/${organizationId}`
 /** Dashboard project base path. */
-export const p = (tenantId: string, projectId: string) => `${t(tenantId)}/projects/${projectId}`
+export const p = (organizationId: string, projectId: string) => `${t(organizationId)}/projects/${projectId}`
 
 /**
  * Build a query-param object, dropping empty values.
@@ -124,9 +124,9 @@ const API_BASE = env('VITE_API_URL', '') + '/api'
  * Uses a raw fetch (not alova) because the global response handler parses JSON —
  * it can't carry binary. Revoke the returned URL when done.
  */
-export async function fetchSessionMedia(tenantId: string, sessionId: string, kind: string): Promise<string> {
+export async function fetchSessionMedia(organizationId: string, sessionId: string, kind: string): Promise<string> {
   const token = await SecureStorage.get<string>(AUTH_TOKEN_KEY)
-  const res = await fetch(`${API_BASE}${t(tenantId)}/sessions/${sessionId}/media/${kind}`, {
+  const res = await fetch(`${API_BASE}${t(organizationId)}/sessions/${sessionId}/media/${kind}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
   if (!res.ok) throw new Error(`Failed to load media (${res.status})`)

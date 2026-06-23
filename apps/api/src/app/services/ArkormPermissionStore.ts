@@ -16,7 +16,7 @@ import { Permission } from '@app/models/Permission'
 import { ProjectMember } from '@app/models/ProjectMember'
 import { Role } from '@app/models/Role'
 import { RolePermission } from '@app/models/RolePermission'
-import { TenantMember } from '@app/models/TenantMember'
+import { OrganizationMember } from '@app/models/OrganizationMember'
 import { UserPermission } from '@app/models/UserPermission'
 
 function toArray<T>(collection: Iterable<T> | null | undefined): T[] {
@@ -37,8 +37,8 @@ type Loaded = { getAttribute(key: string): unknown } | null | undefined
 export class ArkormPermissionStore
   implements PermissionResolverStore, PermissionSyncStore, AdminResolverStore, AdminSyncStore
 {
-  async tenantRolePermissions(ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
-    const member = await TenantMember.where({ userId: ctx.userId, tenantId: ctx.tenantId })
+  async organizationRolePermissions(ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
+    const member = await OrganizationMember.where({ userId: ctx.userId, organizationId: ctx.organizationId })
       .with('role.permissions')
       .first()
 
@@ -56,7 +56,7 @@ export class ArkormPermissionStore
 
   async directPermissions(ctx: PermissionResolutionContext): Promise<PermissionKey[]> {
     const grants = toArray(
-      await UserPermission.where({ userId: ctx.userId, tenantId: ctx.tenantId }).with('permission').get(),
+      await UserPermission.where({ userId: ctx.userId, organizationId: ctx.organizationId }).with('permission').get(),
     )
 
     return grants
@@ -80,7 +80,7 @@ export class ArkormPermissionStore
     return (
       grants
         .map((g) => g.getAttribute('role') as Loaded)
-        // Only admin roles contribute admin access; a tenant role never can.
+        // Only admin roles contribute admin access; an organization role never can.
         .filter((role) => role != null && role.getAttribute('admin') === true)
         .flatMap((role) => this.roleNames(role) as AdminPermissionKey[])
     )
@@ -116,8 +116,8 @@ export class ArkormPermissionStore
     })
   }
 
-  async upsertSystemRole(tenantId: string, role: DefaultRoleDefinition): Promise<string> {
-    const existing = await Role.where({ tenantId, slug: role.slug }).first()
+  async upsertSystemRole(organizationId: string, role: DefaultRoleDefinition): Promise<string> {
+    const existing = await Role.where({ organizationId, slug: role.slug }).first()
     if (existing) {
       existing.name = role.name
       existing.description = role.description
@@ -127,7 +127,7 @@ export class ArkormPermissionStore
       return existing.id
     }
     const created = await Role.create({
-      tenantId,
+      organizationId,
       name: role.name,
       slug: role.slug,
       description: role.description,
@@ -148,7 +148,7 @@ export class ArkormPermissionStore
       return existing.id
     }
     const created = await Role.create({
-      tenantId: null,
+      organizationId: null,
       name: role.name,
       slug: role.slug,
       description: role.description,

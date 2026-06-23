@@ -1,14 +1,14 @@
 import { Model } from 'arkormx'
 import type { MembershipStatus } from '@arkyc/types'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Role } from './Role'
 import { User } from './User'
 
-export class TenantMember extends Model {
-  protected static override table = 'tenant_members'
+export class OrganizationMember extends Model {
+  protected static override table = 'organization_members'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare userId: string
   declare roleId: string
   declare status: MembershipStatus
@@ -17,7 +17,7 @@ export class TenantMember extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     userId: 'user_id',
     roleId: 'role_id',
     joinedAt: 'joined_at',
@@ -25,8 +25,8 @@ export class TenantMember extends Model {
     updatedAt: 'updated_at',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   user() {

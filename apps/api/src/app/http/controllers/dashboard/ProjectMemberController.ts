@@ -7,18 +7,18 @@ import { ProjectMember } from '@app/models/ProjectMember'
 import ProjectMemberCollection from '@app/http/resources/ProjectMemberCollection'
 import ProjectMemberResource from '@app/http/resources/ProjectMemberResource'
 import { Role } from '@app/models/Role'
-import { TenantMember } from '@app/models/TenantMember'
+import { OrganizationMember } from '@app/models/OrganizationMember'
 import { audit } from '@app/services/AuditLogger'
 
 /**
- * Manage which tenant members belong to a project and in what role. All actions
- * are scoped to a project the active tenant owns.
+ * Manage which organization members belong to a project and in what role. All actions
+ * are scoped to a project the active organization owns.
  */
 export default class ProjectMemberController extends BaseController {
   /**
    * List a project's members with their user + role eager-loaded (no N+1).
    *
-   * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:projectId`, `req.organization`).
    * @returns      A ProjectMemberCollection.
    */
   async index({ req }: HttpContext) {
@@ -35,9 +35,9 @@ export default class ProjectMemberController extends BaseController {
   }
 
   /**
-   * Add an existing tenant member to the project with a role.
+   * Add an existing organization member to the project with a role.
    *
-   * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:projectId`, `req.organization`).
    * @returns      The created ProjectMemberResource (HTTP 201).
    */
   async store({ req }: HttpContext) {
@@ -47,8 +47,8 @@ export default class ProjectMemberController extends BaseController {
       role_id: ['required', 'string'],
     })
 
-    await this.assertTenantMember(req.tenant!.id, data.user_id)
-    await this.assertTenantRole(req.tenant!.id, data.role_id)
+    await this.assertOrganizationMember(req.organization!.id, data.user_id)
+    await this.assertOrganizationRole(req.organization!.id, data.role_id)
 
     const existing = await ProjectMember.where({
       projectId: project.id,
@@ -57,7 +57,7 @@ export default class ProjectMemberController extends BaseController {
     RequestException.abortIf(existing, 'User is already a member of this project', 409)
 
     const member = await ProjectMember.create({
-      tenantId: project.tenantId,
+      organizationId: project.organizationId,
       projectId: project.id,
       userId: data.user_id,
       roleId: data.role_id,
@@ -84,14 +84,14 @@ export default class ProjectMemberController extends BaseController {
   /**
    * Change a project member's role.
    *
-   * @param   ctx  The HTTP context (`:projectId`, `:memberId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:projectId`, `:memberId`, `req.organization`).
    * @returns      The updated ProjectMemberResource.
    */
   async update({ req }: HttpContext) {
     const project = await this.scopedProject(req)
     const data = await this.validate({ role_id: ['required', 'string'] })
 
-    await this.assertTenantRole(req.tenant!.id, data.role_id)
+    await this.assertOrganizationRole(req.organization!.id, data.role_id)
     const member = await ProjectMember.where({
       id: req.params.memberId,
       projectId: project.id,
@@ -117,7 +117,7 @@ export default class ProjectMemberController extends BaseController {
   /**
    * Remove a member from the project.
    *
-   * @param   ctx  The HTTP context (`:projectId`, `:memberId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:projectId`, `:memberId`, `req.organization`).
    * @returns      An empty success envelope.
    */
   async destroy({ req }: HttpContext) {
@@ -142,20 +142,20 @@ export default class ProjectMemberController extends BaseController {
     })
   }
 
-  /** Resolve the route's project, scoped to the active tenant (404 otherwise). */
+  /** Resolve the route's project, scoped to the active organization (404 otherwise). */
   private scopedProject(req: HttpContext['req']) {
-    return Project.where({ id: req.params.projectId, tenantId: req.tenant!.id }).firstOrFail()
+    return Project.where({ id: req.params.projectId, organizationId: req.organization!.id }).firstOrFail()
   }
 
-  /** A project member must already be an active member of the tenant. */
-  private async assertTenantMember(tenantId: string, userId: string): Promise<void> {
-    const member = await TenantMember.where({ tenantId, userId, status: 'active' }).first()
-    RequestException.assertFound(member, 'user_id is not an active member of this tenant', 422)
+  /** A project member must already be an active member of the organization. */
+  private async assertOrganizationMember(organizationId: string, userId: string): Promise<void> {
+    const member = await OrganizationMember.where({ organizationId, userId, status: 'active' }).first()
+    RequestException.assertFound(member, 'user_id is not an active member of this organization', 422)
   }
 
-  /** A role assigned to a project member must belong to the tenant. */
-  private async assertTenantRole(tenantId: string, roleId: string): Promise<void> {
-    const role = await Role.where({ id: roleId, tenantId }).first()
-    RequestException.assertFound(role, 'role_id is not a role of this tenant', 422)
+  /** A role assigned to a project member must belong to the organization. */
+  private async assertOrganizationRole(organizationId: string, roleId: string): Promise<void> {
+    const role = await Role.where({ id: roleId, organizationId }).first()
+    RequestException.assertFound(role, 'role_id is not a role of this organization', 422)
   }
 }

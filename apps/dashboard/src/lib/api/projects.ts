@@ -5,14 +5,14 @@ import type { CreateProjectInput } from './types'
 /** Large page size for "fetch all" picker/dropdown calls. */
 const PICKER_LIMIT = 200
 
-/** Projects (applications/environments) scoped to a tenant. */
+/** Projects (applications/environments) scoped to an organization. */
 export class Projects {
   /**
    * Paginated project list. Pass `page`/`limit` (usePagination supplies these);
    * list views consume it via infinite scroll.
    */
-  static list(tenantId: string, query?: { page?: number; limit?: number }) {
-    return alova.Get<Paginated<Project>>(`${t(tenantId)}/projects`, {
+  static list(organizationId: string, query?: { page?: number; limit?: number }) {
+    return alova.Get<Paginated<Project>>(`${t(organizationId)}/projects`, {
       name: 'projects:list',
       cacheFor: CACHE,
       hitSource: ['project:create', 'project:update'],
@@ -21,8 +21,8 @@ export class Projects {
   }
 
   /** All projects in one shot, for filter dropdowns/pickers (simple-data fetch). */
-  static options(tenantId: string) {
-    return alova.Get(`${t(tenantId)}/projects`, {
+  static options(organizationId: string) {
+    return alova.Get(`${t(organizationId)}/projects`, {
       name: 'projects:options',
       cacheFor: CACHE,
       hitSource: ['project:create', 'project:update'],
@@ -32,8 +32,8 @@ export class Projects {
   }
 
   /** Show a single project. */
-  static get(tenantId: string, projectId: string) {
-    return alova.Get(p(tenantId, projectId), {
+  static get(organizationId: string, projectId: string) {
+    return alova.Get(p(organizationId, projectId), {
       name: 'project:detail',
       cacheFor: CACHE,
       hitSource: ['project:update'],
@@ -42,26 +42,26 @@ export class Projects {
   }
 
   /** Create a project. */
-  static create(tenantId: string, input: CreateProjectInput) {
-    return alova.Post(`${t(tenantId)}/projects`, input, {
+  static create(organizationId: string, input: CreateProjectInput) {
+    return alova.Post(`${t(organizationId)}/projects`, input, {
       name: 'project:create',
       transform: unwrap<Project>,
     })
   }
 
   /** Update a project (name, branding, settings, thresholds). */
-  static update(tenantId: string, projectId: string, input: Partial<CreateProjectInput>) {
-    return alova.Patch(p(tenantId, projectId), input, {
+  static update(organizationId: string, projectId: string, input: Partial<CreateProjectInput>) {
+    return alova.Patch(p(organizationId, projectId), input, {
       name: 'project:update',
       transform: unwrap<Project>,
     })
   }
 
   /** Upload a project logo (multipart); the API stores it and sets branding.logo_url. */
-  static uploadLogo(tenantId: string, projectId: string, file: File) {
+  static uploadLogo(organizationId: string, projectId: string, file: File) {
     const body = new FormData()
     body.append('logo', file)
-    return alova.Post(`${p(tenantId, projectId)}/logo`, body, {
+    return alova.Post(`${p(organizationId, projectId)}/logo`, body, {
       name: 'project:update',
       transform: unwrap<Project>,
     })

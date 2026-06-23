@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { usePagination } from 'alova/client'
 import { AuditLogs } from '@/lib/api'
-import { useTenantId } from '@/contexts/tenant-context'
+import { useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -10,7 +10,7 @@ import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { formatDateTime, humanize } from '@/lib/utils'
 
 export default function AuditLogsPage() {
-  const tenantId = useTenantId()
+  const organizationId = useOrganizationId()
   const [action, setAction] = useState('')
   const [entityType, setEntityType] = useState('')
 
@@ -24,7 +24,7 @@ export default function AuditLogsPage() {
     update,
   } = usePagination(
     (currentPage, pageSize) =>
-      AuditLogs.list(tenantId, {
+      AuditLogs.list(organizationId, {
         page: currentPage,
         limit: pageSize,
         action: action || undefined,
@@ -42,7 +42,7 @@ export default function AuditLogsPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <PageHeader title="Audit Logs" description="Every privileged action taken in this tenant." />
+      <PageHeader title="Audit Logs" description="Every privileged action taken in this organization." />
 
       <Card>
         <CardHeader className="flex-row flex-wrap items-center gap-3 border-b border-border">

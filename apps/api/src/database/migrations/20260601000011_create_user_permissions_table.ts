@@ -5,12 +5,12 @@ export default class CreateUserPermissionsTableMigration extends Migration {
     schema.createTable('user_permissions', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('userPermissions')
       table
         .uuid('projectId')
@@ -38,8 +38,8 @@ export default class CreateUserPermissionsTableMigration extends Migration {
         .as('permission')
         .inverseAlias('userPermissions')
       table.timestamps('camel', 'snake')
-      table.index(['tenantId', 'userId'])
-      table.unique(['tenantId', 'projectId', 'userId', 'permissionId'])
+      table.index(['organizationId', 'userId'])
+      table.unique(['organizationId', 'projectId', 'userId', 'permissionId'])
     })
   }
 

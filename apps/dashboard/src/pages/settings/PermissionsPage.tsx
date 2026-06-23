@@ -3,16 +3,16 @@ import { Link } from 'react-router-dom'
 import { useRequest } from 'alova/client'
 import type { Permission } from '@arkyc/types'
 import { Permissions } from '@/lib/api'
-import { useTenantId } from '@/contexts/tenant-context'
+import { useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { humanize } from '@/lib/utils'
 
 export default function PermissionsPage() {
-  const tenantId = useTenantId()
+  const organizationId = useOrganizationId()
 
-  const { data: catalogue, loading, error } = useRequest(Permissions.list(tenantId), { initialData: [] })
+  const { data: catalogue, loading, error } = useRequest(Permissions.list(organizationId), { initialData: [] })
 
   const grouped = useMemo(() => {
     const map = new Map<string, Permission[]>()

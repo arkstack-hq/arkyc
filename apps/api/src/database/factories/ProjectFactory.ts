@@ -19,7 +19,7 @@ const SESSION_STATUSES: VerificationStatus[] = [
   'cancelled',
 ]
 
-/** `tenantId` must be supplied as an override when creating. */
+/** `organizationId` must be supplied as an override when creating. */
 export class ProjectFactory extends ModelFactory<Project> {
   protected model = Project
 
@@ -38,12 +38,12 @@ export class ProjectFactory extends ModelFactory<Project> {
 
   protected configure() {
     this.afterCreating(async (project) => {
-      await project.load('tenant')
-      const tenant = project.getAttribute('tenant')!
+      await project.load('organization')
+      const organization = project.getAttribute('organization')!
 
       const key = ApiKeyAuth.generate(project.environment === 'production' ? 'live' : 'test')
       await ApiKey.create({
-        tenantId: tenant.id,
+        organizationId: organization.id,
         projectId: project.id,
         name: 'Default key',
         keyPrefix: key.keyPrefix,
@@ -53,7 +53,7 @@ export class ProjectFactory extends ModelFactory<Project> {
       // One fixture session per status, all under the production project.
       for (const status of SESSION_STATUSES) {
         await VerificationSession.create({
-          tenantId: tenant.id,
+          organizationId: organization.id,
           projectId: project.id,
           userReference: `user_${status}_${project.id}`,
           status,

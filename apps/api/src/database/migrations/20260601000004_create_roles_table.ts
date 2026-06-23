@@ -5,20 +5,20 @@ export default class CreateRolesTableMigration extends Migration {
     schema.createTable('roles', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('roles')
       table.string('name')
       table.string('slug')
       table.string('description').nullable()
       table.boolean('isSystem').map('is_system')
       table.timestamps('camel', 'snake')
-      table.index(['tenantId'])
-      table.unique(['tenantId', 'slug'])
+      table.index(['organizationId'])
+      table.unique(['organizationId', 'slug'])
     })
   }
 

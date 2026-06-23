@@ -15,7 +15,7 @@ import {
   Users,
 } from 'lucide-react'
 import type { PermissionKey } from '@arkyc/types'
-import { TenantProvider, useTenant } from '@/contexts/tenant-context'
+import { OrganizationProvider, useOrganization } from '@/contexts/organization-context'
 import { RealtimeProvider } from '@/contexts/realtime-context'
 import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
@@ -89,7 +89,7 @@ function groupedNav(items: NavItem[]): Array<{ group: string; items: NavItem[] }
   return groups
 }
 
-/** The path segment after `/t/:slug/`, used to mark the active nav item. */
+/** The path segment after `/o/:slug/`, used to mark the active nav item. */
 function activeSegment(pathname: string): string {
   return pathname.split('/').slice(3).join('/')
 }
@@ -99,25 +99,25 @@ function isActiveItem(seg: string, item: NavItem): boolean {
   return seg === item.to || seg.startsWith(`${item.to}/`)
 }
 
-export function TenantLayout() {
+export function OrganizationLayout() {
   return (
-    <TenantProvider>
+    <OrganizationProvider>
       <RealtimeProvider>
         <LayoutInner />
       </RealtimeProvider>
-    </TenantProvider>
+    </OrganizationProvider>
   )
 }
 
 function LayoutInner() {
-  const { tenant, loading, notFound, can } = useTenant()
+  const { organization, loading, notFound, can } = useOrganization()
   const [scrolled, setScrolled] = useState(false)
 
   if (loading) return <Loading />
-  if (notFound || !tenant) {
+  if (notFound || !organization) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        Tenant not found or you are not a member.{' '}
+        Organization not found or you are not a member.{' '}
         <Link to="/" className="ml-1 text-primary underline">
           Go back
         </Link>
@@ -127,11 +127,11 @@ function LayoutInner() {
 
   return (
     <SidebarProvider>
-      <TenantSidebar can={can} />
+      <OrganizationSidebar can={can} />
       <SidebarInset onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 12)}>
         <div className="px-3 pb-3 pt-3">
           <main className="min-h-[calc(100svh-1.5rem)] rounded-xl border border-border bg-card">
-            <TenantHeader can={can} scrolled={scrolled} />
+            <OrganizationHeader can={can} scrolled={scrolled} />
             <Outlet />
           </main>
         </div>
@@ -140,8 +140,8 @@ function LayoutInner() {
   )
 }
 
-function TenantSidebar({ can }: { can: (perm: PermissionKey) => boolean }) {
-  const { tenant, tenants } = useTenant()
+function OrganizationSidebar({ can }: { can: (perm: PermissionKey) => boolean }) {
+  const { organization, organizations } = useOrganization()
   const navigate = useNavigate()
   const location = useLocation()
   const seg = activeSegment(location.pathname)
@@ -153,10 +153,10 @@ function TenantSidebar({ can }: { can: (perm: PermissionKey) => boolean }) {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton size="lg" className="gap-2.5 focus-visible:ring-0 data-[state=open]:bg-sidebar-accent">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-                {(tenant?.name?.[0] ?? 'A').toUpperCase()}
+                {(organization?.name?.[0] ?? 'A').toUpperCase()}
               </span>
               <span className="flex flex-1 flex-col text-left leading-tight group-data-[state=collapsed]/sidebar:hidden">
-                <span className="truncate text-sm font-semibold text-foreground">{tenant?.name ?? 'Arkyc'}</span>
+                <span className="truncate text-sm font-semibold text-foreground">{organization?.name ?? 'Arkyc'}</span>
                 <span className="truncate text-xs text-muted-foreground">Organization</span>
               </span>
               <ChevronsUpDown className="ml-auto size-4 text-muted-foreground group-data-[state=collapsed]/sidebar:hidden" />
@@ -164,8 +164,8 @@ function TenantSidebar({ can }: { can: (perm: PermissionKey) => boolean }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuLabel>Organizations</DropdownMenuLabel>
-            {tenants.map((tn) => (
-              <DropdownMenuItem key={tn.id} onSelect={() => navigate(`/t/${tn.slug}/overview`)}>
+            {organizations.map((tn) => (
+              <DropdownMenuItem key={tn.id} onSelect={() => navigate(`/o/${tn.slug}/overview`)}>
                 <span className="flex size-5 items-center justify-center rounded bg-muted text-[10px] font-bold">
                   {tn.name[0]?.toUpperCase()}
                 </span>
@@ -260,8 +260,8 @@ function UserMenu() {
   )
 }
 
-function TenantHeader({ can, scrolled }: { can: (perm: PermissionKey) => boolean; scrolled: boolean }) {
-  const { tenant } = useTenant()
+function OrganizationHeader({ can, scrolled }: { can: (perm: PermissionKey) => boolean; scrolled: boolean }) {
+  const { organization } = useOrganization()
   const { logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -278,7 +278,7 @@ function TenantHeader({ can, scrolled }: { can: (perm: PermissionKey) => boolean
         items: visibleNavItems(can).map((item) => ({
           label: item.label,
           icon: item.icon,
-          onSelect: () => navigate(`/t/${tenant?.slug}/${item.to}`),
+          onSelect: () => navigate(`/o/${organization?.slug}/${item.to}`),
         })),
       },
       {
@@ -287,7 +287,7 @@ function TenantHeader({ can, scrolled }: { can: (perm: PermissionKey) => boolean
       },
     ]
     return out
-  }, [can, navigate, tenant?.slug, logout])
+  }, [can, navigate, organization?.slug, logout])
 
   return (
     <SidebarHeaderBar scrolled={scrolled}>
@@ -296,7 +296,7 @@ function TenantHeader({ can, scrolled }: { can: (perm: PermissionKey) => boolean
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem className="hidden sm:inline-flex">
-            <BreadcrumbPage className="text-muted-foreground">{tenant?.name}</BreadcrumbPage>
+            <BreadcrumbPage className="text-muted-foreground">{organization?.name}</BreadcrumbPage>
           </BreadcrumbItem>
           <BreadcrumbSeparator className="hidden sm:inline-flex" />
           <BreadcrumbItem>

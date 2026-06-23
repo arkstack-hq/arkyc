@@ -4,7 +4,7 @@ import { permissionStore } from 'src/app/services/ArkormPermissionStore'
 
 /**
  * Sync the global permission catalogue and platform-admin scope. Idempotent:
- *   - tenant catalogue (`admin: false`)
+ *   - organization catalogue (`admin: false`)
  *   - platform-admin catalogue (`admin: true`)
  *   - platform-admin role(s) and their grants
  *

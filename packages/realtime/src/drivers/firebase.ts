@@ -19,7 +19,7 @@ const APP_NAME = 'arkyc-realtime'
 /**
  * Firebase driver — broadcasts by pushing event records to the Realtime Database
  * (clients listen via `onChildAdded`) and mints per-user custom tokens carrying
- * tenant claims (the browser signs in with `signInWithCustomToken`; RDB security
+ * organization claims (the browser signs in with `signInWithCustomToken`; RDB security
  * rules authorize reads by claim). `firebase-admin` is dynamically imported so it
  * only loads when firebase is the active transport.
  */

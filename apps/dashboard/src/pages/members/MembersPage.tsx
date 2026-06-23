@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm, usePagination, useRequest } from 'alova/client'
 import { Members, Roles, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Mail } from 'lucide-react'
@@ -24,8 +24,8 @@ function statusVariant(status: string): 'success' | 'warning' | 'muted' {
 }
 
 export default function MembersPage() {
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
 
   const [open, setOpen] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -40,7 +40,7 @@ export default function MembersPage() {
     error,
     update,
     reload: refreshMembers,
-  } = usePagination((currentPage, pageSize) => Members.list(tenantId, { page: currentPage, limit: pageSize }), {
+  } = usePagination((currentPage, pageSize) => Members.list(organizationId, { page: currentPage, limit: pageSize }), {
     append: true,
     initialPage: 1,
     initialPageSize: 15,
@@ -48,10 +48,10 @@ export default function MembersPage() {
     total: (res) => res.meta.total,
   })
 
-  // Fetch role options eagerly when permitted (TenantLayout blocks rendering
+  // Fetch role options eagerly when permitted (OrganizationLayout blocks rendering
   // until permissions resolve, so `canSeeRoles` is accurate at mount). Gating on
   // `open` would never fire — `immediate` is evaluated once, when open is false.
-  const { data: roles, loading: rolesLoading } = useRequest(Roles.options(tenantId), {
+  const { data: roles, loading: rolesLoading } = useRequest(Roles.options(organizationId), {
     immediate: canSeeRoles,
     initialData: [],
   })
@@ -64,7 +64,7 @@ export default function MembersPage() {
     error: inviteError,
     update: clearInviteError,
     onSuccess,
-  } = useForm((formData) => Members.invite(tenantId, formData), {
+  } = useForm((formData) => Members.invite(organizationId, formData), {
     initialForm: { email: '', role_id: '' },
   })
 

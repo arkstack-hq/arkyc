@@ -5,12 +5,12 @@ export default class CreateProjectsTableMigration extends Migration {
     schema.createTable('projects', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('projects')
       table.string('name')
       table.string('slug')
@@ -19,8 +19,8 @@ export default class CreateProjectsTableMigration extends Migration {
       table.json('branding').nullable()
       table.string('status')
       table.timestamps('camel', 'snake')
-      table.index(['tenantId'])
-      table.unique(['tenantId', 'slug'])
+      table.index(['organizationId'])
+      table.unique(['organizationId', 'slug'])
     })
   }
 

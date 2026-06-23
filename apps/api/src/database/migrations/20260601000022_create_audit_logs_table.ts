@@ -5,12 +5,12 @@ export default class CreateAuditLogsTableMigration extends Migration {
     schema.createTable('audit_logs', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('auditLogs')
       table
         .uuid('projectId')
@@ -30,7 +30,7 @@ export default class CreateAuditLogsTableMigration extends Migration {
       table.string('ipAddress').nullable().map('ip_address')
       table.string('userAgent').nullable().map('user_agent')
       table.timestamps('camel', 'snake')
-      table.index(['tenantId', 'createdAt'])
+      table.index(['organizationId', 'createdAt'])
     })
   }
 

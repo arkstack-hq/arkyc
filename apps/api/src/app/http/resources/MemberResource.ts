@@ -2,7 +2,7 @@ import { Resource } from 'resora'
 
 type Related = { getAttribute(key: string): unknown } | null | undefined
 
-/** A tenant member; eager-load `user` and `role` relations for nested data. */
+/** An organization member; eager-load `user` and `role` relations for nested data. */
 export default class MemberResource extends Resource {
   data() {
     const user = this.resource.getAttribute('user') as Related

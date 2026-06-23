@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { usePagination, useRequest } from 'alova/client'
 import type { VerificationStatus } from '@arkyc/types'
 import { Projects, Sessions } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { StatusBadge, DecisionBadge } from '@/components/StatusBadge'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
@@ -26,15 +26,15 @@ const STATUSES: VerificationStatus[] = [
 ]
 
 export default function SessionsPage() {
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
   const [status, setStatus] = useState('')
   const [projectId, setProjectId] = useState('')
 
   const canViewProjects = can('projects.view')
 
   // Picker data: all projects in one shot (not a paginated list view).
-  const { data: projects } = useRequest(Projects.options(tenantId), {
+  const { data: projects } = useRequest(Projects.options(organizationId), {
     immediate: canViewProjects,
     initialData: [],
   })
@@ -49,7 +49,7 @@ export default function SessionsPage() {
     update,
   } = usePagination(
     (currentPage, pageSize) =>
-      Sessions.list(tenantId, {
+      Sessions.list(organizationId, {
         page: currentPage,
         limit: pageSize,
         status: status || undefined,
@@ -67,7 +67,7 @@ export default function SessionsPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <PageHeader title="Sessions" description="Every verification session in this tenant." />
+      <PageHeader title="Sessions" description="Every verification session in this organization." />
 
       <Card>
         <CardHeader className="flex-row flex-wrap items-center gap-3 border-b border-border">

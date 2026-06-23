@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useForm, usePagination, useRequest } from 'alova/client'
 import { realtimeChannels } from '@arkyc/types'
 import { Sessions } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { useRealtimeChannel } from '@/contexts/realtime-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
@@ -18,8 +18,8 @@ import { formatDateTime, humanize } from '@/lib/utils'
 type Action = 'approve' | 'reject' | 'retry'
 
 export default function ReviewsPage() {
-  const tenantId = useTenantId()
-  const { tenant, can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { organization, can } = useOrganization()
 
   const [noteFor, setNoteFor] = useState<string | null>(null)
   const [actingId, setActingId] = useState<string | null>(null)
@@ -35,7 +35,7 @@ export default function ReviewsPage() {
     update,
   } = usePagination(
     (currentPage, pageSize) =>
-      Sessions.list(tenantId, {
+      Sessions.list(organizationId, {
         page: currentPage,
         limit: pageSize,
         status: 'requires_review',
@@ -57,9 +57,9 @@ export default function ReviewsPage() {
     onError: onActionError,
   } = useRequest(
     (id: string, act: Action) => {
-      if (act === 'approve') return Sessions.approve(tenantId, id)
-      if (act === 'reject') return Sessions.reject(tenantId, id)
-      return Sessions.requestRetry(tenantId, id, { kind: 'full' })
+      if (act === 'approve') return Sessions.approve(organizationId, id)
+      if (act === 'reject') return Sessions.reject(organizationId, id)
+      return Sessions.requestRetry(organizationId, id, { kind: 'full' })
     },
     { immediate: false },
   )
@@ -70,9 +70,9 @@ export default function ReviewsPage() {
   })
   onActionError(() => setActingId(null))
 
-  // Live updates: any session transition or review action in this tenant reloads
+  // Live updates: any session transition or review action in this organization reloads
   // the queue, so reviewers see new/cleared items without a manual refresh.
-  useRealtimeChannel(realtimeChannels.tenant(tenantId), () => void refresh(page))
+  useRealtimeChannel(realtimeChannels.organization(organizationId), () => void refresh(page))
 
   const {
     form: noteForm,
@@ -80,7 +80,7 @@ export default function ReviewsPage() {
     send: sendNote,
     loading: noteLoading,
     onSuccess: onNoteSuccess,
-  } = useForm((form) => Sessions.note(tenantId, noteFor as string, { body: form.body.trim() }), {
+  } = useForm((form) => Sessions.note(organizationId, noteFor as string, { body: form.body.trim() }), {
     initialForm: { body: '' },
   })
 
@@ -94,7 +94,7 @@ export default function ReviewsPage() {
     void sendAction(id, act)
   }
 
-  const sessionPath = (id: string) => (tenant ? `/t/${tenant.slug}/sessions/${id}` : `../sessions/${id}`)
+  const sessionPath = (id: string) => (organization ? `/o/${organization.slug}/sessions/${id}` : `../sessions/${id}`)
 
   return (
     <div className="p-6 lg:p-8">

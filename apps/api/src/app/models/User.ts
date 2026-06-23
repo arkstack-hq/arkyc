@@ -7,7 +7,7 @@ import { ProjectMember } from './ProjectMember'
 import { UserPermission } from './UserPermission'
 import { AdminPermission } from './AdminPermission'
 import { Review } from './Review'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 
 export class User extends BaseUser {
   declare email: string
@@ -47,8 +47,8 @@ export class User extends BaseUser {
     return this.hasMany(UserNotification, 'userId')
   }
 
-  tenantMemberships() {
-    return this.belongsToMany(Tenant, 'tenant_members', 'tenantId', 'userId')
+  organizationMemberships() {
+    return this.belongsToMany(Organization, 'organization_members', 'organizationId', 'userId')
   }
 
   projectMemberships() {

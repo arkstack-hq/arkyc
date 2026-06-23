@@ -1,6 +1,6 @@
 import type { ProjectContext } from '@arkyc/types'
-import type { Tenant } from '@app/models/Tenant'
-import type { TenantMember } from '@app/models/TenantMember'
+import type { Organization } from '@app/models/Organization'
+import type { OrganizationMember } from '@app/models/OrganizationMember'
 import type { VerificationSession } from '@app/models/VerificationSession'
 
 /**
@@ -9,11 +9,11 @@ import type { VerificationSession } from '@app/models/VerificationSession'
  */
 declare module 'node:http' {
   interface IncomingMessage {
-    /** Active tenant resolved from the route (dashboard surface). */
-    tenant?: Tenant
-    /** The acting user's membership in {@link tenant}. */
-    tenantMember?: TenantMember
-    /** Tenant + project resolved from a secret API key (public surface). */
+    /** Active organization resolved from the route (dashboard surface). */
+    organization?: Organization
+    /** The acting user's membership in {@link organization}. */
+    organizationMember?: OrganizationMember
+    /** Organization + project resolved from a secret API key (public surface). */
     projectContext?: ProjectContext
     /** Session resolved from a short-lived client token (widget surface). */
     verificationSession?: VerificationSession

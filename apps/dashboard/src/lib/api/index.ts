@@ -18,7 +18,7 @@ export { Projects } from './projects'
 export { Realtime } from './realtime'
 export { Roles } from './roles'
 export { Sessions } from './sessions'
-export { Tenants } from './tenants'
+export { Organizations } from './organizations'
 export { Webhooks } from './webhooks'
 
 export {

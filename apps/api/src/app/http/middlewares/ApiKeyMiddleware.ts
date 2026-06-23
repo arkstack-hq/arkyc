@@ -15,7 +15,7 @@ function readSecret(req: Request): string | null {
 
 /**
  * Authenticates a request from an integrating backend using a project secret
- * API key (`Authorization: Bearer sk_…` or `X-Api-Key`). Resolves the tenant +
+ * API key (`Authorization: Bearer sk_…` or `X-Api-Key`). Resolves the organization +
  * project from the key and attaches `req.projectContext`.
  */
 export class ApiKeyMiddleware {
@@ -34,7 +34,7 @@ export class ApiKeyMiddleware {
       )
 
       req.projectContext = {
-        tenant_id: key.tenantId,
+        organization_id: key.organizationId,
         project_id: key.projectId,
         api_key_id: key.id,
       }

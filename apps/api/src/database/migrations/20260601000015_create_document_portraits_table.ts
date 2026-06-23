@@ -5,12 +5,12 @@ export default class CreateDocumentPortraitsTableMigration extends Migration {
     schema.createTable('document_portraits', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('documentPortraits')
       table
         .uuid('projectId')

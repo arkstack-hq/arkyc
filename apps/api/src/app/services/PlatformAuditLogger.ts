@@ -17,7 +17,7 @@ export interface PlatformAuditEntry {
 /**
  * Writes the append-only platform-admin audit trail (Phase 15). Records every
  * state-changing action on the `/admin` surface — who did it, from where, and
- * against which entity. Separate from the tenant {@link AuditLogger}.
+ * against which entity. Separate from the organization {@link AuditLogger}.
  */
 export class PlatformAuditLogger {
   /** Persist a platform audit entry. */

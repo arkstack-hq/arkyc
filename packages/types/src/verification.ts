@@ -43,7 +43,7 @@ export type DecisionReason =
 
 /**
  * A verification session: the full lifecycle of one verification flow, owned by
- * a project (and tenant). Created from an integrator's backend, driven by the
+ * a project (and organization). Created from an integrator's backend, driven by the
  * widget, decided automatically and/or by a human reviewer.
  */
 export interface VerificationSession extends Entity, ProjectScoped {

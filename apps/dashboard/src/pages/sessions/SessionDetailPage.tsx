@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useRequest } from 'alova/client'
 import { realtimeChannels, type VerificationDecision, type VerificationStatus } from '@arkyc/types'
 import { Sessions, fetchSessionMedia } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { useRealtimeChannel } from '@/contexts/realtime-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { StatusBadge, DecisionBadge } from '@/components/StatusBadge'
@@ -50,7 +50,7 @@ const num = (v: number | null | undefined, digits = 2) => (typeof v === 'number'
 const bool = (v: boolean | null | undefined) => (v == null ? '—' : v ? 'Passed' : 'Failed')
 
 /** Loads a private media artifact through the authenticated route as an object URL. */
-function SessionMedia({ tenantId, sessionId, kind }: { tenantId: string; sessionId: string; kind: string }) {
+function SessionMedia({ organizationId, sessionId, kind }: { organizationId: string; sessionId: string; kind: string }) {
   const [url, setUrl] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
 
@@ -59,7 +59,7 @@ function SessionMedia({ tenantId, sessionId, kind }: { tenantId: string; session
     let made: string | null = null
     setUrl(null)
     setFailed(false)
-    fetchSessionMedia(tenantId, sessionId, kind)
+    fetchSessionMedia(organizationId, sessionId, kind)
       .then((u) => {
         if (active) {
           made = u
@@ -71,7 +71,7 @@ function SessionMedia({ tenantId, sessionId, kind }: { tenantId: string; session
       active = false
       if (made) URL.revokeObjectURL(made)
     }
-  }, [tenantId, sessionId, kind])
+  }, [organizationId, sessionId, kind])
 
   return (
     <figure className="flex flex-col gap-1.5">
@@ -92,8 +92,8 @@ function SessionMedia({ tenantId, sessionId, kind }: { tenantId: string; session
 }
 
 export default function SessionDetailPage() {
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
   const { sessionId } = useParams()
   const [reason, setReason] = useState('')
   const [retryKind, setRetryKind] = useState<'document' | 'selfie' | 'full'>('full')
@@ -103,7 +103,7 @@ export default function SessionDetailPage() {
     loading,
     error,
     send,
-  } = useRequest(Sessions.get(tenantId, sessionId as string), {
+  } = useRequest(Sessions.get(organizationId, sessionId as string), {
     immediate: !!sessionId,
   })
   const data = raw as unknown as SessionDetail | undefined
@@ -120,9 +120,9 @@ export default function SessionDetailPage() {
     (action: 'approve' | 'reject' | 'retry') => {
       const id = sessionId as string
       const reasonInput = reason.trim() ? { reason: reason.trim() } : {}
-      if (action === 'approve') return Sessions.approve(tenantId, id, reasonInput)
-      if (action === 'reject') return Sessions.reject(tenantId, id, reasonInput)
-      return Sessions.requestRetry(tenantId, id, { kind: retryKind, ...reasonInput })
+      if (action === 'approve') return Sessions.approve(organizationId, id, reasonInput)
+      if (action === 'reject') return Sessions.reject(organizationId, id, reasonInput)
+      return Sessions.requestRetry(organizationId, id, { kind: retryKind, ...reasonInput })
     },
     { immediate: false },
   )
@@ -199,12 +199,12 @@ export default function SessionDetailPage() {
               <CardContent>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {images.map((kind) => (
-                    <SessionMedia key={kind} tenantId={tenantId} sessionId={data.id} kind={kind} />
+                    <SessionMedia key={kind} organizationId={organizationId} sessionId={data.id} kind={kind} />
                   ))}
                 </div>
                 {media.includes('video') ? (
                   <div className="mt-4 max-w-md">
-                    <SessionMedia tenantId={tenantId} sessionId={data.id} kind="video" />
+                    <SessionMedia organizationId={organizationId} sessionId={data.id} kind="video" />
                   </div>
                 ) : null}
               </CardContent>

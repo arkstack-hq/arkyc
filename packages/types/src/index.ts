@@ -6,7 +6,7 @@
  */
 export * from './common'
 export * from './user'
-export * from './tenant'
+export * from './organization'
 export * from './rbac'
 export * from './settings'
 export * from './realtime'

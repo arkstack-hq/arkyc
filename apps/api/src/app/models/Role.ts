@@ -1,33 +1,33 @@
 import { Model } from 'arkormx'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Permission } from './Permission'
 import { RolePermission } from './RolePermission'
-import { TenantMember } from './TenantMember'
+import { OrganizationMember } from './OrganizationMember'
 
 export class Role extends Model {
   protected static override table = 'roles'
 
   declare id: string
-  /** Null for platform-admin roles (`admin: true`); set for tenant roles. */
-  declare tenantId: string | null
+  /** Null for platform-admin roles (`admin: true`); set for organization roles. */
+  declare organizationId: string | null
   declare name: string
   declare slug: string
   declare description: string | null
   declare isSystem: boolean
-  /** Platform-admin role (not tenant-scoped). */
+  /** Platform-admin role (not organization-scoped). */
   declare admin: boolean
   declare createdAt: Date
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     isSystem: 'is_system',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   rolePermissions() {
@@ -40,6 +40,6 @@ export class Role extends Model {
   }
 
   members() {
-    return this.hasMany(TenantMember, 'roleId')
+    return this.hasMany(OrganizationMember, 'roleId')
   }
 }

@@ -11,13 +11,13 @@ import { audit } from '@app/services/AuditLogger'
 
 export default class ProjectController extends BaseController {
   /**
-   * List the active tenant's projects.
+   * List the active organization's projects.
    *
-   * @param   ctx  The HTTP context (`req.tenant`).
+   * @param   ctx  The HTTP context (`req.organization`).
    * @returns      A ProjectCollection.
    */
   async index({ req }: HttpContext) {
-    const projects = await Project.where({ tenantId: req.tenant!.id }).paginate(perPage(req.query))
+    const projects = await Project.where({ organizationId: req.organization!.id }).paginate(perPage(req.query))
 
     return new ProjectCollection(projects).additional({
       status: 'success',
@@ -27,9 +27,9 @@ export default class ProjectController extends BaseController {
   }
 
   /**
-   * Create a project under the active tenant.
+   * Create a project under the active organization.
    *
-   * @param   ctx  The HTTP context (`req.tenant`).
+   * @param   ctx  The HTTP context (`req.organization`).
    * @returns      A ProjectResource (HTTP 201).
    */
   async create({ req }: HttpContext) {
@@ -43,13 +43,13 @@ export default class ProjectController extends BaseController {
 
     const slug = (data.slug || Str.slug(data.name)).toLowerCase()
     RequestException.abortIf(
-      await Project.where({ tenantId: req.tenant!.id, slug }).first(),
-      'A project with this slug already exists in this tenant',
+      await Project.where({ organizationId: req.organization!.id, slug }).first(),
+      'A project with this slug already exists in this organization',
       409,
     )
 
     const project = await Project.create({
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
       name: data.name,
       slug,
       environment: data.environment ?? 'production',
@@ -76,15 +76,15 @@ export default class ProjectController extends BaseController {
   }
 
   /**
-   * Show a project scoped to the active tenant.
+   * Show a project scoped to the active organization.
    *
-   * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:projectId`, `req.organization`).
    * @returns      A ProjectResource.
    */
   async show({ req }: HttpContext) {
     const project = await Project.where({
       id: req.params.projectId,
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
     }).firstOrFail()
 
     return new ProjectResource(project).additional({
@@ -97,7 +97,7 @@ export default class ProjectController extends BaseController {
   /**
    * Update a project's name/status/settings/branding/thresholds.
    *
-   * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:projectId`, `req.organization`).
    * @returns      A ProjectResource.
    */
   async update({ req }: HttpContext) {
@@ -111,7 +111,7 @@ export default class ProjectController extends BaseController {
 
     const project = await Project.where({
       id: req.params.projectId,
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
     }).firstOrFail()
     if (data.name) project.name = data.name
     if (data.status) project.status = data.status
@@ -152,10 +152,10 @@ export default class ProjectController extends BaseController {
 
     const project = await Project.where({
       id: req.params.projectId,
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
     }).firstOrFail()
 
-    const key = `tenants/${project.tenantId}/projects/${project.id}/branding/logo`
+    const key = `organizations/${project.organizationId}/projects/${project.id}/branding/logo`
     await Storage.disk().put(key, data.logo, { visibility: 'public' })
     const url = await Storage.disk().getUrl(key)
 

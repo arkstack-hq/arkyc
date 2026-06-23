@@ -1,16 +1,16 @@
 import { Migration, SchemaBuilder } from 'arkormx'
 
-export default class CreateTenantInvitationsTableMigration extends Migration {
+export default class CreateOrganizationInvitationsTableMigration extends Migration {
   public async up(schema: SchemaBuilder): Promise<void> {
-    schema.createTable('tenant_invitations', (table) => {
+    schema.createTable('organization_invitations', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('invitations')
       table.string('email').index()
       table
@@ -25,11 +25,11 @@ export default class CreateTenantInvitationsTableMigration extends Migration {
       table.timestamp('expiresAt').map('expires_at')
       table.timestamp('acceptedAt').nullable().map('accepted_at')
       table.timestamps('camel', 'snake')
-      table.index(['tenantId'])
+      table.index(['organizationId'])
     })
   }
 
   public async down(schema: SchemaBuilder): Promise<void> {
-    schema.dropTable('tenant_invitations')
+    schema.dropTable('organization_invitations')
   }
 }

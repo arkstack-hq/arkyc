@@ -1,8 +1,8 @@
 import { Storage } from '@arkstack/filesystem'
 
-/** Tenant/project/session-scoped object key for a stored artifact. */
-export function sessionObjectKey(scope: { tenantId: string; projectId: string; id: string }, leaf: string): string {
-  return `tenants/${scope.tenantId}/projects/${scope.projectId}/sessions/${scope.id}/${leaf}`
+/** Organization/project/session-scoped object key for a stored artifact. */
+export function sessionObjectKey(scope: { organizationId: string; projectId: string; id: string }, leaf: string): string {
+  return `organizations/${scope.organizationId}/projects/${scope.projectId}/sessions/${scope.id}/${leaf}`
 }
 
 /** Read stored bytes for an object, tolerating a missing key/object. */

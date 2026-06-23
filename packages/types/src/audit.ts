@@ -5,11 +5,11 @@ export type ActorType = 'user' | 'api_key' | 'system'
 
 /**
  * An immutable audit log entry. Project scope is optional (some actions are
- * tenant-level only). Audit rows are append-only and carry no `updated_at`.
+ * organization-level only). Audit rows are append-only and carry no `updated_at`.
  */
 export interface AuditLog {
   id: Id
-  tenant_id: Id
+  organization_id: Id
   project_id: Id | null
   actor_id: Id | null
   actor_type: ActorType

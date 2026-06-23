@@ -1,5 +1,5 @@
 import { Model } from 'arkormx'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Project } from './Project'
 import { User } from './User'
 import { Permission } from './Permission'
@@ -8,7 +8,7 @@ export class UserPermission extends Model {
   protected static override table = 'user_permissions'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare projectId: string | null
   declare userId: string
   declare permissionId: string
@@ -16,7 +16,7 @@ export class UserPermission extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     projectId: 'project_id',
     userId: 'user_id',
     permissionId: 'permission_id',
@@ -24,8 +24,8 @@ export class UserPermission extends Model {
     updatedAt: 'updated_at',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   project() {

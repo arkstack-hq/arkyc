@@ -20,16 +20,16 @@ const MEDIA_CONTENT_TYPE: Record<string, string> = {
 }
 
 /**
- * Review queue + reviewer actions (Phase 9). All routes run after `resolveTenant`
+ * Review queue + reviewer actions (Phase 9). All routes run after `resolveOrganization`
  * and are gated by `sessions.view` / `reviews.*`.
  */
 export default class SessionReviewController extends BaseController {
   /**
-   * List the tenant's sessions, newest first. Filter by `status`,
+   * List the organization's sessions, newest first. Filter by `status`,
    * `decision_reason`, or `project_id` query params.
    */
   async index({ req }: HttpContext) {
-    let query = VerificationSession.where({ tenantId: req.tenant!.id })
+    let query = VerificationSession.where({ organizationId: req.organization!.id })
     const status = param(req.query.status)
     const decisionReason = param(req.query.decision_reason)
     const projectId = param(req.query.project_id)
@@ -205,9 +205,9 @@ export default class SessionReviewController extends BaseController {
     return this.session(session, 'Note added')
   }
 
-  /** Resolve a session by id, scoped to the active tenant (404 otherwise). */
+  /** Resolve a session by id, scoped to the active organization (404 otherwise). */
   private scoped(req: HttpContext['req']) {
-    return VerificationSession.where({ id: req.params.id, tenantId: req.tenant!.id }).firstOrFail()
+    return VerificationSession.where({ id: req.params.id, organizationId: req.organization!.id }).firstOrFail()
   }
 
   private session(session: VerificationSession, message: string) {

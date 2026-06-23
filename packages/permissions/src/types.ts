@@ -5,7 +5,7 @@ import type { AdminRoleDefinition, DefaultRoleDefinition } from './default-roles
 /** Identifies whose effective permissions to resolve, and in what scope. */
 export interface PermissionResolutionContext {
   userId: string
-  tenantId: string
+  organizationId: string
   /** When set, project-level role and direct permissions are also included. */
   projectId?: string | null
 }
@@ -16,12 +16,12 @@ export interface PermissionResolutionContext {
  * database dependency so it is reusable by the api, dashboard, and sdk.
  */
 export interface PermissionResolverStore {
-  /** Permission keys granted via the user's tenant-level role. */
-  tenantRolePermissions(ctx: PermissionResolutionContext): Promise<readonly PermissionKey[]>
+  /** Permission keys granted via the user's organization-level role. */
+  organizationRolePermissions(ctx: PermissionResolutionContext): Promise<readonly PermissionKey[]>
   /** Permission keys granted via the user's project-level role (if `projectId`). */
   projectRolePermissions(ctx: PermissionResolutionContext): Promise<readonly PermissionKey[]>
   /**
-   * Direct permission keys assigned to the user: tenant-level grants
+   * Direct permission keys assigned to the user: organization-level grants
    * (`project_id` null) plus project-level grants matching `projectId`.
    */
   directPermissions(ctx: PermissionResolutionContext): Promise<readonly PermissionKey[]>
@@ -31,8 +31,8 @@ export interface PermissionResolverStore {
 export interface PermissionSyncStore {
   /** Insert or update a permission by its `name`. */
   upsertPermission(def: PermissionDefinition): Promise<void>
-  /** Insert or update a tenant's system role by slug; returns its id. */
-  upsertSystemRole(tenantId: string, role: DefaultRoleDefinition): Promise<string>
+  /** Insert or update an organization's system role by slug; returns its id. */
+  upsertSystemRole(organizationId: string, role: DefaultRoleDefinition): Promise<string>
   /** Replace a role's permission grants with exactly `permissions`. */
   syncRolePermissions(roleId: string, permissions: readonly AnyPermissionKey[]): Promise<void>
 }
@@ -43,8 +43,8 @@ export interface AdminResolutionContext {
 }
 
 /**
- * Read port for platform-admin resolution. Distinct from the tenant
- * {@link PermissionResolverStore}: a tenant role must never grant admin access.
+ * Read port for platform-admin resolution. Distinct from the organization
+ * {@link PermissionResolverStore}: an organization role must never grant admin access.
  */
 export interface AdminResolverStore {
   /** Admin permission keys granted via the user's platform-admin role(s). */
@@ -55,7 +55,7 @@ export interface AdminResolverStore {
 
 /** Write port used by the admin sync helpers to seed the admin catalogue/roles. */
 export interface AdminSyncStore extends PermissionSyncStore {
-  /** Insert or update a platform-admin role by slug (no tenant); returns its id. */
+  /** Insert or update a platform-admin role by slug (no organization); returns its id. */
   upsertAdminRole(role: AdminRoleDefinition): Promise<string>
 }
 

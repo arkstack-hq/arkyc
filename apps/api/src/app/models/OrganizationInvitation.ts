@@ -1,12 +1,12 @@
 import { Model } from 'arkormx'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Role } from './Role'
 
-export class TenantInvitation extends Model {
-  protected static override table = 'tenant_invitations'
+export class OrganizationInvitation extends Model {
+  protected static override table = 'organization_invitations'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare email: string
   declare roleId: string
   declare tokenHash: string
@@ -16,7 +16,7 @@ export class TenantInvitation extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     roleId: 'role_id',
     tokenHash: 'token_hash',
     expiresAt: 'expires_at',
@@ -25,8 +25,8 @@ export class TenantInvitation extends Model {
     updatedAt: 'updated_at',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   role() {

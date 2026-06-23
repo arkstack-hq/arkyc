@@ -1,12 +1,12 @@
 import { Model } from 'arkormx'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Project } from './Project'
 
 export class ApiKey extends Model {
   protected static override table = 'api_keys'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare projectId: string
   declare name: string
   declare keyPrefix: string
@@ -18,7 +18,7 @@ export class ApiKey extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     projectId: 'project_id',
     keyPrefix: 'key_prefix',
     keyHash: 'key_hash',
@@ -32,8 +32,8 @@ export class ApiKey extends Model {
   /** The secret hash is never serialised to API responses. */
   protected override hidden = ['keyHash']
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   project() {

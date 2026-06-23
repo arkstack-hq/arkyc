@@ -3,10 +3,10 @@ import request from 'parasito'
 import { MemoryRealtimeDriver } from '@arkyc/realtime'
 import { realtimeChannels, REALTIME_EVENT } from '@arkyc/types'
 import { app } from '../src/core/bootstrap'
-import { Tenant } from '../src/app/models/Tenant'
+import { Organization } from '../src/app/models/Organization'
 
 /** Phase 16 — realtime broadcasts from the transition + review choke points. */
-const fx = { token: '', outsiderToken: '', ownerId: '', tenantId: '', projectId: '', apiKeySecret: '' }
+const fx = { token: '', outsiderToken: '', ownerId: '', organizationId: '', projectId: '', apiKeySecret: '' }
 
 const authed = (method: 'get' | 'post', path: string) =>
   request(app)[method](`/api/v1/dashboard${path}`).set('Authorization', `Bearer ${fx.token}`)
@@ -41,22 +41,22 @@ beforeAll(async () => {
     .send({ firstname: 'RT Outsider', lastname: 'Test', email: `rt-out-${s}@test.dev`, password: 'secret123' })
   fx.outsiderToken = outsider.body.token
 
-  const tenant = await authed('post', '/tenants').send({ name: `RT Co ${s}` })
-  fx.tenantId = tenant.body.data.id
+  const organization = await authed('post', '/organizations').send({ name: `RT Co ${s}` })
+  fx.organizationId = organization.body.data.id
 
-  const project = await authed('post', `/tenants/${fx.tenantId}/projects`).send({ name: 'RT Prod' })
+  const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'RT Prod' })
   fx.projectId = project.body.data.id
 
-  const key = await authed('post', `/tenants/${fx.tenantId}/projects/${fx.projectId}/api-keys`).send({ name: 'RT key' })
+  const key = await authed('post', `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`).send({ name: 'RT key' })
   fx.apiKeySecret = key.body.secret
 })
 
 afterAll(async () => {
-  if (fx.tenantId) await Tenant.destroy(fx.tenantId)
+  if (fx.organizationId) await Organization.destroy(fx.organizationId)
 })
 
 describe('realtime broadcasts', () => {
-  it('broadcasts a session transition to tenant/project/session channels', async () => {
+  it('broadcasts a session transition to organization/project/session channels', async () => {
     MemoryRealtimeDriver.clear()
     const id = await reviewableSession()
 
@@ -66,8 +66,8 @@ describe('realtime broadcasts', () => {
     // The final transition into requires_review fans out to all three channels.
     const last = transitions.at(-1)!
     expect(last.channels).toEqual([
-      realtimeChannels.tenant(fx.tenantId),
-      realtimeChannels.project(fx.tenantId, fx.projectId),
+      realtimeChannels.organization(fx.organizationId),
+      realtimeChannels.project(fx.organizationId, fx.projectId),
       realtimeChannels.session(id),
     ])
     expect((last.payload as { session_id: string }).session_id).toBe(id)
@@ -77,7 +77,7 @@ describe('realtime broadcasts', () => {
     const id = await reviewableSession()
     MemoryRealtimeDriver.clear()
 
-    const approve = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/approve`).send({})
+    const approve = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/approve`).send({})
     expect(approve.status).toBe(200)
 
     const review = MemoryRealtimeDriver.events.find(
@@ -85,7 +85,7 @@ describe('realtime broadcasts', () => {
     )
     expect(review).toBeTruthy()
     expect((review!.payload as { session_id: string }).session_id).toBe(id)
-    expect(review!.channels).toContain(realtimeChannels.tenant(fx.tenantId))
+    expect(review!.channels).toContain(realtimeChannels.organization(fx.organizationId))
 
     // The approve also transitions the session → a transition broadcast too.
     expect(MemoryRealtimeDriver.events.some((e) => e.event === REALTIME_EVENT.sessionTransition)).toBe(true)
@@ -99,20 +99,20 @@ describe('realtime client glue', () => {
     expect(res.body.data.transport).toBe('memory')
   })
 
-  it('authorizes a tenant channel for a member', async () => {
+  it('authorizes an organization channel for a member', async () => {
     const res = await request(app)
       .post('/api/v1/realtime/auth')
       .set('Authorization', `Bearer ${fx.token}`)
-      .send({ socket_id: '123.456', channel_name: realtimeChannels.tenant(fx.tenantId) })
+      .send({ socket_id: '123.456', channel_name: realtimeChannels.organization(fx.organizationId) })
     expect(res.status).toBe(200)
     expect(typeof res.body.auth).toBe('string')
   })
 
-  it('denies a tenant channel to a non-member (403)', async () => {
+  it('denies an organization channel to a non-member (403)', async () => {
     const res = await request(app)
       .post('/api/v1/realtime/auth')
       .set('Authorization', `Bearer ${fx.outsiderToken}`)
-      .send({ socket_id: '123.456', channel_name: realtimeChannels.tenant(fx.tenantId) })
+      .send({ socket_id: '123.456', channel_name: realtimeChannels.organization(fx.organizationId) })
     expect(res.status).toBe(403)
   })
 })

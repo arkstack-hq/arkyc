@@ -1,15 +1,15 @@
 import { auth } from '@arkstack/driver-express/middlewares'
 import { Router } from '@arkstack/driver-express'
 import type { PermissionKey } from '@arkyc/types'
-import { can, resolveTenant } from '@app/http/middlewares'
+import { can, resolveOrganization } from '@app/http/middlewares'
 import ProjectController from '@controllers/dashboard/ProjectController'
 import ProjectMemberController from '@controllers/dashboard/ProjectMemberController'
 import ApiKeyController from '@controllers/dashboard/ApiKeyController'
 import WebhookEndpointController from '@controllers/dashboard/WebhookEndpointController'
 
-const scoped = (perm: PermissionKey) => [auth, resolveTenant, can(perm)]
+const scoped = (perm: PermissionKey) => [auth, resolveOrganization, can(perm)]
 
-Router.group('/v1/dashboard/tenants/:tenantId/projects', () => {
+Router.group('/v1/dashboard/organizations/:organizationId/projects', () => {
   Router.get('/', [ProjectController, 'index'], scoped('projects.view'))
   Router.post('/', [ProjectController, 'create'], scoped('projects.create'))
   Router.get('/:projectId', [ProjectController, 'show'], scoped('projects.view'))

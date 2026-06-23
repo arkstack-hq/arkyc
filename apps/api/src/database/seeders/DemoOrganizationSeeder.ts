@@ -6,18 +6,18 @@ import type { AnyPermissionKey } from '@arkyc/types'
 import { Project } from 'src/app/models/Project'
 import { Role } from 'src/app/models/Role'
 import { RolePermission } from 'src/app/models/RolePermission'
-import { Tenant } from 'src/app/models/Tenant'
-import { TenantFactory } from '../factories/TenantFactory'
+import { Organization } from 'src/app/models/Organization'
+import { OrganizationFactory } from '../factories/OrganizationFactory'
 import { User } from 'src/app/models/User'
 
 /**
- * Seed a complete demo workspace: a tenant with the five system roles (and
+ * Seed a complete demo workspace: an organization with the five system roles (and
  * their permissions), an owner member, two projects with API keys, and one
  * verification session per status.
  */
-export class DemoTenantSeeder extends Seeder {
+export class DemoOrganizationSeeder extends Seeder {
   public async run(): Promise<void> {
-    const tenant = await Tenant.factory<TenantFactory>(1).create()
+    const organization = await Organization.factory<OrganizationFactory>(1).create()
 
     // Build a permission-name → id lookup once to avoid per-grant queries.
     const permissions = Array.from(await Permission.all())
@@ -26,7 +26,7 @@ export class DemoTenantSeeder extends Seeder {
     const roleBySlug = new Map<string, Role>()
     for (const def of DefaultRoles.ALL) {
       const role = await Role.create({
-        tenantId: tenant.id,
+        organizationId: organization.id,
         name: def.name,
         slug: def.slug,
         description: def.description,
@@ -45,12 +45,12 @@ export class DemoTenantSeeder extends Seeder {
     await SchemaBuilder.disableForeignKeyConstraints()
     await User.factory()
       .hasAttached(
-        Tenant.factory().has(Project.factory(3)),
+        Organization.factory().has(Project.factory(3)),
         {
           status: 'active',
           roleId: roleBySlug.get('owner')!.id,
         },
-        'tenantMemberships',
+        'organizationMemberships',
       )
       .create()
     await SchemaBuilder.enableForeignKeyConstraints()

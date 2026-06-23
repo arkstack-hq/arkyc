@@ -1,16 +1,16 @@
 import { Migration, SchemaBuilder } from 'arkormx'
 
-export default class CreateTenantMembersTableMigration extends Migration {
+export default class CreateOrganizationMembersTableMigration extends Migration {
   public async up(schema: SchemaBuilder): Promise<void> {
-    schema.createTable('tenant_members', (table) => {
+    schema.createTable('organization_members', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('members')
       table
         .uuid('userId')
@@ -19,7 +19,7 @@ export default class CreateTenantMembersTableMigration extends Migration {
         .references('users', 'id')
         .onDelete('cascade')
         .as('user')
-        .inverseAlias('tenantMemberships')
+        .inverseAlias('organizationMemberships')
       table
         .uuid('roleId')
         .map('role_id')
@@ -27,16 +27,16 @@ export default class CreateTenantMembersTableMigration extends Migration {
         .references('roles', 'id')
         .onDelete('restrict')
         .as('role')
-        .inverseAlias('tenantMembers')
+        .inverseAlias('organizationMembers')
       table.string('status')
       table.date('joinedAt').nullable().map('joined_at')
       table.timestamps('camel', 'snake')
-      table.index(['tenantId'])
-      table.unique(['tenantId', 'userId'])
+      table.index(['organizationId'])
+      table.unique(['organizationId', 'userId'])
     })
   }
 
   public async down(schema: SchemaBuilder): Promise<void> {
-    schema.dropTable('tenant_members')
+    schema.dropTable('organization_members')
   }
 }

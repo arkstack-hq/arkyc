@@ -6,14 +6,14 @@ import AuditLogCollection from '@app/http/resources/AuditLogCollection'
 
 const param = (value: unknown): string | undefined => (Array.isArray(value) ? value[0] : value) as string | undefined
 
-/** Tenant audit-log read API (Phase 9). Gated by `audit_logs.view`. */
+/** Organization audit-log read API (Phase 9). Gated by `audit_logs.view`. */
 export default class AuditLogController extends BaseController {
   /**
-   * List the tenant's audit entries, newest first. Filter by `action` or
+   * List the organization's audit entries, newest first. Filter by `action` or
    * `entity_type` query params.
    */
   async index({ req }: HttpContext) {
-    let query = AuditLog.where({ tenantId: req.tenant!.id })
+    let query = AuditLog.where({ organizationId: req.organization!.id })
     const action = param(req.query.action)
     const entityType = param(req.query.entity_type)
     if (action) query = query.where({ action })

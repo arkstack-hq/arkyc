@@ -8,7 +8,7 @@ import { AdminPermission } from '../src/app/models/AdminPermission'
 import { GlobalSetting } from '../src/app/models/GlobalSetting'
 import { User } from '../src/app/models/User'
 
-/** Platform super-admin tier above tenants (Phase 15): canAdmin + global settings. */
+/** Platform super-admin tier above organizations (Phase 15): canAdmin + global settings. */
 const ctx = { ownerToken: '', ownerId: '', userToken: '', userId: '' }
 
 const register = (s: number, tag: string) =>
@@ -41,7 +41,7 @@ beforeAll(async () => {
   ctx.ownerToken = owner.body.token
   ctx.ownerId = owner.body.data.id
 
-  const user = await register(s, 'tenant-user')
+  const user = await register(s, 'organization-user')
   ctx.userToken = user.body.token
   ctx.userId = user.body.data.id
 
@@ -116,15 +116,15 @@ describe('global settings', () => {
   })
 })
 
-describe('admin tenants surface', () => {
-  it('lists tenants for the platform owner', async () => {
-    const res = await admin('get', '/tenants', ctx.ownerToken)
+describe('admin organizations surface', () => {
+  it('lists organizations for the platform owner', async () => {
+    const res = await admin('get', '/organizations', ctx.ownerToken)
     expect(res.status).toBe(200)
     expect(Array.isArray(res.body.data)).toBe(true)
   })
 
-  it('denies the tenants list for a non-admin user (403)', async () => {
-    const res = await admin('get', '/tenants', ctx.userToken)
+  it('denies the organizations list for a non-admin user (403)', async () => {
+    const res = await admin('get', '/organizations', ctx.userToken)
     expect(res.status).toBe(403)
   })
 })

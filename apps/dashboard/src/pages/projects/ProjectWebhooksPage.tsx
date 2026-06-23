@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useForm, usePagination, useRequest } from 'alova/client'
 import type { WebhookEventName } from '@arkyc/types'
 import { Webhooks, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { formatDateTime, humanize } from '@/lib/utils'
 import { Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
@@ -31,8 +31,8 @@ const EVENT_NAMES: WebhookEventName[] = [
 ]
 
 export default function ProjectWebhooksPage() {
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
   const { projectId } = useParams()
 
   const {
@@ -44,7 +44,7 @@ export default function ProjectWebhooksPage() {
     update,
     reload: refreshWebhooks,
   } = usePagination(
-    (currentPage, pageSize) => Webhooks.list(tenantId, projectId!, { page: currentPage, limit: pageSize }),
+    (currentPage, pageSize) => Webhooks.list(organizationId, projectId!, { page: currentPage, limit: pageSize }),
     {
       append: true,
       initialPage: 1,
@@ -67,7 +67,7 @@ export default function ProjectWebhooksPage() {
     update: clearCreateError,
     reset,
     onSuccess: onCreateSuccess,
-  } = useForm((f) => Webhooks.create(tenantId, projectId!, { url: f.url.trim(), events: f.events }), {
+  } = useForm((f) => Webhooks.create(organizationId, projectId!, { url: f.url.trim(), events: f.events }), {
     initialForm: { url: '', events: [] as WebhookEventName[] },
   })
 
@@ -78,7 +78,7 @@ export default function ProjectWebhooksPage() {
   })
 
   const { send: testWebhook, loading: testing } = useRequest(
-    (webhookId: string) => Webhooks.test(tenantId, projectId!, webhookId),
+    (webhookId: string) => Webhooks.test(organizationId, projectId!, webhookId),
     { immediate: false },
   )
 
@@ -86,7 +86,7 @@ export default function ProjectWebhooksPage() {
     send: deleteWebhook,
     loading: deleting,
     onSuccess: onDeleteSuccess,
-  } = useRequest((webhookId: string) => Webhooks.remove(tenantId, projectId!, webhookId), {
+  } = useRequest((webhookId: string) => Webhooks.remove(organizationId, projectId!, webhookId), {
     immediate: false,
   })
 

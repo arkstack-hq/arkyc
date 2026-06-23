@@ -4,7 +4,7 @@ import type { DecisionReason, VerificationStatus, WebhookChecks, WebhookEvent, W
 export interface BuildWebhookPayloadInput {
   event: WebhookEventName
   sessionId: string
-  tenantId: string
+  organizationId: string
   projectId: string
   userReference: string | null
   status: VerificationStatus
@@ -28,7 +28,7 @@ export class WebhookPayload {
     return {
       event: input.event,
       session_id: input.sessionId,
-      tenant_id: input.tenantId,
+      organization_id: input.organizationId,
       project_id: input.projectId,
       user_reference: input.userReference,
       status: input.status,

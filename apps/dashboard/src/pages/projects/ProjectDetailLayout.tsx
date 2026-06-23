@@ -1,7 +1,7 @@
 import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
 import { useRequest } from 'alova/client'
 import { Projects } from '@/lib/api'
-import { useTenantId } from '@/contexts/tenant-context'
+import { useOrganizationId } from '@/contexts/organization-context'
 import { cn, humanize } from '@/lib/utils'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { Badge } from '@/components/ui/badge'
@@ -13,14 +13,14 @@ const TABS = [
 ]
 
 export default function ProjectDetailLayout() {
-  const tenantId = useTenantId()
+  const organizationId = useOrganizationId()
   const { projectId } = useParams()
 
   const {
     data: project,
     loading,
     error,
-  } = useRequest(Projects.get(tenantId, projectId!), {
+  } = useRequest(Projects.get(organizationId, projectId!), {
     immediate: !!projectId,
   })
 

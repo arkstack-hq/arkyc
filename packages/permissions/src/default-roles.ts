@@ -11,7 +11,7 @@ export interface DefaultRoleDefinition {
   permissions: readonly PermissionKey[]
 }
 
-/** Definition of a built-in platform-admin role (not tenant-scoped). */
+/** Definition of a built-in platform-admin role (not organization-scoped). */
 export interface AdminRoleDefinition {
   slug: AdminRoleSlug
   name: string
@@ -49,26 +49,26 @@ const READONLY_PERMISSIONS: PermissionKey[] = Catalogue.KEYS.filter((p) => p.end
 
 /** Admin gets broad management, minus the most destructive/owner-only actions. */
 const ADMIN_PERMISSIONS: PermissionKey[] = Catalogue.KEYS.filter(
-  (p) => p !== 'tenants.delete' && p !== 'billing.update',
+  (p) => p !== 'organizations.delete' && p !== 'billing.update',
 )
 
-/** The built-in system roles seeded for every tenant, and lookup by slug. */
+/** The built-in system roles seeded for every organization, and lookup by slug. */
 export class DefaultRoles {
   /**
-   * The built-in system roles seeded for every tenant, with their default
+   * The built-in system roles seeded for every organization, with their default
    * permission sets. `owner` always receives the full catalogue.
    */
   static readonly ALL: readonly DefaultRoleDefinition[] = [
     {
       slug: 'owner',
       name: 'Owner',
-      description: 'Full access to everything in the tenant',
+      description: 'Full access to everything in the organization',
       permissions: Catalogue.KEYS,
     },
     {
       slug: 'admin',
       name: 'Admin',
-      description: 'Broad tenant and project management',
+      description: 'Broad organization and project management',
       permissions: ADMIN_PERMISSIONS,
     },
     {
@@ -86,7 +86,7 @@ export class DefaultRoles {
     {
       slug: 'readonly',
       name: 'Read-only',
-      description: 'View-only access across the tenant',
+      description: 'View-only access across the organization',
       permissions: READONLY_PERMISSIONS,
     },
   ]

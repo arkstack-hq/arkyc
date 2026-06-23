@@ -72,7 +72,7 @@ export interface RealtimeDriver {
 
   /**
    * Mint a per-user client credential, if the driver needs one (e.g. a Firebase
-   * custom token carrying tenant claims). Returns null otherwise.
+   * custom token carrying organization claims). Returns null otherwise.
    */
   mintClientToken?(uid: string, claims: Record<string, unknown>): Promise<string | null>
 }

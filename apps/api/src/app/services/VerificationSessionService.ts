@@ -32,7 +32,7 @@ const EMPTY_IMAGE = new Uint8Array(0)
 
 /** The integrating backend's resolved key context (`req.projectContext`). */
 interface ProjectScope {
-  tenant_id: string
+  organization_id: string
   project_id: string
 }
 
@@ -62,7 +62,7 @@ export class VerificationSessionService {
     const livenessChallenges = this.offersActiveLiveness(captureModel) ? randomChallenges(3) : null
 
     const session = await VerificationSession.create({
-      tenantId: scope.tenant_id,
+      organizationId: scope.organization_id,
       projectId: scope.project_id,
       userReference: input.userReference ?? null,
       status: 'pending',
@@ -120,7 +120,7 @@ export class VerificationSessionService {
     const capture =
       (await DocumentCapture.where({ sessionId: session.id }).first()) ??
       (await DocumentCapture.create({
-        tenantId: session.tenantId,
+        organizationId: session.organizationId,
         projectId: session.projectId,
         sessionId: session.id,
       }))
@@ -209,7 +209,7 @@ export class VerificationSessionService {
       },
     })
     const check = await LivenessCheck.create({
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       sessionId: session.id,
       selfieImagePath: selfiePath,

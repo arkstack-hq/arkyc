@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useRequest } from 'alova/client'
 import type { PermissionKey } from '@arkyc/types'
 import { Members, Permissions, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
@@ -12,15 +12,15 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 
 export default function MemberPermissionsPage() {
   const { memberId = '' } = useParams()
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
 
   const canUpdate = can('members.update')
   const [toAdd, setToAdd] = useState('')
 
-  const { data: perms, loading, error, send: refreshPerms } = useRequest(Members.permissions(tenantId, memberId))
+  const { data: perms, loading, error, send: refreshPerms } = useRequest(Members.permissions(organizationId, memberId))
 
-  const { data: catalogue, loading: catalogueLoading } = useRequest(Permissions.list(tenantId), {
+  const { data: catalogue, loading: catalogueLoading } = useRequest(Permissions.list(organizationId), {
     immediate: canUpdate,
     initialData: [],
   })
@@ -30,7 +30,7 @@ export default function MemberPermissionsPage() {
     loading: adding,
     error: addError,
     onSuccess: onAddSuccess,
-  } = useRequest((permission: PermissionKey) => Members.addPermission(tenantId, memberId, { permission }), {
+  } = useRequest((permission: PermissionKey) => Members.addPermission(organizationId, memberId, { permission }), {
     immediate: false,
   })
 
@@ -44,7 +44,7 @@ export default function MemberPermissionsPage() {
     loading: removing,
     error: removeError,
     onSuccess: onRemoveSuccess,
-  } = useRequest((permission: PermissionKey) => Members.removePermission(tenantId, memberId, permission), {
+  } = useRequest((permission: PermissionKey) => Members.removePermission(organizationId, memberId, permission), {
     immediate: false,
   })
 

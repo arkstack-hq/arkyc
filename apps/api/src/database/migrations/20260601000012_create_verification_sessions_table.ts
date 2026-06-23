@@ -5,12 +5,12 @@ export default class CreateVerificationSessionsTableMigration extends Migration 
     schema.createTable('verification_sessions', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('sessions')
       table
         .uuid('projectId')
@@ -41,7 +41,7 @@ export default class CreateVerificationSessionsTableMigration extends Migration 
         .inverseAlias('reviewedSessions')
       table.json('metadata').nullable()
       table.timestamps('camel', 'snake')
-      table.index(['tenantId'])
+      table.index(['organizationId'])
       table.index(['projectId', 'status'])
     })
   }

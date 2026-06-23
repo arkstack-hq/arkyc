@@ -22,10 +22,10 @@ export type RealtimeEventName = (typeof REALTIME_EVENT)[keyof typeof REALTIME_EV
  * so a subscription must be authorized server-side against the caller's scope.
  */
 export const realtimeChannels = {
-  /** Everything in a tenant. */
-  tenant: (tenantId: Id): string => `private-tenant-${tenantId}`,
+  /** Everything in an organization. */
+  organization: (organizationId: Id): string => `private-organization-${organizationId}`,
   /** Everything in a project. */
-  project: (tenantId: Id, projectId: Id): string => `private-tenant-${tenantId}-project-${projectId}`,
+  project: (organizationId: Id, projectId: Id): string => `private-organization-${organizationId}-project-${projectId}`,
   /** A single verification session (used by the widget via client token). */
   session: (sessionId: Id): string => `private-session-${sessionId}`,
 }
@@ -34,14 +34,14 @@ export const realtimeChannels = {
 export function parseRealtimeChannel(
   channel: string,
 ):
-  | { kind: 'tenant'; tenantId: string }
-  | { kind: 'project'; tenantId: string; projectId: string }
+  | { kind: 'organization'; organizationId: string }
+  | { kind: 'project'; organizationId: string; projectId: string }
   | { kind: 'session'; sessionId: string }
   | null {
-  const project = /^private-tenant-(.+)-project-(.+)$/.exec(channel)
-  if (project) return { kind: 'project', tenantId: project[1]!, projectId: project[2]! }
-  const tenant = /^private-tenant-(.+)$/.exec(channel)
-  if (tenant) return { kind: 'tenant', tenantId: tenant[1]! }
+  const project = /^private-organization-(.+)-project-(.+)$/.exec(channel)
+  if (project) return { kind: 'project', organizationId: project[1]!, projectId: project[2]! }
+  const organization = /^private-organization-(.+)$/.exec(channel)
+  if (organization) return { kind: 'organization', organizationId: organization[1]! }
   const session = /^private-session-(.+)$/.exec(channel)
   if (session) return { kind: 'session', sessionId: session[1]! }
   return null
@@ -50,7 +50,7 @@ export function parseRealtimeChannel(
 /** Payload for {@link REALTIME_EVENT.sessionTransition}. */
 export interface SessionTransitionEvent {
   session_id: Id
-  tenant_id: Id
+  organization_id: Id
   project_id: Id | null
   status: VerificationStatus
   previous_status: VerificationStatus | null
@@ -59,7 +59,7 @@ export interface SessionTransitionEvent {
 /** Payload for {@link REALTIME_EVENT.reviewAction}. */
 export interface ReviewActionEvent {
   session_id: Id
-  tenant_id: Id
+  organization_id: Id
   project_id: Id | null
   /** The audit action, e.g. `review.assigned`, `review.note`, `review.approved`. */
   action: string

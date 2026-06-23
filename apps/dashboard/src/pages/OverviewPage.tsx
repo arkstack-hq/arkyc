@@ -4,7 +4,7 @@ import { usePagination } from 'alova/client'
 import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import { CheckCircle2, Clock, ScrollText, XCircle } from 'lucide-react'
 import { Sessions, isForbidden } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,8 +20,8 @@ const BREAKDOWN = [
 ] as const
 
 export default function OverviewPage() {
-  const tenantId = useTenantId()
-  const { tenant } = useTenant()
+  const organizationId = useOrganizationId()
+  const { organization } = useOrganization()
 
   // Sessions are a paginated endpoint, so usePagination is the right hook. A wide
   // first page drives the status breakdown + recent list; `total` is exact.
@@ -30,7 +30,7 @@ export default function OverviewPage() {
     total,
     loading,
     error,
-  } = usePagination((page, pageSize) => Sessions.list(tenantId, { page, limit: pageSize }), {
+  } = usePagination((page, pageSize) => Sessions.list(organizationId, { page, limit: pageSize }), {
     initialPage: 1,
     initialPageSize: 100,
     data: (res) => res.data,
@@ -98,7 +98,7 @@ export default function OverviewPage() {
     [sessions],
   )
 
-  const title = `${tenant?.name ?? 'Tenant'} Overview`
+  const title = `${organization?.name ?? 'Organization'} Overview`
 
   if (isForbidden(error)) {
     return (
@@ -127,7 +127,7 @@ export default function OverviewPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <PageHeader title={title} description="Verification activity across this tenant." />
+      <PageHeader title={title} description="Verification activity across this organization." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

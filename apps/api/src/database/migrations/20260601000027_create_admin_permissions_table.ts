@@ -2,7 +2,7 @@ import { Migration, SchemaBuilder } from 'arkormx'
 
 /**
  * Platform-admin grants (Phase 15). Mirrors `user_permissions` but without
- * tenant/project scope: a row is EITHER a role grant (`role_id`) or a direct
+ * organization/project scope: a row is EITHER a role grant (`role_id`) or a direct
  * permission grant (`permission_id`). Used to grant the first platform owner
  * ("sync ownership") and resolved by the `canAdmin` guard.
  */

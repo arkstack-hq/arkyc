@@ -59,7 +59,7 @@ export class OcrJob extends Job {
       result: { fields: ocr.fields, confidence: ocr.confidence, raw: ocr.raw },
     })
     await OcrResult.create({
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       sessionId: session.id,
       documentCaptureId: capture.id,
@@ -73,7 +73,7 @@ export class OcrJob extends Job {
     const portraitPath = sessionObjectKey(session, 'documents/portrait.jpg')
     await Storage.disk().put(portraitPath, image, { visibility: 'private' })
     await DocumentPortrait.create({
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       sessionId: session.id,
       documentCaptureId: capture.id,

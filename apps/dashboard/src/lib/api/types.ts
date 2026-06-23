@@ -3,7 +3,7 @@ import type {
   ProjectBranding,
   ProjectSettings,
   Role,
-  TenantMember,
+  OrganizationMember,
   User,
   Permission,
   WebhookEventName,
@@ -15,7 +15,7 @@ export interface AuthResult {
   token: string
 }
 
-export interface MemberWithRelations extends TenantMember {
+export interface MemberWithRelations extends OrganizationMember {
   user?: User
   role?: Role
 }

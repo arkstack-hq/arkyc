@@ -17,15 +17,15 @@ export class PermissionSync {
   }
 
   /**
-   * Create (or update) the five built-in system roles for a tenant and set each
-   * role's permission grants to its default set. Idempotent per tenant.
+   * Create (or update) the five built-in system roles for an organization and set each
+   * role's permission grants to its default set. Idempotent per organization.
    *
-   * @param tenantId
+   * @param organizationId
    * @param store
    */
-  static async roles(tenantId: string, store: PermissionSyncStore): Promise<void> {
+  static async roles(organizationId: string, store: PermissionSyncStore): Promise<void> {
     for (const role of DefaultRoles.ALL) {
-      const roleId = await store.upsertSystemRole(tenantId, role)
+      const roleId = await store.upsertSystemRole(organizationId, role)
       await store.syncRolePermissions(roleId, role.permissions)
     }
   }
@@ -33,7 +33,7 @@ export class PermissionSync {
   /**
    * Upsert the platform-admin permission catalogue (`admin: true`). Idempotent;
    * safe to run on every boot/migration. Separate from {@link permissions} so
-   * tenant flows never touch the admin scope.
+   * organization flows never touch the admin scope.
    *
    * @param store
    */

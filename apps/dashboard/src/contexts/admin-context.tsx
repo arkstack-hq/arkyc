@@ -12,7 +12,7 @@ interface AdminAccess {
 /**
  * The current user's platform-admin standing, from `GET /v1/admin/me`. Returns
  * `isAdmin: false` for ordinary users. Cached by alova, so calling it in both the
- * tenant topbar and the admin layout issues a single request.
+ * organization topbar and the admin layout issues a single request.
  */
 export function useAdmin(): AdminAccess {
   const { data, loading } = useRequest(Admin.me(), {

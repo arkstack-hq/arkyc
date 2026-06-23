@@ -1,14 +1,14 @@
 import { auth } from '@arkstack/driver-express/middlewares'
 import { Router } from '@arkstack/driver-express'
 import type { PermissionKey } from '@arkyc/types'
-import { can, resolveTenant } from '@app/http/middlewares'
+import { can, resolveOrganization } from '@app/http/middlewares'
 import SessionReviewController from '@controllers/dashboard/SessionReviewController'
 import AuditLogController from '@controllers/dashboard/AuditLogController'
 
-const scoped = (perm: PermissionKey) => [auth, resolveTenant, can(perm)]
+const scoped = (perm: PermissionKey) => [auth, resolveOrganization, can(perm)]
 
 // Dashboard review queue + reviewer actions, and the audit-log read API.
-Router.group('/v1/dashboard/tenants/:tenantId', () => {
+Router.group('/v1/dashboard/organizations/:organizationId', () => {
   Router.get('/sessions', [SessionReviewController, 'index'], scoped('sessions.view'))
   Router.get('/sessions/:id', [SessionReviewController, 'show'], scoped('sessions.view'))
   Router.get('/sessions/:id/media/:kind', [SessionReviewController, 'media'], scoped('sessions.view'))

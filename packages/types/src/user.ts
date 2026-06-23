@@ -1,6 +1,6 @@
 import type { Entity, IsoDateTime } from './common'
 
-/** A platform user account. Users belong to one or more tenants via membership. */
+/** A platform user account. Users belong to one or more organizations via membership. */
 export interface User extends Entity {
   name: string
   email: string

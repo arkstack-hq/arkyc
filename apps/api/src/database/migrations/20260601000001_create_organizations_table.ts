@@ -1,8 +1,8 @@
 import { Migration, SchemaBuilder } from 'arkormx'
 
-export default class CreateTenantsTableMigration extends Migration {
+export default class CreateOrganizationsTableMigration extends Migration {
   public async up(schema: SchemaBuilder): Promise<void> {
-    schema.createTable('tenants', (table) => {
+    schema.createTable('organizations', (table) => {
       table.id('id', 'uuid').primary()
       table.string('name')
       table.string('slug').unique().index()
@@ -13,6 +13,6 @@ export default class CreateTenantsTableMigration extends Migration {
   }
 
   public async down(schema: SchemaBuilder): Promise<void> {
-    schema.dropTable('tenants')
+    schema.dropTable('organizations')
   }
 }

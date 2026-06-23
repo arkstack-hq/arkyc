@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useRequest } from 'alova/client'
 import { Members, Roles, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -19,17 +19,17 @@ function statusVariant(status: string): 'success' | 'warning' | 'muted' {
 
 export default function MemberDetailPage() {
   const { memberId = '' } = useParams()
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
 
   const {
     data: member,
     loading,
     error,
     send: refreshMember,
-  } = useRequest(Members.get(tenantId, memberId), { immediate: !!memberId })
+  } = useRequest(Members.get(organizationId, memberId), { immediate: !!memberId })
 
-  const { data: roles, loading: rolesLoading } = useRequest(Roles.options(tenantId), {
+  const { data: roles, loading: rolesLoading } = useRequest(Roles.options(organizationId), {
     immediate: can('settings.view') && can('members.update'),
     initialData: [],
   })
@@ -42,7 +42,7 @@ export default function MemberDetailPage() {
     loading: assigning,
     error: assignError,
     onSuccess: onAssignSuccess,
-  } = useRequest((nextRoleId: string) => Members.assignRole(tenantId, memberId, { role_id: nextRoleId }), {
+  } = useRequest((nextRoleId: string) => Members.assignRole(organizationId, memberId, { role_id: nextRoleId }), {
     immediate: false,
   })
 

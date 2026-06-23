@@ -53,7 +53,7 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
 
   return (
     <div>
-      <PageHeader title="Platform settings" description="Settings that apply across all tenants." />
+      <PageHeader title="Platform settings" description="Settings that apply across all organizations." />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -101,7 +101,7 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
                   dirtyReset()
                 }}
               />
-              Allow new tenant sign-ups
+              Allow new organization sign-ups
             </label>
           </CardContent>
         </Card>

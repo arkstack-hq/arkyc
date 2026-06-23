@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'alova/client'
-import { Tenants, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { Organizations, errorMessage } from '@/lib/api'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader } from '@/components/States'
 import { Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -11,14 +11,14 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 
 export default function SettingsPage() {
-  const tenantId = useTenantId()
-  const { tenant, can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { organization, can } = useOrganization()
 
   const [saved, setSaved] = useState(false)
 
   const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
-    (formData) => Tenants.update(tenantId, { name: formData.name }),
-    { initialForm: { name: tenant?.name ?? '' } },
+    (formData) => Organizations.update(organizationId, { name: formData.name }),
+    { initialForm: { name: organization?.name ?? '' } },
   )
 
   onSuccess(() => setSaved(true))
@@ -32,18 +32,18 @@ export default function SettingsPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Tenant</CardTitle>
+            <CardTitle>Organization</CardTitle>
             <CardDescription>General organization details.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <Field>
-              <FieldLabel htmlFor="tenant-name">Name</FieldLabel>
+              <FieldLabel htmlFor="organization-name">Name</FieldLabel>
               <InputGroup>
                 <InputGroupAddon>
                   <Building2 />
                 </InputGroupAddon>
                 <InputGroupInput
-                  id="tenant-name"
+                  id="organization-name"
                   value={form.name}
                   onChange={(e) => {
                     updateForm({ name: e.target.value })

@@ -5,7 +5,7 @@ import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
 import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
 import { Projects, errorMessage } from '@/lib/api'
 import { useForm, useRequest } from 'alova/client'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -58,8 +58,8 @@ function formFromProject(project: Project): FormState {
 }
 
 function ProjectSettingsForm({ project }: { project: Project }) {
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
   const { projectId } = useParams()
   const [saved, setSaved] = useState(false)
 
@@ -100,7 +100,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
       }
       if (Object.keys(thresholds).length > 0) settings.thresholds = thresholds
 
-      return Projects.update(tenantId, projectId!, {
+      return Projects.update(organizationId, projectId!, {
         name: f.name.trim(),
         branding,
         settings,
@@ -128,7 +128,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
     loading: uploadingLogo,
     error: logoError,
     onSuccess: onLogoUploaded,
-  } = useRequest((file: File) => Projects.uploadLogo(tenantId, projectId!, file), { immediate: false })
+  } = useRequest((file: File) => Projects.uploadLogo(organizationId, projectId!, file), { immediate: false })
   onLogoUploaded(({ data }) => setLogoUrl((data as Project).branding?.logo_url ?? null))
 
   return (
@@ -341,14 +341,14 @@ function ProjectSettingsForm({ project }: { project: Project }) {
 }
 
 export default function ProjectSettingsPage() {
-  const tenantId = useTenantId()
+  const organizationId = useOrganizationId()
   const { projectId } = useParams()
 
   const {
     data: project,
     loading,
     error,
-  } = useRequest(Projects.get(tenantId, projectId!), {
+  } = useRequest(Projects.get(organizationId, projectId!), {
     immediate: !!projectId,
   })
 

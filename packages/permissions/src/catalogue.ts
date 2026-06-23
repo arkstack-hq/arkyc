@@ -11,7 +11,7 @@ export interface PermissionDefinition {
   name: AnyPermissionKey
   group: AnyPermissionGroup
   description: string
-  /** Platform-scope permission. Defaults to a tenant permission when omitted. */
+  /** Platform-scope permission. Defaults to an organization permission when omitted. */
   admin?: boolean
 }
 
@@ -29,9 +29,9 @@ export class Catalogue {
    * (Phase 3) upserts these; seeders reference them directly.
    */
   static readonly ALL: readonly PermissionDefinition[] = [
-    { name: 'tenants.view', group: 'tenants', description: 'View tenant details' },
-    { name: 'tenants.update', group: 'tenants', description: 'Update tenant settings' },
-    { name: 'tenants.delete', group: 'tenants', description: 'Delete the tenant' },
+    { name: 'organizations.view', group: 'organizations', description: 'View organization details' },
+    { name: 'organizations.update', group: 'organizations', description: 'Update organization settings' },
+    { name: 'organizations.delete', group: 'organizations', description: 'Delete the organization' },
 
     { name: 'members.view', group: 'members', description: 'View members' },
     { name: 'members.invite', group: 'members', description: 'Invite members' },
@@ -79,26 +79,26 @@ export class Catalogue {
     { name: 'billing.update', group: 'billing', description: 'Update billing' },
   ]
 
-  /** Every tenant permission key, derived from the catalogue. */
+  /** Every organization permission key, derived from the catalogue. */
   static readonly KEYS: readonly PermissionKey[] = Catalogue.ALL.map((p) => p.name as PermissionKey)
 
   /**
    * The catalogue of platform-admin permissions (the super-admin surface above
-   * tenants). Synced by `PermissionSync.adminPermissions`; every row carries
+   * organizations). Synced by `PermissionSync.adminPermissions`; every row carries
    * `admin: true` and is granted only via `AdminPermission`.
    */
   static readonly ADMIN: readonly AdminPermissionDefinition[] = [
     {
-      name: 'admin.tenants.view',
-      group: 'admin.tenants',
+      name: 'admin.organizations.view',
+      group: 'admin.organizations',
       admin: true,
-      description: 'View all tenants',
+      description: 'View all organizations',
     },
     {
-      name: 'admin.tenants.manage',
-      group: 'admin.tenants',
+      name: 'admin.organizations.manage',
+      group: 'admin.organizations',
       admin: true,
-      description: 'Create, suspend, and delete tenants',
+      description: 'Create, suspend, and delete organizations',
     },
 
     {

@@ -56,7 +56,7 @@ export class BiometricJob extends Job {
       },
     })
     await FaceMatchCheck.create({
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       sessionId: session.id,
       idPortraitImagePath: portrait?.portraitImagePath ?? null,
@@ -99,7 +99,7 @@ export class BiometricJob extends Job {
     await transitionTo(session, decision)
 
     await audit.record({
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       actorType: 'system',
       action: 'session.auto_decided',

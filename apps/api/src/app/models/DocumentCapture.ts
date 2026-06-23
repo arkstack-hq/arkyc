@@ -1,6 +1,6 @@
 import { Model } from 'arkormx'
 import type { DocumentType } from '@arkyc/types'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Project } from './Project'
 import { VerificationSession } from './VerificationSession'
 import { OcrResult } from './OcrResult'
@@ -10,7 +10,7 @@ export class DocumentCapture extends Model {
   protected static override table = 'document_captures'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare projectId: string
   declare sessionId: string
   declare country: string | null
@@ -22,7 +22,7 @@ export class DocumentCapture extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     projectId: 'project_id',
     sessionId: 'session_id',
     documentType: 'document_type',
@@ -33,8 +33,8 @@ export class DocumentCapture extends Model {
     updatedAt: 'updated_at',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   project() {

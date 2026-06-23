@@ -5,12 +5,12 @@ export default class CreateReviewNotesTableMigration extends Migration {
     schema.createTable('review_notes', (table) => {
       table.id('id', 'uuid').primary()
       table
-        .uuid('tenantId')
-        .map('tenant_id')
+        .uuid('organizationId')
+        .map('organization_id')
         .foreign()
-        .references('tenants', 'id')
+        .references('organizations', 'id')
         .onDelete('cascade')
-        .as('tenant')
+        .as('organization')
         .inverseAlias('reviewNotes')
       table
         .uuid('projectId')

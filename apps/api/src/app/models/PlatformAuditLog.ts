@@ -5,7 +5,7 @@ import { User } from './User'
 
 /**
  * An append-only platform-admin audit entry. Mirrors {@link AuditLog} but has no
- * tenant/project scope; `actor` is the admin user who performed the action.
+ * organization/project scope; `actor` is the admin user who performed the action.
  */
 export class PlatformAuditLog extends Model {
   protected static override table = 'platform_audit_logs'

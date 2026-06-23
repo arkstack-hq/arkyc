@@ -12,13 +12,13 @@ export default class ApiKeyController extends BaseController {
   /**
    * List a project's API keys (never the secret hash).
    *
-   * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:projectId`, `req.organization`).
    * @returns      An ApiKeyCollection.
    */
   async index({ req }: HttpContext) {
     const project = await Project.where({
       id: req.params.projectId,
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
     }).firstOrFail()
     const keys = await ApiKey.where({ projectId: project.id }).paginate(perPage(req.query))
 
@@ -32,20 +32,20 @@ export default class ApiKeyController extends BaseController {
   /**
    * Mint an API key; the plaintext secret is returned exactly once.
    *
-   * @param   ctx  The HTTP context (`:projectId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:projectId`, `req.organization`).
    * @returns      An ApiKeyResource plus the one-time `secret` (HTTP 201).
    */
   async create({ req }: HttpContext) {
     const project = await Project.where({
       id: req.params.projectId,
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
     }).firstOrFail()
 
     const data = await this.validate({ name: ['required', 'string', 'min:2'] })
 
     const generated = ApiKeyAuth.generate(project.environment === 'production' ? 'live' : 'test')
     const key = await ApiKey.create({
-      tenantId: project.tenantId,
+      organizationId: project.organizationId,
       projectId: project.id,
       name: data.name,
       keyPrefix: generated.keyPrefix,
@@ -73,13 +73,13 @@ export default class ApiKeyController extends BaseController {
   /**
    * Revoke an API key (sets `revoked_at`).
    *
-   * @param   ctx  The HTTP context (`:projectId`, `:keyId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:projectId`, `:keyId`, `req.organization`).
    * @returns      The revoked ApiKeyResource.
    */
   async destroy({ req }: HttpContext) {
     const project = await Project.where({
       id: req.params.projectId,
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
     }).firstOrFail()
     const key = await ApiKey.where({
       id: req.params.keyId,

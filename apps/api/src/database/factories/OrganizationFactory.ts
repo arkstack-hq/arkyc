@@ -1,9 +1,9 @@
 import { ModelFactory } from '@arkstack/database'
-import { Tenant } from '@app/models/Tenant'
+import { Organization } from '@app/models/Organization'
 import { faker } from '@faker-js/faker'
 
-export class TenantFactory extends ModelFactory<Tenant> {
-  protected model = Tenant
+export class OrganizationFactory extends ModelFactory<Organization> {
+  protected model = Organization
 
   protected definition(sequence: number) {
     const name = faker.company.name()

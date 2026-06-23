@@ -1,14 +1,14 @@
 import { auth } from '@arkstack/driver-express/middlewares'
 import { Router } from '@arkstack/driver-express'
 import type { PermissionKey } from '@arkyc/types'
-import { can, resolveTenant } from '@app/http/middlewares'
+import { can, resolveOrganization } from '@app/http/middlewares'
 import MemberController from '@controllers/dashboard/MemberController'
 
-const scoped = (perm: PermissionKey) => [auth, resolveTenant, can(perm)]
+const scoped = (perm: PermissionKey) => [auth, resolveOrganization, can(perm)]
 
-Router.group('/v1/dashboard/tenants/:tenantId', () => {
+Router.group('/v1/dashboard/organizations/:organizationId', () => {
   // The caller's own effective permissions (any member; powers permission-aware UI).
-  Router.get('/me', [MemberController, 'me'], [auth, resolveTenant])
+  Router.get('/me', [MemberController, 'me'], [auth, resolveOrganization])
 
   Router.get('/members', [MemberController, 'index'], scoped('members.view'))
   Router.post('/invitations', [MemberController, 'invite'], scoped('members.invite'))

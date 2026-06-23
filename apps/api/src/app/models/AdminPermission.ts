@@ -5,7 +5,7 @@ import { Role } from './Role'
 
 /**
  * A platform-admin grant to a user. Mirrors {@link UserPermission} but without
- * tenant/project scope: a row is EITHER a role grant (`roleId` set) or a direct
+ * organization/project scope: a row is EITHER a role grant (`roleId` set) or a direct
  * permission grant (`permissionId` set). Effective admin access is the union of
  * both — resolved by `ArkormPermissionStore` for the `canAdmin` guard.
  */

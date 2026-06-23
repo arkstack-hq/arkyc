@@ -10,13 +10,13 @@ import { audit } from '@app/services/AuditLogger'
 
 export default class RoleController extends BaseController {
   /**
-   * List the active tenant's roles.
+   * List the active organization's roles.
    *
-   * @param   ctx  The HTTP context (`req.tenant`).
+   * @param   ctx  The HTTP context (`req.organization`).
    * @returns      A RoleCollection.
    */
   async index({ req }: HttpContext) {
-    const roles = await Role.where({ tenantId: req.tenant!.id }).paginate(perPage(req.query))
+    const roles = await Role.where({ organizationId: req.organization!.id }).paginate(perPage(req.query))
 
     return new RoleCollection(roles).additional({
       status: 'success',
@@ -28,7 +28,7 @@ export default class RoleController extends BaseController {
   /**
    * Create a custom role with an optional permission set.
    *
-   * @param   ctx  The HTTP context (`req.tenant`).
+   * @param   ctx  The HTTP context (`req.organization`).
    * @returns      A RoleResource with its `permissions` (HTTP 201).
    */
   async create({ req }: HttpContext) {
@@ -41,13 +41,13 @@ export default class RoleController extends BaseController {
 
     const slug = (data.slug || Str.slug(data.name)).toLowerCase()
     RequestException.abortIf(
-      await Role.where({ tenantId: req.tenant!.id, slug }).first(),
+      await Role.where({ organizationId: req.organization!.id, slug }).first(),
       'A role with this slug already exists',
       409,
     )
 
     const role = await Role.create({
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
       name: data.name,
       slug,
       description: data.description ?? null,
@@ -75,13 +75,13 @@ export default class RoleController extends BaseController {
   /**
    * Show a role and its permission names.
    *
-   * @param   ctx  The HTTP context (`:roleId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:roleId`, `req.organization`).
    * @returns      A RoleResource with its `permissions`.
    */
   async show({ req }: HttpContext) {
     const role = await Role.where({
       id: req.params.roleId,
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
     }).firstOrFail()
 
     return new RoleResource(role).additional({
@@ -95,7 +95,7 @@ export default class RoleController extends BaseController {
   /**
    * Update a role's name/description and (optionally) its permission set.
    *
-   * @param   ctx  The HTTP context (`:roleId`, `req.tenant`).
+   * @param   ctx  The HTTP context (`:roleId`, `req.organization`).
    * @returns      A RoleResource with its `permissions`.
    */
   async update({ req }: HttpContext) {
@@ -107,7 +107,7 @@ export default class RoleController extends BaseController {
 
     const role = await Role.where({
       id: req.params.roleId,
-      tenantId: req.tenant!.id,
+      organizationId: req.organization!.id,
     }).firstOrFail()
     if (data.name) role.name = data.name
     if (data.description !== undefined) role.description = data.description

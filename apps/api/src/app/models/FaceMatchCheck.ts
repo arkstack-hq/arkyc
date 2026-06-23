@@ -1,6 +1,6 @@
 import { Model } from 'arkormx'
 import type { CastMap } from 'arkormx'
-import { Tenant } from './Tenant'
+import { Organization } from './Organization'
 import { Project } from './Project'
 import { VerificationSession } from './VerificationSession'
 
@@ -8,7 +8,7 @@ export class FaceMatchCheck extends Model {
   protected static override table = 'face_match_checks'
 
   declare id: string
-  declare tenantId: string
+  declare organizationId: string
   declare projectId: string
   declare sessionId: string
   declare idPortraitImagePath: string | null
@@ -22,7 +22,7 @@ export class FaceMatchCheck extends Model {
   declare updatedAt: Date
 
   protected static override columns = {
-    tenantId: 'tenant_id',
+    organizationId: 'organization_id',
     projectId: 'project_id',
     sessionId: 'session_id',
     idPortraitImagePath: 'id_portrait_image_path',
@@ -38,8 +38,8 @@ export class FaceMatchCheck extends Model {
     passed: 'boolean',
   }
 
-  tenant() {
-    return this.belongsTo(Tenant, 'tenantId')
+  organization() {
+    return this.belongsTo(Organization, 'organizationId')
   }
 
   project() {

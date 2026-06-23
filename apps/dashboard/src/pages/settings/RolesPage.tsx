@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm, usePagination } from 'alova/client'
 import { Roles, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
 import { Button } from '@/components/ui/button'
@@ -14,8 +14,8 @@ import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 export default function RolesPage() {
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
 
   const [open, setOpen] = useState(false)
 
@@ -27,7 +27,7 @@ export default function RolesPage() {
     error,
     update,
     reload: refreshRoles,
-  } = usePagination((currentPage, pageSize) => Roles.list(tenantId, { page: currentPage, limit: pageSize }), {
+  } = usePagination((currentPage, pageSize) => Roles.list(organizationId, { page: currentPage, limit: pageSize }), {
     append: true,
     initialPage: 1,
     initialPageSize: 15,
@@ -45,7 +45,7 @@ export default function RolesPage() {
     onSuccess,
   } = useForm(
     (formData) =>
-      Roles.create(tenantId, {
+      Roles.create(organizationId, {
         name: formData.name,
         description: formData.description || undefined,
       }),

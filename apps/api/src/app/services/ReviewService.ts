@@ -75,7 +75,7 @@ export class ReviewService {
   /** Attach a reviewer note without changing the session's status. */
   async addNote(session: VerificationSession, actor: AuditActor, note: string): Promise<ReviewNote> {
     const row = await ReviewNote.create({
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       sessionId: session.id,
       reviewerId: actor.actorId as string,
@@ -130,7 +130,7 @@ export class ReviewService {
     reason: string | null,
   ): Promise<void> {
     await Review.create({
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       sessionId: session.id,
       reviewerId: actor.actorId,
@@ -148,7 +148,7 @@ export class ReviewService {
     metadata: Metadata,
   ): Promise<void> {
     await audit.record({
-      tenantId: session.tenantId,
+      organizationId: session.organizationId,
       projectId: session.projectId,
       actorId: actor.actorId,
       actorType: actor.actorType,
@@ -162,7 +162,7 @@ export class ReviewService {
 
     const payload: ReviewActionEvent = {
       session_id: session.id,
-      tenant_id: session.tenantId,
+      organization_id: session.organizationId,
       project_id: session.projectId,
       action,
       actor_id: actor.actorId,

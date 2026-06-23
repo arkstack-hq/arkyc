@@ -59,7 +59,7 @@ interface AdminNavItem {
 
 const NAV: AdminNavItem[] = [
   { to: 'settings', label: 'Settings', icon: Settings, perm: 'admin.settings.view', end: true },
-  { to: 'tenants', label: 'Tenants', icon: Building2, perm: 'admin.tenants.view' },
+  { to: 'organizations', label: 'Organizations', icon: Building2, perm: 'admin.organizations.view' },
   { to: 'users', label: 'Users', icon: Users, perm: 'admin.users.view' },
   { to: 'audit-logs', label: 'Audit log', icon: ScrollText, perm: 'admin.audit.view' },
 ]
@@ -75,8 +75,8 @@ function isActiveItem(seg: string, item: AdminNavItem): boolean {
 }
 
 /**
- * The platform-admin shell (above tenants). Gated by `useAdmin()`: non-admins are
- * redirected back to the tenant app; the server enforces every endpoint regardless.
+ * The platform-admin shell (above organizations). Gated by `useAdmin()`: non-admins are
+ * redirected back to the organization app; the server enforces every endpoint regardless.
  */
 export function AdminLayout() {
   const { isAdmin, can, loading } = useAdmin()

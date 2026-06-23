@@ -26,7 +26,7 @@ export async function transitionTo(
 
   const payload: SessionTransitionEvent = {
     session_id: session.id,
-    tenant_id: session.tenantId,
+    organization_id: session.organizationId,
     project_id: session.projectId,
     status: to,
     previous_status: previous,

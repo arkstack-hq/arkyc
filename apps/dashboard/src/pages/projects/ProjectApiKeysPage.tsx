@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useForm, usePagination, useRequest } from 'alova/client'
 import { ApiKeys, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { formatDateTime } from '@/lib/utils'
 import { Loading, ErrorState, EmptyState } from '@/components/States'
 import { InfiniteScroll } from '@/components/InfiniteScroll'
@@ -16,8 +16,8 @@ import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 export default function ProjectApiKeysPage() {
-  const tenantId = useTenantId()
-  const { can } = useTenant()
+  const organizationId = useOrganizationId()
+  const { can } = useOrganization()
   const { projectId } = useParams()
 
   const {
@@ -29,7 +29,7 @@ export default function ProjectApiKeysPage() {
     update,
     reload: refreshKeys,
   } = usePagination(
-    (currentPage, pageSize) => ApiKeys.list(tenantId, projectId!, { page: currentPage, limit: pageSize }),
+    (currentPage, pageSize) => ApiKeys.list(organizationId, projectId!, { page: currentPage, limit: pageSize }),
     {
       append: true,
       initialPage: 1,
@@ -52,7 +52,7 @@ export default function ProjectApiKeysPage() {
     update: clearCreateError,
     reset,
     onSuccess: onCreateSuccess,
-  } = useForm((f) => ApiKeys.create(tenantId, projectId!, { name: f.name.trim() }), {
+  } = useForm((f) => ApiKeys.create(organizationId, projectId!, { name: f.name.trim() }), {
     initialForm: { name: '' },
   })
 
@@ -66,7 +66,7 @@ export default function ProjectApiKeysPage() {
     send: revokeKey,
     loading: revoking,
     onSuccess: onRevokeSuccess,
-  } = useRequest((keyId: string) => ApiKeys.revoke(tenantId, projectId!, keyId), {
+  } = useRequest((keyId: string) => ApiKeys.revoke(organizationId, projectId!, keyId), {
     immediate: false,
   })
 
