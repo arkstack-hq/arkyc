@@ -95,7 +95,11 @@ export class Theme {
 .arkyc-preview{width:100%;max-width:360px;border-radius:var(--arkyc-radius);background:#000;aspect-ratio:3/2;object-fit:cover}
 .arkyc-preview.selfie{aspect-ratio:1/1;max-width:280px;border-radius:50%;transform:scaleX(-1)}
 .arkyc-spinner{width:42px;height:42px;border-radius:50%;border:4px solid var(--arkyc-border);border-top-color:var(--arkyc-primary);animation:arkyc-spin 1s linear infinite}
+.arkyc-spinner.sm{width:18px;height:18px;border-width:3px}
 @keyframes arkyc-spin{to{transform:rotate(360deg)}}
+.arkyc-qr{width:200px;height:200px;padding:12px;margin:4px auto;background:#fff;border-radius:var(--arkyc-radius);border:1px solid var(--arkyc-border)}
+.arkyc-qr svg{display:block;width:100%;height:100%}
+.arkyc-handoff-wait{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--arkyc-muted);font-size:14px;margin-top:6px}
 .arkyc-badge{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff}
 .arkyc-badge.ok{background:#16a34a}
 .arkyc-badge.warn{background:#d97706}

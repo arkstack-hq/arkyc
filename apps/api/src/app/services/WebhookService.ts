@@ -17,6 +17,7 @@ function ocrParseStage(raw: unknown): 'mrz' | 'custom' | 'generic' | undefined {
     const stage = (raw as { stage?: unknown }).stage
     if (stage === 'mrz' || stage === 'custom' || stage === 'generic') return stage
   }
+
   return undefined
 }
 

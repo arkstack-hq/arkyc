@@ -25,6 +25,8 @@ interface FormState {
   livenessThreshold: string
   faceMatchThreshold: string
   allowedOrigins: string
+  handoffEnabled: boolean
+  handoffDesktopOnly: boolean
 }
 
 const THRESHOLD_FIELDS: { key: keyof VerificationThresholds; label: string }[] = [
@@ -49,6 +51,8 @@ function formFromProject(project: Project): FormState {
     livenessThreshold: thresholds.livenessThreshold != null ? String(thresholds.livenessThreshold) : '',
     faceMatchThreshold: thresholds.faceMatchThreshold != null ? String(thresholds.faceMatchThreshold) : '',
     allowedOrigins: (project.settings?.allowed_origins ?? []).join(', '),
+    handoffEnabled: project.settings?.handoff?.enabled === true,
+    handoffDesktopOnly: project.settings?.handoff?.desktop_only !== false,
   }
 }
 
@@ -91,6 +95,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
       const settings: ProjectSettings = {
         ...(project.settings ?? {}),
         allowed_origins,
+        handoff: { enabled: f.handoffEnabled, desktop_only: f.handoffDesktopOnly },
       }
       if (Object.keys(thresholds).length > 0) settings.thresholds = thresholds
 
@@ -288,6 +293,35 @@ function ProjectSettingsForm({ project }: { project: Project }) {
               />
             </InputGroup>
           </Field>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Cross-device handoff</CardTitle>
+          <CardDescription>
+            Let users continue a verification on another device by scanning a QR code (e.g. start on desktop, finish on
+            a phone).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.handoffEnabled}
+              onChange={(e) => set('handoffEnabled', e.target.checked)}
+            />
+            Allow continuing on another device
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.handoffDesktopOnly}
+              disabled={!form.handoffEnabled}
+              onChange={(e) => set('handoffDesktopOnly', e.target.checked)}
+            />
+            Only offer the handoff on desktop devices
+          </label>
         </CardContent>
       </Card>
 

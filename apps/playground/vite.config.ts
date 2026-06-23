@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
 import { arkycBackend } from './src/backend'
 
@@ -19,6 +20,15 @@ export default defineConfig(({ mode }) => {
       port: Number(env.PORT || 5174),
       proxy: {
         '/api': { target: apiUrl, changeOrigin: true },
+      },
+    },
+    build: {
+      rollupOptions: {
+        // Multi-page: the main playground + the hosted handoff continuation page.
+        input: {
+          main: resolve(__dirname, 'index.html'),
+          hosted: resolve(__dirname, 'hosted.html'),
+        },
       },
     },
     plugins: [

@@ -34,6 +34,10 @@ export interface ViewHandlers {
   onActiveLiveness(video: Blob | null, performed: LivenessChallenge[], selfie?: Blob | null): void
   /** The result screen was acknowledged ("Done"). */
   onAcknowledge(): void
+  /** The user chose to continue the verification on another device (handoff). */
+  onUsePhone(): void
+  /** The user dismissed the handoff QR to keep verifying on this device. */
+  onCancelHandoff(): void
 }
 
 /** Per-render data the view needs for the current step. */
@@ -59,6 +63,8 @@ export interface ViewState {
    * button, no permissive brightness/upload fallback that could bypass detection.
    */
   strictCapture?: boolean
+  /** Offer a "Continue on your phone" affordance on the welcome screen (handoff). */
+  handoffAvailable?: boolean
 }
 
 const DOCUMENT_LABELS: Record<DocumentType, string> = {
@@ -239,7 +245,7 @@ export class WidgetView {
 
     switch (state.step) {
       case 'welcome':
-        return this.renderWelcome()
+        return this.renderWelcome(state.handoffAvailable)
       case 'document_selection':
         return this.renderDocumentSelection()
       case 'front_capture':
@@ -263,7 +269,7 @@ export class WidgetView {
     }
   }
 
-  private renderWelcome(): void {
+  private renderWelcome(handoffAvailable?: boolean): void {
     this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Verify your identity' }))
     this.body.appendChild(
       this.el('p', {
@@ -272,6 +278,33 @@ export class WidgetView {
       }),
     )
     this.footer.appendChild(this.button('Get started', () => this.handlers.onStart()))
+    if (handoffAvailable) {
+      this.footer.appendChild(
+        this.button('Continue on your phone', () => this.handlers.onUsePhone(), 'arkyc-btn-ghost'),
+      )
+    }
+  }
+
+  /**
+   * Show the cross-device handoff QR: the user scans it to resume this same
+   * session on their phone. The widget then waits for the other device to finish.
+   */
+  renderHandoff(qrSvg: string): void {
+    this.destroy()
+    this.clear(this.body)
+    this.clear(this.footer)
+    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Continue on your phone' }))
+    this.body.appendChild(
+      this.el('p', { class: 'arkyc-p', text: 'Scan this code with your phone camera to finish verifying there.' }),
+    )
+    this.body.appendChild(this.el('div', { class: 'arkyc-qr', html: qrSvg }))
+    const waiting = this.el('div', { class: 'arkyc-handoff-wait' })
+    waiting.appendChild(this.el('div', { class: 'arkyc-spinner sm' }))
+    waiting.appendChild(this.el('span', { text: 'Waiting for your phone…' }))
+    this.body.appendChild(waiting)
+    this.footer.appendChild(
+      this.button('Continue on this device', () => this.handlers.onCancelHandoff(), 'arkyc-btn-ghost'),
+    )
   }
 
   private renderDocumentSelection(): void {
@@ -896,8 +929,9 @@ export class WidgetView {
     this.footer.appendChild(this.button('Done', () => this.handlers.onAcknowledge()))
   }
 
-  private button(label: string, onClick: () => void): HTMLButtonElement {
-    const btn = this.el('button', { class: 'arkyc-btn', text: label }) as HTMLButtonElement
+  private button(label: string, onClick: () => void, extraClass?: string): HTMLButtonElement {
+    const cls = extraClass ? `arkyc-btn ${extraClass}` : 'arkyc-btn'
+    const btn = this.el('button', { class: cls, text: label }) as HTMLButtonElement
     btn.addEventListener('click', onClick)
     return btn
   }

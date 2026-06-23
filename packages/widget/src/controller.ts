@@ -6,10 +6,12 @@ import type {
   WidgetResult,
   WidgetStep,
 } from '@arkyc/types'
-import { ArkycClient, type ClientSession } from './client'
+import { ArkycClient, type ClientHandoff, type ClientSession, WidgetApiError } from './client'
 import { Flow } from './flow'
 import { Theme } from './theme'
 import { WidgetView, type ViewHandlers } from './ui'
+import { isDesktopDevice } from './device'
+import { renderQrSvg } from './qr'
 import type { BaseWidgetOptions, WidgetControllerConfig } from './types'
 
 /**
@@ -23,11 +25,18 @@ export class WidgetController {
   private readonly client: ArkycClient
   private readonly view: WidgetView
   private readonly win: Window
+  private readonly nav: Navigator
   private readonly postToParent: boolean
   private readonly scheduler: (fn: () => void, ms: number) => void
   private readonly transientMs: number
   private readonly pollMs: number
   private readonly maxPolls: number
+  private readonly maxHandoffPolls: number
+
+  /** Cross-device handoff: project config + whether the offer/QR is showing. */
+  private handoffConfig: ClientHandoff = { enabled: false, desktop_only: false }
+  private handoffReady = false
+  private handoffActive = false
 
   private step: WidgetStep = 'welcome'
   private documentType: DocumentType | null = null
@@ -46,6 +55,7 @@ export class WidgetController {
     const win = config.win ?? globalThis.window
     if (!doc || !win) throw new Error('The Arkyc widget must run in a browser environment.')
     this.win = win
+    this.nav = config.nav ?? globalThis.navigator
 
     this.client = new ArkycClient({
       token: config.token,
@@ -69,6 +79,8 @@ export class WidgetController {
     this.transientMs = config.transientMs ?? 700
     this.pollMs = config.pollMs ?? 1500
     this.maxPolls = config.maxPolls ?? 40
+    // A handed-off session is bounded by its TTL (~15 min); poll generously.
+    this.maxHandoffPolls = config.maxHandoffPolls ?? 600
   }
 
   /** The widget's root element — append it to an overlay or inline container. */
@@ -79,6 +91,9 @@ export class WidgetController {
   /** Render the initial (welcome) screen. */
   start(): void {
     this.render()
+    // If handoff is configured, learn whether the project enabled it (and prep
+    // the "continue on phone" offer) without blocking the welcome screen.
+    if (this.config.handoffUrl) void this.run(() => this.maybeOfferHandoff())
   }
 
   /** Tear down the view and release the camera (does not fire callbacks). */
@@ -118,6 +133,74 @@ export class WidgetController {
           await this.enter(this.next())
         }),
       onAcknowledge: () => this.finishResult(),
+      onUsePhone: () => void this.run(() => this.startHandoff()),
+      onCancelHandoff: () => {
+        this.handoffActive = false
+        this.step = 'welcome'
+        this.render()
+      },
+    }
+  }
+
+  /**
+   * Pre-fetch the session to learn the project's handoff setting, then (when
+   * enabled and applicable to this device) surface the "continue on phone" offer
+   * on the welcome screen.
+   */
+  private async maybeOfferHandoff(): Promise<void> {
+    if (this.settled) return
+    const session = await this.client.getSession()
+    this.resolveLiveness(session)
+    if (session.handoff) this.handoffConfig = session.handoff
+    if (this.handoffOfferable() && this.step === 'welcome' && !this.settled) {
+      this.handoffReady = true
+      this.render()
+    }
+  }
+
+  /** Whether to show the handoff offer: project-enabled, configured, device-appropriate. */
+  private handoffOfferable(): boolean {
+    if (!this.config.handoffUrl || !this.handoffConfig.enabled) return false
+    return !this.handoffConfig.desktop_only || isDesktopDevice(this.nav)
+  }
+
+  /** Render the QR for this session and wait for the other device to finish. */
+  private async startHandoff(): Promise<void> {
+    if (!this.config.handoffUrl) return
+    this.handoffActive = true
+    this.view.renderHandoff(renderQrSvg(this.buildHandoffUrl()))
+    await this.pollHandoff()
+  }
+
+  /** Build the hosted-widget URL the QR encodes (same session, on the phone). */
+  private buildHandoffUrl(): string {
+    const base = this.config.handoffUrl as string
+    const apiBase = (this.config.baseUrl ?? '').trim() || this.win.location.origin
+    const sep = base.includes('?') ? '&' : '?'
+    return `${base}${sep}token=${encodeURIComponent(this.config.token)}&baseUrl=${encodeURIComponent(apiBase)}`
+  }
+
+  /** Poll the session while the user verifies on the other device; mirror the result. */
+  private async pollHandoff(): Promise<void> {
+    let errors = 0
+    for (let i = 0; i < this.maxHandoffPolls && this.handoffActive && !this.settled; i++) {
+      await this.delay(this.pollMs)
+      if (!this.handoffActive || this.settled) return
+      try {
+        const session = await this.client.getSession()
+        errors = 0
+        if (Flow.isTerminal(session.status)) {
+          this.handoffActive = false
+          return this.showResult(session.status)
+        }
+      } catch (error) {
+        // The session/token can expire mid-wait (401) — stop and reflect that.
+        if (error instanceof WidgetApiError && error.status === 401) {
+          this.handoffActive = false
+          return this.showResult('expired')
+        }
+        if (++errors >= 5) return
+      }
     }
   }
 
@@ -206,6 +289,7 @@ export class WidgetController {
       // The active flow is strict end-to-end: documents must be detected, not
       // manually waved through.
       strictCapture: this.livenessMode === 'active',
+      handoffAvailable: this.handoffReady,
     })
   }
 
@@ -294,6 +378,7 @@ export const buildController = (options: BaseWidgetOptions, onSettle: () => void
   return new WidgetController({
     token: options.token,
     baseUrl: options.baseUrl,
+    handoffUrl: options.handoffUrl,
     branding: options.branding,
     signals: options.signals,
     onComplete: options.onComplete,

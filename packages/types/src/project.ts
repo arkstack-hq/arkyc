@@ -34,6 +34,17 @@ export interface ProjectBranding {
   show_branding?: boolean
 }
 
+/**
+ * Cross-device handoff: let a user continue an in-progress verification on another
+ * device by scanning a QR code (e.g. start on desktop, finish on a phone camera).
+ */
+export interface ProjectHandoffSettings {
+  /** Whether users may hand the session off to another device. */
+  enabled?: boolean
+  /** Only offer the handoff on desktop devices (a phone user gains nothing). */
+  desktop_only?: boolean
+}
+
 /** Project-level configuration. */
 export interface ProjectSettings extends Metadata {
   thresholds?: Partial<VerificationThresholds>
@@ -42,6 +53,8 @@ export interface ProjectSettings extends Metadata {
   max_retries?: number
   /** Overrides the global capture model for this project (Phase 17). */
   capture_model?: CaptureModel
+  /** Cross-device session handoff (QR). Off unless the project opts in. */
+  handoff?: ProjectHandoffSettings
 }
 
 /**

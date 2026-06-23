@@ -38,8 +38,10 @@ function buildOcrDriver() {
   if (ocrDriverName === 'tesseract') {
     const registry = createDocumentParserRegistry()
     for (const parser of documentParsers) registry.register(parser)
+
     return new TesseractOcrDriver({ language: ocrLanguage, registry })
   }
+
   return OcrDriverFactory.create({
     driver: ocrDriverName,
     endpoint: env('OCR_ENDPOINT'),

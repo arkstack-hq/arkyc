@@ -10,6 +10,8 @@ export interface WidgetControllerConfig {
   token: string
   /** API origin (defaults to the widget's own origin). */
   baseUrl?: string
+  /** Hosted-widget URL the handoff QR points to (see {@link BaseWidgetOptions.handoffUrl}). */
+  handoffUrl?: string
   branding?: ProjectBranding | null
   /**
    * Mock-driver signal hints. When present, capture screens also offer a
@@ -53,6 +55,8 @@ export interface WidgetControllerConfig {
   pollMs?: number
   /** Maximum number of polls before giving up and showing the last status. */
   maxPolls?: number
+  /** Maximum number of polls while waiting on a handed-off device (bounded by session TTL). */
+  maxHandoffPolls?: number
 }
 
 /** Common options shared by every launch mode. */
@@ -61,6 +65,12 @@ export interface BaseWidgetOptions {
   token: string
   /** API origin (defaults to the page's own origin). */
   baseUrl?: string
+  /**
+   * URL of a page that boots the widget in hosted mode (`ArkycWidget.hosted()`).
+   * Required to offer cross-device handoff: the QR points here with the session
+   * `token`/`baseUrl` appended so the second device resumes the same session.
+   */
+  handoffUrl?: string
   /** Branding (colors, logo, radius, theme, name). Usually sourced from project config. */
   branding?: ProjectBranding | null
   /**

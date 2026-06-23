@@ -427,6 +427,13 @@ importers:
       '@arkyc/types':
         specifier: workspace:*
         version: link:../types
+      qrcode-generator:
+        specifier: ^1.4.4
+        version: 1.5.2
+    devDependencies:
+      '@types/qrcode-generator':
+        specifier: ^1.0.6
+        version: 1.0.6
 
 packages:
 
@@ -3338,6 +3345,10 @@ packages:
   '@types/pluralize@0.0.33':
     resolution: {integrity: sha512-JOqsl+ZoCpP4e8TDke9W79FDcSgPAR0l6pixx2JHkhnRjvShyYiAYw2LVsnA7K08Y6DeOnaU6ujmENO4os/cYg==}
 
+  '@types/qrcode-generator@1.0.6':
+    resolution: {integrity: sha512-XasuPjhHBC4hyOJ/pHaUNTj+tNxA1SyZpXaS/FOUxEVX03D1gFM8UmMKSIs+pPHLAmRZpU6j9KYxvo+lfsvhKw==}
+    deprecated: This is a stub types definition for qrcode-generator (https://github.com/kazuhikoarase/qrcode-generator). qrcode-generator provides its own type definitions, so you don't need @types/qrcode-generator installed!
+
   '@types/qs@6.15.1':
     resolution: {integrity: sha512-GZHUBZR9hckSUhrxmp1nG6NwdpM9fCunJwyThLW1X3AyHgd9IlHb6VANpQQqDr2o/qQp6McZ3y/IA2rVzKzSbw==}
 
@@ -5577,6 +5588,9 @@ packages:
   pusher@5.3.4:
     resolution: {integrity: sha512-gA7NpPRsQW9qpry/Ov+o9KKIPaRMziiDoEtiZ6EF0+QiSdsnT49+dH7+hf0Dvd4d+HEGQDHp6VXtrVM5DDrpmw==}
     engines: {node: '>= 10.0.0'}
+
+  qrcode-generator@1.5.2:
+    resolution: {integrity: sha512-pItrW0Z9HnDBnFmgiNrY1uxRdri32Uh9EjNYLPVC2zZ3ZRIIEqBoDgm4DkvDwNNDHTK7FNkmr8zAa77BYc9xNw==}
 
   qs@6.15.2:
     resolution: {integrity: sha512-Rzq0KEyX/w/tEybncDgdkZrJgVUsUMk3xjh3t5bv3S1HTAtg+uOYt72+ZfwiQwKdysThkTBdL/rTi6HDmX9Ddw==}
@@ -9572,6 +9586,10 @@ snapshots:
 
   '@types/pluralize@0.0.33': {}
 
+  '@types/qrcode-generator@1.0.6':
+    dependencies:
+      qrcode-generator: 1.5.2
+
   '@types/qs@6.15.1': {}
 
   '@types/range-parser@1.2.7': {}
@@ -12075,6 +12093,8 @@ snapshots:
       tweetnacl-util: 0.15.1
     transitivePeerDependencies:
       - encoding
+
+  qrcode-generator@1.5.2: {}
 
   qs@6.15.2:
     dependencies:

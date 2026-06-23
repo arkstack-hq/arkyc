@@ -39,6 +39,9 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     env: {
       NODE_ENV: 'test',
+      // Not local/development — keeps the OCR debug log (storage/logs/ocr.log)
+      // off during tests so the suite doesn't write a line per session.
+      APP_ENV: 'testing',
       VERBOSITY: '0',
       // Use the file mail transport in tests — no SMTP socket. The default
       // `smtp` transport fires un-awaited background connects (via fire-and-forget

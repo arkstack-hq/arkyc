@@ -9,6 +9,14 @@ export interface ClientSession {
   capture_model?: CaptureModel
   /** The active-liveness challenge sequence to prompt the user through. */
   liveness_challenges?: LivenessChallenge[]
+  /** Cross-device handoff config resolved from the project setting. */
+  handoff?: ClientHandoff
+}
+
+/** Whether (and where) the widget may offer cross-device handoff. */
+export interface ClientHandoff {
+  enabled: boolean
+  desktop_only: boolean
 }
 
 /**

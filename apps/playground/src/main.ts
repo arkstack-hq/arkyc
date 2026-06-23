@@ -49,6 +49,9 @@ async function startVerification(): Promise<void> {
       container: widgetEl,
       // Same-origin: Vite proxies /api → the Arkyc API (see vite.config.ts).
       baseUrl: '/api',
+      // Cross-device handoff: the QR points at the hosted continuation page. The
+      // "Continue on your phone" offer only appears if the project enables handoff.
+      handoffUrl: `${location.origin}/hosted.html`,
       onComplete: (result) => {
         setStatus(`Done: ${result.status}${result.decision ? ` (${result.decision})` : ''}.`, 'ok')
         void showResult(data.session.id)

@@ -100,6 +100,16 @@ function findByAttr(root: FakeEl, attr: string, value: string): FakeEl | undefin
   return undefined
 }
 
+/** Recursively find the first element whose className includes `cls`. */
+function findByClass(root: FakeEl, cls: string): FakeEl | undefined {
+  if (root.className.split(' ').includes(cls)) return root
+  for (const child of root.children) {
+    const hit = findByClass(child, cls)
+    if (hit) return hit
+  }
+  return undefined
+}
+
 const flush = () => new Promise((r) => setTimeout(r, 0))
 
 function makeFetch(script: { onCall?: (key: string, n: number) => string | undefined } = {}) {
@@ -312,6 +322,83 @@ describe('WidgetController flow', () => {
     closeBtn!.click()
     expect(onClose).toHaveBeenCalledTimes(1)
     expect(messages).toContainEqual({ type: 'arkyc:close' })
+  })
+})
+
+describe('WidgetController cross-device handoff', () => {
+  /** A fetch whose `/session` carries handoff config and approves on the 2nd read. */
+  function handoffFetch(handoff: { enabled: boolean; desktop_only: boolean }) {
+    const counts: Record<string, number> = {}
+    return vi.fn(async (url: string, init?: RequestInit) => {
+      const path = String(url).replace(/^https?:\/\/[^/]+/, '')
+      const key = `${init?.method ?? 'GET'} ${path}`
+      counts[key] = (counts[key] ?? 0) + 1
+      const isSession = path.endsWith('/session')
+      const status = isSession && counts[key] > 1 ? 'approved' : 'started'
+      const data: Record<string, unknown> = { id: 's1', status, expires_at: '2099-01-01' }
+      if (isSession) data.handoff = handoff
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ status: 'success', message: 'OK', code: 200, data }),
+      } as Response
+    })
+  }
+
+  const desktopNav = { userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 0 } as Navigator
+  const handoffWin = () =>
+    ({ parent: { postMessage: () => {} }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
+
+  it('offers the QR and mirrors the result completed on the other device', async () => {
+    const fetchMock = handoffFetch({ enabled: true, desktop_only: false })
+    const { controller } = makeController({
+      fetch: fetchMock as never,
+      nav: desktopNav,
+      win: handoffWin(),
+      handoffUrl: 'https://verify.test/hosted',
+    })
+    const el = controller.element as unknown as FakeEl
+
+    controller.start()
+    await flush() // prefetch session → handoff offer appears on welcome
+    clickText(el, 'Continue on your phone')
+
+    // The QR screen renders synchronously (polling is still suspended on its delay):
+    // a rendered SVG and a "use this device" escape hatch.
+    expect(find(el, 'Continue on this device')).toBeTruthy()
+    const qr = findByClass(el, 'arkyc-qr')
+    expect(qr?.innerHTML.includes('<svg')).toBe(true)
+
+    // Polling then sees the handed-off session reach a terminal status → result mirrors.
+    await flush()
+    expect(find(el, 'Verified')).toBeTruthy()
+  })
+
+  it('hides the offer when the project disables handoff', async () => {
+    const fetchMock = handoffFetch({ enabled: false, desktop_only: false })
+    const { controller } = makeController({
+      fetch: fetchMock as never,
+      nav: desktopNav,
+      win: handoffWin(),
+      handoffUrl: 'https://verify.test/hosted',
+    })
+    controller.start()
+    await flush()
+    expect(find(controller.element as unknown as FakeEl, 'Continue on your phone')).toBeFalsy()
+  })
+
+  it('hides a desktop-only offer on a phone', async () => {
+    const fetchMock = handoffFetch({ enabled: true, desktop_only: true })
+    const phoneNav = { userAgent: 'Mozilla/5.0 (iPhone)', platform: 'iPhone', maxTouchPoints: 5 } as Navigator
+    const { controller } = makeController({
+      fetch: fetchMock as never,
+      nav: phoneNav,
+      win: handoffWin(),
+      handoffUrl: 'https://verify.test/hosted',
+    })
+    controller.start()
+    await flush()
+    expect(find(controller.element as unknown as FakeEl, 'Continue on your phone')).toBeFalsy()
   })
 })
 

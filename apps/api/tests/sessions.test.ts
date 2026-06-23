@@ -52,8 +52,9 @@ beforeAll(async () => {
     slug: `sess-prod-${s}`,
     environment: 'production',
     // Pin passive so the capture-model assertions don't depend on the shared
-    // global-settings singleton (other suites mutate it to `active`).
-    settings: { capture_model: 'passive' },
+    // global-settings singleton (other suites mutate it to `active`). Opt into
+    // cross-device handoff so the bootstrap surfaces it.
+    settings: { capture_model: 'passive', handoff: { enabled: true, desktop_only: true } },
     branding: {},
     status: 'active',
   })
@@ -210,6 +211,12 @@ describe('verification session lifecycle', () => {
     expect(boot.body.data.capture_model).toBe('passive')
     expect(boot.body.data.liveness_challenges).toEqual([])
   })
+
+  it('exposes the project cross-device handoff config in the bootstrap', async () => {
+    const { token } = await openSession()
+    const boot = await clientApi('get', 'session', token)
+    expect(boot.body.data.handoff).toEqual({ enabled: true, desktop_only: true })
+  })
 })
 
 describe('active liveness (Phase 17)', () => {
@@ -226,6 +233,12 @@ describe('active liveness (Phase 17)', () => {
     expect(boot.body.data.capture_model).toBe('active')
     expect(Array.isArray(boot.body.data.liveness_challenges)).toBe(true)
     expect(boot.body.data.liveness_challenges).toHaveLength(3)
+  })
+
+  it('defaults handoff to disabled when the project has not opted in', async () => {
+    const { token } = await openActive()
+    const boot = await clientApi('get', 'session', token)
+    expect(boot.body.data.handoff).toEqual({ enabled: false, desktop_only: false })
   })
 
   it('passes when the performed sequence matches the issued one', async () => {
