@@ -83,8 +83,8 @@ export class UsersCommand extends Command {
 
     if (userId) {
       const user = await User.query()
-        .when(!userId.includes('@'), e => e.where({ id: userId }))
-        .when(userId.includes('@'), e => e.where({ email: userId }))
+        .when(!userId.includes('@'), (e) => e.where({ id: userId }))
+        .when(userId.includes('@'), (e) => e.where({ email: userId }))
         .firstOrFail()
 
       const action = await this.choice(`Selected user: ${user.getAttribute('name')}. Choose an action:`, [

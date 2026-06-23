@@ -1,10 +1,11 @@
-import { fileURLToPath } from 'node:url'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import { defineConfig } from 'vitest/config'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), basicSsl()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -12,6 +13,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    https: {},
     proxy: {
       // Dev convenience: proxy API calls to the local Arkstack API.
       // The Arkstack app listens on APP_PORT (apps/api/.env, default 3100).

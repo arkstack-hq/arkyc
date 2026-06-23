@@ -65,7 +65,6 @@ export function getApiUrl(defaultValue: string): string {
   if (import.meta.env.PROD) {
     return import.meta.env.VITE_PROD_API_URL || DEFAULT
   }
-
   switch (apiEnv) {
     case 'production':
       return import.meta.env.VITE_PROD_API_URL || DEFAULT

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+
 import { ArkycWidget } from '../src/index'
 import { WidgetController } from '../src/controller'
 import type { WidgetEvent } from '../src/types'
@@ -45,11 +46,11 @@ class FakeEl {
   }
 
   addEventListener(type: string, fn: () => void): void {
-    ;(this.listeners[type] ??= []).push(fn)
+    ; (this.listeners[type] ??= []).push(fn)
   }
 
   click(): void {
-    ;(this.listeners.click ?? []).forEach((fn) => fn())
+    ; (this.listeners.click ?? []).forEach((fn) => fn())
   }
 
   get classList() {
@@ -183,7 +184,7 @@ function makeController(over: Partial<ConstructorParameters<typeof WidgetControl
     postToParent: true,
     ...over,
   })
-  body.appendChild(controller.element)
+  body.appendChild(controller.element as never)
   return { controller, body, messages, fetchMock, win }
 }
 
@@ -422,7 +423,7 @@ describe('WidgetController cross-device handoff', () => {
   const desktopNav = { userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 0 } as Navigator
   const phoneNav = { userAgent: 'Mozilla/5.0 (iPhone)', platform: 'iPhone', maxTouchPoints: 5 } as Navigator
   const handoffWin = () =>
-    ({ parent: { postMessage: () => {} }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
+    ({ parent: { postMessage: () => { } }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
 
   it('leads with the QR on desktop and offers continuing on this device', async () => {
     // Session never reaches terminal, so the QR screen persists while we assert.
@@ -494,7 +495,7 @@ describe('WidgetController cross-device handoff', () => {
 describe('WidgetController realtime events', () => {
   const desktopNav = { userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 0 } as Navigator
   const handoffWin = () =>
-    ({ parent: { postMessage: () => {} }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
+    ({ parent: { postMessage: () => { } }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
 
   it('streams session.transition + complete through the onEvent firehose (polling)', async () => {
     const events: WidgetEvent[] = []
@@ -530,9 +531,9 @@ describe('WidgetController realtime events', () => {
     const fakeClient = {
       subscribe: (_channel: string, handler: (event: string, data: unknown) => void) => {
         pushHandler = handler
-        return () => {}
+        return () => { }
       },
-      disconnect: () => {},
+      disconnect: () => { },
     }
     const realtimeFactory = vi.fn(async () => fakeClient)
 
@@ -559,7 +560,7 @@ describe('WidgetController realtime events', () => {
       win: handoffWin(),
       realtimeFactory,
       onEvent: (e) => events.push(e),
-      scheduler: () => {}, // freeze the poll backstop so only the push event resolves
+      scheduler: () => { }, // freeze the poll backstop so only the push event resolves
       maxHandoffPolls: 5,
     })
     const el = controller.element as unknown as FakeEl
