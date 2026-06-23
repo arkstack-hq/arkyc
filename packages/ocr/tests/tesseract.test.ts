@@ -18,9 +18,21 @@ describe('TesseractOcrDriver', () => {
       dateOfBirth: '1974-08-12',
       expiryDate: '2012-04-15',
     })
-    // Engine 0.9 blended with parser 1.0 → 0.95.
-    expect(result.confidence).toBeCloseTo(0.95, 2)
+    // A check-digit-verified MRZ (parser 1.0) is parser-dominant: engine 0.9 only
+    // lifts it slightly → 1.0*0.9 + 0.9*0.1 = 0.99.
+    expect(result.confidence).toBeCloseTo(0.99, 2)
     expect((result.raw as { engine?: string }).engine).toBe('tesseract')
+    expect((result.raw as { stage?: string }).stage).toBe('mrz')
+  })
+
+  it('keeps a check-digit-verified MRZ high even when the engine is unsure', async () => {
+    // OCR-B reads make Tesseract pessimistic; a verified MRZ must not be dragged down.
+    const driver = new TesseractOcrDriver({
+      recognize: async () => ({ text: TD3, confidence: 35 }),
+    })
+    const result = await driver.extract({ image: dummy, documentType: 'passport' })
+    // Parser 1.0 dominates: 1.0*0.9 + 0.35*0.1 = 0.935.
+    expect(result.confidence).toBeGreaterThan(0.9)
   })
 
   it('returns empty fields when the engine yields no MRZ or other data', async () => {

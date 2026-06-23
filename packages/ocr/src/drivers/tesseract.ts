@@ -75,12 +75,28 @@ export class TesseractOcrDriver implements OcrDriver {
       country: request.country,
       documentType: request.documentType,
     })
+    const stage = (parsed.raw as { stage?: string } | undefined)?.stage
+    const confidence = this.scoreConfidence(parsed.confidence, engineConfidence / 100, stage)
     return {
       fields: parsed.fields,
-      // Blend the engine's raw confidence with the parser's structural confidence.
-      confidence: clamp01((engineConfidence / 100) * 0.5 + parsed.confidence * 0.5),
-      raw: { engine: 'tesseract', text, parser: parsed.raw },
+      confidence,
+      raw: { engine: 'tesseract', stage, text, parser: parsed.raw },
     }
+  }
+
+  /**
+   * Blend the parser's structural confidence with the engine's self-reported
+   * confidence — parser-dominant, because what the parser extracted matters more
+   * than how sure Tesseract felt about each glyph (it is pessimistic on the OCR-B
+   * MRZ font and busy document backgrounds). For the `mrz` stage the result is
+   * check-digit-verified ground truth, so the engine only lifts the score and can
+   * never drag a verified read down. Other stages aren't self-verifying, so the
+   * engine's confidence carries more weight.
+   */
+  private scoreConfidence(parserConfidence: number, engine: number, stage?: string): number {
+    const e = clamp01(engine)
+    if (stage === 'mrz') return clamp01(parserConfidence * 0.9 + e * 0.1)
+    return clamp01(parserConfidence * 0.6 + e * 0.4)
   }
 
   /** Recognize text, or `null` if the engine can't read the image. */
