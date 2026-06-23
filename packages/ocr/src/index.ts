@@ -12,7 +12,7 @@ export * from './registry'
 export { MockOcrDriver } from './drivers/mock'
 export { ExternalOcrDriver } from './drivers/external'
 export { TesseractOcrDriver } from './drivers/tesseract'
-export type { TesseractOcrOptions, TesseractRecognize } from './drivers/tesseract'
+export type { TesseractOcrOptions, TesseractRecognize, RecognizeOptions } from './drivers/tesseract'
 export {
   buildSharpPreprocessor,
   defaultPreprocessor,

@@ -1,19 +1,56 @@
 import type { OcrResultData } from '@arkyc/types'
 import type { OcrDriver, OcrRequest } from '../types'
 import { createDocumentParserRegistry, type DocumentParserRegistry } from '../parsers/registry'
+import type { ParseOutput } from '../parsers/types'
 import { defaultPreprocessor, type OcrPreprocessor } from './preprocess'
 
 const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
 
+/** MRZ (machine-readable zone) charset — uppercase letters, digits and the filler. */
+const MRZ_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<'
+
+/** Relative quality of each parse stage; higher wins when picking the best result. */
+const STAGE_RANK: Record<string, number> = { mrz: 3, custom: 2, generic: 1, none: 0 }
+
+/** Options for a single recognition pass. */
+export interface RecognizeOptions {
+  /**
+   * Constrain recognition to the {@link MRZ_CHARSET}. This forces ambiguous OCR-B
+   * glyphs into the machine-readable zone's alphabet (e.g. `O`→`0`, `I`→`1`),
+   * dramatically improving the numeric MRZ lines (dates, check digits).
+   */
+  mrz?: boolean
+}
+
 /** Reads text from an image; returns text + an engine confidence in [0, 100]. */
-export type TesseractRecognize = (image: Uint8Array, language: string) => Promise<{ text: string; confidence: number }>
+export type TesseractRecognize = (
+  image: Uint8Array,
+  language: string,
+  options?: RecognizeOptions,
+) => Promise<{ text: string; confidence: number }>
 
 /** Minimal structural type for the lazily-imported `tesseract.js` module. */
 interface TesseractModule {
   createWorker(language?: string): Promise<{
+    setParameters(params: Record<string, string>): Promise<unknown>
     recognize(image: Buffer): Promise<{ data: { text: string; confidence: number } }>
     terminate(): Promise<void>
   }>
+}
+
+/** A candidate OCR text to parse, with the engine confidence that produced it. */
+interface Candidate {
+  text: string
+  engine: number
+}
+
+/** A parse result with the metadata used to rank it against other candidates. */
+interface Scored {
+  parsed: ParseOutput
+  stage?: string
+  rank: number
+  score: number
+  text: string
 }
 
 export interface TesseractOcrOptions {
@@ -56,31 +93,83 @@ export class TesseractOcrDriver implements OcrDriver {
 
   async extract(request: OcrRequest): Promise<OcrResultData> {
     // Read both sides — the MRZ may be on the front (passports) or the back
-    // (TD1 ID cards, residence permits). Parse the combined text once.
-    const front = request.image?.length ? await this.tryRecognize(request.image) : null
-    const back = request.backImage?.length ? await this.tryRecognize(request.backImage) : null
+    // (TD1 ID cards, residence permits).
+    const sides: Uint8Array[] = []
+    if (request.image?.length) sides.push(request.image)
+    if (request.backImage?.length) sides.push(request.backImage)
 
-    if (!front && !back) {
+    const reads: Candidate[] = []
+    for (const image of sides) {
+      const read = await this.tryRecognize(image)
+      if (read) reads.push({ text: read.text, engine: read.confidence })
+    }
+
+    if (reads.length === 0) {
       // Nothing readable (empty or unreadable images, or engine failure): return
       // empty so the decision engine routes on low confidence (manual review).
       return { fields: {}, confidence: 0, raw: { engine: 'tesseract', empty: true } }
     }
 
-    const text = [front?.text ?? '', back?.text ?? ''].filter((t) => t.trim()).join('\n')
-    const confidences = [front?.confidence, back?.confidence].filter((c): c is number => typeof c === 'number')
-    const engineConfidence = confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : 0
+    // Parse each side ALONE, plus the combination. The MRZ lives on a single
+    // side, and mixing both sides' text into one parse lets the other side's
+    // stray long lines capture the MRZ's line slots — so a clean single side can
+    // read where front+back together cannot. We keep the best-ranked result.
+    const candidates: Candidate[] = [...reads]
+    if (reads.length > 1) {
+      candidates.push({ text: reads.map((r) => r.text).join('\n'), engine: avg(reads.map((r) => r.engine)) })
+    }
+    let best = this.bestOf(candidates, request)
 
+    // Legibility fallback: if nothing parsed as an MRZ, retry each side
+    // constrained to the OCR-B charset (forces O→0 / I→1 on the numeric lines),
+    // which often rescues an MRZ the unconstrained pass mangled.
+    if (best.rank < STAGE_RANK.mrz!) {
+      const mrzReads: Candidate[] = []
+      for (const image of sides) {
+        const read = await this.tryRecognize(image, { mrz: true })
+        if (read?.text.trim()) mrzReads.push({ text: read.text, engine: read.confidence })
+      }
+      if (mrzReads.length) {
+        const mrzBest = this.bestOf(mrzReads, request)
+        if (mrzBest.rank > best.rank || (mrzBest.rank === best.rank && mrzBest.score > best.score)) best = mrzBest
+      }
+    }
+
+    return {
+      fields: best.parsed.fields,
+      confidence: best.score,
+      raw: { engine: 'tesseract', stage: best.stage, text: best.text, parser: best.parsed.raw },
+    }
+  }
+
+  /** Parse every candidate text and return the best-ranked, highest-scoring result. */
+  private bestOf(candidates: Candidate[], request: OcrRequest): Scored {
+    let best: Scored | null = null
+    for (const candidate of candidates) {
+      const scored = this.score(candidate, request)
+      if (!best || scored.rank > best.rank || (scored.rank === best.rank && scored.score > best.score)) {
+        best = scored
+      }
+    }
+    return best!
+  }
+
+  /** Parse one candidate text and attach its stage rank + blended confidence. */
+  private score(candidate: Candidate, request: OcrRequest): Scored {
     const parsed = this.registry.parse({
-      text,
+      text: candidate.text,
       country: request.country,
       documentType: request.documentType,
     })
     const stage = (parsed.raw as { stage?: string } | undefined)?.stage
-    const confidence = this.scoreConfidence(parsed.confidence, engineConfidence / 100, stage)
+    const hasFields = Object.keys(parsed.fields).length > 0
     return {
-      fields: parsed.fields,
-      confidence,
-      raw: { engine: 'tesseract', stage, text, parser: parsed.raw },
+      parsed,
+      stage,
+      rank: STAGE_RANK[stage ?? 'none'] ?? 0,
+      // A result with no extracted fields carries no confidence, whatever the engine felt.
+      score: hasFields ? this.scoreConfidence(parsed.confidence, candidate.engine / 100, stage) : 0,
+      text: candidate.text,
     }
   }
 
@@ -100,11 +189,14 @@ export class TesseractOcrDriver implements OcrDriver {
   }
 
   /** Recognize text, or `null` if the engine can't read the image. */
-  private async tryRecognize(image: Uint8Array): Promise<{ text: string; confidence: number } | null> {
+  private async tryRecognize(
+    image: Uint8Array,
+    options?: RecognizeOptions,
+  ): Promise<{ text: string; confidence: number } | null> {
     try {
       const prepared = await this.preprocess(image)
       const recognize = this.recognizeImpl ?? (await this.loadRecognizer())
-      return await recognize(prepared, this.language)
+      return await recognize(prepared, this.language, options)
     } catch {
       return null
     }
@@ -130,9 +222,16 @@ export class TesseractOcrDriver implements OcrDriver {
         "OCR driver 'tesseract' requires the 'tesseract.js' package. Install it with: pnpm add tesseract.js -F @arkyc/ocr",
       )
     }
-    return async (image, language) => {
+    return async (image, language, options) => {
       const worker = await mod.createWorker(language)
       try {
+        if (options?.mrz) {
+          await worker.setParameters({
+            tessedit_char_whitelist: MRZ_CHARSET,
+            // Treat the input as a single uniform block (the MRZ band's fixed lines).
+            tessedit_pageseg_mode: '6',
+          })
+        }
         const { data } = await worker.recognize(Buffer.from(image))
         return { text: data.text, confidence: data.confidence }
       } finally {
@@ -140,4 +239,9 @@ export class TesseractOcrDriver implements OcrDriver {
       }
     }
   }
+}
+
+/** Mean of a non-empty list of numbers. */
+function avg(values: number[]): number {
+  return values.reduce((a, b) => a + b, 0) / values.length
 }

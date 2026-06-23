@@ -58,6 +58,34 @@ describe('TesseractOcrDriver', () => {
     expect(result.fields.lastName).toBe('ERIKSSON')
   })
 
+  it('reads the MRZ from one clean side despite MRZ-shaped noise on the other', async () => {
+    // The "front" yields two MRZ-shaped junk lines that, if concatenated ahead of
+    // the real MRZ, would steal its line slots. Parsing each side alone avoids that.
+    const noise = ['ABC<' + 'D'.repeat(40), 'EFG<' + 'H'.repeat(40)].join('\n')
+    const driver = new TesseractOcrDriver({
+      recognize: async (image) => (image[0] === 2 ? { text: TD3, confidence: 85 } : { text: noise, confidence: 70 }),
+    })
+    const result = await driver.extract({
+      image: new Uint8Array([1]),
+      backImage: new Uint8Array([2]),
+      documentType: 'id_card',
+    })
+    expect(result.fields.documentNumber).toBe('L898902C3')
+    expect(result.fields.lastName).toBe('ERIKSSON')
+  })
+
+  it('rescues the MRZ with a charset-constrained fallback pass', async () => {
+    // The unconstrained pass mangles the MRZ to unreadable text; the MRZ-charset
+    // pass (options.mrz) recovers it. The driver must try the fallback and use it.
+    const driver = new TesseractOcrDriver({
+      recognize: async (_image, _language, options) =>
+        options?.mrz ? { text: TD3, confidence: 80 } : { text: 'glare blur noise', confidence: 30 },
+    })
+    const result = await driver.extract({ image: dummy, documentType: 'passport' })
+    expect(result.fields.documentNumber).toBe('L898902C3')
+    expect((result.raw as { stage?: string }).stage).toBe('mrz')
+  })
+
   it('skips the engine and returns empty for a 0-byte image', async () => {
     let called = false
     const driver = new TesseractOcrDriver({
