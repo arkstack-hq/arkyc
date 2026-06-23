@@ -42,6 +42,9 @@ export class ArkycWidget {
       : 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;'
 
     const controller = buildController(options, () => overlay.remove())
+    // Mark overlay mode so a handoff QR can take over the whole viewport here
+    // (it escapes the dimmed backdrop) without doing the same when inline-mounted.
+    controller.element.classList.add('arkyc-overlay')
     if (options.fullscreen) controller.element.classList.add('arkyc-fullscreen')
     overlay.appendChild(controller.element)
     ;(doc.body ?? doc.documentElement).appendChild(overlay)

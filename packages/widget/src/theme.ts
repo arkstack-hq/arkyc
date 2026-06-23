@@ -77,14 +77,16 @@ export class Theme {
 .arkyc-root{${this.variables()};color:var(--arkyc-fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-sizing:border-box}
 .arkyc-root *{box-sizing:border-box}
 .arkyc-card{background:var(--arkyc-bg);border-radius:var(--arkyc-radius);width:100vw;max-width:480px;height:100%;max-height:720px;display:flex;flex-direction:column;overflow:hidden}
-.arkyc-root.arkyc-fullscreen .arkyc-card{max-width:none;max-height:none;height:100vh;border-radius:0}
+.arkyc-root.arkyc-fullscreen .arkyc-card{max-width:none;max-height:none;height:100vh;height:100dvh;border-radius:0}
 /* On a wider (desktop) viewport, "fullscreen" is a large centred dialog rather than edge-to-edge. */
 @media (min-width:700px){
   .arkyc-root.arkyc-fullscreen .arkyc-card{max-width:560px;min-width:400px;width:100%;height:auto;min-height:min(620px,92vh);max-height:92vh;border-radius:var(--arkyc-radius)}
 }
-/* Handoff (QR) takes over the whole viewport on every device + mount mode, and
-   hides the close affordance — there's nothing to dismiss while awaiting the phone. */
-.arkyc-root.arkyc-handoff .arkyc-card{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;min-width:0;min-height:0;border-radius:0;z-index:2147483646}
+/* Handoff (QR) takes over the whole viewport — but only in overlay (open) mode,
+   so an inline mount() stays within its container instead of escaping fullscreen.
+   The close affordance is hidden either way: there's nothing to dismiss while
+   awaiting the phone. */
+.arkyc-root.arkyc-overlay.arkyc-handoff .arkyc-card{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;min-width:0;min-height:0;border-radius:0;z-index:2147483646}
 .arkyc-root.arkyc-handoff .arkyc-close{display:none}
 .arkyc-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--arkyc-border)}
 .arkyc-logo{height:24px;width:auto}
