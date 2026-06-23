@@ -114,6 +114,10 @@ export class Theme {
 .arkyc-qr{width:200px;height:200px;padding:12px;margin:4px auto;background:#fff;border-radius:var(--arkyc-radius);border:1px solid var(--arkyc-border)}
 .arkyc-qr svg{display:block;width:100%;height:100%}
 .arkyc-handoff-wait{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--arkyc-muted);font-size:14px;margin-top:6px}
+/* Decorative line-art illustration on the welcome / instruction screens: a soft
+   tinted disc in the primary colour with a halo, holding a stroked icon. */
+.arkyc-illus{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 2px;color:var(--arkyc-primary);background:color-mix(in srgb,var(--arkyc-primary) 12%,transparent);box-shadow:0 0 0 8px color-mix(in srgb,var(--arkyc-primary) 5%,transparent)}
+.arkyc-illus svg{width:58px;height:58px}
 .arkyc-badge{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff}
 .arkyc-badge.ok{background:#16a34a}
 .arkyc-badge.warn{background:#d97706}

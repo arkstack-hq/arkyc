@@ -137,6 +137,34 @@ const CUE_ICONS: Record<LivenessChallenge, string> = {
 
 const CHECK_ICON = SVG('<path d="M20 6 9 17l-5-5"/>')
 
+/** Larger line-art illustration used to dress the informative / lead-in screens. */
+const ART = (body: string) =>
+  `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`
+
+/** Per-screen decorative illustrations, keyed by step (plus a welcome hero). */
+const STEP_ART: Partial<Record<WidgetStep | 'welcome', string>> = {
+  // Shield with a check — trust / "verify your identity".
+  welcome: ART(
+    '<path d="M32 7 52 14v14c0 12.5-8.2 21.6-20 25.6C20.2 49.6 12 40.5 12 28V14z"/><path d="M23 30.5l6.2 6.2L41 24.5"/>',
+  ),
+  // ID card with a portrait + text lines.
+  front_capture: ART(
+    '<rect x="7" y="15" width="50" height="34" rx="5"/><circle cx="22" cy="28" r="5"/><path d="M14 42c1-5 5-7 8-7s7 2 8 7"/><path d="M38 27h12M38 34h12M38 41h8"/>',
+  ),
+  // ID card flipped: magnetic stripe + MRZ lines.
+  back_capture: ART(
+    '<rect x="7" y="15" width="50" height="34" rx="5"/><rect x="7" y="20" width="50" height="6" fill="currentColor" stroke="none" opacity=".18"/><path d="M14 34h36M14 41h24"/>',
+  ),
+  // A person centred in a camera viewfinder (corner brackets).
+  selfie_capture: ART(
+    '<path d="M10 20v-6a4 4 0 0 1 4-4h6"/><path d="M44 10h6a4 4 0 0 1 4 4v6"/><path d="M54 44v6a4 4 0 0 1-4 4h-6"/><path d="M20 54h-6a4 4 0 0 1-4-4v-6"/><circle cx="32" cy="27" r="8"/><path d="M19 50c0-7 6-11 13-11s13 4 13 11"/>',
+  ),
+  // A smiling face with turn-your-head arrows on each side.
+  active_liveness: ART(
+    '<circle cx="32" cy="30" r="13"/><circle cx="27" cy="27" r="1.2" fill="currentColor" stroke="none"/><circle cx="37" cy="27" r="1.2" fill="currentColor" stroke="none"/><path d="M26 34c2 2.5 10 2.5 12 0"/><path d="M13 30H6M10 26l-4 4 4 4"/><path d="M51 30h7M54 26l4 4-4 4"/>',
+  ),
+}
+
 /** Handles for driving the circular preview overlay (ring + cue + success check). */
 interface FaceStage {
   stage: HTMLElement
@@ -312,7 +340,14 @@ export class WidgetView {
     }
   }
 
+  /** Prepend a decorative illustration for the given screen, when one exists. */
+  private appendArt(key: WidgetStep | 'welcome'): void {
+    const art = STEP_ART[key]
+    if (art) this.body.appendChild(this.el('div', { class: 'arkyc-illus', html: art }))
+  }
+
   private renderWelcome(handoffAvailable?: boolean): void {
+    this.appendArt('welcome')
     this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Verify your identity' }))
     this.body.appendChild(
       this.el('p', {
@@ -342,11 +377,12 @@ export class WidgetView {
    * Continue button — so each step starts deliberately rather than the camera
    * springing to life unannounced.
    */
-  renderInstruction(title: string, body: string, cta: string, onContinue: () => void): void {
+  renderInstruction(step: WidgetStep, title: string, body: string, cta: string, onContinue: () => void): void {
     this.destroy()
     this.clear(this.body)
     this.clear(this.footer)
     this.root.classList.remove('arkyc-handoff')
+    this.appendArt(step)
     this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: title }))
     this.body.appendChild(this.el('p', { class: 'arkyc-p', text: body }))
     this.footer.appendChild(this.button(cta, onContinue))

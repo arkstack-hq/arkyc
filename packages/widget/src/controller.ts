@@ -279,7 +279,7 @@ export class WidgetController {
     // the same step with the instruction acknowledged.
     const instruction = STEP_INSTRUCTIONS[step]
     if (instruction && !this.instructionAcked) {
-      this.view.renderInstruction(instruction.title, instruction.body, instruction.cta ?? 'Continue', () => {
+      this.view.renderInstruction(step, instruction.title, instruction.body, instruction.cta ?? 'Continue', () => {
         this.instructionAcked = true
         void this.run(() => this.enter(step))
       })
