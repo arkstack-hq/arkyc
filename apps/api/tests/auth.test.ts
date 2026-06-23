@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { ApiKey } from '../src/app/models/ApiKey'
 import { Hash } from '@arkstack/common'
+import { TwoFactor } from '@arkstack/auth'
 import { PermissionSync } from '@arkyc/permissions'
 import { Project } from '../src/app/models/Project'
 import { Role } from '../src/app/models/Role'
@@ -213,6 +214,174 @@ describe('client-token surface', () => {
     expect(ok.body.data.id).toBe(fx.sessionId)
 
     await request(app).get('/api/v1/client/session').set('X-Client-Token', 'nope').expect(401)
+  })
+})
+
+describe('two-factor authentication', () => {
+  // Fresh accounts so enabling 2FA never interferes with the shared fixtures.
+  const totp = { email: '', token: '', secret: '', recoveryCodes: [] as string[] }
+  const mail = { email: '', token: '' }
+
+  /** Register a user via the API and return its issued session token. */
+  async function register(email: string): Promise<string> {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ firstname: 'Two', lastname: 'Factor', email, password: PASSWORD })
+
+    return res.body.token
+  }
+
+  /** Enroll and enable an authenticator factor, returning its secret + recovery codes. */
+  async function enrollAuthenticator(email: string, token: string) {
+    const setup = await request(app)
+      .post('/api/v1/auth/2fa/setup')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ method: 'authenticator' })
+    const user = await User.where({ email }).firstOrFail()
+    const code = TwoFactor.getTotp(user, setup.body.two_factor.secret).generate()
+    const confirm = await request(app)
+      .post('/api/v1/auth/2fa/confirm')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ method: 'authenticator', code })
+
+    return {
+      secret: setup.body.two_factor.secret as string,
+      recoveryCodes: confirm.body.two_factor.recovery_codes as string[],
+    }
+  }
+
+  beforeAll(async () => {
+    const s = Date.now()
+    totp.email = `totp-${s}@test.dev`
+    mail.email = `mfa-mail-${s}@test.dev`
+    totp.token = await register(totp.email)
+    mail.token = await register(mail.email)
+  })
+
+  it('reports 2FA disabled for a fresh account', async () => {
+    const res = await request(app).get('/api/v1/auth/2fa').set('Authorization', `Bearer ${totp.token}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.enabled).toBe(false)
+    expect(res.body.data.method).toBeNull()
+  })
+
+  it('enrolls and enables an authenticator (TOTP) factor with recovery codes', async () => {
+    const setup = await request(app)
+      .post('/api/v1/auth/2fa/setup')
+      .set('Authorization', `Bearer ${totp.token}`)
+      .send({ method: 'authenticator' })
+    expect(setup.status).toBe(201)
+    expect(setup.body.two_factor.secret).toBeTruthy()
+    expect(setup.body.two_factor.otpauth_url).toContain('otpauth://')
+    totp.secret = setup.body.two_factor.secret
+
+    const user = await User.where({ email: totp.email }).firstOrFail()
+    const code = TwoFactor.getTotp(user, totp.secret).generate()
+
+    const confirm = await request(app)
+      .post('/api/v1/auth/2fa/confirm')
+      .set('Authorization', `Bearer ${totp.token}`)
+      .send({ method: 'authenticator', code })
+    expect(confirm.status).toBe(201)
+    expect(confirm.body.two_factor.recovery_codes.length).toBeGreaterThan(0)
+    totp.recoveryCodes = confirm.body.two_factor.recovery_codes
+
+    const status = await request(app).get('/api/v1/auth/2fa').set('Authorization', `Bearer ${totp.token}`)
+    expect(status.body.data.enabled).toBe(true)
+    expect(status.body.data.method).toBe('authenticator')
+  })
+
+  it('challenges login for a TOTP user and issues a token only after a valid code', async () => {
+    const login = await request(app).post('/api/v1/auth/login').send({ email: totp.email, password: PASSWORD })
+    expect(login.status).toBe(200)
+    expect(login.body.token).toBeFalsy()
+    expect(login.body.two_factor.required).toBe(true)
+    expect(login.body.two_factor.method).toBe('authenticator')
+    const ticket = login.body.two_factor.ticket
+    expect(ticket).toBeTruthy()
+
+    const bad = await request(app).post('/api/v1/auth/login/2fa').send({ ticket, code: '000000' })
+    expect(bad.status).toBe(422)
+
+    const user = await User.where({ email: totp.email }).firstOrFail()
+    const code = TwoFactor.getTotp(user, totp.secret).generate()
+    const ok = await request(app).post('/api/v1/auth/login/2fa').send({ ticket, code })
+    expect(ok.status).toBe(200)
+    expect(ok.body.token).toBeTruthy()
+  })
+
+  it('accepts a one-time recovery code and refuses to reuse it', async () => {
+    // A dedicated user: completing a login twice for one account collides on the
+    // single device session, so the reuse attempt below is rejected before a token issues.
+    const email = `recovery-${Date.now()}@test.dev`
+    const token = await register(email)
+    const { recoveryCodes } = await enrollAuthenticator(email, token)
+    const recovery = recoveryCodes[0]
+
+    const login = await request(app).post('/api/v1/auth/login').send({ email, password: PASSWORD })
+    const ok = await request(app)
+      .post('/api/v1/auth/login/2fa')
+      .send({ ticket: login.body.two_factor.ticket, code: recovery })
+    expect(ok.status).toBe(200)
+    expect(ok.body.token).toBeTruthy()
+
+    const login2 = await request(app).post('/api/v1/auth/login').send({ email, password: PASSWORD })
+    const reuse = await request(app)
+      .post('/api/v1/auth/login/2fa')
+      .send({ ticket: login2.body.two_factor.ticket, code: recovery })
+    expect(reuse.status).toBe(422)
+  })
+
+  it('enrolls, challenges, resends, and completes an email factor', async () => {
+    const setup = await request(app)
+      .post('/api/v1/auth/2fa/setup')
+      .set('Authorization', `Bearer ${mail.token}`)
+      .send({ method: 'email' })
+    expect(setup.status).toBe(201)
+    expect(setup.body.two_factor.method).toBe('email')
+
+    const setupCode = Hash.otp(6, `${mail.email}:2fa:setup`, 600).generate()
+    const confirm = await request(app)
+      .post('/api/v1/auth/2fa/confirm')
+      .set('Authorization', `Bearer ${mail.token}`)
+      .send({ method: 'email', code: setupCode })
+    expect(confirm.status).toBe(201)
+
+    const login = await request(app).post('/api/v1/auth/login').send({ email: mail.email, password: PASSWORD })
+    expect(login.body.two_factor.method).toBe('email')
+    const ticket = login.body.two_factor.ticket
+
+    const resend = await request(app).post('/api/v1/auth/login/2fa/resend').send({ ticket })
+    expect(resend.status).toBe(200)
+
+    const loginCode = Hash.otp(6, `${mail.email}:2fa:login`, 600).generate()
+    const ok = await request(app).post('/api/v1/auth/login/2fa').send({ ticket, code: loginCode })
+    expect(ok.status).toBe(200)
+    expect(ok.body.token).toBeTruthy()
+    // Re-capture the active session token; the completed login may rotate it.
+    mail.token = ok.body.token
+  })
+
+  it('rejects a stale or invalid challenge ticket', async () => {
+    const res = await request(app).post('/api/v1/auth/login/2fa').send({ ticket: 'not-a-real-ticket', code: '123456' })
+    expect(res.status).toBe(422)
+  })
+
+  it('disables 2FA only when the password is re-confirmed', async () => {
+    const wrong = await request(app)
+      .delete('/api/v1/auth/2fa')
+      .set('Authorization', `Bearer ${mail.token}`)
+      .send({ password: 'wrong-password' })
+    expect(wrong.status).toBe(422)
+
+    const ok = await request(app)
+      .delete('/api/v1/auth/2fa')
+      .set('Authorization', `Bearer ${mail.token}`)
+      .send({ password: PASSWORD })
+    expect(ok.status).toBe(200)
+
+    const status = await request(app).get('/api/v1/auth/2fa').set('Authorization', `Bearer ${mail.token}`)
+    expect(status.body.data.enabled).toBe(false)
   })
 })
 

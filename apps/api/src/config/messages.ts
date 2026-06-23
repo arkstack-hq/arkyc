@@ -52,6 +52,34 @@ const config = () => {
       },
     },
     two_factor: {
+      email: {
+        setup: {
+          subject: 'Confirm two-factor authentication on {app_name}',
+          template: [
+            'Hello <b>{name}</b>,',
+            '',
+            'Use this code to finish turning on two-factor authentication for your {app_name} account:',
+            '<h3>{code}</h3>',
+            'This code expires in 10 minutes. If you did not request this, you can ignore this email.',
+            '',
+            'Thank you,',
+            'The {app_name} Team',
+          ].join('<br />\n'),
+        },
+        login: {
+          subject: 'Your {app_name} sign-in code',
+          template: [
+            'Hello <b>{name}</b>,',
+            '',
+            'Your {app_name} sign-in verification code is:',
+            '<h3>{code}</h3>',
+            'This code expires in 10 minutes. If this was not you, please reset your password immediately.',
+            '',
+            'Thank you,',
+            'The {app_name} Team',
+          ].join('<br />\n'),
+        },
+      },
       sms: {
         setup: {
           template: 'Your {app_name} two-factor setup code is {code}. It expires in 10 minutes.',

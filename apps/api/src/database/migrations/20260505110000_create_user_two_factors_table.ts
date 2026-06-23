@@ -12,7 +12,9 @@ export default class CreateUserTwoFactorsTableMigration extends Migration {
         .onDelete('cascade')
         .as('user')
         .inverseAlias('twoFactor')
-      table.enum('method', ['authenticator', 'sms']).nullable().enumName('TwoFactorMethod')
+      // `sms` is retained from the framework default so this stays an additive
+      // enum change (Prisma will not auto-apply a value removal); Arkyc uses `email`.
+      table.enum('method', ['authenticator', 'sms', 'email']).nullable().enumName('TwoFactorMethod')
       table.string('secretCiphertext').nullable().map('secret_ciphertext')
       table.string('smsCodeHash').nullable().map('sms_code_hash')
       table.date('smsCodeExpiresAt').nullable().map('sms_code_expires_at')
