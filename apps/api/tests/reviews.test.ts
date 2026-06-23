@@ -100,11 +100,13 @@ describe('review queue + actions', () => {
     expect(retry.body.data.status).toBe('started')
   })
 
-  it('rejects acting on a session that is not awaiting review', async () => {
+  it('lets a manager override an already-finalized decision', async () => {
     const id = await reviewableSession()
     await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/approve`).send({})
-    const again = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/approve`).send({})
-    expect(again.status).toBe(409)
+    // Full override: a finalized (approved) session can be re-decided to rejected.
+    const override = await authed('post', `/tenants/${fx.tenantId}/sessions/${id}/reject`).send({ reason: 'override' })
+    expect(override.status).toBe(200)
+    expect(override.body.data.final_decision).toBe('rejected')
   })
 
   it('assigns a session to a reviewer', async () => {

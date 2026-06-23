@@ -95,7 +95,9 @@ export class ReviewService {
     action: string,
     reason?: string,
   ): Promise<VerificationSession> {
-    this.assertAwaitingReview(session)
+    // A manager can override any session's decision — including a pending or an
+    // already-finalized one — so no awaiting-review guard here. The transition is
+    // forced past the automated state machine.
     const previousStatus = session.status
 
     session.finalDecision = decision
@@ -103,7 +105,7 @@ export class ReviewService {
     session.reviewedAt = new Date()
     session.reviewedBy = actor.actorId
     session.completedAt = new Date()
-    await transitionTo(session, decision)
+    await transitionTo(session, decision, { force: true })
 
     await this.recordReview(session, actor, previousStatus, decision, reason ?? null)
     await this.emit(session, actor, action, { reason: reason ?? null })

@@ -11,9 +11,16 @@ import { sessionChannels } from './realtime-channels'
  * The single choke point for every status transition, so webhooks + realtime
  * fire consistently.
  */
-export async function transitionTo(session: VerificationSession, to: VerificationStatus): Promise<void> {
+export async function transitionTo(
+  session: VerificationSession,
+  to: VerificationStatus,
+  opts: { force?: boolean } = {},
+): Promise<void> {
   const previous = session.status
-  session.status = StatusMachine.assert(session.status, to)
+  // `force` is for human overrides (a manager re-deciding a session): it bypasses
+  // the automated state machine so any status — including a finalized one — can be
+  // overridden. Webhooks + realtime still fire so integrators see the change.
+  session.status = opts.force ? to : StatusMachine.assert(session.status, to)
   await session.save()
   await webhookService.onStatusChange(session, to)
 
