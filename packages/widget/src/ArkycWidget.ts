@@ -34,14 +34,16 @@ export class ArkycWidget {
     overlay.setAttribute('data-arkyc-widget', '')
     // Fullscreen: edge-to-edge with no backdrop gap. Otherwise a centred modal
     // over a dimmed backdrop.
+    // Both modes use a dimmed, centred backdrop. Fullscreen fills the viewport on
+    // mobile but renders as a large centred dialog on desktop (see the card CSS);
+    // the dimmed backdrop is what's visible around that dialog.
     overlay.style.cssText = options.fullscreen
-      ? 'position:fixed;inset:0;z-index:2147483647;background:var(--arkyc-bg,#fff);display:flex;align-items:stretch;justify-content:center;padding:0;'
+      ? 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;padding:0;'
       : 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;'
 
     const controller = buildController(options, () => overlay.remove())
     if (options.fullscreen) controller.element.classList.add('arkyc-fullscreen')
     overlay.appendChild(controller.element)
-
     ;(doc.body ?? doc.documentElement).appendChild(overlay)
     controller.start()
 

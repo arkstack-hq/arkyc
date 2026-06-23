@@ -75,9 +75,12 @@ export interface DocumentTuning {
 
 export const DEFAULT_DOCUMENT_TUNING: DocumentTuning = {
   sampleWidth: 320,
-  minFill: 0.28,
+  // Edge-projection underestimates the document rectangle when the strongest
+  // borders sit inside the card, so a demanding minFill reads as a constant
+  // "move closer". Keep it modest; framing is still gated by maxFill + margins.
+  minFill: 0.18,
   maxFill: 0.97,
-  centerTol: 0.2,
+  centerTol: 0.22,
   minEdgeStrength: 0.1,
   minSharpness: 8,
   borderMargin: 0.012,
@@ -245,7 +248,7 @@ class CanvasDocumentAnalyzer implements DocumentAnalyzer {
   private canvas: HTMLCanvasElement | null = null
   private ctx: CanvasRenderingContext2D | null = null
 
-  constructor(private readonly tuning: DocumentTuning) { }
+  constructor(private readonly tuning: DocumentTuning) {}
 
   ready(): Promise<boolean> {
     try {

@@ -78,6 +78,12 @@ export class Theme {
 .arkyc-root *{box-sizing:border-box}
 .arkyc-card{background:var(--arkyc-bg);border-radius:var(--arkyc-radius);width:100%;max-width:480px;height:100%;max-height:720px;display:flex;flex-direction:column;overflow:hidden}
 .arkyc-root.arkyc-fullscreen .arkyc-card{max-width:none;max-height:none;height:100%;border-radius:0}
+/* On a wider (desktop) viewport, "fullscreen" is a large centred dialog rather
+   than edge-to-edge — except in handoff mode, where the QR stays prominent. */
+@media (min-width:700px){
+  .arkyc-root.arkyc-fullscreen .arkyc-card{max-width:560px;width:100%;height:auto;min-height:min(620px,92vh);max-height:92vh;border-radius:var(--arkyc-radius)}
+  .arkyc-root.arkyc-fullscreen.arkyc-handoff .arkyc-card{max-width:none;height:100%;min-height:0;max-height:none;border-radius:0}
+}
 .arkyc-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--arkyc-border)}
 .arkyc-logo{height:24px;width:auto}
 .arkyc-title{font-size:15px;font-weight:600;margin:0}

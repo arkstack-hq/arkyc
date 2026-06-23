@@ -242,6 +242,7 @@ export class WidgetView {
     this.destroy()
     this.clear(this.body)
     this.clear(this.footer)
+    this.root.classList.remove('arkyc-handoff')
 
     switch (state.step) {
       case 'welcome':
@@ -290,6 +291,7 @@ export class WidgetView {
     this.destroy()
     this.clear(this.body)
     this.clear(this.footer)
+    this.root.classList.remove('arkyc-handoff')
     this.renderProcessing(label)
   }
 
@@ -302,6 +304,8 @@ export class WidgetView {
     this.destroy()
     this.clear(this.body)
     this.clear(this.footer)
+    // Keep the QR prominent (edge-to-edge in fullscreen) rather than a small dialog.
+    this.root.classList.add('arkyc-handoff')
     this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Continue on your phone' }))
     this.body.appendChild(
       this.el('p', { class: 'arkyc-p', text: 'Scan this code with your phone camera to finish verifying there.' }),
@@ -484,14 +488,25 @@ export class WidgetView {
         return
       }
       let goodStreak = 0
+      // Smooth the noisiest geometry signals (fill/edge strength) across frames so a
+      // single jittery edge-projection read doesn't flip the hint to "move closer"
+      // and reset the streak. Exponential moving average; null until the first frame.
+      let fillEma: number | null = null
+      let edgeEma: number | null = null
+      const ema = (prev: number | null, next: number) => (prev == null ? next : prev * 0.6 + next * 0.4)
       const timer = setInterval(() => {
         const sample = analyzer.analyze(video)
         if (!sample) return
-        const { ready, hint: message } = documentGuidance(sample, this.docTuning)
+        fillEma = ema(fillEma, sample.fill)
+        edgeEma = ema(edgeEma, sample.edgeStrength)
+        const smoothed = { ...sample, fill: fillEma, edgeStrength: edgeEma }
+        const { ready, hint: message } = documentGuidance(smoothed, this.docTuning)
         hint.textContent = message
         doc.setFrame(sample.present ? sample.rect : null)
         doc.setQuality(ready ? 'good' : sample.present ? 'wait' : 'bad')
-        goodStreak = ready ? goodStreak + 1 : 0
+        // Soft reset: a single off frame nudges the streak down rather than zeroing
+        // it, so transient detector noise doesn't perpetually restart the hold.
+        goodStreak = ready ? goodStreak + 1 : Math.max(0, goodStreak - 1)
         // Auto-capture once a framed, focused document has held for ~1.25s.
         if (goodStreak >= this.docTuning.hold) {
           clearInterval(timer)

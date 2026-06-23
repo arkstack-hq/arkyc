@@ -54,8 +54,15 @@ class FakeEl {
   get classList() {
     return {
       add: (cls: string) => {
-        this.className += (this.className ? ' ' : '') + cls
+        if (!this.className.split(' ').includes(cls)) this.className += (this.className ? ' ' : '') + cls
       },
+      remove: (cls: string) => {
+        this.className = this.className
+          .split(' ')
+          .filter((c) => c && c !== cls)
+          .join(' ')
+      },
+      contains: (cls: string) => this.className.split(' ').includes(cls),
     }
   }
 
