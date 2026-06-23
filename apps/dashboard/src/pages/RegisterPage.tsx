@@ -25,7 +25,8 @@ export default function RegisterPage() {
 
   onSuccess(({ data }) => {
     setUser(data.user)
-    navigate('/')
+    // New accounts land on email verification before entering the app.
+    navigate('/verify-email')
   })
 
   function onSubmit(e: FormEvent) {

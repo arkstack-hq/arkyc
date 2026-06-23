@@ -47,4 +47,29 @@ export class Auth {
       meta: { authRole: 'logout' },
     })
   }
+
+  /** Request a password-reset code/link for an email (no auth). */
+  static forgotPassword(input: { email: string }) {
+    return alova.Post('/v1/auth/forgot', input, { name: 'auth:forgot' })
+  }
+
+  /** Check that a reset token is still valid (no auth). */
+  static verifyResetToken(token: string) {
+    return alova.Get(`/v1/auth/forgot/${encodeURIComponent(token)}`, { name: 'auth:forgot:verify' })
+  }
+
+  /** Consume a reset token and set a new password (no auth). */
+  static resetPassword(token: string, input: { password: string }) {
+    return alova.Put(`/v1/auth/forgot/${encodeURIComponent(token)}`, input, { name: 'auth:forgot:reset' })
+  }
+
+  /** Email the signed-in user a verification code. */
+  static sendEmailVerification() {
+    return alova.Post('/v1/auth/verify', { object: 'email' }, { name: 'auth:verify:send' })
+  }
+
+  /** Confirm an emailed verification code, marking the email verified. */
+  static confirmEmailVerification(input: { code: string }) {
+    return alova.Put('/v1/auth/verify/email', input, { name: 'auth:verify:confirm' })
+  }
 }

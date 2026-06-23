@@ -6,6 +6,7 @@ import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
 import AdminOrganizationsPage from '@/pages/admin/AdminOrganizationsPage'
 import AdminUsersPage from '@/pages/admin/AdminUsersPage'
 import AuditLogsPage from '@/pages/AuditLogsPage'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import { Loading } from '@/components/States'
 import LoginPage from '@/pages/LoginPage'
 import MemberDetailPage from '@/pages/members/MemberDetailPage'
@@ -21,6 +22,7 @@ import ProjectWebhooksPage from '@/pages/projects/ProjectWebhooksPage'
 import ProjectsPage from '@/pages/projects/ProjectsPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import RegisterPage from '@/pages/RegisterPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import ReviewsPage from '@/pages/ReviewsPage'
 import RoleDetailPage from '@/pages/settings/RoleDetailPage'
 import RolesPage from '@/pages/settings/RolesPage'
@@ -29,6 +31,7 @@ import SessionsPage from '@/pages/sessions/SessionsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
 import { OrganizationLayout } from '@/components/Layout'
 import { Organizations } from '@/lib/api'
+import VerifyEmailPage from '@/pages/VerifyEmailPage'
 import VerifyPage from '@/pages/VerifyPage'
 import { useAuth } from '@/contexts/auth-context'
 import { useRequest } from 'alova/client'
@@ -48,6 +51,12 @@ export default function App() {
     <Routes>
       <Route path="/login" element={user && !loading ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/register" element={user && !loading ? <Navigate to="/" replace /> : <RegisterPage />} />
+      <Route
+        path="/forgot-password"
+        element={user && !loading ? <Navigate to="/" replace /> : <ForgotPasswordPage />}
+      />
+      <Route path="/reset-password" element={user && !loading ? <Navigate to="/" replace /> : <ResetPasswordPage />} />
+      <Route path="/verify-email" element={user ? <VerifyEmailPage /> : <Navigate to="/login" replace />} />
       <Route path="/verify" element={<VerifyPage />} />
 
       <Route

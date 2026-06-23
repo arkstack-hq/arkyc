@@ -7,7 +7,7 @@ import { Auth, clearAuthToken, hasAuthToken } from '@/lib/api'
 import { setUnauthorizedHandler } from '@/lib/requests/auth-session'
 
 /** Routes that are reachable while unauthenticated (no 401 redirect from here). */
-const PUBLIC_PATHS = ['/login', '/register', '/verify']
+const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/verify']
 
 interface AuthState {
   user: User | null
