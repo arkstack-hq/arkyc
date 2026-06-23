@@ -436,10 +436,6 @@ importers:
       qrcode-generator:
         specifier: ^1.4.4
         version: 1.5.2
-    devDependencies:
-      '@types/qrcode-generator':
-        specifier: ^1.0.6
-        version: 1.0.6
 
 packages:
 
@@ -3350,10 +3346,6 @@ packages:
 
   '@types/pluralize@0.0.33':
     resolution: {integrity: sha512-JOqsl+ZoCpP4e8TDke9W79FDcSgPAR0l6pixx2JHkhnRjvShyYiAYw2LVsnA7K08Y6DeOnaU6ujmENO4os/cYg==}
-
-  '@types/qrcode-generator@1.0.6':
-    resolution: {integrity: sha512-XasuPjhHBC4hyOJ/pHaUNTj+tNxA1SyZpXaS/FOUxEVX03D1gFM8UmMKSIs+pPHLAmRZpU6j9KYxvo+lfsvhKw==}
-    deprecated: This is a stub types definition for qrcode-generator (https://github.com/kazuhikoarase/qrcode-generator). qrcode-generator provides its own type definitions, so you don't need @types/qrcode-generator installed!
 
   '@types/qs@6.15.1':
     resolution: {integrity: sha512-GZHUBZR9hckSUhrxmp1nG6NwdpM9fCunJwyThLW1X3AyHgd9IlHb6VANpQQqDr2o/qQp6McZ3y/IA2rVzKzSbw==}
@@ -9591,10 +9583,6 @@ snapshots:
       pg-types: 2.2.0
 
   '@types/pluralize@0.0.33': {}
-
-  '@types/qrcode-generator@1.0.6':
-    dependencies:
-      qrcode-generator: 1.5.2
 
   '@types/qs@6.15.1': {}
 

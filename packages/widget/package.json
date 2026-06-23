@@ -27,8 +27,5 @@
   "dependencies": {
     "@arkyc/types": "workspace:*",
     "qrcode-generator": "^1.4.4"
-  },
-  "devDependencies": {
-    "@types/qrcode-generator": "^1.0.6"
   }
 }
