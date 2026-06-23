@@ -103,6 +103,11 @@ export class Auth {
     return alova.Put(`/v1/auth/forgot/${encodeURIComponent(token)}`, input, { name: 'auth:forgot:reset' })
   }
 
+  /** Change the signed-in user's password after re-confirming the current one. */
+  static changePassword(input: { current_password: string; password: string }) {
+    return alova.Put('/v1/auth/password', input, { name: 'auth:password:change' })
+  }
+
   /** Email the signed-in user a verification code. */
   static sendEmailVerification() {
     return alova.Post('/v1/auth/verify', { object: 'email' }, { name: 'auth:verify:send' })

@@ -30,6 +30,9 @@ Router.group('/v1/auth', () => {
   Router.post('/forgot', [NewPasswordController, 'create'])
   Router.get('/forgot/:token', [NewPasswordController, 'show'])
   Router.put('/forgot/:token', [NewPasswordController, 'update'])
+
+  // Change password (authenticated)
+  Router.put('/password', [NewPasswordController, 'change'], [auth])
 })
 
 export default () => {}

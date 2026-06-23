@@ -1,10 +1,12 @@
-import { Hash } from '@arkstack/common'
 import { ValidationException, Validator } from 'kanun'
 
 import { BaseController } from '@controllers/BaseController'
 import EmptyResource from '@app/http/resources/EmptyResource'
+import { Hash } from '@arkstack/common'
+import { HttpContext } from 'clear-router/types/express'
 import { PasswordReset } from '@app/models/PasswordReset'
 import { User } from '@app/models/User'
+import { auth } from 'src/core/auth-instance'
 import { sendMail } from '@app/support/mail'
 
 const RESET_TTL_SECONDS = 60 * 15
@@ -24,7 +26,7 @@ export default class NewPasswordController extends BaseController {
     const pr = await PasswordReset.create({ email: user.email, phone: null, token })
 
     const msg = config('messages.password_reset.email')
-    sendMail(user.email, msg.template, msg.subject, {
+    await sendMail(user.email, msg.template, msg.subject, {
       code: token,
       name: user.name,
       reset_link: pr.link(),
@@ -108,5 +110,38 @@ export default class NewPasswordController extends BaseController {
       })
       .response()
       .setStatusCode(202)
+  }
+
+  /**
+   * Change the signed-in user's password after re-confirming the current one.
+   *
+   * @param   ctx  The HTTP context (`req.user`, `current_password`, `password`).
+   * @returns      An EmptyResource confirming the change (HTTP 200).
+   */
+  async change({ req }: HttpContext) {
+    const data = await this.validate({
+      current_password: ['required', 'string'],
+      password: ['required', 'string', 'min:8'],
+    })
+    const user = req.user!
+
+    if (!(await auth.verify(user.email, data.current_password))) {
+      throw ValidationException.withMessages({ current_password: ['That password is incorrect.'] })
+    }
+
+    if (await Hash.verify(data.password, user.password)) {
+      throw ValidationException.withMessages({
+        password: ['Your new password must be different from the current one.'],
+      })
+    }
+
+    user.password = await Hash.make(data.password)
+    await user.save()
+
+    return new EmptyResource({}).additional({
+      status: 'success',
+      message: 'Your password has been changed.',
+      code: 200,
+    })
   }
 }

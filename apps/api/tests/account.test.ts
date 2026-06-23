@@ -85,3 +85,51 @@ describe('password reset', () => {
     expect(res.status).toBe(422)
   })
 })
+
+describe('change password', () => {
+  it('rejects a wrong current password', async () => {
+    const email = `chpw-${Date.now()}@test.dev`
+    const token = await registerUser(email)
+
+    const res = await request(app)
+      .put('/api/v1/auth/password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ current_password: 'not-my-password', password: 'brandnew123' })
+    expect(res.status).toBe(422)
+  })
+
+  it('rejects reusing the current password', async () => {
+    const email = `chpw-same-${Date.now()}@test.dev`
+    const token = await registerUser(email)
+
+    const res = await request(app)
+      .put('/api/v1/auth/password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ current_password: 'secret123', password: 'secret123' })
+    expect(res.status).toBe(422)
+  })
+
+  it('changes the password when the current one is correct', async () => {
+    const email = `chpw-ok-${Date.now()}@test.dev`
+    const token = await registerUser(email)
+
+    const res = await request(app)
+      .put('/api/v1/auth/password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ current_password: 'secret123', password: 'brandnew123' })
+    expect(res.status).toBe(200)
+
+    // Assert the stored hash directly (the post-change login is covered by auth flows
+    // and is subject to the documented sendMail/DB read race).
+    const user = await User.where({ email }).firstOrFail()
+    expect(await Hash.verify('brandnew123', user.password)).toBe(true)
+    expect(await Hash.verify('secret123', user.password)).toBe(false)
+  })
+
+  it('requires authentication', async () => {
+    await request(app)
+      .put('/api/v1/auth/password')
+      .send({ current_password: 'secret123', password: 'brandnew123' })
+      .expect(401)
+  })
+})

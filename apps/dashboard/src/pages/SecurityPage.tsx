@@ -56,16 +56,138 @@ export default function SecurityPage() {
 
       {loading ? (
         <Loading />
-      ) : recoveryCodes ? (
-        <RecoveryCodes codes={recoveryCodes} onDone={reset} />
-      ) : enroll ? (
-        <ConfirmEnrollment enroll={enroll} onConfirmed={setRecoveryCodes} onCancel={() => setEnroll(null)} />
-      ) : status.enabled ? (
-        <EnabledCard status={status} onDisabled={reset} />
       ) : (
-        <ChooseMethod onStarted={setEnroll} />
+        <div className="flex flex-col gap-6">
+          {recoveryCodes ? (
+            <RecoveryCodes codes={recoveryCodes} onDone={reset} />
+          ) : enroll ? (
+            <ConfirmEnrollment enroll={enroll} onConfirmed={setRecoveryCodes} onCancel={() => setEnroll(null)} />
+          ) : status.enabled ? (
+            <EnabledCard status={status} onDisabled={reset} />
+          ) : (
+            <ChooseMethod onStarted={setEnroll} />
+          )}
+
+          {/* Keep the focus on enrollment while it's in progress. */}
+          {!enroll && !recoveryCodes ? <ChangePasswordCard /> : null}
+        </div>
       )}
     </div>
+  )
+}
+
+/** Change the account password after confirming the current one. */
+function ChangePasswordCard() {
+  const [done, setDone] = useState(false)
+  const [mismatch, setMismatch] = useState(false)
+
+  const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
+    (formData) => Auth.changePassword({ current_password: formData.current_password, password: formData.password }),
+    { initialForm: { current_password: '', password: '', confirm: '' } },
+  )
+
+  onSuccess(() => {
+    setDone(true)
+    updateForm({ current_password: '', password: '', confirm: '' })
+  })
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (form.password !== form.confirm) {
+      setMismatch(true)
+
+      return
+    }
+    setMismatch(false)
+    setDone(false)
+    void send()
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Change password</CardTitle>
+        <CardDescription>Use a strong password you don&apos;t use anywhere else.</CardDescription>
+      </CardHeader>
+      <form onSubmit={onSubmit}>
+        <CardContent className="flex flex-col gap-4">
+          <Field>
+            <FieldLabel htmlFor="current_password">Current password</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <Lock />
+              </InputGroupAddon>
+              <InputGroupInput
+                id="current_password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={form.current_password}
+                aria-invalid={!!error?.flat?.current_password}
+                onChange={(e) => {
+                  updateForm({ current_password: e.target.value })
+                  if (error?.errors) error.delete('current_password', update)
+                }}
+              />
+            </InputGroup>
+            <FieldError errors={error?.list?.current_password} />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="new_password">New password</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <Lock />
+              </InputGroupAddon>
+              <InputGroupInput
+                id="new_password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={form.password}
+                aria-invalid={!!error?.flat?.password}
+                onChange={(e) => {
+                  updateForm({ password: e.target.value })
+                  if (error?.errors) error.delete('password', update)
+                }}
+              />
+            </InputGroup>
+            <FieldError errors={error?.list?.password} />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="confirm_password">Confirm new password</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <Lock />
+              </InputGroupAddon>
+              <InputGroupInput
+                id="confirm_password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={form.confirm}
+                aria-invalid={mismatch}
+                onChange={(e) => {
+                  updateForm({ confirm: e.target.value })
+                  setMismatch(false)
+                }}
+              />
+            </InputGroup>
+            {mismatch ? <FieldError>Passwords do not match.</FieldError> : null}
+          </Field>
+
+          {error && !error.errors ? <FieldError>{errorMessage(error)}</FieldError> : null}
+          {done ? <p className="text-sm text-success">Your password has been changed.</p> : null}
+        </CardContent>
+        <CardFooter>
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Updating…' : 'Update password'}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   )
 }
 
