@@ -4,10 +4,15 @@
   --border: #233044;
   --fg: #e6edf6;
   --muted: #8a99ad;
-  --primary: #4f8cff;
+  --primary: #e2a93b;
   --ok: #3fb950;
   --error: #f85149;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    sans-serif;
 }
 
 * {

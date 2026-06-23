@@ -40,7 +40,7 @@ export class Theme {
   constructor(branding?: ProjectBranding | null) {
     this.mode = branding?.theme === 'dark' ? 'dark' : 'light'
     const palette = this.mode === 'dark' ? DARK : LIGHT
-    this.primaryColor = branding?.primary_color ?? '#4f46e5'
+    this.primaryColor = branding?.primary_color ?? '#b8860b'
     this.borderRadius = branding?.border_radius ?? 12
     this.logoUrl = branding?.logo_url ?? null
     this.name = branding?.name ?? null

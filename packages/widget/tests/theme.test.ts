@@ -5,7 +5,7 @@ describe('Theme', () => {
   it('applies sensible light-mode defaults', () => {
     const theme = new Theme()
     expect(theme.mode).toBe('light')
-    expect(theme.primaryColor).toBe('#4f46e5')
+    expect(theme.primaryColor).toBe('#b8860b')
     expect(theme.borderRadius).toBe(12)
     expect(theme.logoUrl).toBeNull()
     expect(theme.background).toBe('#ffffff')
