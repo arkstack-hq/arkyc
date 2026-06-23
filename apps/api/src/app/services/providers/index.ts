@@ -29,6 +29,8 @@ export const ocrDriver = OcrDriverFactory.create({
   driver: env('OCR_DRIVER', 'mock') as OcrDriverName,
   endpoint: env('OCR_ENDPOINT'),
   apiKey: env('OCR_API_KEY'),
+  // Tesseract recognition language(s), e.g. `eng` or `eng+fra`.
+  language: env('OCR_LANGUAGE', 'eng'),
 })
 
 export const livenessDriver = LivenessDriverFactory.create({

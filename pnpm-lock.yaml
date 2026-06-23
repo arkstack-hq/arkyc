@@ -341,7 +341,7 @@ importers:
     devDependencies:
       vitepress:
         specifier: 2.0.0-alpha.17
-        version: 2.0.0-alpha.17(@types/node@26.0.0)(axios@1.18.0)(jiti@2.7.0)(lightningcss@1.32.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@6.0.3)
+        version: 2.0.0-alpha.17(@types/node@26.0.0)(axios@1.18.0)(idb-keyval@6.2.5)(jiti@2.7.0)(lightningcss@1.32.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@6.0.3)
 
   packages/auth:
     dependencies:
@@ -376,6 +376,10 @@ importers:
       '@arkyc/types':
         specifier: workspace:*
         version: link:../types
+    optionalDependencies:
+      tesseract.js:
+        specifier: ^5.1.1
+        version: 5.1.1
 
   packages/permissions:
     dependencies:
@@ -3607,6 +3611,9 @@ packages:
   birpc@4.0.0:
     resolution: {integrity: sha512-LShSxJP0KTmd101b6DRyGBj57LZxSDYWKitQNW/mi8GRMvZb078Uf9+pveax1DrVL89vm7mWe+TovdI/UDOuPw==}
 
+  bmp-js@0.1.0:
+    resolution: {integrity: sha512-vHdS19CnY3hwiNdkaqk93DvjVLfbEcI8mys4UjuWrlX1haDmroo8o4xCzh4wD6DGV6HxRCyauwhHRqMTfERtjw==}
+
   body-parser@2.3.0:
     resolution: {integrity: sha512-2cGmJupaNgg+QUwVLAucDuWuoMZ6EX9iHDRswZ5lsNYEmwPaRknMPCLZz07yTzVq/83p4o/wzbDZbBrTvGGTIw==}
     engines: {node: '>=18'}
@@ -4512,6 +4519,9 @@ packages:
     resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
     engines: {node: '>=0.10.0'}
 
+  idb-keyval@6.2.5:
+    resolution: {integrity: sha512-eKQkTnS0relYsSOYomx8ozIbmdsQCKUdhyuIaQ2DZgKuaxtyQQMkyD/wlnQN32pO3yutN1b1L8uqwcDKaJd7/Q==}
+
   idb@7.1.1:
     resolution: {integrity: sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ==}
 
@@ -4562,6 +4572,9 @@ packages:
   is-base64@1.1.0:
     resolution: {integrity: sha512-Nlhg7Z2dVC4/PTvIFkgVVNvPHSO2eR/Yd0XzhGiXCXEvWnptXlXa/clQ8aePPiMuxEGcWfzWbGw2Fe3d+Y3v1g==}
     hasBin: true
+
+  is-electron@2.2.2:
+    resolution: {integrity: sha512-FO/Rhvz5tuw4MCWkpMzHFKWD2LsfHzIb7i6MdPYZ/KW7AlxawyLkqdy+jPZP1WubqEADE3O4FUENlJHDfQASRg==}
 
   is-extglob@2.1.1:
     resolution: {integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==}
@@ -4614,6 +4627,9 @@ packages:
 
   is-unsafe@1.0.1:
     resolution: {integrity: sha512-CLK2+VdgERgD96EYm5lUQssZYlRg2tkZnbsxZoacmSiRxiFJ4Nk4SzjCl+Ur+v3kXIY9dTIdb3IH22y1mZ56LA==}
+
+  is-url@1.2.4:
+    resolution: {integrity: sha512-ITvGim8FhRiYe4IQ5uHSkj7pVaPDrCTkNd3yq3cV7iZAcJdHTUMPMEHcqSOy9xZ9qFenQCvi+2wjH9a1nXqHww==}
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
@@ -5191,6 +5207,10 @@ packages:
   oniguruma-to-es@4.3.6:
     resolution: {integrity: sha512-csuQ9x3Yr0cEIs/Zgx/OEt9iBw9vqIunAPQkx19R/fiMq2oGVTgcMqO/V3Ybqefr1TBvosI6jU539ksaBULJyA==}
 
+  opencollective-postinstall@2.0.3:
+    resolution: {integrity: sha512-8AV/sCtuzUeTo8gQK5qDZzARrulB3egtLzFgteqB2tcT4Mw7B8Kt7JcDHmltjz6FOAHsvTevk70gZEbhM4ZS9Q==}
+    hasBin: true
+
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
@@ -5572,6 +5592,9 @@ packages:
   reflect-metadata@0.2.2:
     resolution: {integrity: sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==}
 
+  regenerator-runtime@0.13.11:
+    resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
+
   regex-recursion@6.0.2:
     resolution: {integrity: sha512-0YCaSCq2VRIebiaUviZNs0cBz1kg5kVS2UKUfNIx8YVs1cN3AV7NTctO5FOKBA+UT2BPJIWZauYHPqJODG50cg==}
 
@@ -5868,6 +5891,12 @@ packages:
   teeny-request@9.0.0:
     resolution: {integrity: sha512-resvxdc6Mgb7YEThw6G6bExlXKkv6+YbuzGg9xuXxSgxJF7Ozs+o8Y9+2R3sArdWdW8nOokoQb1yrpFB0pQK2g==}
     engines: {node: '>=14'}
+
+  tesseract.js-core@5.1.1:
+    resolution: {integrity: sha512-KX3bYSU5iGcO1XJa+QGPbi+Zjo2qq6eBhNjSGR5E5q0JtzkoipJKOUQD7ph8kFyteCEfEQ0maWLu8MCXtvX5uQ==}
+
+  tesseract.js@5.1.1:
+    resolution: {integrity: sha512-lzVl/Ar3P3zhpUT31NjqeCo1f+D5+YfpZ5J62eo2S14QNVOmHBTtbchHm/YAbOOOzCegFnKf4B3Qih9LuldcYQ==}
 
   thread-stream@4.2.0:
     resolution: {integrity: sha512-e2zZ96wSChazBsbENf/Pcm/4swHt2cEKQ92rhUjkL9GCKiTDJIaTBenjE/m9DXi0QBmTMDkFDdOomUy20A1tDQ==}
@@ -6279,6 +6308,9 @@ packages:
     resolution: {integrity: sha512-o8qghlI8NZHU1lLPrpi2+Uq7abh4GGPpYANlalzWxyWteJOCsr/P+oPBA49TOLu5FTZO4d3F9MnWJfiMo4BkmA==}
     engines: {node: '>=18'}
 
+  wasm-feature-detect@1.8.0:
+    resolution: {integrity: sha512-zksaLKM2fVlnB5jQQDqKXXwYHLQUVH9es+5TOOHwGOVJOCeRBCiPjwSg+3tN2AdTCzjgli4jijCH290kXb/zWQ==}
+
   web-streams-polyfill@3.3.3:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
     engines: {node: '>= 8'}
@@ -6389,6 +6421,9 @@ packages:
   yoctocolors@2.1.2:
     resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
     engines: {node: '>=18'}
+
+  zlibjs@0.3.1:
+    resolution: {integrity: sha512-+J9RrgTKOmlxFSDHo0pI1xM6BLVUv+o0ZT9ANtCxGkjIVCCUdx9alUF8Gm+dGLKbkkkidWIHFDZHDMpfITt4+w==}
 
   zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
@@ -9580,7 +9615,7 @@ snapshots:
       '@vueuse/shared': 14.3.0(vue@3.5.38(typescript@6.0.3))
       vue: 3.5.38(typescript@6.0.3)
 
-  '@vueuse/integrations@14.3.0(axios@1.18.0)(focus-trap@8.2.1)(vue@3.5.38(typescript@6.0.3))':
+  '@vueuse/integrations@14.3.0(axios@1.18.0)(focus-trap@8.2.1)(idb-keyval@6.2.5)(vue@3.5.38(typescript@6.0.3))':
     dependencies:
       '@vueuse/core': 14.3.0(vue@3.5.38(typescript@6.0.3))
       '@vueuse/shared': 14.3.0(vue@3.5.38(typescript@6.0.3))
@@ -9588,6 +9623,7 @@ snapshots:
     optionalDependencies:
       axios: 1.18.0
       focus-trap: 8.2.1
+      idb-keyval: 6.2.5
 
   '@vueuse/metadata@14.3.0': {}
 
@@ -9753,6 +9789,9 @@ snapshots:
   birpc@2.9.0: {}
 
   birpc@4.0.0: {}
+
+  bmp-js@0.1.0:
+    optional: true
 
   body-parser@2.3.0:
     dependencies:
@@ -10773,6 +10812,9 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
+  idb-keyval@6.2.5:
+    optional: true
+
   idb@7.1.1: {}
 
   ignore@5.3.2: {}
@@ -10804,6 +10846,9 @@ snapshots:
 
   is-base64@1.1.0: {}
 
+  is-electron@2.2.2:
+    optional: true
+
   is-extglob@2.1.1: {}
 
   is-fullwidth-code-point@3.0.0: {}
@@ -10833,6 +10878,9 @@ snapshots:
   is-unicode-supported@2.1.0: {}
 
   is-unsafe@1.0.1: {}
+
+  is-url@1.2.4:
+    optional: true
 
   isexe@2.0.0: {}
 
@@ -11558,6 +11606,9 @@ snapshots:
       regex: 6.1.0
       regex-recursion: 6.0.2
 
+  opencollective-postinstall@2.0.3:
+    optional: true
+
   optionator@0.9.4:
     dependencies:
       deep-is: 0.1.4
@@ -11987,6 +12038,9 @@ snapshots:
 
   reflect-metadata@0.2.2: {}
 
+  regenerator-runtime@0.13.11:
+    optional: true
+
   regex-recursion@6.0.2:
     dependencies:
       regex-utilities: 2.3.0
@@ -12362,6 +12416,25 @@ snapshots:
       - encoding
       - supports-color
 
+  tesseract.js-core@5.1.1:
+    optional: true
+
+  tesseract.js@5.1.1:
+    dependencies:
+      bmp-js: 0.1.0
+      idb-keyval: 6.2.5
+      is-electron: 2.2.2
+      is-url: 1.2.4
+      node-fetch: 2.7.0
+      opencollective-postinstall: 2.0.3
+      regenerator-runtime: 0.13.11
+      tesseract.js-core: 5.1.1
+      wasm-feature-detect: 1.8.0
+      zlibjs: 0.3.1
+    transitivePeerDependencies:
+      - encoding
+    optional: true
+
   thread-stream@4.2.0:
     dependencies:
       real-require: 1.0.0
@@ -12652,7 +12725,7 @@ snapshots:
       jiti: 2.7.0
       tsx: 4.22.4
 
-  vitepress@2.0.0-alpha.17(@types/node@26.0.0)(axios@1.18.0)(jiti@2.7.0)(lightningcss@1.32.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@6.0.3):
+  vitepress@2.0.0-alpha.17(@types/node@26.0.0)(axios@1.18.0)(idb-keyval@6.2.5)(jiti@2.7.0)(lightningcss@1.32.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@6.0.3):
     dependencies:
       '@docsearch/css': 4.6.3
       '@docsearch/js': 4.6.3
@@ -12666,7 +12739,7 @@ snapshots:
       '@vue/devtools-api': 8.1.3
       '@vue/shared': 3.5.38
       '@vueuse/core': 14.3.0(vue@3.5.38(typescript@6.0.3))
-      '@vueuse/integrations': 14.3.0(axios@1.18.0)(focus-trap@8.2.1)(vue@3.5.38(typescript@6.0.3))
+      '@vueuse/integrations': 14.3.0(axios@1.18.0)(focus-trap@8.2.1)(idb-keyval@6.2.5)(vue@3.5.38(typescript@6.0.3))
       focus-trap: 8.2.1
       mark.js: 8.11.1
       minisearch: 7.2.0
@@ -12742,6 +12815,9 @@ snapshots:
   w3c-xmlserializer@5.0.0:
     dependencies:
       xml-name-validator: 5.0.0
+
+  wasm-feature-detect@1.8.0:
+    optional: true
 
   web-streams-polyfill@3.3.3: {}
 
@@ -12836,6 +12912,9 @@ snapshots:
   yoctocolors-cjs@2.1.3: {}
 
   yoctocolors@2.1.2: {}
+
+  zlibjs@0.3.1:
+    optional: true
 
   zod@3.22.4: {}
 

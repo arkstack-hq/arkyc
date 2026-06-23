@@ -2,6 +2,7 @@ import type { OcrConfig, OcrDriver } from './types'
 
 import { ExternalOcrDriver } from './drivers/external'
 import { MockOcrDriver } from './drivers/mock'
+import { TesseractOcrDriver } from './drivers/tesseract'
 
 /**
  * Selects an OCR driver from config. Call sites depend only on the
@@ -19,6 +20,8 @@ export class OcrDriverFactory {
     switch (config.driver) {
       case 'mock':
         return new MockOcrDriver()
+      case 'tesseract':
+        return new TesseractOcrDriver({ language: config.language })
       case 'external':
         return new ExternalOcrDriver(config)
       default:

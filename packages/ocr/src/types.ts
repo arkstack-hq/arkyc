@@ -22,7 +22,7 @@ export interface OcrDriver {
 }
 
 /** Identifier for a registered OCR driver. */
-export type OcrDriverName = 'mock' | 'external'
+export type OcrDriverName = 'mock' | 'tesseract' | 'external'
 
 /** Configuration selecting + parameterising the active OCR driver. */
 export interface OcrConfig {
@@ -30,4 +30,6 @@ export interface OcrConfig {
   /** Base URL for the `external` driver. */
   endpoint?: string
   apiKey?: string
+  /** Tesseract language(s), e.g. `eng` (the `tesseract` driver). */
+  language?: string
 }
