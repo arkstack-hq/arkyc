@@ -192,6 +192,7 @@ describe('WidgetController flow', () => {
     const { controller, messages, fetchMock } = makeController({ onComplete })
 
     controller.start()
+    await flush() // connect → welcome
     clickText(controller.element as unknown as FakeEl, 'Get started')
     await flush()
     clickText(controller.element as unknown as FakeEl, 'Passport')
@@ -256,6 +257,7 @@ describe('WidgetController flow', () => {
     const el = controller.element as unknown as FakeEl
 
     controller.start()
+    await flush() // connect → welcome
     clickText(el, 'Get started')
     await flush()
     clickText(el, 'Passport')
@@ -281,6 +283,7 @@ describe('WidgetController flow', () => {
   it('captures the document back for two-sided documents', async () => {
     const { controller, fetchMock } = makeController()
     controller.start()
+    await flush() // connect → welcome
     clickText(controller.element as unknown as FakeEl, 'Get started')
     await flush()
     clickText(controller.element as unknown as FakeEl, 'ID Card')
@@ -305,6 +308,7 @@ describe('WidgetController flow', () => {
     const { controller, messages } = makeController({ fetch: fetchMock as never, onError })
 
     controller.start()
+    await flush() // connect → welcome
     clickText(controller.element as unknown as FakeEl, 'Get started')
     await flush()
     clickText(controller.element as unknown as FakeEl, 'Passport')
@@ -318,6 +322,34 @@ describe('WidgetController flow', () => {
     clickText(controller.element as unknown as FakeEl, 'Done')
     expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Session expired' }))
     expect(messages.some((m) => m.type === 'arkyc:error')).toBe(true)
+  })
+
+  it('shows a close-only notice when the session is already terminal on load', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        ({
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              status: 'success',
+              message: 'OK',
+              code: 200,
+              data: { id: 's1', status: 'expired', expires_at: '2099-01-01' },
+            }),
+        }) as Response,
+    )
+    const onClose = vi.fn()
+    const { controller } = makeController({ fetch: fetchMock as never, onClose })
+    const el = controller.element as unknown as FakeEl
+
+    controller.start()
+    await flush()
+    expect(find(el, 'Link expired')).toBeTruthy()
+    expect(find(el, 'Get started')).toBeFalsy()
+    expect(find(el, 'Done')).toBeFalsy() // close-only — no continue/acknowledge
+    clickText(el, 'Close')
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 
   it('closes via the header button, firing onClose + arkyc:close', () => {
@@ -420,9 +452,8 @@ describe('WidgetController cross-device handoff', () => {
     const { controller } = makeController({ fetch: fetchMock as never, nav: phoneNav, win: handoffWin() })
     const el = controller.element as unknown as FakeEl
     controller.start()
-    // Phone renders welcome synchronously — no connecting/QR detour.
+    await flush() // connect → welcome (no QR detour on a phone)
     expect(find(el, 'Get started')).toBeTruthy()
-    await flush()
     expect(findByClass(el, 'arkyc-qr')).toBeFalsy()
   })
 })

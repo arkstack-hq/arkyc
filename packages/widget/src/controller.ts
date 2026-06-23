@@ -47,6 +47,8 @@ export class WidgetController {
   private captureModel: 'passive' | 'active' | 'both' = 'passive'
   private livenessChallenges: LivenessChallenge[] = []
   private result: WidgetResult | null = null
+  /** The session was already terminal when the widget loaded (show a close-only notice). */
+  private terminalOnLoad = false
   private pendingError: Error | null = null
   private settled = false
 
@@ -88,18 +90,10 @@ export class WidgetController {
     return this.view.element
   }
 
-  /** Render the initial screen (QR-first on desktop when handoff is enabled). */
+  /** Connect to the session, then route to the result, the QR, or the welcome flow. */
   start(): void {
-    // On a desktop the phone has the better camera, so when the project enables
-    // handoff we lead with the QR. The enabled flag comes from the server, so on
-    // desktop we show a brief connecting screen, fetch the config, then route to
-    // the QR or the normal welcome flow. Mobile (and hosted pages) start at welcome.
-    if (this.config.handoff !== false && isDesktopDevice(this.nav)) {
-      this.view.renderLoading()
-      void this.run(() => this.bootstrapDesktop())
-      return
-    }
-    this.render()
+    this.view.renderLoading()
+    void this.run(() => this.bootstrap())
   }
 
   /** Tear down the view and release the camera (does not fire callbacks). */
@@ -115,12 +109,8 @@ export class WidgetController {
   private handlers(): ViewHandlers {
     return {
       onClose: () => this.finishClose(),
-      onStart: () =>
-        void this.run(async () => {
-          const session = await this.client.getSession()
-          this.resolveLiveness(session)
-          await this.enter(this.next())
-        }),
+      // The session was already fetched + resolved during bootstrap; just advance.
+      onStart: () => void this.run(() => this.enter(this.next())),
       onDocumentSelected: (type, country) => {
         this.documentType = type
         this.country = country || null
@@ -149,16 +139,20 @@ export class WidgetController {
   }
 
   /**
-   * Desktop bootstrap: fetch the session to learn the project's handoff config,
-   * then lead with the QR when enabled (otherwise fall through to welcome). On a
-   * phone this path isn't taken — handoff has no value there.
+   * Fetch the session and route: an already-terminal session (e.g. a stale handoff
+   * link, or one finished on another device) shows a close-only notice; on a
+   * desktop with handoff enabled we lead with the QR; otherwise the welcome flow.
    */
-  private async bootstrapDesktop(): Promise<void> {
+  private async bootstrap(): Promise<void> {
     if (this.settled) return
     const session = await this.client.getSession()
+    if (this.settled) return
+    if (Flow.isTerminal(session.status)) return this.showTerminal(session.status)
     this.resolveLiveness(session)
     if (session.handoff) this.handoffConfig = session.handoff
-    if (this.handoffConfig.enabled && this.handoffTarget()) {
+    const canHandoff =
+      this.config.handoff !== false && isDesktopDevice(this.nav) && this.handoffConfig.enabled && !!this.handoffTarget()
+    if (canHandoff) {
       this.handoffReady = true
       await this.startHandoff()
     } else {
@@ -291,11 +285,21 @@ export class WidgetController {
     this.render()
   }
 
+  /** A session that was already terminal on load: a notice with only a Close button. */
+  private showTerminal(status: VerificationStatus): void {
+    this.result = { status, decision: Flow.statusToDecision(status) }
+    this.step = 'result'
+    this.terminalOnLoad = true
+    this.render()
+  }
+
   private render(): void {
     this.view.render({
       step: this.step,
       documentType: this.documentType,
       decision: this.result?.decision,
+      status: this.result?.status,
+      terminalNotice: this.terminalOnLoad,
       allowSkip: !!this.config.signals,
       livenessChallenges: this.livenessChallenges,
       requireLiveCamera: this.captureModel === 'active',

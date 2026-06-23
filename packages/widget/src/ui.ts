@@ -1,4 +1,10 @@
-import type { DocumentType, LivenessChallenge, VerificationDecision, WidgetStep } from '@arkyc/types'
+import type {
+  DocumentType,
+  LivenessChallenge,
+  VerificationDecision,
+  VerificationStatus,
+  WidgetStep,
+} from '@arkyc/types'
 
 import { Camera } from './capture'
 import type { Facing } from './capture'
@@ -45,6 +51,10 @@ export interface ViewState {
   step: WidgetStep
   documentType: DocumentType | null
   decision?: VerificationDecision | null
+  /** The session status (drives the close-only terminal notice). */
+  status?: VerificationStatus
+  /** Render the result as a close-only notice (session was already terminal on load). */
+  terminalNotice?: boolean
   statusLabel?: string
   errorMessage?: string
   /** Show a "Skip" affordance on capture screens (demo / mock-driver flows). */
@@ -81,6 +91,35 @@ const CHALLENGE_LABELS: Record<LivenessChallenge, string> = {
   smile: 'Smile, and hold it',
   nod: 'Slowly nod your head',
   move_closer: 'Slowly move closer to the camera',
+}
+
+interface Notice {
+  cls: string
+  icon: string
+  title: string
+  copy: string
+}
+
+/** Fallback notice for an expired/unknown terminal session. */
+const EXPIRED_NOTICE: Notice = {
+  cls: 'warn',
+  icon: '⏳',
+  title: 'Link expired',
+  copy: 'This verification link has expired.',
+}
+
+/** Close-only notice copy for a session that was already terminal on load. */
+const TERMINAL_NOTICE: Partial<Record<VerificationStatus, Notice>> = {
+  approved: { cls: 'ok', icon: '✓', title: 'Already complete', copy: 'This verification has already been completed.' },
+  rejected: { cls: 'ok', icon: '✓', title: 'Already complete', copy: 'This verification has already been completed.' },
+  requires_review: {
+    cls: 'ok',
+    icon: '✓',
+    title: 'Already complete',
+    copy: 'This verification has already been submitted and is being reviewed.',
+  },
+  expired: EXPIRED_NOTICE,
+  cancelled: { cls: 'warn', icon: '⏳', title: 'Cancelled', copy: 'This verification was cancelled.' },
 }
 
 const SVG = (body: string) =>
@@ -266,7 +305,10 @@ export class WidgetView {
       case 'processing':
         return this.renderProcessing(state.statusLabel ?? 'Finalising verification…')
       case 'result':
-        return this.renderResult(state.decision ?? null, state.errorMessage)
+        return this.renderResult(state.decision ?? null, state.errorMessage, {
+          terminal: state.terminalNotice,
+          status: state.status,
+        })
     }
   }
 
@@ -921,11 +963,24 @@ export class WidgetView {
     this.body.appendChild(this.el('p', { class: 'arkyc-p', text: label }))
   }
 
-  private renderResult(decision: VerificationDecision | null, errorMessage?: string): void {
+  private renderResult(
+    decision: VerificationDecision | null,
+    errorMessage?: string,
+    opts: { terminal?: boolean; status?: VerificationStatus } = {},
+  ): void {
     if (errorMessage) {
       this.body.appendChild(this.el('div', { class: 'arkyc-badge err', html: '!' }))
       this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Something went wrong' }))
       this.body.appendChild(this.el('p', { class: 'arkyc-p', text: errorMessage }))
+    } else if (opts.terminal) {
+      // The session was already finished/expired when this device opened it (e.g.
+      // a stale handoff link). Show a notice, not the live result — and only Close.
+      const n = TERMINAL_NOTICE[opts.status ?? 'expired'] ?? EXPIRED_NOTICE
+      this.body.appendChild(this.el('div', { class: `arkyc-badge ${n.cls}`, text: n.icon }))
+      this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: n.title }))
+      this.body.appendChild(this.el('p', { class: 'arkyc-p', text: n.copy }))
+      this.footer.appendChild(this.button('Close', () => this.handlers.onClose()))
+      return
     } else {
       const map = {
         approved: {
