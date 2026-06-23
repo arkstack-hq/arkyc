@@ -33,7 +33,9 @@ export class Auth {
     return alova.Get('/v1/auth/me', {
       name: 'auth:me',
       cacheFor: CACHE,
-      hitSource: ['auth:login', 'auth:register', 'auth:logout'],
+      // Refresh on sign-in only. NOT on logout: invalidating here would make the
+      // still-mounted `me` request auto-refetch `/auth/me` with no token (a 401).
+      hitSource: ['auth:login', 'auth:register'],
       transform: unwrap<User>,
     })
   }

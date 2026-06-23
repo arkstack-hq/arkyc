@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { useState } from 'react'
 
-const TRANSPORTS: RealtimeTransport[] = ['off', 'pusher', 'firebase']
+const TRANSPORTS: RealtimeTransport[] = ['off', 'polling', 'pusher', 'firebase']
 const CAPTURE_MODELS: CaptureModel[] = ['passive', 'active', 'both']
 
 export default function AdminSettingsPage() {

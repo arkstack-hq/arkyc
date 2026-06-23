@@ -1,9 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useRequest } from 'alova/client'
 import type { User } from '@arkyc/types'
 import { Auth, clearAuthToken, hasAuthToken } from '@/lib/api'
 import { setUnauthorizedHandler } from '@/lib/requests/auth-session'
+
+/** Routes that are reachable while unauthenticated (no 401 redirect from here). */
+const PUBLIC_PATHS = ['/login', '/register', '/verify']
 
 interface AuthState {
   user: User | null
@@ -16,8 +20,10 @@ interface AuthState {
 const AuthContext = createContext<AuthState | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate()
   // `data` is alova's reactive current-user state; restore it from a persisted
-  // token on mount and drive it directly (no mirroring into local state).
+  // token on mount and drive it directly (no mirroring into local state). We only
+  // hit `/auth/me` when a token is actually present, never while logged out.
   const {
     data: user,
     loading,
@@ -40,14 +46,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     update({ data: undefined })
   }, [sendLogout, update])
 
-  // Centralised 401 handling: an expired session drops the stale token + user.
+  // Centralised 401 handling: an expired session drops the stale token + user and
+  // sends the user to /login via the router (SPA navigation, no full reload),
+  // unless they're already on a public route.
   useEffect(() => {
     setUnauthorizedHandler(async () => {
       await clearAuthToken()
       update({ data: undefined })
+      if (!PUBLIC_PATHS.includes(window.location.pathname)) {
+        navigate('/login', { replace: true })
+      }
     })
     return () => setUnauthorizedHandler(undefined)
-  }, [update])
+  }, [update, navigate])
 
   const value = useMemo<AuthState>(
     () => ({ user: user ?? null, loading, setUser, logout }),
