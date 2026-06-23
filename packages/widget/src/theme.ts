@@ -95,7 +95,11 @@ export class Theme {
 .arkyc-p{font-size:14px;color:var(--arkyc-muted);margin:0;max-width:340px}
 .arkyc-footer{padding:16px 20px;border-top:1px solid var(--arkyc-border)}
 .arkyc-btn{appearance:none;border:0;border-radius:var(--arkyc-radius);background:var(--arkyc-primary);color:#fff;font-size:15px;font-weight:600;padding:12px 18px;width:100%;cursor:pointer}
-.arkyc-btn[disabled]{opacity:.5;cursor:not-allowed}
+.arkyc-btn[disabled]{opacity:.6;cursor:not-allowed}
+/* Busy: hide the label and show an inline spinner while the handler runs. */
+.arkyc-btn.arkyc-busy{position:relative;color:transparent;pointer-events:none;opacity:1}
+.arkyc-btn.arkyc-busy::after{content:'';position:absolute;inset:0;margin:auto;width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;animation:arkyc-spin .8s linear infinite}
+.arkyc-btn-ghost.arkyc-busy::after{border-color:color-mix(in srgb,var(--arkyc-primary) 35%,transparent);border-top-color:var(--arkyc-primary)}
 .arkyc-btn-ghost{background:transparent;color:var(--arkyc-primary);border:1px solid var(--arkyc-border)}
 .arkyc-choices{display:flex;flex-direction:column;gap:8px;width:100%;max-width:340px}
 .arkyc-preview{width:100%;max-width:360px;border-radius:var(--arkyc-radius);background:#000;aspect-ratio:3/2;object-fit:cover}

@@ -1013,7 +1013,17 @@ export class WidgetView {
   private button(label: string, onClick: () => void, extraClass?: string): HTMLButtonElement {
     const cls = extraClass ? `arkyc-btn ${extraClass}` : 'arkyc-btn'
     const btn = this.el('button', { class: cls, text: label }) as HTMLButtonElement
-    btn.addEventListener('click', onClick)
+    // Guard against accidental double-clicks: a button fires once, then disables
+    // and shows an inline loader while its (usually async) handler runs. The next
+    // screen re-renders a fresh button, so this only spans the in-flight gap.
+    let fired = false
+    btn.addEventListener('click', () => {
+      if (fired) return
+      fired = true
+      btn.setAttribute('disabled', 'true')
+      btn.classList.add('arkyc-busy')
+      onClick()
+    })
     return btn
   }
 
