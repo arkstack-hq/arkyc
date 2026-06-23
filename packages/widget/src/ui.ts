@@ -317,16 +317,29 @@ export class WidgetView {
       const hint = this.el('p', { class: 'arkyc-p arkyc-hint' }) as HTMLParagraphElement
       this.body.appendChild(hint)
 
-      // After a capture, freeze the frame and wait for an explicit "Continue" so
-      // the user can review and get ready for the next step — never auto-advance.
+      // After a capture, wait for an explicit "Continue" so the user can review
+      // and get ready for the next step — never auto-advance. Swap the live
+      // preview for a still of the captured frame: this shows exactly what was
+      // captured and removes the overlay (brackets / scan line / ring) entirely,
+      // rather than leaving a stopped (black) video with animations still running.
       const confirmCapture = (blob: Blob | null) => {
-        this.destroy() // stop the camera + clear detection timers (freeze the frame)
+        this.destroy() // stop the camera + detection timers
+        if (blob) {
+          const url = URL.createObjectURL(blob)
+          const still = this.el('img', {
+            class: `arkyc-preview${selfie ? ' selfie' : ''}`,
+            src: url,
+          }) as HTMLImageElement
+          mount.replaceWith(still)
+          this.cleanups.push(() => URL.revokeObjectURL(url))
+        } else {
+          mount.classList.add('arkyc-hidden')
+        }
         this.clear(this.footer)
         hint.textContent = '✓ Captured'
-        doc?.setQuality('good')
-        face?.setState('done')
         this.footer.appendChild(this.button('Continue', () => this.handlers.onImage(blob)))
         const retake = this.button('Retake', () => {
+          this.destroy()
           this.clear(this.body)
           this.clear(this.footer)
           this.renderCapture(title, facing, allowSkip, selfie, strict)

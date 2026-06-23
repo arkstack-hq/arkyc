@@ -2,68 +2,15 @@ import type {
   DocumentType,
   LivenessChallenge,
   LivenessMode,
-  ProjectBranding,
   VerificationStatus,
   WidgetResult,
   WidgetStep,
 } from '@arkyc/types'
-import { ArkycClient, type ClientSession, type ProviderSignalHints } from './client'
-import type { DocumentAnalyzer, DocumentTuning } from './document'
-import type { FaceAnalyzer, FaceTuning } from './face'
+import { ArkycClient, type ClientSession } from './client'
 import { Flow } from './flow'
 import { Theme } from './theme'
 import { WidgetView, type ViewHandlers } from './ui'
-
-/** Configuration for a {@link WidgetController}. */
-export interface WidgetControllerConfig {
-  /** Short-lived client token for this session. */
-  token: string
-  /** API origin (defaults to the widget's own origin). */
-  baseUrl?: string
-  branding?: ProjectBranding | null
-  /**
-   * Mock-driver signal hints. When present, capture screens also offer a
-   * "Skip" affordance (the `mock` drivers can decide without a real image).
-   */
-  signals?: ProviderSignalHints
-  onComplete?: (result: WidgetResult) => void
-  onError?: (error: Error) => void
-  onClose?: () => void
-  /** Fired once the flow settles (complete/error/close); used to remove the host. */
-  onSettle?: () => void
-  /** Force (or disable) posting `arkyc:*` messages to `window.parent`. */
-  postToParent?: boolean
-
-  // Injectables (testing / non-browser hosts).
-  fetch?: typeof fetch
-  doc?: Document
-  win?: Window
-  nav?: Navigator
-  /**
-   * Face analyzer powering selfie auto-capture + active-liveness detection.
-   * Defaults to the real MediaPipe-backed analyzer (loaded lazily from a CDN);
-   * pass `null` to disable detection and use the manual capture flow.
-   */
-  faceAnalyzer?: FaceAnalyzer | null
-  /** Override face-detection thresholds (tune against a real camera). */
-  faceTuning?: FaceTuning
-  /**
-   * Document analyzer powering document auto-capture (real edge-projection
-   * detection). Defaults to the built-in canvas detector; pass `null` to disable
-   * it and fall back to the brightness/glare heuristic.
-   */
-  documentAnalyzer?: DocumentAnalyzer | null
-  /** Override document-detection thresholds (tune against a real camera). */
-  documentTuning?: DocumentTuning
-  /** Schedules a callback after `ms` (defaults to `setTimeout`). */
-  scheduler?: (fn: () => void, ms: number) => void
-  /** Cosmetic OCR-processing screen duration (ms). */
-  transientMs?: number
-  /** Delay between session polls while finalising (ms). */
-  pollMs?: number
-  /** Maximum number of polls before giving up and showing the last status. */
-  maxPolls?: number
-}
+import type { BaseWidgetOptions, WidgetControllerConfig } from './types'
 
 /**
  * Drives the full verification flow: renders each screen via {@link WidgetView},
@@ -285,17 +232,20 @@ export class WidgetController {
     if (this.settled) return
     const err = error instanceof Error ? error : new Error(String(error))
     this.step = 'result'
+
     this.view.render({
       step: 'result',
       documentType: this.documentType,
       errorMessage: err.message,
     })
+
     this.pendingError = err
   }
 
   private finishResult(): void {
     if (this.settled) return
     this.settled = true
+
     if (this.pendingError) {
       this.post('arkyc:error', { error: serializeError(this.pendingError) })
       this.config.onError?.(this.pendingError)
@@ -303,12 +253,14 @@ export class WidgetController {
       this.post('arkyc:complete', { payload: this.result })
       this.config.onComplete?.(this.result)
     }
+
     this.destroy()
     this.config.onSettle?.()
   }
 
   private finishClose(): void {
     if (this.settled) return
+
     this.settled = true
     this.post('arkyc:close', {})
     this.config.onClose?.()
@@ -328,4 +280,32 @@ export class WidgetController {
 
 function serializeError(error: Error): { message: string; name: string } {
   return { message: error.message, name: error.name }
+}
+
+export const resolveContainer = (container: string | HTMLElement, doc: Document): HTMLElement => {
+  const el = typeof container === 'string' ? doc.querySelector<HTMLElement>(container) : container
+  if (!el) throw new Error(`ArkycWidget.mount: container "${String(container)}" not found.`)
+  return el
+}
+
+export const buildController = (options: BaseWidgetOptions, onSettle: () => void): WidgetController => {
+  if (!options.token) throw new Error('ArkycWidget requires a client `token`.')
+  return new WidgetController({
+    token: options.token,
+    baseUrl: options.baseUrl,
+    branding: options.branding,
+    signals: options.signals,
+    onComplete: options.onComplete,
+    onError: options.onError,
+    onClose: options.onClose,
+    onSettle,
+    fetch: options.fetch,
+    doc: options.doc,
+    win: options.win,
+    nav: options.nav,
+    faceAnalyzer: options.faceAnalyzer,
+    faceTuning: options.faceTuning,
+    documentAnalyzer: options.documentAnalyzer,
+    documentTuning: options.documentTuning,
+  })
 }
