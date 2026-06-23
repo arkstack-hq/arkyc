@@ -49,6 +49,12 @@ export default defineConfig({
       // Record realtime broadcasts in-memory (no live pusher/firebase) so tests
       // can assert what was published. `memory` is an env-only hard override.
       REALTIME_TRANSPORT: 'memory',
+      // Pin the deterministic mock provider drivers so the suite never depends on
+      // a developer's local .env (e.g. OCR_DRIVER=tesseract, which would run the
+      // real engine on placeholder images). Set before dotenv, which won't override.
+      OCR_DRIVER: 'mock',
+      LIVENESS_DRIVER: 'mock',
+      FACE_MATCH_DRIVER: 'mock',
     },
   },
 })

@@ -37,18 +37,32 @@ describe('DocumentParserRegistry', () => {
     parse: () => ({ fields: { firstName: 'Pat', lastName: 'Doe' }, confidence: 0.8 }),
   }
 
-  it('falls back to MRZ when no parser matches the selection', () => {
+  it('reads the MRZ first, before any custom parser', () => {
     const registry = createDocumentParserRegistry().register(usLicense)
     const out = registry.parse({ text: TD3, country: 'GB', documentType: 'passport' })
     expect(out.fields.documentNumber).toBe('L898902C3')
-    expect((out.raw as { fallback?: boolean }).fallback).toBe(true)
+    expect((out.raw as { stage?: string }).stage).toBe('mrz')
   })
 
-  it('uses a country+type specific parser when it matches the user input', () => {
+  it('uses a country+type custom parser when the MRZ fails', () => {
     const registry = createDocumentParserRegistry().register(usLicense)
-    const out = registry.parse({ text: 'whatever', country: 'US', documentType: 'drivers_license' })
+    const out = registry.parse({
+      text: 'no machine readable zone here',
+      country: 'US',
+      documentType: 'drivers_license',
+    })
     expect(out.fields).toMatchObject({ firstName: 'Pat', lastName: 'Doe' })
-    expect((out.raw as { parser?: string }).parser).toBe('us-dl')
+    expect((out.raw as { parser?: string; stage?: string }).parser).toBe('us-dl')
+    expect((out.raw as { stage?: string }).stage).toBe('custom')
+  })
+
+  it('falls back to generic extraction when MRZ and custom parsers find nothing', () => {
+    const registry = createDocumentParserRegistry()
+    const out = registry.parse({ text: 'ID No A1234567 born 12/03/1985 expires 01/01/2030', country: 'NG' })
+    expect(out.fields.documentNumber).toBe('A1234567')
+    expect(out.fields.dateOfBirth).toBe('1985-03-12')
+    expect(out.fields.expiryDate).toBe('2030-01-01')
+    expect((out.raw as { stage?: string }).stage).toBe('generic')
   })
 
   it('orders candidates most-specific first', () => {

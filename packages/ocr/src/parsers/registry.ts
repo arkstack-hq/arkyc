@@ -1,6 +1,7 @@
 import type { DocumentType } from '@arkyc/types'
 import type { DocumentParser, ParseInput, ParseOutput } from './types'
 import { mrzParser } from './mrz'
+import { genericTextParser } from './generic'
 
 function eqCountry(a: string, b: string): boolean {
   return a.trim().toUpperCase() === b.trim().toUpperCase()
@@ -22,25 +23,39 @@ function matchScore(parser: DocumentParser, country?: string | null, documentTyp
   return (scopedCountries ? 2 : 0) + (scopedTypes ? 1 : 0)
 }
 
+/** Which stage of the pipeline produced a parse result. */
+export type ParseStage = 'mrz' | 'custom' | 'generic'
+
 /**
- * A registry of {@link DocumentParser}s. Parsers declare the countries and
- * document types they apply to; {@link DocumentParserRegistry.parse} matches those
- * against the user's selection, tries the most specific applicable parsers first,
- * and falls back to the default parser when none match (or none can parse).
+ * A registry of document parsers, resolved in three stages for each document:
+ *
+ *  1. **MRZ** — the machine-readable zone (reliable, check-digit-verified) when present.
+ *  2. **Custom** — country/document-type-specific parsers (registered via {@link register}),
+ *     matched against the user's selection (most specific first) when the MRZ fails.
+ *  3. **Generic** — a best-effort text scraper, the last resort.
+ *
+ * Custom parsers declare the countries and document types they apply to; register
+ * one per document layout the MRZ + generic stages can't read.
  */
 export class DocumentParserRegistry {
   private readonly parsers: DocumentParser[] = []
 
-  /** @param fallback Used when no registered parser matches or can parse. */
-  constructor(private readonly fallback: DocumentParser) {}
+  /**
+   * @param primary  Tried first for every document (the MRZ parser).
+   * @param fallback Tried last when nothing else extracts anything (generic).
+   */
+  constructor(
+    private readonly primary: DocumentParser,
+    private readonly fallback: DocumentParser,
+  ) {}
 
-  /** Register a parser. Returns `this` for chaining. */
+  /** Register a custom country/type-specific parser. Returns `this` for chaining. */
   register(parser: DocumentParser): this {
     this.parsers.push(parser)
     return this
   }
 
-  /** The applicable parsers for a selection, most specific first. */
+  /** The applicable custom parsers for a selection, most specific first. */
   candidates(country?: string | null, documentType?: DocumentType | null): DocumentParser[] {
     return this.parsers
       .map((parser, index) => ({ parser, index, score: matchScore(parser, country, documentType) }))
@@ -50,32 +65,42 @@ export class DocumentParserRegistry {
   }
 
   /**
-   * Parse fields from OCR text, using the best-matching parser. Tries each
-   * applicable parser in specificity order, then the fallback. Always returns a
-   * result (empty fields with confidence 0 if nothing could parse).
+   * Parse fields from OCR text: MRZ first, then the matched custom parsers, then
+   * the generic fallback. Always returns a result (empty fields, confidence 0,
+   * when nothing could parse).
    */
   parse(input: ParseInput): ParseOutput {
+    // 1. MRZ — the gold standard when a machine-readable zone is present.
+    const fromMrz = this.primary.parse(input)
+    if (fromMrz) return tag(fromMrz, this.primary.name, 'mrz')
+
+    // 2. Custom country/type-specific parsers, most specific first.
     for (const parser of this.candidates(input.country, input.documentType)) {
       const out = parser.parse(input)
-      if (out) return tag(out, parser.name, false)
+      if (out) return tag(out, parser.name, 'custom')
     }
-    const fb = this.fallback.parse(input)
-    if (fb) return tag(fb, this.fallback.name, true)
+
+    // 3. Generic best-effort extraction.
+    const fromGeneric = this.fallback.parse(input)
+    if (fromGeneric) return tag(fromGeneric, this.fallback.name, 'generic')
+
     return { fields: {}, confidence: 0, raw: { parser: 'none' } }
   }
 }
 
-/** Annotate a parse result with which parser produced it. */
-function tag(out: ParseOutput, parser: string, fallback: boolean): ParseOutput {
+/** Annotate a parse result with which parser + stage produced it. */
+function tag(out: ParseOutput, parser: string, stage: ParseStage): ParseOutput {
   const detail = out.raw && typeof out.raw === 'object' ? out.raw : { value: out.raw }
-  return { ...out, raw: { parser, fallback, ...detail } }
+  return { ...out, raw: { parser, stage, ...detail } }
 }
 
 /**
- * Create a registry seeded with the MRZ parser as the default fallback (it works
- * across countries for machine-readable documents). Register country/type-specific
- * parsers on top for documents the MRZ default can't read.
+ * Create a registry with the MRZ parser as the primary stage and the generic text
+ * parser as the fallback. Register country/document-type-specific custom parsers
+ * on top for documents the MRZ + generic stages can't read.
  */
-export function createDocumentParserRegistry(fallback: DocumentParser = mrzParser()): DocumentParserRegistry {
-  return new DocumentParserRegistry(fallback)
+export function createDocumentParserRegistry(
+  options: { primary?: DocumentParser; fallback?: DocumentParser } = {},
+): DocumentParserRegistry {
+  return new DocumentParserRegistry(options.primary ?? mrzParser(), options.fallback ?? genericTextParser())
 }

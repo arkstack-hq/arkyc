@@ -45,18 +45,39 @@ export class TesseractOcrDriver implements OcrDriver {
   }
 
   async extract(request: OcrRequest): Promise<OcrResultData> {
-    const recognize = this.recognizeImpl ?? (await this.loadRecognizer())
-    const { text, confidence } = await recognize(request.image, this.language)
+    // Nothing to read — skip the engine rather than failing on 0 bytes.
+    if (!request.image || request.image.length === 0) {
+      return { fields: {}, confidence: 0, raw: { engine: 'tesseract', empty: true } }
+    }
+
+    const recognized = await this.tryRecognize(request.image)
+    if (!recognized) {
+      // Unreadable/corrupt image or engine failure: don't crash the verification
+      // pipeline — return empty fields so the decision engine routes on low OCR
+      // confidence (typically → manual review).
+      return { fields: {}, confidence: 0, raw: { engine: 'tesseract', error: true } }
+    }
+
     const parsed = this.registry.parse({
-      text,
+      text: recognized.text,
       country: request.country,
       documentType: request.documentType,
     })
     return {
       fields: parsed.fields,
       // Blend the engine's raw confidence with the parser's structural confidence.
-      confidence: clamp01((confidence / 100) * 0.5 + parsed.confidence * 0.5),
-      raw: { engine: 'tesseract', text, parser: parsed.raw },
+      confidence: clamp01((recognized.confidence / 100) * 0.5 + parsed.confidence * 0.5),
+      raw: { engine: 'tesseract', text: recognized.text, parser: parsed.raw },
+    }
+  }
+
+  /** Recognize text, or `null` if the engine can't read the image. */
+  private async tryRecognize(image: Uint8Array): Promise<{ text: string; confidence: number } | null> {
+    try {
+      const recognize = this.recognizeImpl ?? (await this.loadRecognizer())
+      return await recognize(image, this.language)
+    } catch {
+      return null
     }
   }
 

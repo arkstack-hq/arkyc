@@ -5,11 +5,13 @@ import { TesseractOcrDriver } from '../src'
 const TD3 = ['P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<', 'L898902C36UTO7408122F1204159ZE184226B<<<<<10'].join('\n')
 
 describe('TesseractOcrDriver', () => {
+  const dummy = new Uint8Array([1, 2, 3])
+
   it('recognizes text and extracts fields via the parser registry', async () => {
     const driver = new TesseractOcrDriver({
       recognize: async () => ({ text: TD3, confidence: 90 }),
     })
-    const result = await driver.extract({ image: new Uint8Array(), documentType: 'passport', country: 'GB' })
+    const result = await driver.extract({ image: dummy, documentType: 'passport', country: 'GB' })
     expect(result.fields).toMatchObject({
       lastName: 'ERIKSSON',
       documentNumber: 'L898902C3',
@@ -21,11 +23,36 @@ describe('TesseractOcrDriver', () => {
     expect((result.raw as { engine?: string }).engine).toBe('tesseract')
   })
 
-  it('returns empty fields when the engine yields no MRZ', async () => {
+  it('returns empty fields when the engine yields no MRZ or other data', async () => {
     const driver = new TesseractOcrDriver({
       recognize: async () => ({ text: 'blurry unreadable text', confidence: 20 }),
     })
-    const result = await driver.extract({ image: new Uint8Array() })
+    const result = await driver.extract({ image: dummy })
     expect(result.fields).toEqual({})
+  })
+
+  it('skips the engine and returns empty for a 0-byte image', async () => {
+    let called = false
+    const driver = new TesseractOcrDriver({
+      recognize: async () => {
+        called = true
+        return { text: TD3, confidence: 90 }
+      },
+    })
+    const result = await driver.extract({ image: new Uint8Array() })
+    expect(called).toBe(false)
+    expect(result.fields).toEqual({})
+    expect(result.confidence).toBe(0)
+  })
+
+  it('returns empty (does not throw) when the engine fails on a bad image', async () => {
+    const driver = new TesseractOcrDriver({
+      recognize: async () => {
+        throw new Error('Image file cannot be read')
+      },
+    })
+    const result = await driver.extract({ image: dummy })
+    expect(result.fields).toEqual({})
+    expect(result.confidence).toBe(0)
   })
 })

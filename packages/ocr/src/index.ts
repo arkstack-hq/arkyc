@@ -17,5 +17,6 @@ export type { TesseractOcrOptions, TesseractRecognize } from './drivers/tesserac
 // Document-parser registry: turn OCR text into structured fields, with
 // country/document-type matching and an MRZ default.
 export type { DocumentParser, ParseInput, ParseOutput } from './parsers/types'
-export { DocumentParserRegistry, createDocumentParserRegistry } from './parsers/registry'
+export { DocumentParserRegistry, createDocumentParserRegistry, type ParseStage } from './parsers/registry'
 export { mrzParser } from './parsers/mrz'
+export { genericTextParser } from './parsers/generic'
