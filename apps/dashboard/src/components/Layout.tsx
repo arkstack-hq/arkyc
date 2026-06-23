@@ -4,6 +4,7 @@ import {
   Boxes,
   ChevronsUpDown,
   ClipboardCheck,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -241,6 +242,10 @@ function UserMenu() {
             Platform admin
           </DropdownMenuItem>
         ) : null}
+        <DropdownMenuItem onSelect={() => navigate('/account/security')}>
+          <KeyRound className="size-4" />
+          Security
+        </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(e) => {
             e.preventDefault()

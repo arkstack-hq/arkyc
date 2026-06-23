@@ -23,6 +23,7 @@ import ProjectsPage from '@/pages/projects/ProjectsPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import RegisterPage from '@/pages/RegisterPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
+import SecurityPage from '@/pages/SecurityPage'
 import ReviewsPage from '@/pages/ReviewsPage'
 import RoleDetailPage from '@/pages/settings/RoleDetailPage'
 import RolesPage from '@/pages/settings/RolesPage'
@@ -77,6 +78,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <OnboardingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/account/security"
+        element={
+          <ProtectedRoute>
+            <SecurityPage />
           </ProtectedRoute>
         }
       />
