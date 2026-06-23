@@ -10,3 +10,9 @@ export * from './types'
 export * from './registry'
 export { MockOcrDriver } from './drivers/mock'
 export { ExternalOcrDriver } from './drivers/external'
+
+// Document-parser registry: turn OCR text into structured fields, with
+// country/document-type matching and an MRZ default.
+export type { DocumentParser, ParseInput, ParseOutput } from './parsers/types'
+export { DocumentParserRegistry, createDocumentParserRegistry } from './parsers/registry'
+export { mrzParser } from './parsers/mrz'
