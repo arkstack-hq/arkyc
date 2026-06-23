@@ -45,29 +45,31 @@ export class TesseractOcrDriver implements OcrDriver {
   }
 
   async extract(request: OcrRequest): Promise<OcrResultData> {
-    // Nothing to read — skip the engine rather than failing on 0 bytes.
-    if (!request.image || request.image.length === 0) {
+    // Read both sides — the MRZ may be on the front (passports) or the back
+    // (TD1 ID cards, residence permits). Parse the combined text once.
+    const front = request.image?.length ? await this.tryRecognize(request.image) : null
+    const back = request.backImage?.length ? await this.tryRecognize(request.backImage) : null
+
+    if (!front && !back) {
+      // Nothing readable (empty or unreadable images, or engine failure): return
+      // empty so the decision engine routes on low confidence (manual review).
       return { fields: {}, confidence: 0, raw: { engine: 'tesseract', empty: true } }
     }
 
-    const recognized = await this.tryRecognize(request.image)
-    if (!recognized) {
-      // Unreadable/corrupt image or engine failure: don't crash the verification
-      // pipeline — return empty fields so the decision engine routes on low OCR
-      // confidence (typically → manual review).
-      return { fields: {}, confidence: 0, raw: { engine: 'tesseract', error: true } }
-    }
+    const text = [front?.text ?? '', back?.text ?? ''].filter((t) => t.trim()).join('\n')
+    const confidences = [front?.confidence, back?.confidence].filter((c): c is number => typeof c === 'number')
+    const engineConfidence = confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : 0
 
     const parsed = this.registry.parse({
-      text: recognized.text,
+      text,
       country: request.country,
       documentType: request.documentType,
     })
     return {
       fields: parsed.fields,
       // Blend the engine's raw confidence with the parser's structural confidence.
-      confidence: clamp01((recognized.confidence / 100) * 0.5 + parsed.confidence * 0.5),
-      raw: { engine: 'tesseract', text: recognized.text, parser: parsed.raw },
+      confidence: clamp01((engineConfidence / 100) * 0.5 + parsed.confidence * 0.5),
+      raw: { engine: 'tesseract', text, parser: parsed.raw },
     }
   }
 

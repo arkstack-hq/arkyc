@@ -21,6 +21,7 @@ export class ExternalOcrDriver implements OcrDriver {
       },
       body: JSON.stringify({
         image: Buffer.from(request.image).toString('base64'),
+        backImage: request.backImage?.length ? Buffer.from(request.backImage).toString('base64') : null,
         documentType: request.documentType ?? null,
         country: request.country ?? null,
       }),

@@ -31,6 +31,21 @@ describe('TesseractOcrDriver', () => {
     expect(result.fields).toEqual({})
   })
 
+  it('reads the MRZ from the back of the card', async () => {
+    const driver = new TesseractOcrDriver({
+      // The back image (byte 2) carries the MRZ; the front (byte 1) does not.
+      recognize: async (image) =>
+        image[0] === 2 ? { text: TD3, confidence: 88 } : { text: 'SPECIMEN NAME', confidence: 60 },
+    })
+    const result = await driver.extract({
+      image: new Uint8Array([1]),
+      backImage: new Uint8Array([2]),
+      documentType: 'id_card',
+    })
+    expect(result.fields.documentNumber).toBe('L898902C3')
+    expect(result.fields.lastName).toBe('ERIKSSON')
+  })
+
   it('skips the engine and returns empty for a 0-byte image', async () => {
     let called = false
     const driver = new TesseractOcrDriver({

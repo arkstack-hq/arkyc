@@ -4,6 +4,11 @@ import type { DocumentType, OcrResultData } from '@arkyc/types'
 export interface OcrRequest {
   /** Raw document-front image bytes. */
   image: Uint8Array
+  /**
+   * Raw document-back image bytes, when captured. Some documents (TD1 ID cards,
+   * residence permits) print the MRZ on the back, so both sides are read.
+   */
+  backImage?: Uint8Array
   /** Optional hint about the document category. */
   documentType?: DocumentType | null
   /** Optional ISO country code hint. */

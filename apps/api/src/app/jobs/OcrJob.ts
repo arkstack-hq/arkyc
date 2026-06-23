@@ -40,8 +40,11 @@ export class OcrJob extends Job {
     if (!capture) return
 
     const image = await readObject(capture.frontImagePath)
+    // Read the back too — the MRZ may be printed there (ID cards, residence permits).
+    const back = capture.backImagePath ? await readObject(capture.backImagePath) : new Uint8Array(0)
     const ocr = await ocrDriver.extract({
       image,
+      backImage: back.length ? back : undefined,
       documentType: capture.documentType,
       country: capture.country,
       hints: { confidence: this.hints.ocrConfidence, expired: this.hints.expired },

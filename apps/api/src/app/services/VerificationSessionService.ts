@@ -138,16 +138,20 @@ export class VerificationSessionService {
     }
     await capture.save()
 
-    // The front side carries the readable data — OCR + portrait run async.
-    if (side === 'front') {
+    if (side === 'front' && session.status === 'started') {
+      await this.transition(session, 'document_submitted')
+    }
+
+    // Run OCR once every readable side is captured: at the back for two-sided
+    // documents (the MRZ may be printed there), otherwise at the front. OCR reads
+    // both stored sides and parses the combined text.
+    const twoSided = capture.documentType != null && capture.documentType !== 'passport'
+    const ocrReady = side === 'back' || (side === 'front' && !twoSided)
+    if (ocrReady) {
       await OcrJob.dispatch(session.id, {
         ocrConfidence: input.signals?.ocrConfidence,
         expired: input.signals?.expired,
       })
-
-      if (session.status === 'started') {
-        await this.transition(session, 'document_submitted')
-      }
     }
 
     return capture
