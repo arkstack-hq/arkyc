@@ -1,9 +1,11 @@
 import { RequestException, perPage } from '@arkstack/common'
+
 import { BaseController } from '@controllers/BaseController'
 import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
 import ProjectCollection from '@app/http/resources/ProjectCollection'
 import ProjectResource from '@app/http/resources/ProjectResource'
+import { Storage } from '@arkstack/filesystem'
 import { Str } from '@h3ravel/support'
 import { audit } from '@app/services/AuditLogger'
 
@@ -137,6 +139,39 @@ export default class ProjectController extends BaseController {
     return new ProjectResource(project).additional({
       status: 'success',
       message: 'Project updated',
+      code: 200,
+    })
+  }
+
+  /**
+   * Upload a project logo (multipart `logo`). Stored publicly and its URL written
+   * to `branding.logo_url` so the widget can render it.
+   */
+  async uploadLogo({ req }: HttpContext) {
+    const data = await this.validate({ logo: ['required', 'file', 'image', 'max:2048'] })
+
+    const project = await Project.where({
+      id: req.params.projectId,
+      tenantId: req.tenant!.id,
+    }).firstOrFail()
+
+    const key = `tenants/${project.tenantId}/projects/${project.id}/branding/logo`
+    await Storage.disk().put(key, data.logo, { visibility: 'public' })
+    const url = await Storage.disk().getUrl(key)
+
+    project.branding = { ...(project.branding ?? {}), logo_url: url }
+    await project.save()
+
+    await audit.recordForRequest(req, {
+      projectId: project.id,
+      action: 'project.logo_uploaded',
+      entityType: 'project',
+      entityId: project.id,
+    })
+
+    return new ProjectResource(project).additional({
+      status: 'success',
+      message: 'Logo uploaded',
       code: 200,
     })
   }

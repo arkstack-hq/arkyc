@@ -67,6 +67,23 @@ describe('review queue + actions', () => {
     expect(found.auto_decision).toBe('requires_review')
   })
 
+  it('exposes a detailed session (ocr + checks + media) and streams an artifact', async () => {
+    const id = await reviewableSession()
+
+    const detail = await authed('get', `/tenants/${fx.tenantId}/sessions/${id}`)
+    expect(detail.status).toBe(200)
+    expect(detail.body.data).toHaveProperty('ocr')
+    expect(detail.body.data).toHaveProperty('liveness')
+    expect(Array.isArray(detail.body.data.media)).toBe(true)
+    expect(detail.body.data.media).toContain('document_front')
+
+    const media = await authed('get', `/tenants/${fx.tenantId}/sessions/${id}/media/document_front`)
+    expect(media.status).toBe(200)
+
+    const missing = await authed('get', `/tenants/${fx.tenantId}/sessions/${id}/media/bogus`)
+    expect(missing.status).toBe(404)
+  })
+
   it('approves a session and records the audit trail', async () => {
     const id = await reviewableSession()
 

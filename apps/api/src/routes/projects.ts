@@ -14,6 +14,7 @@ Router.group('/v1/dashboard/tenants/:tenantId/projects', () => {
   Router.post('/', [ProjectController, 'create'], scoped('projects.create'))
   Router.get('/:projectId', [ProjectController, 'show'], scoped('projects.view'))
   Router.patch('/:projectId', [ProjectController, 'update'], scoped('projects.update'))
+  Router.post('/:projectId/logo', [ProjectController, 'uploadLogo'], scoped('projects.update'))
 
   // Project members (project-scoped)
   Router.get('/:projectId/members', [ProjectMemberController, 'index'], scoped('members.view'))

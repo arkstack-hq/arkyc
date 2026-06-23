@@ -11,6 +11,7 @@ const scoped = (perm: PermissionKey) => [auth, resolveTenant, can(perm)]
 Router.group('/v1/dashboard/tenants/:tenantId', () => {
   Router.get('/sessions', [SessionReviewController, 'index'], scoped('sessions.view'))
   Router.get('/sessions/:id', [SessionReviewController, 'show'], scoped('sessions.view'))
+  Router.get('/sessions/:id/media/:kind', [SessionReviewController, 'media'], scoped('sessions.view'))
   Router.post('/sessions/:id/approve', [SessionReviewController, 'approve'], scoped('reviews.approve'))
   Router.post('/sessions/:id/reject', [SessionReviewController, 'reject'], scoped('reviews.reject'))
   Router.post('/sessions/:id/request-retry', [SessionReviewController, 'requestRetry'], scoped('reviews.request_retry'))
