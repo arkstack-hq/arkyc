@@ -40,7 +40,7 @@
     "@arkyc/realtime": "workspace:*",
     "@arkyc/types": "workspace:*",
     "@arkyc/webhooks": "workspace:*",
-    "@h3ravel/musket": "^2.2.0",
+    "@h3ravel/musket": "^2.2.1",
     "@h3ravel/support": "^2.2.0",
     "@kanun-hq/plugin-file": "^0.1.12",
     "arkormx": "^2.9.3",

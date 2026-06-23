@@ -24,6 +24,10 @@ export class Theme {
   readonly borderRadius: number
   readonly mode: 'light' | 'dark'
   readonly logoUrl: string | null
+  /** Project/company display name shown in the header (when branding is shown). */
+  readonly name: string | null
+  /** Whether to show the project name/logo in the header (white-label off → false). */
+  readonly showBranding: boolean
   /** Surface (card) background. */
   readonly background: string
   /** Primary text colour. */
@@ -39,6 +43,8 @@ export class Theme {
     this.primaryColor = branding?.primary_color ?? '#4f46e5'
     this.borderRadius = branding?.border_radius ?? 12
     this.logoUrl = branding?.logo_url ?? null
+    this.name = branding?.name ?? null
+    this.showBranding = branding?.show_branding !== false
     this.background = palette.background
     this.foreground = palette.foreground
     this.muted = palette.muted
@@ -71,9 +77,12 @@ export class Theme {
 .arkyc-root{${this.variables()};color:var(--arkyc-fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-sizing:border-box}
 .arkyc-root *{box-sizing:border-box}
 .arkyc-card{background:var(--arkyc-bg);border-radius:var(--arkyc-radius);width:100%;max-width:480px;height:100%;max-height:720px;display:flex;flex-direction:column;overflow:hidden}
+.arkyc-root.arkyc-fullscreen .arkyc-card{max-width:none;max-height:none;height:100%;border-radius:0}
 .arkyc-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--arkyc-border)}
-.arkyc-logo{height:24px}
+.arkyc-logo{height:24px;width:auto}
 .arkyc-title{font-size:15px;font-weight:600;margin:0}
+.arkyc-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.arkyc-brand-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arkyc-close{background:none;border:0;color:var(--arkyc-muted);font-size:20px;line-height:1;cursor:pointer}
 .arkyc-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:24px;overflow-y:auto}
 .arkyc-h{font-size:20px;font-weight:600;margin:0}

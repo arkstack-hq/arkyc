@@ -1,5 +1,5 @@
-import type { BaseWidgetOptions, MountWidgetOptions, WidgetHandle } from "./types"
-import { buildController, resolveContainer } from "./controller"
+import type { BaseWidgetOptions, MountWidgetOptions, WidgetHandle } from './types'
+import { buildController, resolveContainer } from './controller'
 
 /**
  * @arkyc/widget
@@ -32,17 +32,21 @@ export class ArkycWidget {
     const overlay = doc.createElement('div')
 
     overlay.setAttribute('data-arkyc-widget', '')
-    overlay.style.cssText =
-      'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;'
+    // Fullscreen: edge-to-edge with no backdrop gap. Otherwise a centred modal
+    // over a dimmed backdrop.
+    overlay.style.cssText = options.fullscreen
+      ? 'position:fixed;inset:0;z-index:2147483647;background:var(--arkyc-bg,#fff);display:flex;align-items:stretch;justify-content:center;padding:0;'
+      : 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;'
 
     const controller = buildController(options, () => overlay.remove())
-    overlay.appendChild(controller.element);
+    if (options.fullscreen) controller.element.classList.add('arkyc-fullscreen')
+    overlay.appendChild(controller.element)
 
-    (doc.body ?? doc.documentElement).appendChild(overlay)
+    ;(doc.body ?? doc.documentElement).appendChild(overlay)
     controller.start()
 
     return {
-      close: () => controller.close()
+      close: () => controller.close(),
     }
   }
 
@@ -61,7 +65,7 @@ export class ArkycWidget {
     controller.start()
 
     return {
-      close: () => controller.close()
+      close: () => controller.close(),
     }
   }
 

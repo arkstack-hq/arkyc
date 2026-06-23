@@ -1,13 +1,14 @@
-import { useState } from 'react'
-import { useForm, useRequest } from 'alova/client'
-import type { CaptureModel, GlobalSettings, RealtimeTransport } from '@arkyc/types'
 import { Admin, errorMessage } from '@/lib/api'
+import type { CaptureModel, GlobalSettings, RealtimeTransport } from '@arkyc/types'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState, Loading, PageHeader } from '@/components/States'
-import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { useForm, useRequest } from 'alova/client'
+
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react'
 
 const TRANSPORTS: RealtimeTransport[] = ['off', 'pusher', 'firebase']
 const CAPTURE_MODELS: CaptureModel[] = ['passive', 'active', 'both']

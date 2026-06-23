@@ -25,6 +25,13 @@ export interface ProjectBranding {
   primary_color?: string
   border_radius?: number
   theme?: 'light' | 'dark'
+  /** Display name (company/product) shown in the widget header. */
+  name?: string | null
+  /**
+   * Whether to show the project's name/logo in the widget header. Defaults to
+   * shown; set `false` for an unbranded (white-label) header.
+   */
+  show_branding?: boolean
 }
 
 /** Project-level configuration. */

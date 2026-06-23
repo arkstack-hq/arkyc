@@ -171,11 +171,16 @@ export class WidgetView {
 
     const card = this.el('div', { class: 'arkyc-card' })
     const header = this.el('div', { class: 'arkyc-header' })
-    if (theme.logoUrl) {
-      header.appendChild(this.el('img', { class: 'arkyc-logo', src: theme.logoUrl }))
+    // Project branding: show the logo and/or name when allowed; otherwise a
+    // neutral title. The "brand" group keeps a logo and name side by side.
+    const brand = this.el('div', { class: 'arkyc-brand' })
+    if (theme.showBranding && (theme.logoUrl || theme.name)) {
+      if (theme.logoUrl) brand.appendChild(this.el('img', { class: 'arkyc-logo', src: theme.logoUrl }))
+      if (theme.name) brand.appendChild(this.el('span', { class: 'arkyc-brand-name', text: theme.name }))
     } else {
-      header.appendChild(this.el('p', { class: 'arkyc-title', text: 'Verify your identity' }))
+      brand.appendChild(this.el('p', { class: 'arkyc-title', text: 'Verify your identity' }))
     }
+    header.appendChild(brand)
     const close = this.el('button', {
       class: 'arkyc-close',
       html: '&times;',

@@ -1,8 +1,7 @@
-import { type VerifyWebhookInput, WebhookSigner } from '@arkyc/webhooks'
 import { ArkycApiError } from './errors'
-import type { ArkycOptions, CreateSessionParams, CreatedSession, VerificationSession } from './types'
-
-const DEFAULT_BASE_URL = 'https://api.arkyc.dev'
+import type { ArkycOptions } from './types'
+import { Sessions } from './Sessions'
+import { Webhooks } from './Webhooks'
 
 /**
  * Arkyc server SDK. Authenticates with a project secret key and wraps the
@@ -14,6 +13,7 @@ const DEFAULT_BASE_URL = 'https://api.arkyc.dev'
  * ```
  */
 export class Arkyc {
+  private static DEFAULT_BASE_URL = 'https://api.arkyc.dev'
   private readonly secretKey: string
   private readonly baseUrl: string
   private readonly fetchImpl: typeof fetch
@@ -22,67 +22,19 @@ export class Arkyc {
     if (!options.secretKey) throw new Error('Arkyc requires a `secretKey`.')
 
     this.secretKey = options.secretKey
-    this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '')
+    this.baseUrl = (options.baseUrl ?? Arkyc.DEFAULT_BASE_URL).replace(/\/$/, '')
     this.fetchImpl = options.fetch ?? globalThis.fetch
   }
 
-  /** Verification session operations. */
-  readonly sessions = {
-    /**
-     * Open a session and receive its one-time client token for the widget.
-     *
-     * @param params
-     * @returns
-     */
-    create: async (params: CreateSessionParams = {}): Promise<CreatedSession> => {
-      const body = await this.request('POST', '/v1/sessions', {
-        user_reference: params.userReference ?? null,
-        metadata: params.metadata ?? null,
-      })
-
-      return {
-        session: body.data as VerificationSession,
-        clientToken: body.client_token as string,
-      }
-    },
-
-    /**
-     * Fetch a session by id.
-     *
-     * @param id
-     * @returns
-     */
-    retrieve: async (id: string): Promise<VerificationSession> => {
-      const body = await this.request('GET', `/v1/sessions/${encodeURIComponent(id)}`)
-
-      return body.data as VerificationSession
-    },
-
-    /**
-     * Cancel a non-terminal session.
-     *
-     * @param id
-     * @returns
-     */
-    cancel: async (id: string): Promise<VerificationSession> => {
-      const body = await this.request('POST', `/v1/sessions/${encodeURIComponent(id)}/cancel`)
-
-      return body.data as VerificationSession
-    },
-  }
+  /**
+   * Verification session operations.
+   */
+  readonly sessions = new Sessions(this.request)
 
   /**
    * Webhook helpers.
    */
-  readonly webhooks = {
-    /**
-     * Verify a received webhook signature against the endpoint's signing secret.
-     *
-     * @param input
-     * @returns
-     */
-    verify: (input: VerifyWebhookInput): boolean => WebhookSigner.verify(input),
-  }
+  readonly webhooks = new Webhooks()
 
   /**
    * Issue an authenticated request and unwrap the `{ status, data, … }` envelope.

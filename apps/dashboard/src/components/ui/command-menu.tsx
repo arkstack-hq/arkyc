@@ -107,7 +107,6 @@ export function CommandMenu({
       >
         <div className="flex items-center gap-2 border-b border-border px-3">
           <Search className="size-4 shrink-0 text-muted-foreground" />
-          {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
           <input
             autoFocus
             value={query}

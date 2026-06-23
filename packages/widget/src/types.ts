@@ -55,15 +55,19 @@ export interface WidgetControllerConfig {
   maxPolls?: number
 }
 
-
 /** Common options shared by every launch mode. */
 export interface BaseWidgetOptions {
   /** Short-lived client token minted by the integrator's backend. */
   token: string
   /** API origin (defaults to the page's own origin). */
   baseUrl?: string
-  /** Branding (colors, logo, radius, theme). Usually sourced from project config. */
+  /** Branding (colors, logo, radius, theme, name). Usually sourced from project config. */
   branding?: ProjectBranding | null
+  /**
+   * Open the widget edge-to-edge (no surrounding padding/backdrop gap, no card
+   * max-size or border radius). Applies to {@link ArkycWidget.open} only.
+   */
+  fullscreen?: boolean
   /** Mock-driver signal hints; enables a "Skip" affordance on capture screens. */
   signals?: ProviderSignalHints
   onComplete?: (result: WidgetResult) => void
@@ -95,45 +99,4 @@ export interface MountWidgetOptions extends BaseWidgetOptions {
 export interface WidgetHandle {
   /** Close the widget and release the camera (fires `onClose`). */
   close: () => void
-}
-
-/** Options for {@link ArkycWidget.mount} (inline mode). */
-export interface MountWidgetOptions extends BaseWidgetOptions {
-  /** Element (or selector) to mount the widget into. */
-  container: string | HTMLElement
-}
-
-/** A handle to an open/mounted widget. */
-export interface WidgetHandle {
-  /** Close the widget and release the camera (fires `onClose`). */
-  close: () => void
-}
-
-/** Common options shared by every launch mode. */
-export interface BaseWidgetOptions {
-  /** Short-lived client token minted by the integrator's backend. */
-  token: string
-  /** API origin (defaults to the page's own origin). */
-  baseUrl?: string
-  /** Branding (colors, logo, radius, theme). Usually sourced from project config. */
-  branding?: ProjectBranding | null
-  /** Mock-driver signal hints; enables a "Skip" affordance on capture screens. */
-  signals?: ProviderSignalHints
-  onComplete?: (result: WidgetResult) => void
-  onError?: (error: Error) => void
-  onClose?: () => void
-
-  // Injectables (testing / non-browser hosts).
-  fetch?: typeof fetch
-  doc?: Document
-  win?: Window
-  nav?: Navigator
-  /** Pass `null` to disable face detection (selfie auto-capture + active liveness). */
-  faceAnalyzer?: FaceAnalyzer | null
-  /** Override face-detection thresholds (tune against a real camera). */
-  faceTuning?: FaceTuning
-  /** Pass `null` to disable document detection (falls back to the brightness heuristic). */
-  documentAnalyzer?: DocumentAnalyzer | null
-  /** Override document-detection thresholds (tune against a real camera). */
-  documentTuning?: DocumentTuning
 }

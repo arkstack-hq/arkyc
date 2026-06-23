@@ -39,3 +39,31 @@ export interface ArkycOptions {
   /** Custom fetch implementation (defaults to global `fetch`). */
   fetch?: typeof fetch
 }
+
+
+
+/** Payload delivered when the widget flow completes. */
+export interface WidgetResult {
+  status: string
+  [key: string]: unknown
+}
+
+/** Options for {@link ArkycWidget.open}. */
+export interface OpenWidgetOptions {
+  /** The session's client token (from `arkyc.sessions.create`). */
+  token: string
+  /** Hosted widget origin (default `https://verify.arkyc.dev`). */
+  widgetUrl?: string
+  onComplete?: (result: WidgetResult) => void
+  onError?: (error: unknown) => void
+  onClose?: () => void
+  /** Injectable for testing; defaults to the global `document`. */
+  doc?: Document
+  /** Injectable for testing; defaults to the global `window`. */
+  win?: Window
+}
+
+/** A handle to the open widget. */
+export interface WidgetHandle {
+  close: () => void
+}

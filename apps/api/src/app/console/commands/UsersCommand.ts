@@ -13,7 +13,7 @@ const dayjs = interopDefault(day)
 
 export class UsersCommand extends Command {
   signature = `users
-        {userId? : The ID of the user to manage, will prompt if not provided)}
+        {userId? : The ID|Email addres of the user to manage, will prompt if not provided)}
         {--p|perPage=20 : Number of users to show per page when prompting.}
         {--s|search? : Search term for filtering users.}
         {--a|accountType? : Filter users by account type.}
@@ -82,7 +82,10 @@ export class UsersCommand extends Command {
     }
 
     if (userId) {
-      const user = await User.query().where({ id: userId }).firstOrFail()
+      const user = await User.query()
+        .when(!userId.includes('@'), e => e.where({ id: userId }))
+        .when(userId.includes('@'), e => e.where({ email: userId }))
+        .firstOrFail()
 
       const action = await this.choice(`Selected user: ${user.getAttribute('name')}. Choose an action:`, [
         { name: 'Details', value: 'view' },

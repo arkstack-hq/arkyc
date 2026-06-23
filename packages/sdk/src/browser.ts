@@ -1,3 +1,5 @@
+import type { OpenWidgetOptions, WidgetHandle, WidgetResult } from "./types"
+
 /**
  * @arkyc/sdk/browser
  *
@@ -9,50 +11,23 @@
  * ArkycWidget.open({ token: clientToken, onComplete: (r) => console.log(r.status) })
  * ```
  */
+export class ArkycWidget {
+  private static DEFAULT_WIDGET_URL = 'https://verify.arkyc.dev'
 
-const DEFAULT_WIDGET_URL = 'https://verify.arkyc.dev'
-
-/** Payload delivered when the widget flow completes. */
-export interface WidgetResult {
-  status: string
-  [key: string]: unknown
-}
-
-/** Options for {@link ArkycWidget.open}. */
-export interface OpenWidgetOptions {
-  /** The session's client token (from `arkyc.sessions.create`). */
-  token: string
-  /** Hosted widget origin (default `https://verify.arkyc.dev`). */
-  widgetUrl?: string
-  onComplete?: (result: WidgetResult) => void
-  onError?: (error: unknown) => void
-  onClose?: () => void
-  /** Injectable for testing; defaults to the global `document`. */
-  doc?: Document
-  /** Injectable for testing; defaults to the global `window`. */
-  win?: Window
-}
-
-/** A handle to the open widget. */
-export interface WidgetHandle {
-  close: () => void
-}
-
-export const ArkycWidget = {
   /**
    * Open the verification widget for a client token. Returns a close handle.
    *
    * @param options
    * @returns
    */
-  open(options: OpenWidgetOptions): WidgetHandle {
+  static open(options: OpenWidgetOptions): WidgetHandle {
     if (!options.token) throw new Error('ArkycWidget.open requires a client `token`.')
 
     const doc = options.doc ?? globalThis.document
     const win = options.win ?? globalThis.window
     if (!doc || !win) throw new Error('ArkycWidget.open must run in a browser environment.')
 
-    const widgetUrl = (options.widgetUrl ?? DEFAULT_WIDGET_URL).replace(/\/$/, '')
+    const widgetUrl = (options.widgetUrl ?? ArkycWidget.DEFAULT_WIDGET_URL).replace(/\/$/, '')
     const src = `${widgetUrl}?token=${encodeURIComponent(options.token)}`
 
     const overlay = doc.createElement('div')
@@ -88,9 +63,9 @@ export const ArkycWidget = {
       }
     }
 
-    win.addEventListener('message', onMessage)
-    ;(doc.body ?? doc.documentElement).appendChild(overlay)
+    win.addEventListener('message', onMessage);
+    (doc.body ?? doc.documentElement).appendChild(overlay)
 
     return { close }
-  },
+  }
 }
