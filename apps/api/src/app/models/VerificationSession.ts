@@ -7,6 +7,7 @@ import type {
   Metadata,
   VerificationDecision,
   VerificationStatus,
+  WorkflowConfig,
 } from '@arkyc/types'
 import { Organization } from './Organization'
 import { Project } from './Project'
@@ -45,6 +46,10 @@ export class VerificationSession extends Model {
   declare captureModel: CaptureModel | null
   /** Randomized active-liveness challenge sequence issued at session creation. */
   declare livenessChallenges: LivenessChallenge[] | null
+  /** The workflow applied to this session, if any (its ID for traceability). */
+  declare workflowId: string | null
+  /** Snapshot of the applied workflow config, frozen at session creation. */
+  declare workflow: WorkflowConfig | null
   declare createdAt: Date
   declare updatedAt: Date
 
@@ -64,6 +69,7 @@ export class VerificationSession extends Model {
     assignedTo: 'assigned_to',
     captureModel: 'capture_model',
     livenessChallenges: 'liveness_challenges',
+    workflowId: 'workflow_id',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }
@@ -71,6 +77,7 @@ export class VerificationSession extends Model {
   protected override casts: CastMap = {
     metadata: 'json',
     livenessChallenges: 'json',
+    workflow: 'json',
   }
 
   /** The client token hash is internal and never serialised. */

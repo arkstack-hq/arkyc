@@ -53,6 +53,11 @@ export class Catalogue {
     { name: 'webhooks.delete', group: 'webhooks', description: 'Delete webhook endpoints' },
     { name: 'webhooks.test', group: 'webhooks', description: 'Send test webhook deliveries' },
 
+    { name: 'workflows.view', group: 'workflows', description: 'View workflows' },
+    { name: 'workflows.create', group: 'workflows', description: 'Create workflows' },
+    { name: 'workflows.update', group: 'workflows', description: 'Update workflows' },
+    { name: 'workflows.delete', group: 'workflows', description: 'Delete workflows' },
+
     { name: 'sessions.view', group: 'sessions', description: 'View verification sessions' },
     { name: 'sessions.create', group: 'sessions', description: 'Create verification sessions' },
     { name: 'sessions.cancel', group: 'sessions', description: 'Cancel verification sessions' },
