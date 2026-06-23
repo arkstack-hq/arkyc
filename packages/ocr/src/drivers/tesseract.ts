@@ -1,6 +1,7 @@
 import type { OcrResultData } from '@arkyc/types'
 import type { OcrDriver, OcrRequest } from '../types'
 import { createDocumentParserRegistry, type DocumentParserRegistry } from '../parsers/registry'
+import { defaultPreprocessor, type OcrPreprocessor } from './preprocess'
 
 const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
 
@@ -25,6 +26,12 @@ export interface TesseractOcrOptions {
   registry?: DocumentParserRegistry
   /** Injectable recognizer (tests); defaults to a lazily-loaded `tesseract.js`. */
   recognize?: TesseractRecognize
+  /**
+   * Injectable image preprocessor run on each side before recognition. Defaults
+   * to a lazily-loaded `sharp` pass (grayscale/normalise/upscale) that degrades
+   * to a no-op when `sharp` isn't installed. Pass `false` to disable it.
+   */
+  preprocess?: OcrPreprocessor | false
 }
 
 /**
@@ -37,11 +44,14 @@ export class TesseractOcrDriver implements OcrDriver {
   private readonly language: string
   private readonly registry: DocumentParserRegistry
   private readonly recognizeImpl?: TesseractRecognize
+  private readonly preprocessOption?: OcrPreprocessor | false
+  private preprocessImpl?: OcrPreprocessor
 
   constructor(options: TesseractOcrOptions = {}) {
     this.language = options.language ?? 'eng'
     this.registry = options.registry ?? createDocumentParserRegistry()
     this.recognizeImpl = options.recognize
+    this.preprocessOption = options.preprocess
   }
 
   async extract(request: OcrRequest): Promise<OcrResultData> {
@@ -76,11 +86,21 @@ export class TesseractOcrDriver implements OcrDriver {
   /** Recognize text, or `null` if the engine can't read the image. */
   private async tryRecognize(image: Uint8Array): Promise<{ text: string; confidence: number } | null> {
     try {
+      const prepared = await this.preprocess(image)
       const recognize = this.recognizeImpl ?? (await this.loadRecognizer())
-      return await recognize(image, this.language)
+      return await recognize(prepared, this.language)
     } catch {
       return null
     }
+  }
+
+  /** Run the configured preprocessor (resolved once), or pass bytes through. */
+  private async preprocess(image: Uint8Array): Promise<Uint8Array> {
+    if (this.preprocessOption === false) return image
+    if (!this.preprocessImpl) {
+      this.preprocessImpl = this.preprocessOption ?? (await defaultPreprocessor())
+    }
+    return this.preprocessImpl(image)
   }
 
   /** Lazily load `tesseract.js` and adapt it to {@link TesseractRecognize}. */

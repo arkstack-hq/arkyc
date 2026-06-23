@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { TesseractOcrDriver } from '../src'
+import { TesseractOcrDriver, buildSharpPreprocessor } from '../src'
 
 // Canonical ICAO TD3 MRZ (valid check digits).
 const TD3 = ['P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<', 'L898902C36UTO7408122F1204159ZE184226B<<<<<10'].join('\n')
@@ -69,5 +69,74 @@ describe('TesseractOcrDriver', () => {
     const result = await driver.extract({ image: dummy })
     expect(result.fields).toEqual({})
     expect(result.confidence).toBe(0)
+  })
+
+  it('preprocesses each side before recognition', async () => {
+    const seen: Uint8Array[] = []
+    const driver = new TesseractOcrDriver({
+      // Tag the bytes so we can assert the recognizer saw the preprocessed image.
+      preprocess: async (image) => new Uint8Array([...image, 99]),
+      recognize: async (image) => {
+        seen.push(image)
+        return { text: TD3, confidence: 90 }
+      },
+    })
+    await driver.extract({ image: new Uint8Array([1]), backImage: new Uint8Array([2]) })
+    expect(seen).toEqual([new Uint8Array([1, 99]), new Uint8Array([2, 99])])
+  })
+
+  it('skips preprocessing when disabled', async () => {
+    let seen: Uint8Array | null = null
+    const driver = new TesseractOcrDriver({
+      preprocess: false,
+      recognize: async (image) => {
+        seen = image
+        return { text: TD3, confidence: 90 }
+      },
+    })
+    await driver.extract({ image: new Uint8Array([7]) })
+    expect(seen).toEqual(new Uint8Array([7]))
+  })
+})
+
+describe('buildSharpPreprocessor', () => {
+  // A fake `sharp` instance recording the pipeline calls; toBuffer yields a marker.
+  function fakeSharp(width: number, calls: string[]) {
+    const instance = {
+      metadata: async () => ({ width }),
+      grayscale: () => (calls.push('grayscale'), instance),
+      normalise: () => (calls.push('normalise'), instance),
+      median: (n: number) => (calls.push(`median:${n}`), instance),
+      sharpen: () => (calls.push('sharpen'), instance),
+      resize: (o: { width: number }) => (calls.push(`resize:${o.width}`), instance),
+      png: () => (calls.push('png'), instance),
+      toBuffer: async () => Buffer.from([42]),
+    }
+    return instance
+  }
+
+  it('runs the grayscale/normalise/sharpen pipeline and upscales small images', async () => {
+    const calls: string[] = []
+    const pre = buildSharpPreprocessor(() => fakeSharp(800, calls) as never, { minWidth: 1600 })
+    const out = await pre(new Uint8Array([1, 2, 3]))
+    expect(out).toEqual(new Uint8Array([42]))
+    expect(calls).toContain('grayscale')
+    expect(calls).toContain('normalise')
+    expect(calls).toContain('resize:1600')
+  })
+
+  it('does not upscale images already at least minWidth', async () => {
+    const calls: string[] = []
+    const pre = buildSharpPreprocessor(() => fakeSharp(2000, calls) as never, { minWidth: 1600 })
+    await pre(new Uint8Array([1]))
+    expect(calls.some((c) => c.startsWith('resize'))).toBe(false)
+  })
+
+  it('falls back to the original bytes when sharp throws', async () => {
+    const pre = buildSharpPreprocessor(() => {
+      throw new Error('unsupported image format')
+    })
+    const input = new Uint8Array([1, 2, 3])
+    expect(await pre(input)).toBe(input)
   })
 })

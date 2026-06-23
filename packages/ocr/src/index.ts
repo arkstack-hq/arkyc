@@ -13,6 +13,13 @@ export { MockOcrDriver } from './drivers/mock'
 export { ExternalOcrDriver } from './drivers/external'
 export { TesseractOcrDriver } from './drivers/tesseract'
 export type { TesseractOcrOptions, TesseractRecognize } from './drivers/tesseract'
+export {
+  buildSharpPreprocessor,
+  defaultPreprocessor,
+  passthrough,
+  type OcrPreprocessor,
+  type PreprocessOptions,
+} from './drivers/preprocess'
 
 // Document-parser registry: turn OCR text into structured fields, with
 // country/document-type matching and an MRZ default.
