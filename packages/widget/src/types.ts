@@ -10,7 +10,9 @@ export interface WidgetControllerConfig {
   token: string
   /** API origin (defaults to the widget's own origin). */
   baseUrl?: string
-  /** Hosted-widget URL the handoff QR points to (see {@link BaseWidgetOptions.handoffUrl}). */
+  /** Disable cross-device handoff entirely (set on the hosted page to avoid recursion). */
+  handoff?: boolean
+  /** Override the server-provided handoff page URL. */
   handoffUrl?: string
   branding?: ProjectBranding | null
   /**
@@ -66,9 +68,14 @@ export interface BaseWidgetOptions {
   /** API origin (defaults to the page's own origin). */
   baseUrl?: string
   /**
-   * URL of a page that boots the widget in hosted mode (`ArkycWidget.hosted()`).
-   * Required to offer cross-device handoff: the QR points here with the session
-   * `token`/`baseUrl` appended so the second device resumes the same session.
+   * Cross-device handoff (desktop → phone via QR) is on by default and uses a
+   * first-party hosted page the API points to — integrators host nothing. Set
+   * `false` to disable it (the hosted page itself does, to avoid recursion).
+   */
+  handoff?: boolean
+  /**
+   * Override the hosted handoff page URL. By default the widget uses the URL the
+   * API returns (the dashboard's `/verify` page); only set this for custom hosting.
    */
   handoffUrl?: string
   /** Branding (colors, logo, radius, theme, name). Usually sourced from project config. */

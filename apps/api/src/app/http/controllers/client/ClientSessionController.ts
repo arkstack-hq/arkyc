@@ -1,11 +1,12 @@
+import type { DocumentType, LivenessChallenge, LivenessMode } from '@arkyc/types'
+
 import { BaseController } from '@controllers/BaseController'
 import ClientSessionResource from '@app/http/resources/ClientSessionResource'
-import type { DocumentType, LivenessChallenge, LivenessMode } from '@arkyc/types'
 import type { FileLike } from '@arkstack/filesystem'
 import { HttpContext } from 'clear-router/types/express'
+import { Project } from '@app/models/Project'
 import type { ProviderSignals } from '@app/services/providers'
 import { sessionService } from '@app/services/VerificationSessionService'
-import { Project } from '@app/models/Project'
 
 const DOCUMENT_TYPES = 'passport,id_card,drivers_license,residence_permit'
 
@@ -26,10 +27,12 @@ export default class ClientSessionController extends BaseController {
     const session = await sessionService.start(req.verificationSession!)
     const project = await Project.where({ id: session.projectId }).first()
     const handoff = project?.settings?.handoff
+    const frontendUrl = String(config('app.frontend_url') ?? '').replace(/\/$/, '')
 
     return new ClientSessionResource(session, {
       enabled: !!handoff?.enabled,
-      desktop_only: !!handoff?.desktop_only,
+      allow_desktop: handoff?.allow_desktop !== false,
+      url: `${frontendUrl}/verify`,
     })
       .additional({
         status: 'success',

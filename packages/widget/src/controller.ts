@@ -34,7 +34,7 @@ export class WidgetController {
   private readonly maxHandoffPolls: number
 
   /** Cross-device handoff: project config + whether the offer/QR is showing. */
-  private handoffConfig: ClientHandoff = { enabled: false, desktop_only: false }
+  private handoffConfig: ClientHandoff = { enabled: false, allow_desktop: true, url: '' }
   private handoffReady = false
   private handoffActive = false
 
@@ -88,12 +88,18 @@ export class WidgetController {
     return this.view.element
   }
 
-  /** Render the initial (welcome) screen. */
+  /** Render the initial screen (QR-first on desktop when handoff is enabled). */
   start(): void {
+    // On a desktop the phone has the better camera, so when the project enables
+    // handoff we lead with the QR. The enabled flag comes from the server, so on
+    // desktop we show a brief connecting screen, fetch the config, then route to
+    // the QR or the normal welcome flow. Mobile (and hosted pages) start at welcome.
+    if (this.config.handoff !== false && isDesktopDevice(this.nav)) {
+      this.view.renderLoading()
+      void this.run(() => this.bootstrapDesktop())
+      return
+    }
     this.render()
-    // If handoff is configured, learn whether the project enabled it (and prep
-    // the "continue on phone" offer) without blocking the welcome screen.
-    if (this.config.handoffUrl) void this.run(() => this.maybeOfferHandoff())
   }
 
   /** Tear down the view and release the camera (does not fire callbacks). */
@@ -134,7 +140,7 @@ export class WidgetController {
         }),
       onAcknowledge: () => this.finishResult(),
       onUsePhone: () => void this.run(() => this.startHandoff()),
-      onCancelHandoff: () => {
+      onContinueHere: () => {
         this.handoffActive = false
         this.step = 'welcome'
         this.render()
@@ -143,41 +149,48 @@ export class WidgetController {
   }
 
   /**
-   * Pre-fetch the session to learn the project's handoff setting, then (when
-   * enabled and applicable to this device) surface the "continue on phone" offer
-   * on the welcome screen.
+   * Desktop bootstrap: fetch the session to learn the project's handoff config,
+   * then lead with the QR when enabled (otherwise fall through to welcome). On a
+   * phone this path isn't taken — handoff has no value there.
    */
-  private async maybeOfferHandoff(): Promise<void> {
+  private async bootstrapDesktop(): Promise<void> {
     if (this.settled) return
     const session = await this.client.getSession()
     this.resolveLiveness(session)
     if (session.handoff) this.handoffConfig = session.handoff
-    if (this.handoffOfferable() && this.step === 'welcome' && !this.settled) {
+    if (this.handoffConfig.enabled && this.handoffTarget()) {
       this.handoffReady = true
+      await this.startHandoff()
+    } else {
+      this.step = 'welcome'
       this.render()
     }
   }
 
-  /** Whether to show the handoff offer: project-enabled, configured, device-appropriate. */
-  private handoffOfferable(): boolean {
-    if (!this.config.handoffUrl || !this.handoffConfig.enabled) return false
-    return !this.handoffConfig.desktop_only || isDesktopDevice(this.nav)
+  /** The hosted handoff page URL: a consumer override, else the server-provided one. */
+  private handoffTarget(): string {
+    return (this.config.handoffUrl ?? this.handoffConfig.url ?? '').trim()
   }
 
   /** Render the QR for this session and wait for the other device to finish. */
   private async startHandoff(): Promise<void> {
-    if (!this.config.handoffUrl) return
+    const target = this.handoffTarget()
+    if (!target) return
     this.handoffActive = true
-    this.view.renderHandoff(renderQrSvg(this.buildHandoffUrl()))
+    // Offer "continue on this device" only when the project permits it.
+    this.view.renderHandoff(renderQrSvg(this.buildHandoffUrl(target)), this.handoffConfig.allow_desktop)
     await this.pollHandoff()
   }
 
-  /** Build the hosted-widget URL the QR encodes (same session, on the phone). */
-  private buildHandoffUrl(): string {
-    const base = this.config.handoffUrl as string
-    const apiBase = (this.config.baseUrl ?? '').trim() || this.win.location.origin
-    const sep = base.includes('?') ? '&' : '?'
-    return `${base}${sep}token=${encodeURIComponent(this.config.token)}&baseUrl=${encodeURIComponent(apiBase)}`
+  /** Build the hosted-page URL the QR encodes (carries the session token). */
+  private buildHandoffUrl(target: string): string {
+    const sep = target.includes('?') ? '&' : '?'
+    let url = `${target}${sep}token=${encodeURIComponent(this.config.token)}`
+    // The hosted page supplies its own API base; only pass one when ours is
+    // absolute, so a custom cross-origin host can still reach the right API.
+    const apiBase = (this.config.baseUrl ?? '').trim()
+    if (/^https?:\/\//i.test(apiBase)) url += `&baseUrl=${encodeURIComponent(apiBase)}`
+    return url
   }
 
   /** Poll the session while the user verifies on the other device; mirror the result. */
@@ -378,6 +391,7 @@ export const buildController = (options: BaseWidgetOptions, onSettle: () => void
   return new WidgetController({
     token: options.token,
     baseUrl: options.baseUrl,
+    handoff: options.handoff,
     handoffUrl: options.handoffUrl,
     branding: options.branding,
     signals: options.signals,

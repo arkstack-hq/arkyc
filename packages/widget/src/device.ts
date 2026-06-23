@@ -5,6 +5,9 @@
  */
 export function isDesktopDevice(nav: Navigator): boolean {
   const ua = nav.userAgent || ''
+  // Require a positive desktop signal: an unknown/empty UA is treated as
+  // non-desktop so the QR-first handoff flow never triggers on uncertainty.
+  if (!ua) return false
   const mobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile|BlackBerry|Windows Phone/i.test(ua)
   // iPadOS 13+ masquerades as desktop Safari but reports touch points.
   const iPadOS = nav.platform === 'MacIntel' && (nav.maxTouchPoints ?? 0) > 1

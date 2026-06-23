@@ -16,7 +16,10 @@ export interface ClientSession {
 /** Whether (and where) the widget may offer cross-device handoff. */
 export interface ClientHandoff {
   enabled: boolean
-  desktop_only: boolean
+  /** Whether a desktop user may continue on the desktop device instead of handing off. */
+  allow_desktop: boolean
+  /** First-party hosted page the QR points to (the phone resumes the session there). */
+  url: string
 }
 
 /**

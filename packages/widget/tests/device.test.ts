@@ -23,6 +23,10 @@ describe('isDesktopDevice', () => {
     ).toBe(false)
   })
 
+  it('treats an unknown/empty user agent as non-desktop', () => {
+    expect(isDesktopDevice(nav({}))).toBe(false)
+  })
+
   it('detects iPadOS masquerading as desktop Safari via touch points', () => {
     expect(
       isDesktopDevice(

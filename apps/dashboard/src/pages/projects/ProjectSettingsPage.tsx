@@ -1,17 +1,18 @@
-import { useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { useForm, useRequest } from 'alova/client'
-import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
-import { Projects, errorMessage } from '@/lib/api'
-import { useTenant, useTenantId } from '@/contexts/tenant-context'
-import { Loading, ErrorState } from '@/components/States'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ErrorState, Loading } from '@/components/States'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
+import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
+import { Projects, errorMessage } from '@/lib/api'
+import { useForm, useRequest } from 'alova/client'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
+
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { useParams } from 'react-router-dom'
+import { useState } from 'react'
 
 interface FormState {
   name: string
@@ -26,7 +27,7 @@ interface FormState {
   faceMatchThreshold: string
   allowedOrigins: string
   handoffEnabled: boolean
-  handoffDesktopOnly: boolean
+  handoffAllowDesktop: boolean
 }
 
 const THRESHOLD_FIELDS: { key: keyof VerificationThresholds; label: string }[] = [
@@ -52,7 +53,7 @@ function formFromProject(project: Project): FormState {
     faceMatchThreshold: thresholds.faceMatchThreshold != null ? String(thresholds.faceMatchThreshold) : '',
     allowedOrigins: (project.settings?.allowed_origins ?? []).join(', '),
     handoffEnabled: project.settings?.handoff?.enabled === true,
-    handoffDesktopOnly: project.settings?.handoff?.desktop_only !== false,
+    handoffAllowDesktop: project.settings?.handoff?.allow_desktop !== false,
   }
 }
 
@@ -95,7 +96,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
       const settings: ProjectSettings = {
         ...(project.settings ?? {}),
         allowed_origins,
-        handoff: { enabled: f.handoffEnabled, desktop_only: f.handoffDesktopOnly },
+        handoff: { enabled: f.handoffEnabled, allow_desktop: f.handoffAllowDesktop },
       }
       if (Object.keys(thresholds).length > 0) settings.thresholds = thresholds
 
@@ -300,8 +301,8 @@ function ProjectSettingsForm({ project }: { project: Project }) {
         <CardHeader>
           <CardTitle>Cross-device handoff</CardTitle>
           <CardDescription>
-            Let users continue a verification on another device by scanning a QR code (e.g. start on desktop, finish on
-            a phone).
+            On desktop, lead with a QR code so users can finish the verification on their phone (which usually has the
+            better camera).
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
@@ -311,16 +312,16 @@ function ProjectSettingsForm({ project }: { project: Project }) {
               checked={form.handoffEnabled}
               onChange={(e) => set('handoffEnabled', e.target.checked)}
             />
-            Allow continuing on another device
+            Offer desktop users a QR to continue on their phone
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              checked={form.handoffDesktopOnly}
+              checked={form.handoffAllowDesktop}
               disabled={!form.handoffEnabled}
-              onChange={(e) => set('handoffDesktopOnly', e.target.checked)}
+              onChange={(e) => set('handoffAllowDesktop', e.target.checked)}
             />
-            Only offer the handoff on desktop devices
+            Also let them continue on the desktop device
           </label>
         </CardContent>
       </Card>

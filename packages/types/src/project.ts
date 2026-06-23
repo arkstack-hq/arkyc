@@ -35,14 +35,18 @@ export interface ProjectBranding {
 }
 
 /**
- * Cross-device handoff: let a user continue an in-progress verification on another
- * device by scanning a QR code (e.g. start on desktop, finish on a phone camera).
+ * Cross-device handoff: a desktop user continues an in-progress verification on
+ * their phone by scanning a QR code.
+ * The QR is shown first on desktop.
  */
 export interface ProjectHandoffSettings {
-  /** Whether users may hand the session off to another device. */
+  /** Whether desktop users are offered the QR handoff to their phone. */
   enabled?: boolean
-  /** Only offer the handoff on desktop devices (a phone user gains nothing). */
-  desktop_only?: boolean
+  /**
+   * Whether a desktop user may instead continue on the desktop device. When
+   * `false`, a desktop user must scan to a phone (no "continue here"). Defaults true.
+   */
+  allow_desktop?: boolean
 }
 
 /** Project-level configuration. */

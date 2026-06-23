@@ -36,8 +36,8 @@ export interface ViewHandlers {
   onAcknowledge(): void
   /** The user chose to continue the verification on another device (handoff). */
   onUsePhone(): void
-  /** The user dismissed the handoff QR to keep verifying on this device. */
-  onCancelHandoff(): void
+  /** The user chose to keep verifying on this (desktop) device instead of handing off. */
+  onContinueHere(): void
 }
 
 /** Per-render data the view needs for the current step. */
@@ -285,11 +285,20 @@ export class WidgetView {
     }
   }
 
+  /** A neutral connecting screen shown while the widget bootstraps the session. */
+  renderLoading(label = 'Loading…'): void {
+    this.destroy()
+    this.clear(this.body)
+    this.clear(this.footer)
+    this.renderProcessing(label)
+  }
+
   /**
    * Show the cross-device handoff QR: the user scans it to resume this same
    * session on their phone. The widget then waits for the other device to finish.
+   * `allowContinueHere` offers an escape hatch to keep verifying on this device.
    */
-  renderHandoff(qrSvg: string): void {
+  renderHandoff(qrSvg: string, allowContinueHere: boolean): void {
     this.destroy()
     this.clear(this.body)
     this.clear(this.footer)
@@ -302,9 +311,11 @@ export class WidgetView {
     waiting.appendChild(this.el('div', { class: 'arkyc-spinner sm' }))
     waiting.appendChild(this.el('span', { text: 'Waiting for your phone…' }))
     this.body.appendChild(waiting)
-    this.footer.appendChild(
-      this.button('Continue on this device', () => this.handlers.onCancelHandoff(), 'arkyc-btn-ghost'),
-    )
+    if (allowContinueHere) {
+      this.footer.appendChild(
+        this.button('Continue on this device', () => this.handlers.onContinueHere(), 'arkyc-btn-ghost'),
+      )
+    }
   }
 
   private renderDocumentSelection(): void {

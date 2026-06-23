@@ -326,15 +326,16 @@ describe('WidgetController flow', () => {
 })
 
 describe('WidgetController cross-device handoff', () => {
-  /** A fetch whose `/session` carries handoff config and approves on the 2nd read. */
-  function handoffFetch(handoff: { enabled: boolean; desktop_only: boolean }) {
+  type Handoff = { enabled: boolean; allow_desktop: boolean; url: string }
+  /** A fetch whose `/session` carries the server handoff config; approves after N reads. */
+  function handoffFetch(handoff: Handoff, approveAfter = Infinity) {
     const counts: Record<string, number> = {}
     return vi.fn(async (url: string, init?: RequestInit) => {
       const path = String(url).replace(/^https?:\/\/[^/]+/, '')
       const key = `${init?.method ?? 'GET'} ${path}`
       counts[key] = (counts[key] ?? 0) + 1
       const isSession = path.endsWith('/session')
-      const status = isSession && counts[key] > 1 ? 'approved' : 'started'
+      const status = isSession && counts[key] > approveAfter ? 'approved' : 'started'
       const data: Record<string, unknown> = { id: 's1', status, expires_at: '2099-01-01' }
       if (isSession) data.handoff = handoff
       return {
@@ -345,60 +346,77 @@ describe('WidgetController cross-device handoff', () => {
     })
   }
 
+  const URL = 'https://verify.test/verify'
   const desktopNav = { userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 0 } as Navigator
+  const phoneNav = { userAgent: 'Mozilla/5.0 (iPhone)', platform: 'iPhone', maxTouchPoints: 5 } as Navigator
   const handoffWin = () =>
     ({ parent: { postMessage: () => {} }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
 
-  it('offers the QR and mirrors the result completed on the other device', async () => {
-    const fetchMock = handoffFetch({ enabled: true, desktop_only: false })
+  it('leads with the QR on desktop and offers continuing on this device', async () => {
+    // Session never reaches terminal, so the QR screen persists while we assert.
+    const fetchMock = handoffFetch({ enabled: true, allow_desktop: true, url: URL })
     const { controller } = makeController({
       fetch: fetchMock as never,
       nav: desktopNav,
       win: handoffWin(),
-      handoffUrl: 'https://verify.test/hosted',
+      maxHandoffPolls: 2,
     })
     const el = controller.element as unknown as FakeEl
 
-    controller.start()
-    await flush() // prefetch session → handoff offer appears on welcome
-    clickText(el, 'Continue on your phone')
+    controller.start() // desktop → connecting → bootstrap → QR (no welcome click)
+    await flush()
 
-    // The QR screen renders synchronously (polling is still suspended on its delay):
-    // a rendered SVG and a "use this device" escape hatch.
-    expect(find(el, 'Continue on this device')).toBeTruthy()
     const qr = findByClass(el, 'arkyc-qr')
     expect(qr?.innerHTML.includes('<svg')).toBe(true)
+    expect(find(el, 'Continue on this device')).toBeTruthy()
+    // No "Get started" yet — the QR is the first screen on desktop.
+    expect(find(el, 'Get started')).toBeFalsy()
+  })
 
-    // Polling then sees the handed-off session reach a terminal status → result mirrors.
+  it('mirrors the result completed on the other device', async () => {
+    const fetchMock = handoffFetch({ enabled: true, allow_desktop: true, url: URL }, 1)
+    const { controller } = makeController({ fetch: fetchMock as never, nav: desktopNav, win: handoffWin() })
+    const el = controller.element as unknown as FakeEl
+    controller.start()
     await flush()
+    await flush() // polling sees the session reach approved
     expect(find(el, 'Verified')).toBeTruthy()
   })
 
-  it('hides the offer when the project disables handoff', async () => {
-    const fetchMock = handoffFetch({ enabled: false, desktop_only: false })
+  it('forces the phone when the project forbids continuing on desktop', async () => {
+    const fetchMock = handoffFetch({ enabled: true, allow_desktop: false, url: URL })
     const { controller } = makeController({
       fetch: fetchMock as never,
       nav: desktopNav,
       win: handoffWin(),
-      handoffUrl: 'https://verify.test/hosted',
+      maxHandoffPolls: 2,
     })
+    const el = controller.element as unknown as FakeEl
     controller.start()
     await flush()
-    expect(find(controller.element as unknown as FakeEl, 'Continue on your phone')).toBeFalsy()
+    expect(findByClass(el, 'arkyc-qr')).toBeTruthy()
+    expect(find(el, 'Continue on this device')).toBeFalsy()
   })
 
-  it('hides a desktop-only offer on a phone', async () => {
-    const fetchMock = handoffFetch({ enabled: true, desktop_only: true })
-    const phoneNav = { userAgent: 'Mozilla/5.0 (iPhone)', platform: 'iPhone', maxTouchPoints: 5 } as Navigator
-    const { controller } = makeController({
-      fetch: fetchMock as never,
-      nav: phoneNav,
-      win: handoffWin(),
-      handoffUrl: 'https://verify.test/hosted',
-    })
+  it('starts at the welcome screen on desktop when handoff is disabled', async () => {
+    const fetchMock = handoffFetch({ enabled: false, allow_desktop: true, url: URL })
+    const { controller } = makeController({ fetch: fetchMock as never, nav: desktopNav, win: handoffWin() })
+    const el = controller.element as unknown as FakeEl
     controller.start()
     await flush()
-    expect(find(controller.element as unknown as FakeEl, 'Continue on your phone')).toBeFalsy()
+    expect(find(el, 'Get started')).toBeTruthy()
+    expect(findByClass(el, 'arkyc-qr')).toBeFalsy()
+  })
+
+  it('never shows handoff on a phone (welcome first)', async () => {
+    const fetchMock = handoffFetch({ enabled: true, allow_desktop: true, url: URL })
+    const { controller } = makeController({ fetch: fetchMock as never, nav: phoneNav, win: handoffWin() })
+    const el = controller.element as unknown as FakeEl
+    controller.start()
+    // Phone renders welcome synchronously — no connecting/QR detour.
+    expect(find(el, 'Get started')).toBeTruthy()
+    await flush()
+    expect(findByClass(el, 'arkyc-qr')).toBeFalsy()
   })
 })
 
