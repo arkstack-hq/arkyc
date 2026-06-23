@@ -2,6 +2,7 @@ import { Job } from '@arkstack/jobs'
 import { Storage } from '@arkstack/filesystem'
 import { ocrDriver } from '@app/services/providers'
 import { readObject, sessionObjectKey } from 'src/support/storage'
+import { logOcrExtraction } from 'src/support/ocr-log'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { DocumentCapture } from '@app/models/DocumentCapture'
 import { OcrResult } from '@app/models/OcrResult'
@@ -48,6 +49,14 @@ export class OcrJob extends Job {
       documentType: capture.documentType,
       country: capture.country,
       hints: { confidence: this.hints.ocrConfidence, expired: this.hints.expired },
+    })
+    await logOcrExtraction({
+      sessionId: session.id,
+      documentType: capture.documentType,
+      country: capture.country,
+      frontBytes: image.length,
+      backBytes: back.length,
+      result: { fields: ocr.fields, confidence: ocr.confidence, raw: ocr.raw },
     })
     await OcrResult.create({
       tenantId: session.tenantId,

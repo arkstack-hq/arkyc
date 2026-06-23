@@ -19,6 +19,8 @@ export interface WebhookChecks {
     quality_score: number
     ocr_confidence: number
     expired: boolean
+    /** Which parser produced the OCR fields: the MRZ, a custom parser, or the generic scraper. */
+    ocr_parse_stage?: 'mrz' | 'custom' | 'generic'
   }
   liveness?: {
     passed: boolean

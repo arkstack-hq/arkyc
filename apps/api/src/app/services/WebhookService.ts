@@ -11,6 +11,15 @@ import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
 import { toArray } from 'src/support/collection'
 import { WebhookJob } from '@app/jobs'
 
+/** Read the OCR parse stage from a stored driver `rawResponse`, if present. */
+function ocrParseStage(raw: unknown): 'mrz' | 'custom' | 'generic' | undefined {
+  if (raw && typeof raw === 'object' && 'stage' in raw) {
+    const stage = (raw as { stage?: unknown }).stage
+    if (stage === 'mrz' || stage === 'custom' || stage === 'generic') return stage
+  }
+  return undefined
+}
+
 /** Map a session status to the webhook event it emits (omitted = no event). */
 const STATUS_EVENT: Partial<Record<VerificationStatus, WebhookEventName>> = {
   started: 'verification.started',
@@ -168,6 +177,7 @@ export class WebhookService {
         quality_score: capture?.qualityScore ?? 0,
         ocr_confidence: ocr?.confidence ?? 0,
         expired: ocr ? SessionRules.isDocumentExpired(ocr.fields.expiryDate, new Date()) : false,
+        ocr_parse_stage: ocrParseStage(ocr?.rawResponse),
       }
     }
 

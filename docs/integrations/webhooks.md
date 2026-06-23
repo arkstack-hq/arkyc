@@ -38,7 +38,7 @@ the biometric worker, and review actions.
   "user_reference": "user_123",
   "status": "approved",
   "checks": {
-    "document": { "quality_score": 0.93, "ocr_confidence": 0.88, "expired": false },
+    "document": { "quality_score": 0.93, "ocr_confidence": 0.88, "expired": false, "ocr_parse_stage": "mrz" },
     "liveness": { "passed": true, "score": 0.97 },
     "face_match": { "passed": true, "similarity_score": 0.91 }
   },
