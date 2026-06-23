@@ -2,6 +2,16 @@ import { Resource } from 'resora'
 
 /** A verification session as seen by the integrating backend (Public API). */
 export default class VerificationSessionResource extends Resource {
+  /** Signed inline-image URLs for captured assets (attached on single-session retrieve). */
+  private assets: Record<string, string> | null = null
+
+  /** Attach signed asset URLs to this resource (chainable). */
+  withAssets(assets: Record<string, string> | null): this {
+    this.assets = assets
+
+    return this
+  }
+
   data() {
     return {
       id: this.id,
@@ -15,6 +25,7 @@ export default class VerificationSessionResource extends Resource {
       assigned_to: this.assignedTo ?? null,
       workflow_id: this.workflowId ?? null,
       workflow: this.workflow ?? null,
+      assets: this.assets,
       expires_at: this.expiresAt,
       completed_at: this.completedAt ?? null,
       created_at: this.createdAt,

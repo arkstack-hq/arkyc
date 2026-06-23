@@ -3,6 +3,7 @@ import { Resource } from 'resora'
 import { Router } from '@arkstack/driver-express'
 import { apiKeyAuth } from '@app/http/middlewares'
 import SessionController from '@controllers/public/SessionController'
+import SessionAssetController from '@controllers/public/SessionAssetController'
 
 // Public Project API (secret API key `Bearer sk_…` / `X-Api-Key`).
 
@@ -24,5 +25,10 @@ Router.group('/v1/sessions', () => {
   Router.get('/:id', [SessionController, 'show'], [apiKeyAuth])
   Router.post('/:id/cancel', [SessionController, 'cancel'], [apiKeyAuth])
 })
+
+// Signed, time-limited session assets served inline as images (no API key — the
+// HMAC signature in the query authorizes the request). Lets a third party view
+// or embed captured images directly.
+Router.get('/v1/session-assets/:id/:kind', [SessionAssetController, 'show'])
 
 export default () => {}

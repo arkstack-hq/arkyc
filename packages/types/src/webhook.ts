@@ -42,6 +42,8 @@ export interface WebhookEvent {
   status: VerificationStatus
   checks: WebhookChecks
   decision_reason: DecisionReason | null
+  /** Signed, time-limited URLs for captured assets, served inline as images (when any exist). */
+  assets: Record<string, string> | null
   created_at: IsoDateTime
 }
 

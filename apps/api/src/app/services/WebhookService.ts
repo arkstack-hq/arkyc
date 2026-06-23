@@ -9,6 +9,7 @@ import { OcrResult } from '@app/models/OcrResult'
 import { LivenessCheck } from '@app/models/LivenessCheck'
 import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
 import { toArray } from 'src/support/collection'
+import { buildSessionAssets } from '@app/services/SessionAssetService'
 import { WebhookJob } from '@app/jobs'
 
 /** Read the OCR parse stage from a stored driver `rawResponse`, if present. */
@@ -164,6 +165,7 @@ export class WebhookService {
       status: session.status,
       checks: await this.checks(session),
       decisionReason: session.decisionReason,
+      assets: await buildSessionAssets(session),
       createdAt: new Date().toISOString(),
     })
   }

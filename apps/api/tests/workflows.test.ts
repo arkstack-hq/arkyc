@@ -234,4 +234,28 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
     const final = await retrieve(open.body.data.id)
     expect(final.body.data.status).toBe('approved')
   })
+
+  it('exposes signed asset URLs on retrieve and gates them by signature', async () => {
+    const open = await openSession({})
+    const token = open.body.client_token
+    await client('get', 'session', token)
+    await client('post', 'document/front', token).send({})
+
+    const final = await retrieve(open.body.data.id)
+    const url: string = final.body.data.assets.document_front
+    expect(url).toContain(`/api/v1/session-assets/${open.body.data.id}/document_front`)
+
+    const parsed = new URL(url)
+    const signedPath = parsed.pathname + parsed.search
+
+    // A valid signature passes the gate (mock assets are empty, so it 404s on
+    // the bytes rather than 403-ing on the signature).
+    const valid = await request(app).get(signedPath)
+    expect(valid.status).not.toBe(403)
+
+    // A tampered signature is rejected.
+    const tampered = signedPath.replace(/signature=[a-f0-9]+/, 'signature=deadbeefdeadbeef')
+    const bad = await request(app).get(tampered)
+    expect(bad.status).toBe(403)
+  })
 })

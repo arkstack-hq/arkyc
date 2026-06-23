@@ -3,6 +3,7 @@ import { HttpContext } from 'clear-router/types/express'
 import { VerificationSession } from '@app/models/VerificationSession'
 import VerificationSessionResource from '@app/http/resources/VerificationSessionResource'
 import { sessionService } from '@app/services/VerificationSessionService'
+import { buildSessionAssets } from '@app/services/SessionAssetService'
 import { audit } from '@app/services/AuditLogger'
 
 /**
@@ -63,8 +64,9 @@ export default class SessionController extends BaseController {
       projectId: req.projectContext!.project_id,
     }).firstOrFail()
     await sessionService.refresh(session)
+    const assets = await buildSessionAssets(session)
 
-    return new VerificationSessionResource(session).additional({
+    return new VerificationSessionResource(session).withAssets(assets).additional({
       status: 'success',
       message: 'OK',
       code: 200,

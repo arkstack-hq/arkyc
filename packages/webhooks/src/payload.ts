@@ -10,6 +10,8 @@ export interface BuildWebhookPayloadInput {
   status: VerificationStatus
   checks: WebhookChecks
   decisionReason: DecisionReason | null
+  /** Signed inline-image URLs for captured assets (when any exist). */
+  assets?: Record<string, string> | null
   /** ISO-8601 timestamp the event occurred. */
   createdAt: string
 }
@@ -34,6 +36,7 @@ export class WebhookPayload {
       status: input.status,
       checks: input.checks,
       decision_reason: input.decisionReason,
+      assets: input.assets ?? null,
       created_at: input.createdAt,
     }
   }

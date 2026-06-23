@@ -14,6 +14,8 @@ export interface VerificationSession {
   /** The workflow applied to this session, if any (its ID), and the frozen config. */
   workflow_id: string | null
   workflow: WorkflowConfig | null
+  /** Signed, time-limited URLs for captured assets, served inline as images (present on retrieve). */
+  assets?: Record<string, string> | null
   expires_at: string
   completed_at: string | null
   created_at: string
