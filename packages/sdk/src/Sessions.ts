@@ -1,7 +1,10 @@
-import type { CreateSessionParams, CreatedSession, VerificationSession } from "./types"
+import type { CreateSessionParams, CreatedSession, VerificationSession } from './types'
 
 export class Sessions {
-  constructor(private readonly request: (method: string, path: string, body?: unknown) => Promise<Record<string, unknown>>) { }
+  constructor(
+    private readonly request: (method: string, path: string, body?: unknown) => Promise<Record<string, unknown>>,
+    private readonly defaultWorkflowId: string | null = null,
+  ) {}
 
   /**
    * Open a session and receive its one-time client token for the widget.
@@ -13,6 +16,7 @@ export class Sessions {
     const body = await this.request('POST', '/v1/sessions', {
       user_reference: params.userReference ?? null,
       metadata: params.metadata ?? null,
+      workflow_id: params.workflowId ?? this.defaultWorkflowId ?? null,
     })
 
     return {

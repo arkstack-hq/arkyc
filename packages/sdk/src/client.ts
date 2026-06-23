@@ -8,7 +8,7 @@ import { Webhooks } from './Webhooks'
  * Public Project API.
  *
  * ```ts
- * const arkyc = new Arkyc({ secretKey: process.env.ARKYC_SECRET_KEY! })
+ * const arkyc = new Arkyc({ secretKey: process.env.ARKYC_SECRET_KEY!, workflowId: 'wf_…' })
  * const { session, clientToken } = await arkyc.sessions.create({ userReference: 'user_123' })
  * ```
  */
@@ -17,6 +17,18 @@ export class Arkyc {
   private readonly secretKey: string
   private readonly baseUrl: string
   private readonly fetchImpl: typeof fetch
+  private readonly workflowId: string | null
+
+  /**
+   * Verification session operations. `request` is bound so it keeps `this`
+   * (and thus `fetchImpl`) when invoked from the Sessions helper.
+   */
+  readonly sessions: Sessions
+
+  /**
+   * Webhook helpers.
+   */
+  readonly webhooks = new Webhooks()
 
   constructor(options: ArkycOptions) {
     if (!options.secretKey) throw new Error('Arkyc requires a `secretKey`.')
@@ -24,18 +36,11 @@ export class Arkyc {
     this.secretKey = options.secretKey
     this.baseUrl = (options.baseUrl ?? Arkyc.DEFAULT_BASE_URL).replace(/\/$/, '')
     this.fetchImpl = options.fetch ?? globalThis.fetch
+    // Optional default workflow applied to every session this client opens,
+    // overridable per `sessions.create({ workflowId })`.
+    this.workflowId = options.workflowId ?? null
+    this.sessions = new Sessions(this.request.bind(this), this.workflowId)
   }
-
-  /**
-   * Verification session operations. `request` is bound so it keeps `this`
-   * (and thus `fetchImpl`) when invoked from the Sessions helper.
-   */
-  readonly sessions = new Sessions(this.request.bind(this))
-
-  /**
-   * Webhook helpers.
-   */
-  readonly webhooks = new Webhooks()
 
   /**
    * Issue an authenticated request and unwrap the `{ status, data, … }` envelope.

@@ -1,4 +1,4 @@
-import type { DecisionReason, Metadata, VerificationDecision, VerificationStatus } from '@arkyc/types'
+import type { DecisionReason, Metadata, VerificationDecision, VerificationStatus, WorkflowConfig } from '@arkyc/types'
 
 /** A verification session as returned by the public API (snake_case JSON). */
 export interface VerificationSession {
@@ -11,6 +11,9 @@ export interface VerificationSession {
   decision_reason: DecisionReason | null
   risk_score: number | null
   assigned_to: string | null
+  /** The workflow applied to this session, if any (its ID), and the frozen config. */
+  workflow_id: string | null
+  workflow: WorkflowConfig | null
   expires_at: string
   completed_at: string | null
   created_at: string
@@ -22,6 +25,8 @@ export interface CreateSessionParams {
   userReference?: string | null
   /** Arbitrary metadata stored with the session. */
   metadata?: Metadata | null
+  /** Workflow to apply, overriding the client's default `workflowId` for this session. */
+  workflowId?: string | null
 }
 
 /** A freshly opened session plus its one-time client token for the widget. */
@@ -36,6 +41,11 @@ export interface ArkycOptions {
   secretKey: string
   /** API base URL (default `https://api.arkyc.dev`). */
   baseUrl?: string
+  /**
+   * Optional workflow applied to every session this client opens (the workflow's
+   * ID, from the dashboard). Overridable per `sessions.create({ workflowId })`.
+   */
+  workflowId?: string | null
   /** Custom fetch implementation (defaults to global `fetch`). */
   fetch?: typeof fetch
 }
