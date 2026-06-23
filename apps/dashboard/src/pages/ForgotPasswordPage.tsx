@@ -40,7 +40,9 @@ export default function ForgotPasswordPage() {
             Enter the 6-digit code we emailed you on the reset page to choose a new password.
           </p>
           <Button asChild className="w-full">
-            <Link to="/reset-password">Enter reset code</Link>
+            <Link to="/reset-password" state={{ email: form.email }}>
+              Enter reset code
+            </Link>
           </Button>
         </div>
       </AuthShell>

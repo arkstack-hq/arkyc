@@ -56,6 +56,11 @@ export default function App() {
         element={user && !loading ? <Navigate to="/" replace /> : <ForgotPasswordPage />}
       />
       <Route path="/reset-password" element={user && !loading ? <Navigate to="/" replace /> : <ResetPasswordPage />} />
+      {/* Alias for the path emitted in the server's reset email (`/auth/reset-password`). */}
+      <Route
+        path="/auth/reset-password"
+        element={user && !loading ? <Navigate to="/" replace /> : <ResetPasswordPage />}
+      />
       <Route path="/verify-email" element={user ? <VerifyEmailPage /> : <Navigate to="/login" replace />} />
       <Route path="/verify" element={<VerifyPage />} />
 
