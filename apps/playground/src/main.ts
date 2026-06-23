@@ -1,16 +1,11 @@
 import { ArkycWidget } from '@arkyc/widget'
+import type { WidgetEvent } from '@arkyc/widget'
 
 /** Server-side shape returned by `POST /pg/session`. */
 interface StartResponse {
   clientToken: string
   session: { id: string }
   error?: string
-}
-
-interface ReceivedWebhook {
-  receivedAt: string
-  verified: boolean | null
-  event: unknown
 }
 
 const $ = <T extends HTMLElement>(id: string): T => {
@@ -23,8 +18,8 @@ const startBtn = $<HTMLButtonElement>('start')
 const statusEl = $('status')
 const widgetEl = $('widget')
 const resultEl = $('result')
-const webhooksEl = $('webhooks')
-const webhookCountEl = $('webhook-count')
+const eventsEl = $('events')
+const eventCountEl = $('event-count')
 
 function setStatus(message: string, tone: 'idle' | 'busy' | 'ok' | 'error' = 'idle'): void {
   statusEl.textContent = message
@@ -44,11 +39,23 @@ async function startVerification(): Promise<void> {
 
     setStatus(`Session ${data.session.id} created — complete the flow below.`, 'busy')
 
+    resetEvents()
+
     ArkycWidget.mount({
       token: data.clientToken,
       container: widgetEl,
       // Same-origin: Vite proxies /api → the Arkyc API (see vite.config.ts).
       baseUrl: '/api',
+      // The widget streams live session events itself (no webhook endpoint to
+      // poll). Whether they arrive via pusher, firebase or polling is decided by
+      // the platform's configured transport — we just listen.
+      onEvent: (event) => {
+        renderEvent(event)
+        if (event.name === 'session.transition') {
+          const status = (event.data as { status?: string })?.status
+          if (status) setStatus(`Status: ${status}`, 'busy')
+        }
+      },
       onComplete: (result) => {
         setStatus(`Done: ${result.status}${result.decision ? ` (${result.decision})` : ''}.`, 'ok')
         void showResult(data.session.id)
@@ -77,68 +84,33 @@ async function showResult(sessionId: string): Promise<void> {
   }
 }
 
-function createWebhookEl(hook: ReceivedWebhook): HTMLDetailsElement {
-  const event = hook.event as { event?: string; status?: string } | string
-  const name = typeof event === 'object' && event.event ? event.event : 'webhook'
-  const verified = hook.verified === null ? 'unverified' : hook.verified ? 'verified ✓' : 'invalid ✗'
+// How many widget events have landed this run.
+let eventCount = 0
+
+/** Clear the live-events panel for a fresh run. */
+function resetEvents(): void {
+  eventCount = 0
+  eventCountEl.textContent = '0'
+  eventsEl.innerHTML = '<p class="hint">None yet.</p>'
+}
+
+/** Prepend a widget event (newest on top) to the live-events panel. */
+function renderEvent(event: WidgetEvent): void {
+  if (eventCount === 0) eventsEl.replaceChildren()
+  eventCount += 1
+  eventCountEl.textContent = String(eventCount)
 
   const wrap = document.createElement('details')
   wrap.className = 'webhook'
-  wrap.dataset.verified = String(hook.verified)
   const summary = document.createElement('summary')
   summary.innerHTML =
-    `<span class="webhook__name">${name}</span>` +
-    `<span class="webhook__meta">${verified} · ${new Date(hook.receivedAt).toLocaleTimeString()}</span>`
+    `<span class="webhook__name">${event.name}</span>` +
+    `<span class="webhook__meta">${new Date().toLocaleTimeString()}</span>`
   const body = document.createElement('pre')
-  body.textContent = JSON.stringify(hook.event, null, 2)
+  body.textContent = JSON.stringify(event.data ?? {}, null, 2)
   wrap.append(summary, body)
-  return wrap
-}
-
-// How many webhooks are currently in the DOM. Webhooks arrive newest-first and
-// only grow, so we PREPEND just the new ones each poll rather than replacing the
-// whole list — otherwise re-rendering collapses any <details> you've expanded.
-let renderedCount = 0
-
-function renderWebhooks(hooks: ReceivedWebhook[]): void {
-  webhookCountEl.textContent = String(hooks.length)
-
-  if (hooks.length === 0) {
-    webhooksEl.innerHTML = '<p class="hint">None received yet.</p>'
-    renderedCount = 0
-    return
-  }
-
-  // Server restarted / list shrank → rebuild from scratch.
-  if (hooks.length < renderedCount) {
-    webhooksEl.replaceChildren()
-    renderedCount = 0
-  }
-
-  // Nothing new — leave the DOM (and any expanded item) untouched.
-  if (hooks.length === renderedCount) return
-
-  if (renderedCount === 0) webhooksEl.replaceChildren()
-
-  // The newest `hooks.length - renderedCount` entries are at the front.
-  // Insert oldest-of-the-batch first so the very newest ends up on top.
-  const fresh = hooks.slice(0, hooks.length - renderedCount)
-  for (let i = fresh.length - 1; i >= 0; i--) {
-    webhooksEl.prepend(createWebhookEl(fresh[i]!))
-  }
-  renderedCount = hooks.length
-}
-
-async function pollWebhooks(): Promise<void> {
-  try {
-    const res = await fetch('/pg/webhooks')
-    const data = (await res.json()) as { webhooks: ReceivedWebhook[] }
-    renderWebhooks(data.webhooks)
-  } catch {
-    /* dev server momentarily unavailable — ignore */
-  }
+  eventsEl.prepend(wrap)
 }
 
 startBtn.addEventListener('click', () => void startVerification())
-void pollWebhooks()
-setInterval(() => void pollWebhooks(), 2000)
+resetEvents()

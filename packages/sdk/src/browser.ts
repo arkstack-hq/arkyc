@@ -1,4 +1,4 @@
-import type { OpenWidgetOptions, WidgetHandle, WidgetResult } from "./types"
+import type { OpenWidgetOptions, WidgetEventListener, WidgetHandle, WidgetResult } from './types'
 
 /**
  * @arkyc/sdk/browser
@@ -42,6 +42,13 @@ export class ArkycWidget {
       'width:100%;max-width:480px;height:100%;max-height:720px;border:0;border-radius:12px;background:#fff;'
     overlay.appendChild(iframe)
 
+    // Named event listeners registered via the returned handle's `on`.
+    const listeners = new Map<string, Set<WidgetEventListener>>()
+    const emit = (name: string, payload?: unknown): void => {
+      options.onEvent?.({ name, data: payload })
+      listeners.get(name)?.forEach((listener) => listener(payload))
+    }
+
     const close = (): void => {
       win.removeEventListener('message', onMessage)
       overlay.remove()
@@ -49,10 +56,19 @@ export class ArkycWidget {
     }
 
     const onMessage = (event: MessageEvent): void => {
-      const data = event.data as { type?: string; payload?: WidgetResult; error?: unknown } | null
+      const data = event.data as {
+        type?: string
+        payload?: WidgetResult
+        error?: unknown
+        name?: string
+        data?: unknown
+      } | null
       if (!data || typeof data.type !== 'string' || !data.type.startsWith('arkyc:')) return
 
-      if (data.type === 'arkyc:complete') {
+      if (data.type === 'arkyc:event') {
+        // The widget's event firehose, forwarded across the iframe.
+        if (typeof data.name === 'string') emit(data.name, data.data)
+      } else if (data.type === 'arkyc:complete') {
         options.onComplete?.(data.payload ?? { status: 'completed' })
         close()
       } else if (data.type === 'arkyc:error') {
@@ -63,9 +79,18 @@ export class ArkycWidget {
       }
     }
 
-    win.addEventListener('message', onMessage);
-    (doc.body ?? doc.documentElement).appendChild(overlay)
+    win.addEventListener('message', onMessage)
+    ;(doc.body ?? doc.documentElement).appendChild(overlay)
 
-    return { close }
+    return {
+      close,
+      on: (event, listener) => {
+        const set = listeners.get(event) ?? new Set<WidgetEventListener>()
+        set.add(listener)
+        listeners.set(event, set)
+
+        return () => set.delete(listener)
+      },
+    }
   }
 }

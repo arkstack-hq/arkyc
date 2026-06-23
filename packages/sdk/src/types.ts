@@ -40,13 +40,22 @@ export interface ArkycOptions {
   fetch?: typeof fetch
 }
 
-
-
 /** Payload delivered when the widget flow completes. */
 export interface WidgetResult {
   status: string
   [key: string]: unknown
 }
+
+/** A widget event delivered to {@link OpenWidgetOptions.onEvent} / `handle.on`. */
+export interface WidgetEvent {
+  /** Event name, e.g. `session.transition`, `complete`, `error`, `close`. */
+  name: string
+  /** Event payload (shape depends on `name`). */
+  data?: unknown
+}
+
+/** Subscribe to a named widget event; returns an unsubscribe function. */
+export type WidgetEventListener = (data: unknown) => void
 
 /** Options for {@link ArkycWidget.open}. */
 export interface OpenWidgetOptions {
@@ -57,6 +66,12 @@ export interface OpenWidgetOptions {
   onComplete?: (result: WidgetResult) => void
   onError?: (error: unknown) => void
   onClose?: () => void
+  /**
+   * Firehose for live session events (`session.transition`) and lifecycle events
+   * (`complete` / `error` / `close`), delivered from the hosted widget over
+   * `postMessage`. Also subscribable per-name via {@link WidgetHandle.on}.
+   */
+  onEvent?: (event: WidgetEvent) => void
   /** Injectable for testing; defaults to the global `document`. */
   doc?: Document
   /** Injectable for testing; defaults to the global `window`. */
@@ -66,4 +81,9 @@ export interface OpenWidgetOptions {
 /** A handle to the open widget. */
 export interface WidgetHandle {
   close: () => void
+  /**
+   * Subscribe to a named widget event (e.g. `session.transition`, `complete`).
+   * Returns an unsubscribe function.
+   */
+  on: (event: string, listener: WidgetEventListener) => () => void
 }

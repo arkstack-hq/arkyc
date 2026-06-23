@@ -11,8 +11,8 @@
       <header class="header">
         <h1>Arkyc Playground</h1>
         <p>
-          Create a verification session on the server (via <code>@arkyc/sdk</code>), run it in
-          the embedded <code>@arkyc/widget</code>, then watch the decision and webhooks land.
+          Create a verification session on the server (via <code>@arkyc/sdk</code>), run it in the embedded
+          <code>@arkyc/widget</code>, then watch the decision and live events land.
         </p>
       </header>
 
@@ -32,15 +32,14 @@
 
       <section class="card">
         <div class="card__head">
-          <h2>3 · Received webhooks</h2>
-          <span id="webhook-count" class="badge">0</span>
+          <h2>3 · Live events</h2>
+          <span id="event-count" class="badge">0</span>
         </div>
         <p class="hint">
-          Point a project webhook endpoint at
-          <code>http://localhost:5174/pg/webhooks/arkyc</code> and set
-          <code>ARKYC_WEBHOOK_SECRET</code> to its signing secret to see verified deliveries.
+          Streamed by <code>ArkycWidget</code> as the session progresses — via pusher, firebase or polling, whichever
+          the platform configured. No webhook endpoint to poll.
         </p>
-        <div id="webhooks" class="webhooks"></div>
+        <div id="events" class="webhooks"></div>
       </section>
     </main>
 
