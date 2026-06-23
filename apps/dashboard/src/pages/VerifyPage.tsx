@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+
 import { ArkycWidget } from '@arkyc/widget'
 import { env } from '@/config/environment'
 
@@ -12,21 +13,20 @@ const API_BASE = env('VITE_API_URL', '') + '/api'
  * doesn't offer to hand off again.
  */
 export default function VerifyPage() {
-  const started = useRef(false)
-  const [token] = useState(() => new URLSearchParams(window.location.search).get('token') ?? '')
+  const [{ token, baseUrl }] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    // Prefer the baseUrl the QR carried (custom hosting); else this app's API.
+    return { token: params.get('token') ?? '', baseUrl: params.get('baseUrl') ?? API_BASE }
+  })
 
   useEffect(() => {
-    if (!token || started.current) return
-    started.current = true
-    const handle = ArkycWidget.open({
-      token,
-      // Prefer the baseUrl the QR carried (custom hosting); else this app's API.
-      baseUrl: new URLSearchParams(window.location.search).get('baseUrl') ?? API_BASE,
-      fullscreen: true,
-      handoff: false,
-    })
+    if (!token) return
+    // No mount guard: the cleanup closes the widget, so React's StrictMode
+    // double-invoke (mount → cleanup → mount) settles on a single open widget.
+    // A persistent ref guard would survive the first cleanup and block reopening.
+    const handle = ArkycWidget.open({ token, baseUrl, fullscreen: true, handoff: false })
     return () => handle.close()
-  }, [token])
+  }, [token, baseUrl])
 
   if (!token) {
     return (
