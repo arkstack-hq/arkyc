@@ -20,11 +20,13 @@ export default class SessionController extends BaseController {
     const data = await this.validate({
       user_reference: ['nullable', 'string'],
       metadata: ['nullable'],
+      workflow_id: ['nullable', 'string'],
     })
 
     const { session, clientToken } = await sessionService.create(req.projectContext!, {
       userReference: data.user_reference ?? null,
       metadata: data.metadata ?? null,
+      workflowId: data.workflow_id ?? null,
     })
 
     await audit.record({

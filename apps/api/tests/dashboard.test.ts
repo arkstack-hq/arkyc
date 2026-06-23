@@ -51,10 +51,10 @@ describe('organizations', () => {
 })
 
 describe('roles & permissions', () => {
-  it('serves the permission catalogue (35)', async () => {
+  it('serves the permission catalogue (39)', async () => {
     const res = await authed('get', `/organizations/${ctx.organizationId}/permissions`)
     expect(res.status).toBe(200)
-    expect(res.body.data).toHaveLength(35)
+    expect(res.body.data).toHaveLength(39)
   })
 
   it('seeds the five system roles', async () => {

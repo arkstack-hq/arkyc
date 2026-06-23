@@ -13,6 +13,8 @@ import type {
 } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { Project } from '@app/models/Project'
+import { Workflow } from '@app/models/Workflow'
+import { type WorkflowConfig, workflowEnables, workflowRunsOcr } from '@arkyc/types'
 import { DocumentCapture } from '@app/models/DocumentCapture'
 import { LivenessCheck } from '@app/models/LivenessCheck'
 import { sessionObjectKey } from 'src/support/storage'
@@ -52,14 +54,18 @@ export class VerificationSessionService {
   /** Create a `pending` session and mint its one-time client token. */
   async create(
     scope: ProjectScope,
-    input: { userReference?: string | null; metadata?: Metadata | null },
+    input: { userReference?: string | null; metadata?: Metadata | null; workflowId?: string | null },
   ): Promise<{ session: VerificationSession; clientToken: string }> {
     const { token, tokenHash } = Token.createPair()
+    // Resolve and snapshot the workflow now so editing/deleting it never
+    // disturbs this session. A null workflow runs the default pipeline.
+    const workflow = await this.resolveWorkflow(scope.organization_id, input.workflowId ?? null)
     // Resolve the offered capture model now and issue an active-liveness
     // challenge sequence up front when it applies, so the widget bootstrap can
     // surface them and submissions are validated against a fixed order.
     const captureModel = await this.resolveCaptureModel(scope.project_id)
-    const livenessChallenges = this.offersActiveLiveness(captureModel) ? randomChallenges(3) : null
+    const livenessChallenges =
+      workflowEnables(workflow, 'liveness') && this.offersActiveLiveness(captureModel) ? randomChallenges(3) : null
 
     const session = await VerificationSession.create({
       organizationId: scope.organization_id,
@@ -71,9 +77,20 @@ export class VerificationSessionService {
       metadata: input.metadata ?? null,
       captureModel,
       livenessChallenges,
+      workflowId: input.workflowId ?? null,
+      workflow,
     })
 
     return { session, clientToken: token }
+  }
+
+  /** Look up and snapshot an organization's workflow config; 422 if it doesn't belong to the org. */
+  private async resolveWorkflow(organizationId: string, workflowId: string | null): Promise<WorkflowConfig | null> {
+    if (!workflowId) return null
+    const workflow = await Workflow.where({ id: workflowId, organizationId }).first()
+    RequestException.assertFound(workflow, 'Unknown workflow_id for this organization', 422)
+
+    return { steps: workflow.steps, options: workflow.options }
   }
 
   /** The capture model for a project: its own override, else the global default. */
@@ -144,10 +161,11 @@ export class VerificationSessionService {
 
     // Run OCR once every readable side is captured: at the back for two-sided
     // documents (the MRZ may be printed there), otherwise at the front. OCR reads
-    // both stored sides and parses the combined text.
+    // both stored sides and parses the combined text. A workflow can skip OCR
+    // (capture-only) — then the image is stored but no fields are extracted.
     const twoSided = capture.documentType != null && capture.documentType !== 'passport'
     const ocrReady = side === 'back' || (side === 'front' && !twoSided)
-    if (ocrReady) {
+    if (ocrReady && workflowRunsOcr(session.workflow)) {
       await OcrJob.dispatch(session.id, {
         ocrConfidence: input.signals?.ocrConfidence,
         expired: input.signals?.expired,
@@ -169,8 +187,14 @@ export class VerificationSessionService {
     },
   ): Promise<LivenessCheck> {
     await this.ensureMutable(session)
+    // When a workflow disables document capture, advance past the document stage
+    // so liveness can proceed; otherwise a document must come first.
+    const documentDisabled = !workflowEnables(session.workflow, 'document')
+    if (documentDisabled && session.status === 'started') {
+      await this.transition(session, 'document_submitted')
+    }
     RequestException.abortIf(
-      session.status === 'pending' || session.status === 'started',
+      !documentDisabled && (session.status === 'pending' || session.status === 'started'),
       'Submit a document before the liveness check',
       409,
     )
@@ -235,10 +259,15 @@ export class VerificationSessionService {
   async complete(session: VerificationSession, input: { signals?: ProviderSignals }): Promise<VerificationSession> {
     await this.ensureMutable(session)
 
-    const capture = await DocumentCapture.where({ sessionId: session.id }).first()
-    const liveness = await LivenessCheck.where({ sessionId: session.id }).first()
-    RequestException.assertFound(capture, 'No document has been submitted', 409)
-    RequestException.assertFound(liveness, 'No liveness check has been submitted', 409)
+    // Only require the stages the workflow actually runs.
+    if (workflowEnables(session.workflow, 'document')) {
+      const capture = await DocumentCapture.where({ sessionId: session.id }).first()
+      RequestException.assertFound(capture, 'No document has been submitted', 409)
+    }
+    if (workflowEnables(session.workflow, 'liveness')) {
+      const liveness = await LivenessCheck.where({ sessionId: session.id }).first()
+      RequestException.assertFound(liveness, 'No liveness check has been submitted', 409)
+    }
 
     await this.transition(session, 'processing')
     await BiometricJob.dispatch(session.id, {

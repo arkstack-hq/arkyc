@@ -4,7 +4,7 @@ import { Organization } from '../src/app/models/Organization'
 import { app } from '../src/core/bootstrap'
 import request from 'parasito'
 
-const fx = { token: '', organizationId: '' }
+const fx = { token: '', organizationId: '', projectId: '', apiKeySecret: '' }
 
 const authed = (method: 'get' | 'post' | 'patch' | 'delete', path: string) =>
   request(app)[method](`/api/v1/dashboard${path}`).set('Authorization', `Bearer ${fx.token}`)
@@ -21,6 +21,14 @@ beforeAll(async () => {
 
   const organization = await authed('post', '/organizations').send({ name: `Wf Co ${s}` })
   fx.organizationId = organization.body.data.id
+
+  const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'Wf Prod' })
+  fx.projectId = project.body.data.id
+  const key = await authed(
+    'post',
+    `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`,
+  ).send({ name: 'Wf key' })
+  fx.apiKeySecret = key.body.secret
 })
 
 afterAll(async () => {
@@ -115,5 +123,115 @@ describe('workflows CRUD', () => {
 
   it('denies access without authentication', async () => {
     await request(app).get(`/api/v1/dashboard/organizations/${fx.organizationId}/workflows`).expect(401)
+  })
+})
+
+describe('applying a workflow to a session', () => {
+  async function createWorkflow(): Promise<string> {
+    const res = await wf('post').send({
+      name: 'Capture only',
+      steps: [
+        { key: 'document', enabled: true },
+        { key: 'liveness', enabled: false },
+        { key: 'face_match', enabled: false },
+      ],
+      options: { skip_ocr: true },
+    })
+
+    return res.body.data.id
+  }
+
+  const openSession = (body: Record<string, unknown>) =>
+    request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send(body)
+
+  it('snapshots the workflow onto the session and exposes it to the widget', async () => {
+    const workflowId = await createWorkflow()
+
+    const open = await openSession({ workflow_id: workflowId })
+    expect(open.status).toBe(201)
+    expect(open.body.data.workflow_id).toBe(workflowId)
+    expect(open.body.data.workflow.options).toEqual({ skip_ocr: true })
+
+    // The widget's client-session view carries the resolved workflow.
+    const clientView = await request(app)
+      .get('/api/v1/client/session')
+      .set('X-Client-Token', open.body.client_token)
+    expect(clientView.status).toBe(201)
+    expect(clientView.body.data.workflow.steps).toEqual([
+      { key: 'document', enabled: true },
+      { key: 'liveness', enabled: false },
+      { key: 'face_match', enabled: false },
+    ])
+  })
+
+  it('runs the default pipeline (null workflow) when none is passed', async () => {
+    const open = await openSession({})
+    expect(open.status).toBe(201)
+    expect(open.body.data.workflow_id).toBeNull()
+    expect(open.body.data.workflow).toBeNull()
+  })
+
+  it('rejects a workflow_id that does not belong to the organization', async () => {
+    const open = await openSession({ workflow_id: '00000000-0000-0000-0000-000000000000' })
+    expect(open.status).toBe(422)
+  })
+})
+
+describe('workflow-driven pipeline (jobs run inline in tests)', () => {
+  const client = (method: 'get' | 'post', path: string, token: string) =>
+    request(app)[method](`/api/v1/client/${path}`).set('X-Client-Token', token)
+
+  const openSession = (body: Record<string, unknown>) =>
+    request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send(body)
+
+  async function makeWorkflow(name: string, steps: unknown, options?: unknown): Promise<string> {
+    const res = await wf('post').send({ name, steps, options })
+
+    return res.body.data.id
+  }
+
+  const retrieve = (id: string) =>
+    request(app).get(`/api/v1/sessions/${id}`).set('Authorization', `Bearer ${fx.apiKeySecret}`)
+
+  it('completes a capture-only workflow with no liveness, no OCR, no face match', async () => {
+    const workflowId = await makeWorkflow(
+      'Capture only',
+      [
+        { key: 'document', enabled: true },
+        { key: 'liveness', enabled: false },
+        { key: 'face_match', enabled: false },
+      ],
+      { skip_ocr: true },
+    )
+
+    const open = await openSession({ workflow_id: workflowId })
+    const token = open.body.client_token
+    await client('get', 'session', token)
+    await client('post', 'document/front', token).send({})
+    // No liveness step — complete straight after the document.
+    const done = await client('post', 'complete', token).send({})
+    expect(done.status).toBe(202)
+
+    const final = await retrieve(open.body.data.id)
+    expect(final.body.data.status).toBe('approved')
+  })
+
+  it('completes a face-match-disabled workflow using only document + liveness', async () => {
+    const workflowId = await makeWorkflow('No face match', [
+      { key: 'document', enabled: true },
+      { key: 'liveness', enabled: true },
+      { key: 'face_match', enabled: false },
+    ])
+
+    const open = await openSession({ workflow_id: workflowId })
+    const token = open.body.client_token
+    await client('get', 'session', token)
+    await client('post', 'document/front', token).send({})
+    await client('post', 'liveness', token).send({})
+    const done = await client('post', 'complete', token).send({})
+    expect(done.status).toBe(202)
+
+    const final = await retrieve(open.body.data.id)
+    expect(final.body.data.status).toBe('approved')
   })
 })

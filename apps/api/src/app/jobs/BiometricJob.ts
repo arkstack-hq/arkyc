@@ -1,5 +1,6 @@
 import { Job } from '@arkstack/jobs'
 import { type DecisionInput, DecisionEngine, SessionRules } from '@arkyc/core'
+import { workflowEnables, workflowRunsOcr } from '@arkyc/types'
 import { faceMatchDriver } from '@app/services/providers'
 import { audit } from '@app/services/AuditLogger'
 import { readObject } from 'src/support/storage'
@@ -39,50 +40,67 @@ export class BiometricJob extends Job {
     const session = await VerificationSession.where({ id: this.sessionId }).first()
     if (!session || session.status !== 'processing') return
 
-    const capture = await DocumentCapture.where({ sessionId: session.id }).first()
-    const ocr = await OcrResult.where({ sessionId: session.id }).first()
-    const liveness = await LivenessCheck.where({ sessionId: session.id }).first()
-    if (!capture || !ocr || !liveness) {
-      throw new Error('OCR/liveness results are not ready yet')
+    // The workflow decides which stages run. Face match additionally needs a
+    // document portrait (from OCR) and a liveness selfie, so it only runs when
+    // all three of its sources are on.
+    const workflow = session.workflow
+    const runsDocument = workflowEnables(workflow, 'document')
+    const runsOcr = workflowRunsOcr(workflow)
+    const runsLiveness = workflowEnables(workflow, 'liveness')
+    const runsFaceMatch = workflowEnables(workflow, 'face_match') && runsOcr && runsLiveness
+
+    const capture = runsDocument ? await DocumentCapture.where({ sessionId: session.id }).first() : null
+    const ocr = runsOcr ? await OcrResult.where({ sessionId: session.id }).first() : null
+    const liveness = runsLiveness ? await LivenessCheck.where({ sessionId: session.id }).first() : null
+
+    // Stages that run must have landed their results before deciding. OCR is
+    // async, so an early run throws to retry with backoff.
+    if (runsDocument && !capture) throw new Error('Document capture is not ready yet')
+    if (runsOcr && !ocr) throw new Error('OCR result is not ready yet')
+    if (runsLiveness && !liveness) throw new Error('Liveness result is not ready yet')
+
+    let faceMatch: { passed: boolean; similarityScore: number } | null = null
+    if (runsFaceMatch) {
+      const portrait = await DocumentPortrait.where({ sessionId: session.id }).first()
+      if (!portrait) throw new Error('Document portrait is not ready yet')
+
+      const result = await faceMatchDriver.compare({
+        documentPortrait: await readObject(portrait.portraitImagePath),
+        selfie: await readObject(liveness!.selfieImagePath),
+        hints: { similarityScore: this.hints.faceSimilarity, passed: this.hints.faceMatchPassed },
+      })
+      await FaceMatchCheck.create({
+        organizationId: session.organizationId,
+        projectId: session.projectId,
+        sessionId: session.id,
+        idPortraitImagePath: portrait.portraitImagePath,
+        selfieImagePath: liveness!.selfieImagePath,
+        similarityScore: result.similarityScore,
+        confidence: result.confidence,
+        passed: result.passed,
+        provider: faceMatchDriver.name,
+        rawResponse: result.raw,
+      })
+      faceMatch = { passed: result.passed, similarityScore: result.similarityScore }
     }
 
-    const portrait = await DocumentPortrait.where({ sessionId: session.id }).first()
-    const faceMatch = await faceMatchDriver.compare({
-      documentPortrait: await readObject(portrait?.portraitImagePath),
-      selfie: await readObject(liveness.selfieImagePath),
-      hints: {
-        similarityScore: this.hints.faceSimilarity,
-        passed: this.hints.faceMatchPassed,
-      },
-    })
-    await FaceMatchCheck.create({
-      organizationId: session.organizationId,
-      projectId: session.projectId,
-      sessionId: session.id,
-      idPortraitImagePath: portrait?.portraitImagePath ?? null,
-      selfieImagePath: liveness.selfieImagePath,
-      similarityScore: faceMatch.similarityScore,
-      confidence: faceMatch.confidence,
-      passed: faceMatch.passed,
-      provider: faceMatchDriver.name,
-      rawResponse: faceMatch.raw,
-    })
-
+    // Disabled or skipped stages pass through so they can't fail or flag the user.
     const decisionInput: DecisionInput = {
-      document: {
-        qualityScore: capture.qualityScore ?? 0,
-        ocrConfidence: ocr.confidence,
-        expired: SessionRules.isDocumentExpired(ocr.fields.expiryDate, new Date()),
-      },
-      liveness: {
-        passed: liveness.passed,
-        score: liveness.score,
-        multipleFaces: liveness.spoofSignals?.multipleFaces ?? false,
-      },
-      faceMatch: {
-        passed: faceMatch.passed,
-        similarityScore: faceMatch.similarityScore,
-      },
+      document: runsDocument
+        ? {
+            qualityScore: capture!.qualityScore ?? 0,
+            ocrConfidence: runsOcr ? ocr!.confidence : 1,
+            expired: runsOcr ? SessionRules.isDocumentExpired(ocr!.fields.expiryDate, new Date()) : false,
+          }
+        : { qualityScore: 1, ocrConfidence: 1, expired: false },
+      liveness: runsLiveness
+        ? {
+            passed: liveness!.passed,
+            score: liveness!.score,
+            multipleFaces: liveness!.spoofSignals?.multipleFaces ?? false,
+          }
+        : { passed: true, score: 1, multipleFaces: false },
+      faceMatch: faceMatch ?? { passed: true, similarityScore: 1 },
     }
 
     const project = await Project.where({ id: session.projectId }).first()
