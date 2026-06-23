@@ -276,6 +276,9 @@ export class WidgetController {
     if (this.settled) return
     this.sessionId = session.id
     this.realtimeConfig = session.realtime ?? null
+    // Theme from the project's branding (server-resolved) unless the integrator
+    // passed branding explicitly — their value wins.
+    if (this.config.branding == null && session.branding) this.view.applyBranding(session.branding)
     this.observe(session.status)
     if (Flow.isTerminal(session.status)) return this.showTerminal(session.status)
     this.resolveLiveness(session)

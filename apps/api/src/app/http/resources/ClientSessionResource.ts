@@ -1,3 +1,4 @@
+import type { ProjectBranding } from '@arkyc/types'
 import { Resource } from 'resora'
 
 /** Cross-device handoff config the widget needs (resolved server-side). */
@@ -32,6 +33,7 @@ export default class ClientSessionResource extends Resource {
     session: object,
     private readonly handoff: ClientHandoff = { enabled: false, allow_desktop: true, url: '' },
     private readonly realtime: ClientRealtime | null = null,
+    private readonly branding: ProjectBranding | null = null,
   ) {
     super(session as never)
   }
@@ -50,6 +52,9 @@ export default class ClientSessionResource extends Resource {
       handoff: this.handoff,
       // How the widget should watch this session live (push transport or polling).
       realtime: this.realtime,
+      // Project branding (colours/logo/name) so the widget themes itself to the
+      // integrator's project without them passing anything client-side.
+      branding: this.branding,
     }
   }
 }

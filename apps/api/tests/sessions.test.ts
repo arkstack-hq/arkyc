@@ -55,7 +55,7 @@ beforeAll(async () => {
     // global-settings singleton (other suites mutate it to `active`). Opt into
     // cross-device handoff (and forbid desktop continue) so the bootstrap surfaces it.
     settings: { capture_model: 'passive', handoff: { enabled: true, allow_desktop: false } },
-    branding: {},
+    branding: { primary_color: '#112233', name: 'Sess Co' },
     status: 'active',
   })
   fx.projectId = project.id
@@ -225,6 +225,12 @@ describe('verification session lifecycle', () => {
     const boot = await clientApi('get', 'session', token)
     // Transport is `memory` in tests; the widget learns its own session channel.
     expect(boot.body.data.realtime).toMatchObject({ transport: 'memory', channel: `private-session-${id}` })
+  })
+
+  it('exposes the project branding so the widget themes itself', async () => {
+    const { token } = await openSession()
+    const boot = await clientApi('get', 'session', token)
+    expect(boot.body.data.branding).toMatchObject({ primary_color: '#112233', name: 'Sess Co' })
   })
 
   it('lets a client token sign only its own session channel', async () => {

@@ -1,4 +1,11 @@
-import type { CaptureModel, DocumentType, LivenessChallenge, LivenessMode, VerificationStatus } from '@arkyc/types'
+import type {
+  CaptureModel,
+  DocumentType,
+  LivenessChallenge,
+  LivenessMode,
+  ProjectBranding,
+  VerificationStatus,
+} from '@arkyc/types'
 
 /** The session view exposed by the Client/Widget API (`GET /v1/client/session`). */
 export interface ClientSession {
@@ -13,6 +20,8 @@ export interface ClientSession {
   handoff?: ClientHandoff
   /** How to watch this session live (push transport params or `polling`). */
   realtime?: ClientRealtime
+  /** Project branding (colours/logo/name) so the widget themes itself at runtime. */
+  branding?: ProjectBranding | null
 }
 
 /**

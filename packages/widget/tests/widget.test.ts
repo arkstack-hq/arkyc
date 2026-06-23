@@ -46,11 +46,11 @@ class FakeEl {
   }
 
   addEventListener(type: string, fn: () => void): void {
-    ; (this.listeners[type] ??= []).push(fn)
+    ;(this.listeners[type] ??= []).push(fn)
   }
 
   click(): void {
-    ; (this.listeners.click ?? []).forEach((fn) => fn())
+    ;(this.listeners.click ?? []).forEach((fn) => fn())
   }
 
   get classList() {
@@ -423,7 +423,7 @@ describe('WidgetController cross-device handoff', () => {
   const desktopNav = { userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 0 } as Navigator
   const phoneNav = { userAgent: 'Mozilla/5.0 (iPhone)', platform: 'iPhone', maxTouchPoints: 5 } as Navigator
   const handoffWin = () =>
-    ({ parent: { postMessage: () => { } }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
+    ({ parent: { postMessage: () => {} }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
 
   it('leads with the QR on desktop and offers continuing on this device', async () => {
     // Session never reaches terminal, so the QR screen persists while we assert.
@@ -495,7 +495,7 @@ describe('WidgetController cross-device handoff', () => {
 describe('WidgetController realtime events', () => {
   const desktopNav = { userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 0 } as Navigator
   const handoffWin = () =>
-    ({ parent: { postMessage: () => { } }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
+    ({ parent: { postMessage: () => {} }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
 
   it('streams session.transition + complete through the onEvent firehose (polling)', async () => {
     const events: WidgetEvent[] = []
@@ -531,9 +531,9 @@ describe('WidgetController realtime events', () => {
     const fakeClient = {
       subscribe: (_channel: string, handler: (event: string, data: unknown) => void) => {
         pushHandler = handler
-        return () => { }
+        return () => {}
       },
-      disconnect: () => { },
+      disconnect: () => {},
     }
     const realtimeFactory = vi.fn(async () => fakeClient)
 
@@ -560,7 +560,7 @@ describe('WidgetController realtime events', () => {
       win: handoffWin(),
       realtimeFactory,
       onEvent: (e) => events.push(e),
-      scheduler: () => { }, // freeze the poll backstop so only the push event resolves
+      scheduler: () => {}, // freeze the poll backstop so only the push event resolves
       maxHandoffPolls: 5,
     })
     const el = controller.element as unknown as FakeEl
@@ -590,6 +590,70 @@ describe('WidgetController realtime events', () => {
       events.some((e) => e.name === 'session.transition' && (e.data as { status: string }).status === 'approved'),
     ).toBe(true)
     expect(named.length).toBe(namedAfterOff)
+  })
+})
+
+describe('WidgetController branding', () => {
+  /** Find the first element of the given tag name. */
+  function findTag(root: FakeEl, tag: string): FakeEl | undefined {
+    if (root.tagName === tag) return root
+    for (const child of root.children) {
+      const hit = findTag(child, tag)
+      if (hit) return hit
+    }
+    return undefined
+  }
+
+  it('themes the widget from the project branding in the session response', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const path = String(url).replace(/^https?:\/\/[^/]+/, '')
+      const data: Record<string, unknown> = { id: 's1', status: 'started', expires_at: '2099-01-01' }
+      if (path.endsWith('/session')) {
+        data.branding = { primary_color: '#123456', name: 'Acme Inc', show_branding: true }
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ status: 'success', message: 'OK', code: 200, data }),
+      } as Response
+    })
+    const { controller } = makeController({ fetch: fetchMock as never })
+    const el = controller.element as unknown as FakeEl
+
+    controller.start()
+    await flush()
+
+    // The stylesheet picked up the project's primary colour…
+    const style = findTag(el, 'style')!
+    expect(style.textContent).toContain('#123456')
+    // …and the header shows the project name.
+    expect(find(el, 'Acme Inc')).toBeTruthy()
+  })
+
+  it('lets integrator-provided branding win over the server', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const path = String(url).replace(/^https?:\/\/[^/]+/, '')
+      const data: Record<string, unknown> = { id: 's1', status: 'started', expires_at: '2099-01-01' }
+      if (path.endsWith('/session')) data.branding = { primary_color: '#123456', name: 'Server Co' }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ status: 'success', message: 'OK', code: 200, data }),
+      } as Response
+    })
+    const { controller } = makeController({
+      fetch: fetchMock as never,
+      branding: { primary_color: '#abcdef', name: 'Integrator Co', show_branding: true },
+    })
+    const el = controller.element as unknown as FakeEl
+
+    controller.start()
+    await flush()
+
+    const style = findTag(el, 'style')!
+    expect(style.textContent).toContain('#abcdef')
+    expect(style.textContent).not.toContain('#123456')
+    expect(find(el, 'Integrator Co')).toBeTruthy()
   })
 })
 

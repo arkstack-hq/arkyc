@@ -40,6 +40,7 @@ export default class ClientSessionController extends BaseController {
         url: `${frontendUrl}/verify`,
       },
       await this.realtimeConfig(session.id),
+      project?.branding ?? null,
     )
       .additional({
         status: 'success',
