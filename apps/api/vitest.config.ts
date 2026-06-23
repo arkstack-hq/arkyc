@@ -32,6 +32,7 @@ export default defineConfig({
     },
   },
   test: {
+    passWithNoTests: true,
     environment: 'node',
     include: ['tests/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
     // Load .env (APP_KEY for stable JWT signing, DATABASE_URL, etc.) before tests.

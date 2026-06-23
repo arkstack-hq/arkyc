@@ -53,9 +53,9 @@ export class Sessions {
     })
   }
 
-  /** Ask the user to retry part of the flow. */
-  static requestRetry(tenantId: string, id: string, input?: { scope?: string; reason?: string }) {
-    return alova.Post<unknown>(`${t(tenantId)}/sessions/${id}/request-retry`, input ?? {}, {
+  /** Ask the user to retry part of the flow. `kind` is required by the API. */
+  static requestRetry(tenantId: string, id: string, input: { kind: 'document' | 'selfie' | 'full'; reason?: string }) {
+    return alova.Post<unknown>(`${t(tenantId)}/sessions/${id}/request-retry`, input, {
       name: 'session:retry',
     })
   }

@@ -59,7 +59,7 @@ export default function ReviewsPage() {
     (id: string, act: Action) => {
       if (act === 'approve') return Sessions.approve(tenantId, id)
       if (act === 'reject') return Sessions.reject(tenantId, id)
-      return Sessions.requestRetry(tenantId, id)
+      return Sessions.requestRetry(tenantId, id, { kind: 'full' })
     },
     { immediate: false },
   )

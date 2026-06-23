@@ -51,7 +51,9 @@ beforeAll(async () => {
     name: 'Sess Prod',
     slug: `sess-prod-${s}`,
     environment: 'production',
-    settings: {},
+    // Pin passive so the capture-model assertions don't depend on the shared
+    // global-settings singleton (other suites mutate it to `active`).
+    settings: { capture_model: 'passive' },
     branding: {},
     status: 'active',
   })

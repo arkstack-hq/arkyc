@@ -15,7 +15,7 @@
     "dev": "pnpm --filter @arkyc/api run dev",
     "dev:libs": "tsdown --watch",
     "lint": "pnpm -r run lint",
-    "test": "pnpm -r run test",
+    "test": "pnpm -r run test --pass-with-no-tests",
     "typecheck": "pnpm -r run typecheck",
     "clean": "pnpm -r run clean && rm -rf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",

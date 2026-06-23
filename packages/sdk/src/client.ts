@@ -27,9 +27,10 @@ export class Arkyc {
   }
 
   /**
-   * Verification session operations.
+   * Verification session operations. `request` is bound so it keeps `this`
+   * (and thus `fetchImpl`) when invoked from the Sessions helper.
    */
-  readonly sessions = new Sessions(this.request)
+  readonly sessions = new Sessions(this.request.bind(this))
 
   /**
    * Webhook helpers.

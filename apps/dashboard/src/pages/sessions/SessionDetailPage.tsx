@@ -9,6 +9,7 @@ import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { StatusBadge, DecisionBadge } from '@/components/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Select } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { formatDateTime, humanize } from '@/lib/utils'
@@ -76,13 +77,13 @@ function SessionMedia({ tenantId, sessionId, kind }: { tenantId: string; session
     <figure className="flex flex-col gap-1.5">
       <div className="flex aspect-3/2 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
         {failed ? (
-          <span className="text-xs text-muted-foreground">Failed to load</span>
+          <span className="text-xs text-muted-foreground">Unavailable</span>
         ) : !url ? (
           <Spinner />
         ) : kind === 'video' ? (
-          <video src={url} controls className="h-full w-full object-contain" />
+          <video src={url} controls className="h-full w-full object-contain" onError={() => setFailed(true)} />
         ) : (
-          <img src={url} alt={kind} className="h-full w-full object-contain" />
+          <img src={url} alt={kind} className="h-full w-full object-contain" onError={() => setFailed(true)} />
         )}
       </div>
       <figcaption className="text-xs text-muted-foreground">{humanize(kind)}</figcaption>
@@ -95,6 +96,7 @@ export default function SessionDetailPage() {
   const { can } = useTenant()
   const { sessionId } = useParams()
   const [reason, setReason] = useState('')
+  const [retryKind, setRetryKind] = useState<'document' | 'selfie' | 'full'>('full')
 
   const {
     data: raw,
@@ -117,10 +119,10 @@ export default function SessionDetailPage() {
   } = useRequest(
     (action: 'approve' | 'reject' | 'retry') => {
       const id = sessionId as string
-      const input = reason.trim() ? { reason: reason.trim() } : undefined
-      if (action === 'approve') return Sessions.approve(tenantId, id, input)
-      if (action === 'reject') return Sessions.reject(tenantId, id, input)
-      return Sessions.requestRetry(tenantId, id, input)
+      const reasonInput = reason.trim() ? { reason: reason.trim() } : {}
+      if (action === 'approve') return Sessions.approve(tenantId, id, reasonInput)
+      if (action === 'reject') return Sessions.reject(tenantId, id, reasonInput)
+      return Sessions.requestRetry(tenantId, id, { kind: retryKind, ...reasonInput })
     },
     { immediate: false },
   )
@@ -265,9 +267,21 @@ export default function SessionDetailPage() {
                     </Button>
                   ) : null}
                   {can('reviews.request_retry') ? (
-                    <Button variant="outline" onClick={() => void act('retry')} disabled={acting}>
-                      Request retry
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        aria-label="Retry scope"
+                        value={retryKind}
+                        onChange={(e) => setRetryKind(e.target.value as 'document' | 'selfie' | 'full')}
+                        className="w-auto"
+                      >
+                        <option value="full">Full retry</option>
+                        <option value="document">Document only</option>
+                        <option value="selfie">Selfie only</option>
+                      </Select>
+                      <Button variant="outline" onClick={() => void act('retry')} disabled={acting}>
+                        Request retry
+                      </Button>
+                    </div>
                   ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground">
