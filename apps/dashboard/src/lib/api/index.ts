@@ -29,6 +29,7 @@ export {
   clearAuthToken,
   errorMessage,
   errorStatus,
+  fetchSessionMedia,
   hasAuthToken,
   isForbidden,
 } from './client'

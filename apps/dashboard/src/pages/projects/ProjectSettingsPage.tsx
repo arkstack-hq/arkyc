@@ -15,6 +15,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 
 interface FormState {
   name: string
+  brandName: string
+  showBranding: boolean
   primaryColor: string
   theme: 'light' | 'dark'
   borderRadius: string
@@ -36,6 +38,8 @@ function formFromProject(project: Project): FormState {
   const thresholds = project.settings?.thresholds ?? {}
   return {
     name: project.name ?? '',
+    brandName: project.branding?.name ?? '',
+    showBranding: project.branding?.show_branding !== false,
     primaryColor: project.branding?.primary_color ?? '#000000',
     theme: project.branding?.theme ?? 'light',
     borderRadius: project.branding?.border_radius != null ? String(project.branding.border_radius) : '',
@@ -67,6 +71,8 @@ function ProjectSettingsForm({ project }: { project: Project }) {
       const branding: ProjectBranding = {
         primary_color: f.primaryColor,
         theme: f.theme,
+        name: f.brandName.trim() || null,
+        show_branding: f.showBranding,
       }
       if (f.borderRadius.trim() !== '') branding.border_radius = Number(f.borderRadius)
 
@@ -109,6 +115,16 @@ function ProjectSettingsForm({ project }: { project: Project }) {
     setSaved(true)
   })
 
+  // Logo upload is a separate multipart action (not part of the JSON form save).
+  const [logoUrl, setLogoUrl] = useState<string | null>(project.branding?.logo_url ?? null)
+  const {
+    send: uploadLogo,
+    loading: uploadingLogo,
+    error: logoError,
+    onSuccess: onLogoUploaded,
+  } = useRequest((file: File) => Projects.uploadLogo(tenantId, projectId!, file), { immediate: false })
+  onLogoUploaded(({ data }) => setLogoUrl((data as Project).branding?.logo_url ?? null))
+
   return (
     <form
       className="flex max-w-2xl flex-col gap-6"
@@ -145,6 +161,26 @@ function ProjectSettingsForm({ project }: { project: Project }) {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Field>
+            <FieldLabel htmlFor="brand-name">Display name</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                id="brand-name"
+                type="text"
+                value={form.brandName}
+                onChange={(e) => set('brandName', e.target.value)}
+                placeholder="Company / product shown in the widget header"
+              />
+            </InputGroup>
+          </Field>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.showBranding}
+              onChange={(e) => set('showBranding', e.target.checked)}
+            />
+            Show name &amp; logo in the widget header
+          </label>
+          <Field>
             <FieldLabel htmlFor="primary-color">Primary color</FieldLabel>
             <InputGroup>
               <InputGroupInput
@@ -174,6 +210,41 @@ function ProjectSettingsForm({ project }: { project: Project }) {
               />
             </InputGroup>
           </Field>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="logo">Logo</Label>
+            <div className="flex items-center gap-4">
+              <div className="flex size-16 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Project logo" className="size-full object-contain" />
+                ) : (
+                  <span className="text-xs text-muted-foreground">None</span>
+                )}
+              </div>
+              {canEdit ? (
+                <div className="flex flex-col gap-1.5">
+                  <input
+                    id="logo"
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingLogo}
+                    className="text-sm"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) void uploadLogo(file)
+                      e.target.value = ''
+                    }}
+                  />
+                  {uploadingLogo ? (
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Spinner /> Uploading…
+                    </span>
+                  ) : null}
+                  {logoError ? <FieldError>{errorMessage(logoError, 'Upload failed.')}</FieldError> : null}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </CardContent>
       </Card>
 

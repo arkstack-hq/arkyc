@@ -1,18 +1,40 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useRequest } from 'alova/client'
-import { realtimeChannels } from '@arkyc/types'
-import { Sessions } from '@/lib/api'
-import { useTenantId } from '@/contexts/tenant-context'
+import { realtimeChannels, type VerificationDecision, type VerificationStatus } from '@arkyc/types'
+import { Sessions, fetchSessionMedia } from '@/lib/api'
+import { useTenant, useTenantId } from '@/contexts/tenant-context'
 import { useRealtimeChannel } from '@/contexts/realtime-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
 import { StatusBadge, DecisionBadge } from '@/components/StatusBadge'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Spinner } from '@/components/ui/spinner'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { formatDateTime, humanize } from '@/lib/utils'
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+/** The dashboard session-detail payload (base session + checks + media). */
+interface SessionDetail {
+  id: string
+  project_id: string
+  user_reference?: string | null
+  status: VerificationStatus
+  auto_decision?: VerificationDecision | null
+  final_decision?: VerificationDecision | null
+  decision_reason?: string | null
+  risk_score?: number | null
+  reviewed_at?: string | null
+  completed_at?: string | null
+  created_at: string
+  expires_at: string
+  ocr?: { fields?: Record<string, unknown> | null; confidence?: number | null } | null
+  document?: { country?: string | null; document_type?: string | null; quality_score?: number | null } | null
+  liveness?: { score?: number | null; passed?: boolean | null; spoof_signals?: Record<string, unknown> | null } | null
+  face_match?: { similarity_score?: number | null; confidence?: number | null; passed?: boolean | null } | null
+  media?: string[]
 }
+
+const IMAGE_KINDS = ['document_front', 'document_back', 'portrait', 'selfie'] as const
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -23,34 +45,94 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-function CheckGroup({ title, value }: { title: string; value: unknown }) {
-  if (!isRecord(value)) return null
+const num = (v: number | null | undefined, digits = 2) => (typeof v === 'number' ? v.toFixed(digits) : '—')
+const bool = (v: boolean | null | undefined) => (v == null ? '—' : v ? 'Passed' : 'Failed')
+
+/** Loads a private media artifact through the authenticated route as an object URL. */
+function SessionMedia({ tenantId, sessionId, kind }: { tenantId: string; sessionId: string; kind: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    let made: string | null = null
+    setUrl(null)
+    setFailed(false)
+    fetchSessionMedia(tenantId, sessionId, kind)
+      .then((u) => {
+        if (active) {
+          made = u
+          setUrl(u)
+        } else URL.revokeObjectURL(u)
+      })
+      .catch(() => active && setFailed(true))
+    return () => {
+      active = false
+      if (made) URL.revokeObjectURL(made)
+    }
+  }, [tenantId, sessionId, kind])
+
   return (
-    <div>
-      <p className="mb-1 text-sm font-medium">{humanize(title)}</p>
-      <div className="rounded-md border border-border p-3">
-        {Object.entries(value).map(([k, v]) => (
-          <Row key={k} label={humanize(k)}>
-            {isRecord(v) ? JSON.stringify(v) : String(v ?? '—')}
-          </Row>
-        ))}
+    <figure className="flex flex-col gap-1.5">
+      <div className="flex aspect-3/2 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+        {failed ? (
+          <span className="text-xs text-muted-foreground">Failed to load</span>
+        ) : !url ? (
+          <Spinner />
+        ) : kind === 'video' ? (
+          <video src={url} controls className="h-full w-full object-contain" />
+        ) : (
+          <img src={url} alt={kind} className="h-full w-full object-contain" />
+        )}
       </div>
-    </div>
+      <figcaption className="text-xs text-muted-foreground">{humanize(kind)}</figcaption>
+    </figure>
   )
 }
 
 export default function SessionDetailPage() {
   const tenantId = useTenantId()
+  const { can } = useTenant()
   const { sessionId } = useParams()
+  const [reason, setReason] = useState('')
 
-  const { data, loading, error, send } = useRequest(Sessions.get(tenantId, sessionId as string), {
+  const {
+    data: raw,
+    loading,
+    error,
+    send,
+  } = useRequest(Sessions.get(tenantId, sessionId as string), {
     immediate: !!sessionId,
   })
+  const data = raw as unknown as SessionDetail | undefined
 
   // Live updates: refetch when this session transitions or is acted on.
   useRealtimeChannel(sessionId ? realtimeChannels.session(sessionId) : null, () => void send())
 
-  const checks = data && isRecord(data.checks) ? data.checks : null
+  // Reviewer override actions; refetch the detail on success.
+  const {
+    send: act,
+    loading: acting,
+    onSuccess: onActed,
+  } = useRequest(
+    (action: 'approve' | 'reject' | 'retry') => {
+      const id = sessionId as string
+      const input = reason.trim() ? { reason: reason.trim() } : undefined
+      if (action === 'approve') return Sessions.approve(tenantId, id, input)
+      if (action === 'reject') return Sessions.reject(tenantId, id, input)
+      return Sessions.requestRetry(tenantId, id, input)
+    },
+    { immediate: false },
+  )
+  onActed(() => {
+    setReason('')
+    void send()
+  })
+
+  const media = Array.isArray(data?.media) ? data.media : []
+  const images = IMAGE_KINDS.filter((k) => media.includes(k))
+  const ocrFields = data?.ocr?.fields ?? null
+  const canReview = can('reviews.approve') || can('reviews.reject') || can('reviews.request_retry')
 
   return (
     <div className="p-6 lg:p-8">
@@ -84,7 +166,7 @@ export default function SessionDetailPage() {
                 <DecisionBadge decision={data.final_decision} />
               </Row>
               <Row label="Decision reason">{humanize(data.decision_reason)}</Row>
-              <Row label="Risk score">{data.risk_score?.toFixed(2) ?? '—'}</Row>
+              <Row label="Risk score">{num(data.risk_score)}</Row>
               <Row label="Completed at">{formatDateTime(data.completed_at)}</Row>
               <Row label="Reviewed at">{formatDateTime(data.reviewed_at)}</Row>
             </CardContent>
@@ -107,15 +189,90 @@ export default function SessionDetailPage() {
             </CardContent>
           </Card>
 
-          {checks ? (
+          {media.length ? (
             <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle>Checks</CardTitle>
+                <CardTitle>Captured media</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-3">
-                <CheckGroup title="document" value={checks.document} />
-                <CheckGroup title="liveness" value={checks.liveness} />
-                <CheckGroup title="face_match" value={checks.face_match} />
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {images.map((kind) => (
+                    <SessionMedia key={kind} tenantId={tenantId} sessionId={data.id} kind={kind} />
+                  ))}
+                </div>
+                {media.includes('video') ? (
+                  <div className="mt-4 max-w-md">
+                    <SessionMedia tenantId={tenantId} sessionId={data.id} kind="video" />
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {ocrFields ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>OCR — extracted fields</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-0">
+                {Object.entries(ocrFields).map(([k, v]) => (
+                  <Row key={k} label={humanize(k)}>
+                    {v != null && v !== '' ? String(v) : '—'}
+                  </Row>
+                ))}
+                <Row label="Confidence">{num(data.ocr?.confidence)}</Row>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Checks</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-0">
+              <Row label="Document type">{humanize(data.document?.document_type)}</Row>
+              <Row label="Document country">{data.document?.country ?? '—'}</Row>
+              <Row label="Document quality">{num(data.document?.quality_score)}</Row>
+              <Row label="Liveness">{bool(data.liveness?.passed)}</Row>
+              <Row label="Liveness score">{num(data.liveness?.score)}</Row>
+              <Row label="Face match">{bool(data.face_match?.passed)}</Row>
+              <Row label="Face similarity">{num(data.face_match?.similarity_score)}</Row>
+            </CardContent>
+          </Card>
+
+          {canReview ? (
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Override decision</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <Textarea
+                  placeholder="Reason (optional) — recorded with the review"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={2}
+                />
+                <div className="flex flex-wrap items-center gap-3">
+                  {acting ? <Spinner /> : null}
+                  {can('reviews.approve') ? (
+                    <Button onClick={() => void act('approve')} disabled={acting}>
+                      Approve
+                    </Button>
+                  ) : null}
+                  {can('reviews.reject') ? (
+                    <Button variant="destructive" onClick={() => void act('reject')} disabled={acting}>
+                      Reject
+                    </Button>
+                  ) : null}
+                  {can('reviews.request_retry') ? (
+                    <Button variant="outline" onClick={() => void act('retry')} disabled={acting}>
+                      Request retry
+                    </Button>
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  A manager can approve or reject any session — including a pending or already-finalized one.
+                </p>
               </CardContent>
             </Card>
           ) : null}

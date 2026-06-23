@@ -3,6 +3,7 @@ import { AUTH_TOKEN_KEY, alova } from '@/lib/requests/alova'
 import { RequestException } from '@/lib/Exceptions/RequestException'
 import { SecureStorage } from '@/lib/Storage/SecureStorage'
 import { ValidationException } from '@/lib/Exceptions/ValidationException'
+import { env } from '@/config/environment'
 
 /**
  * Shared building blocks for the concern-scoped API classes.
@@ -113,3 +114,21 @@ export const isForbidden = (error: unknown): boolean => errorStatus(error) === 4
  */
 export const errorMessage = (error: unknown, fallback = 'Something went wrong. Please try again.'): string =>
   error instanceof RequestException ? error.message : fallback
+
+/** API origin + `/api` prefix, matching the alova instance's baseURL. */
+const API_BASE = env('VITE_API_URL', '') + '/api'
+
+/**
+ * Fetch a private session media artifact (document/selfie image, liveness video)
+ * through the authenticated `sessions.view`-gated route and return an object URL.
+ * Uses a raw fetch (not alova) because the global response handler parses JSON —
+ * it can't carry binary. Revoke the returned URL when done.
+ */
+export async function fetchSessionMedia(tenantId: string, sessionId: string, kind: string): Promise<string> {
+  const token = await SecureStorage.get<string>(AUTH_TOKEN_KEY)
+  const res = await fetch(`${API_BASE}${t(tenantId)}/sessions/${sessionId}/media/${kind}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error(`Failed to load media (${res.status})`)
+  return URL.createObjectURL(await res.blob())
+}

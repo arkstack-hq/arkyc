@@ -56,4 +56,14 @@ export class Projects {
       transform: unwrap<Project>,
     })
   }
+
+  /** Upload a project logo (multipart); the API stores it and sets branding.logo_url. */
+  static uploadLogo(tenantId: string, projectId: string, file: File) {
+    const body = new FormData()
+    body.append('logo', file)
+    return alova.Post(`${p(tenantId, projectId)}/logo`, body, {
+      name: 'project:update',
+      transform: unwrap<Project>,
+    })
+  }
 }
