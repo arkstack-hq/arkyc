@@ -116,7 +116,7 @@ export class Theme {
 .arkyc-dot{width:8px;height:8px;border-radius:50%;background:var(--arkyc-border);transition:background .3s,transform .3s}
 .arkyc-dot.active{background:var(--arkyc-primary);transform:scale(1.4);animation:arkyc-pulse 1.2s ease-in-out infinite}
 .arkyc-dot.done{background:#16a34a}
-.arkyc-doc{position:relative;width:100%;max-width:360px;margin:0 auto;transform:scaleX(-1)}
+.arkyc-doc{position:relative;width:100%;max-width:360px;margin:0 auto}
 .arkyc-doc .arkyc-preview{display:block;width:100%;max-width:100%}
 .arkyc-doc-frame{position:absolute;inset:5%;pointer-events:none;transition:left .18s ease,top .18s ease,width .18s ease,height .18s ease}
 .arkyc-corner{position:absolute;width:24px;height:24px;border:3px solid rgba(255,255,255,.9);transition:border-color .3s}

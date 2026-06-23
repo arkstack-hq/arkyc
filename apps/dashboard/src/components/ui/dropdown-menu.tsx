@@ -1,5 +1,5 @@
-import { DropdownMenu as Primitive } from 'radix-ui'
 import type { ComponentProps } from 'react'
+import { DropdownMenu as Primitive } from 'radix-ui'
 import { cn } from '@/lib/utils'
 
 export const DropdownMenu = Primitive.Root
@@ -17,7 +17,7 @@ export function DropdownMenuContent({
         sideOffset={sideOffset}
         align={align}
         className={cn(
-          'z-50 min-w-[11rem] overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground',
+          'z-50 min-w-44 overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground',
           'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
           className,
         )}
@@ -32,7 +32,7 @@ export function DropdownMenuItem({ className, ...props }: ComponentProps<typeof 
     <Primitive.Item
       className={cn(
         'relative flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none transition-colors',
-        'focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:size-4',
+        'focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:size-4',
         className,
       )}
       {...props}

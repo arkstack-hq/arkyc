@@ -317,7 +317,25 @@ export class WidgetView {
       const hint = this.el('p', { class: 'arkyc-p arkyc-hint' }) as HTMLParagraphElement
       this.body.appendChild(hint)
 
-      const onCapture = () => void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
+      // After a capture, freeze the frame and wait for an explicit "Continue" so
+      // the user can review and get ready for the next step — never auto-advance.
+      const confirmCapture = (blob: Blob | null) => {
+        this.destroy() // stop the camera + clear detection timers (freeze the frame)
+        this.clear(this.footer)
+        hint.textContent = '✓ Captured'
+        doc?.setQuality('good')
+        face?.setState('done')
+        this.footer.appendChild(this.button('Continue', () => this.handlers.onImage(blob)))
+        const retake = this.button('Retake', () => {
+          this.clear(this.body)
+          this.clear(this.footer)
+          this.renderCapture(title, facing, allowSkip, selfie, strict)
+        })
+        retake.classList.add('arkyc-btn-ghost')
+        this.footer.appendChild(retake)
+      }
+
+      const onCapture = () => void this.camera.grabFrame(video).then(confirmCapture)
 
       void this.camera.start(video, facing).catch(() => {
         mount.classList.add('arkyc-hidden')
@@ -335,7 +353,7 @@ export class WidgetView {
         // framed. The manual button only appears if the detector can't load.
         this.runSelfieAutoCapture(video, hint, onCapture, face!)
       } else {
-        this.runDocumentAutoCapture(video, hint, doc!, strictDoc)
+        this.runDocumentAutoCapture(video, hint, doc!, strictDoc, onCapture)
         // Passive model only: a manual capture button as a reliable override.
         // The active flow is detection-gated — no manual bypass.
         if (!strictDoc) this.footer.appendChild(this.button('Capture', onCapture))
@@ -369,7 +387,13 @@ export class WidgetView {
    * @param video
    * @returns
    */
-  private runDocumentAutoCapture(video: HTMLVideoElement, hint: HTMLElement, doc: DocStage, strict: boolean): void {
+  private runDocumentAutoCapture(
+    video: HTMLVideoElement,
+    hint: HTMLElement,
+    doc: DocStage,
+    strict: boolean,
+    capture: () => void,
+  ): void {
     // In strict mode the permissive brightness heuristic is disabled — it can't
     // tell a document from a well-lit blank frame, which would defeat detection.
     const onNoDetector = () => {
@@ -377,7 +401,7 @@ export class WidgetView {
         hint.textContent = 'Document scanning isn’t available on this device.'
         return
       }
-      this.runDocumentBrightnessCapture(video, hint, doc)
+      this.runDocumentBrightnessCapture(video, hint, doc, capture)
     }
 
     const analyzer = this.docAnalyzer
@@ -407,7 +431,7 @@ export class WidgetView {
         if (goodStreak >= this.docTuning.hold) {
           clearInterval(timer)
           doc.setQuality('good')
-          void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
+          capture()
         }
       }, 250)
       this.timers.push(timer)
@@ -421,7 +445,12 @@ export class WidgetView {
    * @param hint
    * @param doc
    */
-  private runDocumentBrightnessCapture(video: HTMLVideoElement, hint: HTMLElement, doc: DocStage): void {
+  private runDocumentBrightnessCapture(
+    video: HTMLVideoElement,
+    hint: HTMLElement,
+    doc: DocStage,
+    capture: () => void,
+  ): void {
     let goodStreak = 0
     const timer = setInterval(() => {
       const quality = this.camera.sampleQuality(video)
@@ -442,7 +471,7 @@ export class WidgetView {
       // Auto-capture a steady document after ~1.5s of good quality.
       if (goodStreak >= 5) {
         clearInterval(timer)
-        void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
+        capture()
       }
     }, 300)
     this.timers.push(timer)
