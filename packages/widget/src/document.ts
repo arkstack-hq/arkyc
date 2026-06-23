@@ -19,7 +19,9 @@ export interface DocRect {
   h: number
 }
 
-/** A normalized read of the current frame's document candidate. */
+/**
+ * A normalized read of the current frame's document candidate.
+ */
 export interface DocumentSample {
   /** A plausible rectangular document border was found. */
   present: boolean
@@ -83,7 +85,12 @@ export const DEFAULT_DOCUMENT_TUNING: DocumentTuning = {
   hold: 5,
 }
 
-/** The four border insets of a rect from the frame edges (top, right, bottom, left). */
+/**
+ * The four border insets of a rect from the frame edges (top, right, bottom, left).
+ *
+ * @param rect
+ * @returns
+ */
 function margins(rect: DocRect): [number, number, number, number] {
   return [rect.y, 1 - (rect.x + rect.w), 1 - (rect.y + rect.h), rect.x]
 }
@@ -104,6 +111,9 @@ function peak(arr: Float64Array, lo: number, hi: number): { i: number; v: number
 /**
  * Locate the dominant rectangle in a grayscale frame via Sobel edge projection,
  * and measure focus and brightness. Pure — operates on a grayscale buffer.
+ *
+ * @param tuning
+ * @returns
  */
 export function analyzeDocumentGray(gray: ArrayLike<number>, w: number, h: number): DocumentSample {
   const empty: DocumentSample = {
@@ -195,7 +205,12 @@ export function analyzeDocumentGray(gray: ArrayLike<number>, w: number, h: numbe
   }
 }
 
-/** Whether a document is present, well-framed and in focus, with a guidance hint. */
+/**
+ * Whether a document is present, well-framed and in focus, with a guidance hint.
+ *
+ * @param tuning
+ * @returns
+ */
 export function documentGuidance(
   s: DocumentSample,
   t: DocumentTuning = DEFAULT_DOCUMENT_TUNING,
@@ -215,7 +230,13 @@ export function documentGuidance(
   return { ready: true, hint: 'Looks good — hold steady' }
 }
 
-/** Whether the sample is a well-framed, in-focus document ready to capture. */
+/**
+ * Whether the sample is a well-framed, in-focus document ready to capture.
+ *
+ * @param s
+ * @param t
+ * @returns
+ */
 export function isDocumentReady(s: DocumentSample, t: DocumentTuning = DEFAULT_DOCUMENT_TUNING): boolean {
   return documentGuidance(s, t).ready
 }
@@ -224,7 +245,7 @@ class CanvasDocumentAnalyzer implements DocumentAnalyzer {
   private canvas: HTMLCanvasElement | null = null
   private ctx: CanvasRenderingContext2D | null = null
 
-  constructor(private readonly tuning: DocumentTuning) {}
+  constructor(private readonly tuning: DocumentTuning) { }
 
   ready(): Promise<boolean> {
     try {
@@ -266,7 +287,12 @@ class CanvasDocumentAnalyzer implements DocumentAnalyzer {
   }
 }
 
-/** The default (canvas edge-projection) document analyzer. */
+/**
+ * The default (canvas edge-projection) document analyzer.
+ *
+ * @param tuning
+ * @returns
+ */
 export function createDefaultDocumentAnalyzer(tuning: DocumentTuning = DEFAULT_DOCUMENT_TUNING): DocumentAnalyzer {
   return new CanvasDocumentAnalyzer(tuning)
 }

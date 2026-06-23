@@ -255,6 +255,9 @@ export class WidgetController {
       allowSkip: !!this.config.signals,
       livenessChallenges: this.livenessChallenges,
       requireLiveCamera: this.captureModel === 'active',
+      // The active flow is strict end-to-end: documents must be detected, not
+      // manually waved through.
+      strictCapture: this.livenessMode === 'active',
     })
   }
 

@@ -50,6 +50,12 @@ export interface ViewState {
    * unsupported devices — it shows an "unsupported device" message instead.
    */
   requireLiveCamera?: boolean
+  /**
+   * The session runs the active flow (resolved liveness is `active`). Document
+   * capture is then strict: detection-gated auto-capture only — no manual capture
+   * button, no permissive brightness/upload fallback that could bypass detection.
+   */
+  strictCapture?: boolean
 }
 
 const DOCUMENT_LABELS: Record<DocumentType, string> = {
@@ -194,7 +200,9 @@ export class WidgetView {
     return this.root
   }
 
-  /** Whether live camera capture is available (drives the active-liveness branch). */
+  /**
+   * Whether live camera capture is available (drives the active-liveness branch).
+   */
   get cameraSupported(): boolean {
     return this.camera.supported
   }
@@ -227,11 +235,11 @@ export class WidgetView {
       case 'document_selection':
         return this.renderDocumentSelection()
       case 'front_capture':
-        return this.renderCapture('Front of document', 'environment', state.allowSkip)
+        return this.renderCapture('Front of document', 'environment', state.allowSkip, false, state.strictCapture)
       case 'back_capture':
-        return this.renderCapture('Back of document', 'environment', state.allowSkip)
+        return this.renderCapture('Back of document', 'environment', state.allowSkip, false, state.strictCapture)
       case 'selfie_capture':
-        return this.renderCapture('Take a selfie', 'user', state.allowSkip, true)
+        return this.renderCapture('Take a selfie', 'user', state.allowSkip, true, state.strictCapture)
       case 'active_liveness':
         return this.renderActiveLiveness(state.livenessChallenges ?? [], state.allowSkip, state.requireLiveCamera)
       case 'ocr_processing':
@@ -278,7 +286,10 @@ export class WidgetView {
     this.body.appendChild(choices)
   }
 
-  private renderCapture(title: string, facing: Facing, allowSkip?: boolean, selfie = false): void {
+  private renderCapture(title: string, facing: Facing, allowSkip?: boolean, selfie = false, strict = false): void {
+    // Documents in the active flow are strict: detection-gated only (no manual
+    // bypass). Selfies are always pure auto, so strictness only changes documents.
+    const strictDoc = strict && !selfie
     this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: title }))
     this.body.appendChild(this.el('p', { class: 'arkyc-p', text: 'Position it clearly in frame, then capture.' }))
 
@@ -309,8 +320,13 @@ export class WidgetView {
       const onCapture = () => void this.camera.grabFrame(video).then((blob) => this.handlers.onImage(blob))
 
       void this.camera.start(video, facing).catch(() => {
-        // Camera denied/unavailable — fall back to the file input.
         mount.classList.add('arkyc-hidden')
+        if (strictDoc) {
+          // Strict document capture: no file fallback — a live camera is required.
+          hint.textContent = 'Camera access is required to scan your document. Please allow access and try again.'
+          return
+        }
+        // Camera denied/unavailable — fall back to the file input.
         fileInput.click()
       })
 
@@ -319,11 +335,20 @@ export class WidgetView {
         // framed. The manual button only appears if the detector can't load.
         this.runSelfieAutoCapture(video, hint, onCapture, face!)
       } else {
-        this.runDocumentAutoCapture(video, hint, doc!)
-        // Document auto-capture rides a coarse brightness heuristic, so the
-        // manual button stays as a reliable override.
-        this.footer.appendChild(this.button('Capture', onCapture))
+        this.runDocumentAutoCapture(video, hint, doc!, strictDoc)
+        // Passive model only: a manual capture button as a reliable override.
+        // The active flow is detection-gated — no manual bypass.
+        if (!strictDoc) this.footer.appendChild(this.button('Capture', onCapture))
       }
+    } else if (strictDoc) {
+      // Strict document capture with no camera — surface as unsupported.
+      this.body.appendChild(this.el('div', { class: 'arkyc-badge err', html: '!' }))
+      this.body.appendChild(
+        this.el('p', {
+          class: 'arkyc-p',
+          text: 'This step needs a working camera to scan your document. Please retry on a device with a camera.',
+        }),
+      )
     } else {
       const upload = this.button('Upload photo', () => fileInput.click())
       this.footer.appendChild(upload)
@@ -340,10 +365,23 @@ export class WidgetView {
    * Document capture: detect a real, well-framed, in-focus document (edge
    * projection) and auto-grab only once it's been held steady. Falls back to the
    * brightness/glare heuristic when the detector can't run.
+   *
+   * @param video
+   * @returns
    */
-  private runDocumentAutoCapture(video: HTMLVideoElement, hint: HTMLElement, doc: DocStage): void {
+  private runDocumentAutoCapture(video: HTMLVideoElement, hint: HTMLElement, doc: DocStage, strict: boolean): void {
+    // In strict mode the permissive brightness heuristic is disabled — it can't
+    // tell a document from a well-lit blank frame, which would defeat detection.
+    const onNoDetector = () => {
+      if (strict) {
+        hint.textContent = 'Document scanning isn’t available on this device.'
+        return
+      }
+      this.runDocumentBrightnessCapture(video, hint, doc)
+    }
+
     const analyzer = this.docAnalyzer
-    if (!analyzer) return this.runDocumentBrightnessCapture(video, hint, doc)
+    if (!analyzer) return onNoDetector()
 
     hint.textContent = 'Starting camera…'
     let cancelled = false
@@ -353,8 +391,7 @@ export class WidgetView {
     void analyzer.ready().then((ok) => {
       if (cancelled) return
       if (!ok) {
-        // No detector — fall back to the coarse brightness heuristic.
-        this.runDocumentBrightnessCapture(video, hint, doc)
+        onNoDetector()
         return
       }
       let goodStreak = 0
@@ -480,6 +517,9 @@ export class WidgetView {
    * Guided active-liveness screen: live front-camera preview, a recorded video,
    * and a sequence of challenge prompts the user advances through. The performed
    * sequence (the prompts shown, in order) is submitted for the driver to verify.
+   *
+   * @param video
+   * @returns
    */
   private renderActiveLiveness(
     challenges: LivenessChallenge[],
@@ -659,6 +699,9 @@ export class WidgetView {
   /**
    * Build the circular selfie/liveness preview overlay: an SVG progress ring, a
    * gesture-cue layer, and a success checkmark — driven via the returned handles.
+   *
+   * @param video
+   * @returns
    */
   private buildFaceStage(video: HTMLVideoElement): FaceStage {
     const stage = this.el('div', { class: 'arkyc-stage' })
@@ -723,7 +766,12 @@ export class WidgetView {
     }
   }
 
-  /** Build the document preview overlay: corner brackets + an animated scan line. */
+  /**
+   * Build the document preview overlay: corner brackets + an animated scan line.
+   *
+   * @param video
+   * @returns
+   */
   private buildDocStage(video: HTMLVideoElement): DocStage {
     const stage = this.el('div', { class: 'arkyc-doc' })
     stage.setAttribute('data-q', 'wait')
