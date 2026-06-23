@@ -16,3 +16,5 @@ dist
 .DS_Store
 .idea
 .vscode
+# Tesseract.js language data (downloaded at runtime)
+*.traineddata
