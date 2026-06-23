@@ -14,6 +14,26 @@ import { isDesktopDevice } from './device'
 import { renderQrSvg } from './qr'
 import type { BaseWidgetOptions, WidgetControllerConfig } from './types'
 
+/** Per-step lead-in copy shown before each capture/liveness step. */
+const STEP_INSTRUCTIONS: Partial<Record<WidgetStep, { title: string; body: string; cta?: string }>> = {
+  front_capture: {
+    title: 'Front of your document',
+    body: 'Place the front of your ID flat and fully inside the frame. We’ll capture it automatically.',
+  },
+  back_capture: {
+    title: 'Back of your document',
+    body: 'Now turn your ID over and show the back, fully inside the frame.',
+  },
+  selfie_capture: {
+    title: 'Take a selfie',
+    body: 'Look straight at the camera in good light and hold still — we’ll capture it automatically.',
+  },
+  active_liveness: {
+    title: 'Quick liveness check',
+    body: 'Follow the on-screen prompts (such as turn your head, blink or smile). This confirms you’re really here.',
+  },
+}
+
 /**
  * Drives the full verification flow: renders each screen via {@link WidgetView},
  * advances through {@link flow}, and calls the Client API at each step. Cosmetic
@@ -49,6 +69,8 @@ export class WidgetController {
   private result: WidgetResult | null = null
   /** The session was already terminal when the widget loaded (show a close-only notice). */
   private terminalOnLoad = false
+  /** Whether the current step's instruction interstitial has been acknowledged. */
+  private instructionAcked = false
   private pendingError: Error | null = null
   private settled = false
 
@@ -251,6 +273,19 @@ export class WidgetController {
   private async enter(step: WidgetStep): Promise<void> {
     if (this.settled) return
     this.step = step
+
+    // Lead each capture/liveness step with an instruction screen so the user
+    // knows what's next and starts it deliberately. The Continue button re-enters
+    // the same step with the instruction acknowledged.
+    const instruction = STEP_INSTRUCTIONS[step]
+    if (instruction && !this.instructionAcked) {
+      this.view.renderInstruction(instruction.title, instruction.body, instruction.cta ?? 'Continue', () => {
+        this.instructionAcked = true
+        void this.run(() => this.enter(step))
+      })
+      return
+    }
+    this.instructionAcked = false
     this.render()
 
     switch (step) {

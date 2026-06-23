@@ -197,7 +197,11 @@ describe('WidgetController flow', () => {
     await flush()
     clickText(controller.element as unknown as FakeEl, 'Passport')
     await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // front instruction
+    await flush()
     clickText(controller.element as unknown as FakeEl, 'Skip (demo)') // front capture
+    await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // selfie instruction
     await flush()
     clickText(controller.element as unknown as FakeEl, 'Skip (demo)') // selfie capture
     await flush()
@@ -262,7 +266,11 @@ describe('WidgetController flow', () => {
     await flush()
     clickText(el, 'Passport')
     await flush()
+    clickText(el, 'Continue') // front instruction
+    await flush()
     clickText(el, 'Skip (demo)') // front capture (no camera → upload/skip)
+    await flush()
+    clickText(el, 'Continue') // active-liveness instruction
     await flush()
     // Active-liveness screen: capture_model='active' mandates a live camera, so
     // there is NO "I performed the steps" fallback on the camera-less fake DOM —
@@ -288,9 +296,15 @@ describe('WidgetController flow', () => {
     await flush()
     clickText(controller.element as unknown as FakeEl, 'ID Card')
     await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // front instruction
+    await flush()
     clickText(controller.element as unknown as FakeEl, 'Skip (demo)') // front
     await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // back instruction
+    await flush()
     clickText(controller.element as unknown as FakeEl, 'Skip (demo)') // back
+    await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // selfie instruction
     await flush()
     clickText(controller.element as unknown as FakeEl, 'Skip (demo)') // selfie
     await flush()
@@ -313,7 +327,11 @@ describe('WidgetController flow', () => {
     await flush()
     clickText(controller.element as unknown as FakeEl, 'Passport')
     await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // front instruction
+    await flush()
     clickText(controller.element as unknown as FakeEl, 'Skip (demo)') // front
+    await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // selfie instruction
     await flush()
     clickText(controller.element as unknown as FakeEl, 'Skip (demo)') // selfie → liveness → complete (fails)
     await flush()
@@ -322,6 +340,20 @@ describe('WidgetController flow', () => {
     clickText(controller.element as unknown as FakeEl, 'Done')
     expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Session expired' }))
     expect(messages.some((m) => m.type === 'arkyc:error')).toBe(true)
+  })
+
+  it('shows a next-step instruction before a capture step', async () => {
+    const { controller } = makeController()
+    const el = controller.element as unknown as FakeEl
+    controller.start()
+    await flush()
+    clickText(el, 'Get started')
+    await flush()
+    clickText(el, 'Passport')
+    await flush()
+    // The camera doesn't spring up immediately: an instruction screen leads it.
+    expect(find(el, 'Front of your document')).toBeTruthy()
+    expect(find(el, 'Continue')).toBeTruthy()
   })
 
   it('shows a close-only notice when the session is already terminal on load', async () => {

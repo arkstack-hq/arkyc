@@ -338,6 +338,21 @@ export class WidgetView {
   }
 
   /**
+   * An interstitial that tells the user what the next step is, with a single
+   * Continue button — so each step starts deliberately rather than the camera
+   * springing to life unannounced.
+   */
+  renderInstruction(title: string, body: string, cta: string, onContinue: () => void): void {
+    this.destroy()
+    this.clear(this.body)
+    this.clear(this.footer)
+    this.root.classList.remove('arkyc-handoff')
+    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: title }))
+    this.body.appendChild(this.el('p', { class: 'arkyc-p', text: body }))
+    this.footer.appendChild(this.button(cta, onContinue))
+  }
+
+  /**
    * Show the cross-device handoff QR: the user scans it to resume this same
    * session on their phone. The widget then waits for the other device to finish.
    * `allowContinueHere` offers an escape hatch to keep verifying on this device.
