@@ -1,4 +1,4 @@
-import { RealtimeConfig } from "@arkyc/realtime"
+import { RealtimeConfig } from '@arkyc/realtime'
 
 export default (): RealtimeConfig => {
   return {
@@ -6,7 +6,7 @@ export default (): RealtimeConfig => {
   `  * pusher` targets hosted Pusher Channels via `cluster`; setting `PUSHER_HOST`
      * opts into a self-hosted soketi instead (TLS defaults off for local soketi).
 
-     *"pusher" | "firebase" | "memory" | "off"
+     *"pusher" | "firebase" | "polling" | "memory" | "off"
      */
     driver: 'off',
 

@@ -1,11 +1,14 @@
 import type { DocumentType, LivenessChallenge, LivenessMode } from '@arkyc/types'
 
 import { BaseController } from '@controllers/BaseController'
-import ClientSessionResource from '@app/http/resources/ClientSessionResource'
+import ClientSessionResource, { type ClientRealtime } from '@app/http/resources/ClientSessionResource'
 import type { FileLike } from '@arkstack/filesystem'
 import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
 import type { ProviderSignals } from '@app/services/providers'
+import { RequestException } from '@arkstack/common'
+import { parseRealtimeChannel, realtimeChannels } from '@arkyc/types'
+import { realtime } from '@app/services/RealtimeService'
 import { sessionService } from '@app/services/VerificationSessionService'
 
 const DOCUMENT_TYPES = 'passport,id_card,drivers_license,residence_permit'
@@ -27,13 +30,17 @@ export default class ClientSessionController extends BaseController {
     const session = await sessionService.start(req.verificationSession!)
     const project = await Project.where({ id: session.projectId }).first()
     const handoff = project?.settings?.handoff
-    const frontendUrl = String(config('app.frontend_url') ?? '').replace(/\/$/, '')
+    const frontendUrl = String(req.headers.origin ?? config('app.frontend_url') ?? '').replace(/\/$/, '')
 
-    return new ClientSessionResource(session, {
-      enabled: !!handoff?.enabled,
-      allow_desktop: handoff?.allow_desktop !== false,
-      url: `${frontendUrl}/verify`,
-    })
+    return new ClientSessionResource(
+      session,
+      {
+        enabled: !!handoff?.enabled,
+        allow_desktop: handoff?.allow_desktop !== false,
+        url: `${frontendUrl}/verify`,
+      },
+      await this.realtimeConfig(session.id),
+    )
       .additional({
         status: 'success',
         message: 'OK',
@@ -41,6 +48,46 @@ export default class ClientSessionController extends BaseController {
       })
       .response()
       .setStatusCode(201)
+  }
+
+  /**
+   * Realtime connection info scoped to this one session: the active transport's
+   * public params plus the session's own private channel. For firebase, mints a
+   * per-session custom token so the widget can read only this session's events.
+   */
+  private async realtimeConfig(sessionId: string): Promise<ClientRealtime> {
+    const config = await realtime.clientConfig()
+    const channel = realtimeChannels.session(sessionId)
+    let token: string | null = null
+    if (config.transport === 'firebase') {
+      token = await realtime.mintClientToken(sessionId, { session: sessionId })
+    }
+
+    return { ...config, channel, token }
+  }
+
+  /**
+   * Pusher channel-auth for the widget's client token. Unlike the dashboard
+   * authorizer, a client token may sign ONLY its own session's private channel —
+   * never a tenant/project channel. Returns the raw Pusher `{ auth }` object.
+   */
+  async realtimeAuth({ req, res }: HttpContext) {
+    const session = req.verificationSession!
+    const socketId = String((this.body?.socket_id as string) ?? '')
+    const channel = String((this.body?.channel_name as string) ?? '')
+    RequestException.abortIf(!socketId || !channel, 'Missing socket_id/channel_name', 422)
+
+    const scope = parseRealtimeChannel(channel)
+    RequestException.abortIf(
+      !scope || scope.kind !== 'session' || scope.sessionId !== session.id,
+      'Forbidden channel',
+      403,
+    )
+
+    const signed = await realtime.authorizeChannel(socketId, channel)
+    RequestException.assertFound(signed, 'Channel auth unavailable for this transport', 409)
+
+    res.status(200).json(signed)
   }
 
   /** Submit the document front image (runs OCR + portrait extraction). */

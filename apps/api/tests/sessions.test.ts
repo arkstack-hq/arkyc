@@ -219,6 +219,38 @@ describe('verification session lifecycle', () => {
     // The handoff destination is a first-party hosted page (no integrator setup).
     expect(boot.body.data.handoff.url).toMatch(/\/verify$/)
   })
+
+  it('exposes realtime connection info scoped to the session', async () => {
+    const { id, token } = await openSession()
+    const boot = await clientApi('get', 'session', token)
+    // Transport is `memory` in tests; the widget learns its own session channel.
+    expect(boot.body.data.realtime).toMatchObject({ transport: 'memory', channel: `private-session-${id}` })
+  })
+
+  it('lets a client token sign only its own session channel', async () => {
+    const { id, token } = await openSession()
+    // A foreign session channel is forbidden for this token.
+    const foreign = await clientApi('post', 'realtime/auth', token).send({
+      socket_id: '123.456',
+      channel_name: 'private-session-someone-else',
+    })
+    expect(foreign.status).toBe(403)
+
+    // A tenant channel is never client-signable, even one's own tenant.
+    const tenant = await clientApi('post', 'realtime/auth', token).send({
+      socket_id: '123.456',
+      channel_name: 'private-tenant-x',
+    })
+    expect(tenant.status).toBe(403)
+
+    // The session's own channel passes scope and is signed.
+    const own = await clientApi('post', 'realtime/auth', token).send({
+      socket_id: '123.456',
+      channel_name: `private-session-${id}`,
+    })
+    expect(own.status).toBe(200)
+    expect(own.body.auth).toBeTruthy()
+  })
 })
 
 describe('active liveness (Phase 17)', () => {

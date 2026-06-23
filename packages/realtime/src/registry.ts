@@ -1,8 +1,10 @@
 import type { RealtimeConfig, RealtimeDriver } from './types'
-import { OffRealtimeDriver } from './drivers/off'
-import { MemoryRealtimeDriver } from './drivers/memory'
-import { PusherRealtimeDriver } from './drivers/pusher'
+
 import { FirebaseRealtimeDriver } from './drivers/firebase'
+import { MemoryRealtimeDriver } from './drivers/memory'
+import { OffRealtimeDriver } from './drivers/off'
+import { PollingRealtimeDriver } from './drivers/polling'
+import { PusherRealtimeDriver } from './drivers/pusher'
 
 /** Selects a realtime driver from config. */
 export class RealtimeDriverFactory {
@@ -20,9 +22,13 @@ export class RealtimeDriverFactory {
         return config.pusher ? new PusherRealtimeDriver(config.pusher) : new OffRealtimeDriver()
       case 'firebase':
         return config.firebase ? new FirebaseRealtimeDriver(config.firebase) : new OffRealtimeDriver()
+      case 'polling':
+        return new PollingRealtimeDriver()
       case 'memory':
         return new MemoryRealtimeDriver()
       case 'off':
+      case false as never:
+      case 'false' as never:
         return new OffRealtimeDriver()
       default:
         throw new Error(`Unknown realtime driver: ${(config as RealtimeConfig).driver}`)

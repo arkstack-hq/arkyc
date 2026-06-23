@@ -3,9 +3,11 @@ import type { Entity } from './common'
 /**
  * Realtime transport for verification events (Phase 16). `pusher` covers both
  * hosted Pusher Channels (default, via a cluster) and self-hosted soketi (opt-in,
- * via a host) — they share the Pusher protocol.
+ * via a host) — they share the Pusher protocol. `polling` carries no push
+ * transport: clients poll the session endpoint instead (a universal fallback that
+ * needs no infrastructure). `off` disables live updates entirely.
  */
-export type RealtimeTransport = 'pusher' | 'firebase' | 'off'
+export type RealtimeTransport = 'pusher' | 'firebase' | 'polling' | 'off'
 
 /**
  * Which capture/liveness flow the widget offers (Phase 17). `passive` = the

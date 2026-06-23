@@ -1,5 +1,5 @@
 /** Identifier for a registered realtime driver. */
-export type RealtimeDriverName = 'pusher' | 'firebase' | 'memory' | 'off'
+export type RealtimeDriverName = 'pusher' | 'firebase' | 'polling' | 'memory' | 'off'
 
 /**
  * Pusher connection parameters. By default addresses hosted Pusher Channels via

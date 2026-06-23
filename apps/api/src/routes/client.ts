@@ -10,6 +10,8 @@ Router.group('/v1/client', () => {
   Router.post('/document/back', [ClientSessionController, 'documentBack'], [clientTokenAuth])
   Router.post('/liveness', [ClientSessionController, 'liveness'], [clientTokenAuth])
   Router.post('/complete', [ClientSessionController, 'complete'], [clientTokenAuth])
+  // Pusher channel-auth scoped to this session's own channel (widget realtime).
+  Router.post('/realtime/auth', [ClientSessionController, 'realtimeAuth'], [clientTokenAuth])
 })
 
 export default () => {}
