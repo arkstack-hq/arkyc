@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ArkycWidget } from '../src/index'
 import { WidgetController } from '../src/controller'
+import type { WidgetEvent } from '../src/types'
 
 // --- Minimal fake DOM (the widget core is DOM-injectable, so no jsdom needed) ---
 
@@ -487,6 +488,107 @@ describe('WidgetController cross-device handoff', () => {
     await flush() // connect → welcome (no QR detour on a phone)
     expect(find(el, 'Get started')).toBeTruthy()
     expect(findByClass(el, 'arkyc-qr')).toBeFalsy()
+  })
+})
+
+describe('WidgetController realtime events', () => {
+  const desktopNav = { userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 0 } as Navigator
+  const handoffWin = () =>
+    ({ parent: { postMessage: () => {} }, location: { search: '', origin: 'https://desk.test' } }) as unknown as Window
+
+  it('streams session.transition + complete through the onEvent firehose (polling)', async () => {
+    const events: WidgetEvent[] = []
+    const { controller } = makeController({ onEvent: (e) => events.push(e) })
+    const el = controller.element as unknown as FakeEl
+
+    controller.start()
+    await flush()
+    clickText(el, 'Get started')
+    await flush()
+    clickText(el, 'Passport')
+    await flush()
+    clickText(el, 'Continue') // front instruction
+    await flush()
+    clickText(el, 'Skip (demo)') // front
+    await flush()
+    clickText(el, 'Continue') // selfie instruction
+    await flush()
+    clickText(el, 'Skip (demo)') // selfie → liveness → complete → poll → approved
+    await flush()
+    clickText(el, 'Done')
+
+    const names = events.map((e) => e.name)
+    // The bootstrap 'started' and the finalising 'approved' both surface.
+    expect(names.filter((n) => n === 'session.transition').length).toBeGreaterThanOrEqual(2)
+    expect(names).toContain('complete')
+    const transition = events.find((e) => e.name === 'session.transition')!.data as { status: string }
+    expect(transition.status).toBe('started')
+  })
+
+  it('uses the configured push transport and respects on()/unsubscribe', async () => {
+    let pushHandler: ((event: string, data: unknown) => void) | null = null
+    const fakeClient = {
+      subscribe: (_channel: string, handler: (event: string, data: unknown) => void) => {
+        pushHandler = handler
+        return () => {}
+      },
+      disconnect: () => {},
+    }
+    const realtimeFactory = vi.fn(async () => fakeClient)
+
+    // Desktop + handoff → the widget waits on the push transport (never polls to
+    // terminal here because the scheduler never fires).
+    const fetchMock = vi.fn(async (url: string) => {
+      const path = String(url).replace(/^https?:\/\/[^/]+/, '')
+      const data: Record<string, unknown> = { id: 's1', status: 'started', expires_at: '2099-01-01' }
+      if (path.endsWith('/session')) {
+        data.handoff = { enabled: true, allow_desktop: true, url: 'https://verify.test/verify' }
+        data.realtime = { transport: 'pusher', channel: 'private-session-s1' }
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ status: 'success', message: 'OK', code: 200, data }),
+      } as Response
+    })
+
+    const events: WidgetEvent[] = []
+    const { controller } = makeController({
+      fetch: fetchMock as never,
+      nav: desktopNav,
+      win: handoffWin(),
+      realtimeFactory,
+      onEvent: (e) => events.push(e),
+      scheduler: () => {}, // freeze the poll backstop so only the push event resolves
+      maxHandoffPolls: 5,
+    })
+    const el = controller.element as unknown as FakeEl
+
+    // A named listener we'll unsubscribe before the terminal event.
+    const named: unknown[] = []
+    const off = controller.on('session.transition', (d) => named.push(d))
+
+    controller.start()
+    await flush()
+    await flush()
+    await flush()
+
+    expect(realtimeFactory).toHaveBeenCalledTimes(1)
+    expect(pushHandler).toBeTruthy()
+    expect(named.length).toBeGreaterThan(0) // got the bootstrap 'started' transition
+
+    off() // unsubscribe — must receive nothing further
+    const namedAfterOff = named.length
+
+    pushHandler!('session.transition', { status: 'approved' })
+    await flush()
+
+    expect(find(el, 'Verified')).toBeTruthy()
+    // The firehose still saw the approved transition; the unsubscribed listener didn't.
+    expect(
+      events.some((e) => e.name === 'session.transition' && (e.data as { status: string }).status === 'approved'),
+    ).toBe(true)
+    expect(named.length).toBe(namedAfterOff)
   })
 })
 

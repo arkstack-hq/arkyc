@@ -27,5 +27,17 @@
   "dependencies": {
     "@arkyc/types": "workspace:*",
     "qrcode-generator": "^1.4.4"
+  },
+  "peerDependencies": {
+    "firebase": "^11.0.0",
+    "pusher-js": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "firebase": {
+      "optional": true
+    },
+    "pusher-js": {
+      "optional": true
+    }
   }
 }

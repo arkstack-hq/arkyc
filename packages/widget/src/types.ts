@@ -3,6 +3,22 @@ import type { FaceAnalyzer, FaceTuning } from './face'
 import type { ProjectBranding, WidgetResult } from '@arkyc/types'
 
 import type { ProviderSignalHints } from './client'
+import type { WidgetRealtimeFactory } from './realtime'
+
+/**
+ * An event surfaced to consumers through `onEvent` / `handle.on(name, cb)`. The
+ * stream is a firehose: `session.transition` (live status changes, from the
+ * configured transport) plus the lifecycle events `complete` / `error` / `close`.
+ */
+export interface WidgetEvent {
+  /** Event name, e.g. `session.transition`, `complete`, `error`, `close`. */
+  name: string
+  /** Event payload (shape depends on `name`). */
+  data?: unknown
+}
+
+/** Subscribe to a named widget event; returns an unsubscribe function. */
+export type WidgetEventListener = (data: unknown) => void
 
 /** Configuration for a {@link WidgetController}. */
 export interface WidgetControllerConfig {
@@ -23,6 +39,12 @@ export interface WidgetControllerConfig {
   onComplete?: (result: WidgetResult) => void
   onError?: (error: Error) => void
   onClose?: () => void
+  /**
+   * Firehose for every widget event (`session.transition`, `complete`, `error`,
+   * `close`). Nothing is emitted unless this or a `handle.on(...)` listener is
+   * active. The same stream is filterable per-name via {@link WidgetHandle.on}.
+   */
+  onEvent?: (event: WidgetEvent) => void
   /** Fired once the flow settles (complete/error/close); used to remove the host. */
   onSettle?: () => void
   /** Force (or disable) posting `arkyc:*` messages to `window.parent`. */
@@ -49,6 +71,11 @@ export interface WidgetControllerConfig {
   documentAnalyzer?: DocumentAnalyzer | null
   /** Override document-detection thresholds (tune against a real camera). */
   documentTuning?: DocumentTuning
+  /**
+   * Builds the realtime push client from the session's realtime config. Defaults
+   * to the bundled pusher/firebase factory; injectable for tests.
+   */
+  realtimeFactory?: WidgetRealtimeFactory
   /** Schedules a callback after `ms` (defaults to `setTimeout`). */
   scheduler?: (fn: () => void, ms: number) => void
   /** Cosmetic OCR-processing screen duration (ms). */
@@ -90,6 +117,13 @@ export interface BaseWidgetOptions {
   onComplete?: (result: WidgetResult) => void
   onError?: (error: Error) => void
   onClose?: () => void
+  /**
+   * Firehose for live session events (`session.transition`) and lifecycle events
+   * (`complete` / `error` / `close`). Whether updates arrive via pusher, firebase
+   * or polling is decided by the platform's configured transport — the widget
+   * handles it. Nothing is emitted unless this (or a `handle.on(...)`) is active.
+   */
+  onEvent?: (event: WidgetEvent) => void
 
   // Injectables (testing / non-browser hosts).
   fetch?: typeof fetch
@@ -116,4 +150,10 @@ export interface MountWidgetOptions extends BaseWidgetOptions {
 export interface WidgetHandle {
   /** Close the widget and release the camera (fires `onClose`). */
   close: () => void
+  /**
+   * Subscribe to a named widget event (e.g. `session.transition`, `complete`).
+   * Returns an unsubscribe function. Registering a listener activates the event
+   * stream (events are only delivered while at least one listener is active).
+   */
+  on: (event: string, listener: WidgetEventListener) => () => void
 }

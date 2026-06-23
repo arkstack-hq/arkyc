@@ -1,6 +1,8 @@
 import type { BaseWidgetOptions, MountWidgetOptions, WidgetHandle } from './types'
 import { buildController, resolveContainer } from './controller'
 
+import { WidgetHandler } from './WidgetHandler'
+
 /**
  * @arkyc/widget
  *
@@ -50,9 +52,7 @@ export class ArkycWidget {
     ;(doc.body ?? doc.documentElement).appendChild(overlay)
     controller.start()
 
-    return {
-      close: () => controller.close(),
-    }
+    return new WidgetHandler(controller)
   }
 
   /**
@@ -69,9 +69,7 @@ export class ArkycWidget {
     container.appendChild(controller.element)
     controller.start()
 
-    return {
-      close: () => controller.close(),
-    }
+    return new WidgetHandler(controller)
   }
 
   /**

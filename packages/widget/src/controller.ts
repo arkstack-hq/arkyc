@@ -2,17 +2,20 @@ import type {
   DocumentType,
   LivenessChallenge,
   LivenessMode,
+  SessionTransitionEvent,
   VerificationStatus,
   WidgetResult,
   WidgetStep,
 } from '@arkyc/types'
-import { ArkycClient, type ClientHandoff, type ClientSession, WidgetApiError } from './client'
+import { REALTIME_EVENT } from '@arkyc/types'
+import { ArkycClient, type ClientHandoff, type ClientRealtime, type ClientSession, WidgetApiError } from './client'
 import { Flow } from './flow'
 import { Theme } from './theme'
 import { WidgetView, type ViewHandlers } from './ui'
 import { isDesktopDevice } from './device'
 import { renderQrSvg } from './qr'
-import type { BaseWidgetOptions, WidgetControllerConfig } from './types'
+import { createWidgetRealtimeClient, type WidgetRealtimeClient } from './realtime'
+import type { BaseWidgetOptions, WidgetControllerConfig, WidgetEventListener } from './types'
 
 /** Per-step lead-in copy shown before each capture/liveness step. */
 const STEP_INSTRUCTIONS: Partial<Record<WidgetStep, { title: string; body: string; cta?: string }>> = {
@@ -57,6 +60,18 @@ export class WidgetController {
   private handoffConfig: ClientHandoff = { enabled: false, allow_desktop: true, url: '' }
   private handoffReady = false
   private handoffActive = false
+
+  /** This session's id + how to watch it live (push transport vs. polling). */
+  private sessionId = ''
+  private realtimeConfig: ClientRealtime | null = null
+  private rtClient: WidgetRealtimeClient | null = null
+  private rtResolved = false
+  /** The last status observed, so a transition only emits once per change. */
+  private lastStatus: VerificationStatus | null = null
+  /** Per-name event listeners registered via {@link on}. */
+  private listeners = new Map<string, Set<WidgetEventListener>>()
+  /** Cancels the active session watch (e.g. continue-on-this-device). */
+  private stopWatch: (() => void) | undefined
 
   private step: WidgetStep = 'welcome'
   private documentType: DocumentType | null = null
@@ -128,6 +143,95 @@ export class WidgetController {
     this.finishClose()
   }
 
+  /**
+   * Subscribe to a named widget event; returns an unsubscribe function. Having a
+   * listener (here or via `onEvent`) is what activates the event stream.
+   */
+  on(event: string, listener: WidgetEventListener): () => void {
+    const set = this.listeners.get(event) ?? new Set<WidgetEventListener>()
+    set.add(listener)
+    this.listeners.set(event, set)
+
+    return () => set.delete(listener)
+  }
+
+  /** Whether anyone is listening for `name` (the firehose or a named listener). */
+  private hasListener(name: string): boolean {
+    if (this.config.onEvent) return true
+    const set = this.listeners.get(name)
+
+    return !!set && set.size > 0
+  }
+
+  /**
+   * Surface an event: to local listeners (firehose + `on`), and — in hosted
+   * iframe mode — to the embedding parent as `arkyc:event` so the SDK's
+   * `handle.on(...)` works across the frame.
+   */
+  private dispatch(name: string, data?: unknown): void {
+    this.emit(name, data)
+    // The parent window is the consumer in iframe mode, so forwarding there isn't
+    // gated on a local listener (post() already no-ops when not embedding).
+    this.post('arkyc:event', { name, data })
+  }
+
+  /** Emit an event to the firehose + named listeners — but only if one is active. */
+  private emit(name: string, data?: unknown): void {
+    if (!this.hasListener(name)) return
+    try {
+      this.config.onEvent?.({ name, data })
+    } catch {
+      // A consumer callback threw — never let it break the flow.
+    }
+    const set = this.listeners.get(name)
+    if (set) {
+      for (const listener of [...set]) {
+        try {
+          listener(data)
+        } catch {
+          // ditto
+        }
+      }
+    }
+  }
+
+  /** Record an observed status, emitting `session.transition` on a real change. */
+  private observe(status: VerificationStatus): void {
+    if (status === this.lastStatus) return
+    const previous = this.lastStatus
+    this.lastStatus = status
+    this.dispatch(REALTIME_EVENT.sessionTransition, {
+      session_id: this.sessionId,
+      status,
+      previous_status: previous,
+    } satisfies Partial<SessionTransitionEvent>)
+  }
+
+  /**
+   * Lazily connect the push transport for this session (once). Returns null for
+   * `polling`/`off`/`memory` or when the transport SDK can't load — the caller
+   * then polls instead.
+   */
+  private async resolveRealtime(): Promise<WidgetRealtimeClient | null> {
+    if (this.rtResolved) return this.rtClient
+    this.rtResolved = true
+    const cfg = this.realtimeConfig
+    if (!cfg || cfg.transport === 'polling' || cfg.transport === 'off' || cfg.transport === 'memory') return null
+
+    const factory = this.config.realtimeFactory ?? createWidgetRealtimeClient
+    const apiBase = (this.config.baseUrl ?? '').replace(/\/$/, '')
+    try {
+      this.rtClient = await factory(cfg, {
+        authEndpoint: `${apiBase}/v1/client/realtime/auth`,
+        token: this.config.token,
+      })
+    } catch {
+      this.rtClient = null
+    }
+
+    return this.rtClient
+  }
+
   private handlers(): ViewHandlers {
     return {
       onClose: () => this.finishClose(),
@@ -154,6 +258,7 @@ export class WidgetController {
       onUsePhone: () => void this.run(() => this.startHandoff()),
       onContinueHere: () => {
         this.handoffActive = false
+        this.stopWatch?.()
         this.step = 'welcome'
         this.render()
       },
@@ -169,6 +274,9 @@ export class WidgetController {
     if (this.settled) return
     const session = await this.client.getSession()
     if (this.settled) return
+    this.sessionId = session.id
+    this.realtimeConfig = session.realtime ?? null
+    this.observe(session.status)
     if (Flow.isTerminal(session.status)) return this.showTerminal(session.status)
     this.resolveLiveness(session)
     if (session.handoff) this.handoffConfig = session.handoff
@@ -209,8 +317,19 @@ export class WidgetController {
     return url
   }
 
-  /** Poll the session while the user verifies on the other device; mirror the result. */
+  /** Watch the session while the user verifies on the other device; mirror the result. */
   private async pollHandoff(): Promise<void> {
+    const rt = await this.resolveRealtime()
+    if (rt) {
+      const status = await this.pushWatch(rt, this.maxHandoffPolls, () => this.handoffActive && !this.settled)
+      if (status) {
+        this.handoffActive = false
+        return this.showResult(status)
+      }
+
+      return // cancelled (continue here) or budget elapsed → the QR persists
+    }
+
     let errors = 0
     for (let i = 0; i < this.maxHandoffPolls && this.handoffActive && !this.settled; i++) {
       await this.delay(this.pollMs)
@@ -218,6 +337,7 @@ export class WidgetController {
       try {
         const session = await this.client.getSession()
         errors = 0
+        this.observe(session.status)
         if (Flow.isTerminal(session.status)) {
           this.handoffActive = false
           return this.showResult(session.status)
@@ -231,6 +351,55 @@ export class WidgetController {
         if (++errors >= 5) return
       }
     }
+  }
+
+  /**
+   * Await a terminal status over the push transport. Resolves to the terminal
+   * status, or null if `active()` went false or the tick budget elapsed (push can
+   * miss events / disconnect; the budget bounds the wait). An initial fetch
+   * catches a session that finished before we subscribed.
+   */
+  private pushWatch(
+    rt: WidgetRealtimeClient,
+    budget: number,
+    active: () => boolean,
+  ): Promise<VerificationStatus | null> {
+    return new Promise((resolve) => {
+      let done = false
+      const finish = (status: VerificationStatus | null) => {
+        if (done) return
+        done = true
+        this.stopWatch = undefined
+        unsubscribe()
+        resolve(status)
+      }
+      const channel = this.realtimeConfig!.channel
+      const unsubscribe = rt.subscribe(channel, (event, data) => {
+        if (event !== REALTIME_EVENT.sessionTransition) return
+        const status = (data as SessionTransitionEvent).status
+        this.observe(status)
+        if (Flow.isTerminal(status)) finish(status)
+      })
+      this.stopWatch = () => finish(null)
+      // Catch a race where the session already finished before we subscribed.
+      void this.client
+        .getSession()
+        .then((session) => {
+          this.observe(session.status)
+          if (Flow.isTerminal(session.status)) finish(session.status)
+        })
+        .catch((error) => {
+          if (error instanceof WidgetApiError && error.status === 401) finish('expired')
+        })
+      // Bound the wait by the same tick budget the poller would use.
+      const countdown = async (n: number): Promise<void> => {
+        if (done) return
+        if (!active() || n >= budget) return finish(null)
+        await this.delay(this.pollMs)
+        void countdown(n + 1)
+      }
+      void countdown(0)
+    })
   }
 
   /** Resolve which liveness flow to run from the session's capture model. */
@@ -303,10 +472,18 @@ export class WidgetController {
     }
   }
 
-  /** Poll the session until it reaches a terminal status (then show the result). */
+  /** Watch the session until it reaches a terminal status (then show the result). */
   private async poll(): Promise<void> {
+    const rt = await this.resolveRealtime()
+    if (rt) {
+      const status = await this.pushWatch(rt, this.maxPolls, () => !this.settled)
+
+      return this.showResult(status ?? 'requires_review')
+    }
+
     for (let i = 0; i < this.maxPolls && !this.settled; i++) {
       const session = await this.client.getSession()
+      this.observe(session.status)
       if (Flow.isTerminal(session.status)) return this.showResult(session.status)
       await this.delay(this.pollMs)
     }
@@ -382,12 +559,15 @@ export class WidgetController {
   private finishResult(): void {
     if (this.settled) return
     this.settled = true
+    this.teardownRealtime()
 
     if (this.pendingError) {
       this.post('arkyc:error', { error: serializeError(this.pendingError) })
+      this.dispatch('error', { message: this.pendingError.message })
       this.config.onError?.(this.pendingError)
     } else if (this.result) {
       this.post('arkyc:complete', { payload: this.result })
+      this.dispatch('complete', this.result)
       this.config.onComplete?.(this.result)
     }
 
@@ -399,10 +579,19 @@ export class WidgetController {
     if (this.settled) return
 
     this.settled = true
+    this.teardownRealtime()
     this.post('arkyc:close', {})
+    this.dispatch('close')
     this.config.onClose?.()
     this.destroy()
     this.config.onSettle?.()
+  }
+
+  /** Stop any active session watch + disconnect the push transport. */
+  private teardownRealtime(): void {
+    this.stopWatch?.()
+    this.rtClient?.disconnect()
+    this.rtClient = null
   }
 
   private post(type: string, extra: Record<string, unknown>): void {
@@ -437,6 +626,7 @@ export const buildController = (options: BaseWidgetOptions, onSettle: () => void
     onComplete: options.onComplete,
     onError: options.onError,
     onClose: options.onClose,
+    onEvent: options.onEvent,
     onSettle,
     fetch: options.fetch,
     doc: options.doc,

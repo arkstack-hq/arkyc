@@ -11,6 +11,24 @@ export interface ClientSession {
   liveness_challenges?: LivenessChallenge[]
   /** Cross-device handoff config resolved from the project setting. */
   handoff?: ClientHandoff
+  /** How to watch this session live (push transport params or `polling`). */
+  realtime?: ClientRealtime
+}
+
+/**
+ * Realtime connection info for this session (Phase 16). `transport` selects how
+ * the widget watches the session: `pusher`/`firebase` subscribe to `channel`;
+ * `polling` (and `off`/`memory`) mean poll the session endpoint instead. The
+ * remaining fields carry the active transport's public connection params; `token`
+ * is a per-session Firebase custom token when applicable.
+ */
+export interface ClientRealtime {
+  transport: 'pusher' | 'firebase' | 'polling' | 'off' | 'memory'
+  /** The private channel this session's events publish to. */
+  channel: string
+  /** Per-session Firebase custom token (firebase transport only). */
+  token?: string | null
+  [param: string]: unknown
 }
 
 /** Whether (and where) the widget may offer cross-device handoff. */
