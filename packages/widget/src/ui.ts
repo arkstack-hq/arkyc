@@ -27,8 +27,11 @@ export interface ViewHandlers {
   onDocumentSelected(type: DocumentType, country: string): void
   /** A capture screen produced an image (or `null` when skipped in demo mode). */
   onImage(blob: Blob | null): void
-  /** Active liveness finished: the recorded video (or `null`) + the performed sequence. */
-  onActiveLiveness(video: Blob | null, performed: LivenessChallenge[]): void
+  /**
+   * Active liveness finished: the recorded video (or `null`), the performed
+   * sequence, and a still selfie frame grabbed from the live video (or `null`).
+   */
+  onActiveLiveness(video: Blob | null, performed: LivenessChallenge[], selfie?: Blob | null): void
   /** The result screen was acknowledged ("Done"). */
   onAcknowledge(): void
 }
@@ -641,9 +644,15 @@ export class WidgetView {
 
     const finish = () => {
       advance.setAttribute('disabled', 'true')
-      void Promise.resolve(recording?.stop() ?? Promise.resolve(null)).then((blob) =>
-        this.handlers.onActiveLiveness(blob, performed),
-      )
+      // Grab a still selfie from the live video before stopping the recorder, so
+      // active liveness yields a face image for review + face matching.
+      void this.camera
+        .grabFrame(video)
+        .then((selfie) =>
+          Promise.resolve(recording?.stop() ?? Promise.resolve(null)).then((blob) =>
+            this.handlers.onActiveLiveness(blob, performed, selfie),
+          ),
+        )
     }
 
     const advanceStep = () => {

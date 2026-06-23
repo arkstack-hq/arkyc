@@ -106,9 +106,10 @@ export class WidgetController {
         void this.run(() => this.enter('front_capture'))
       },
       onImage: (blob) => void this.run(() => this.onImage(blob)),
-      onActiveLiveness: (video, performed) =>
+      onActiveLiveness: (video, performed, selfie) =>
         void this.run(async () => {
           await this.client.submitLiveness({
+            selfie,
             video,
             mode: 'active',
             challenges: performed,

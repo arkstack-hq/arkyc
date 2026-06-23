@@ -178,8 +178,13 @@ export class VerificationSessionService {
       429,
     )
 
-    const selfiePath = sessionObjectKey(session, 'liveness/selfie.jpg')
-    await Storage.disk().put(selfiePath, input.selfie ?? EMPTY_IMAGE, { visibility: 'private' })
+    // Only store a selfie when one was actually captured (passive selfie step, or
+    // an active-liveness frame). Otherwise leave it null — no phantom placeholder.
+    let selfiePath: string | null = null
+    if (input.selfie) {
+      selfiePath = sessionObjectKey(session, 'liveness/selfie.jpg')
+      await Storage.disk().put(selfiePath, input.selfie, { visibility: 'private' })
+    }
 
     let videoPath: string | null = null
     if (input.video) {
