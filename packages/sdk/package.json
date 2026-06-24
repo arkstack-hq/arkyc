@@ -27,8 +27,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@arkyc/types": "workspace:*",
-    "@arkyc/core": "workspace:*",
-    "@arkyc/webhooks": "workspace:*"
+    "@arkyc/types": "workspace:^",
+    "@arkyc/core": "workspace:^",
+    "@arkyc/webhooks": "workspace:^"
   }
 }

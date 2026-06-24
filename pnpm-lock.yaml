@@ -84,31 +84,31 @@ importers:
         specifier: ^0.14.3
         version: 0.14.3(@arkstack/common@0.14.3(@arkstack/contract@0.14.3)(@arkstack/foundry@0.14.3)(@h3ravel/support@2.2.0(@types/node@26.0.0))(arkormx@2.9.3(@types/node@26.0.0)))(@arkstack/foundry@0.14.3)(@h3ravel/musket@2.2.1(@types/node@26.0.0))(clear-router@2.8.8(@h3ravel/support@2.2.0(@types/node@26.0.0))(express@5.2.1)(reflect-metadata@0.2.2))
       '@arkyc/auth':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/auth
       '@arkyc/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/core
       '@arkyc/face-match':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/face-match
       '@arkyc/liveness':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/liveness
       '@arkyc/ocr':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/ocr
       '@arkyc/permissions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/permissions
       '@arkyc/realtime':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/realtime
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/types
       '@arkyc/webhooks':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/webhooks
       '@h3ravel/musket':
         specifier: ^2.2.1
@@ -214,10 +214,10 @@ importers:
         specifier: ^2.0.18
         version: 2.0.18(alova@3.5.1)(axios@1.18.0)
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/types
       '@arkyc/widget':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/widget
       alova:
         specifier: ^3.5.1
@@ -299,10 +299,10 @@ importers:
   apps/playground:
     dependencies:
       '@arkyc/sdk':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/sdk
       '@arkyc/widget':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/widget
     devDependencies:
       vite:
@@ -367,7 +367,7 @@ importers:
   packages/auth:
     dependencies:
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
     devDependencies:
       '@types/node':
@@ -377,25 +377,25 @@ importers:
   packages/core:
     dependencies:
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
 
   packages/face-match:
     dependencies:
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
 
   packages/liveness:
     dependencies:
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
 
   packages/ocr:
     dependencies:
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
     optionalDependencies:
       sharp:
@@ -408,13 +408,13 @@ importers:
   packages/permissions:
     dependencies:
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
 
   packages/realtime:
     dependencies:
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
       firebase-admin:
         specifier: ^13.0.2
@@ -426,13 +426,13 @@ importers:
   packages/sdk:
     dependencies:
       '@arkyc/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
       '@arkyc/webhooks':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../webhooks
 
   packages/types: {}
@@ -440,13 +440,13 @@ importers:
   packages/webhooks:
     dependencies:
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
 
   packages/widget:
     dependencies:
       '@arkyc/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
       firebase:
         specifier: ^11.0.0

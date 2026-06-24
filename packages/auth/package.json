@@ -23,7 +23,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@arkyc/types": "workspace:*"
+    "@arkyc/types": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^26.0.0"

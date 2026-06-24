@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  # A published GitHub release drives the version from its tag (e.g. v1.4.0).
+  release:
+    types: [published]
+  # Manual run: pass a version, or leave it blank to bump the minor.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.4.0). Leave blank to bump the minor.'
+        required: false
+        type: string
+
+# Needs write access to commit the version bump back to the default branch.
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Apply release version
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the default branch (not the detached tag commit) so the bump
+      # commit lands on the branch.
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.28.2
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      # On `release`, use the tag; on manual dispatch, use the (optional) input —
+      # an empty value makes the script default to a minor bump.
+      - name: Apply version
+        run: bash scripts/release-version.sh "${{ github.event.release.tag_name || inputs.version }}"
+
+      - name: Commit version bump
+        run: |
+          if git diff --quiet; then
+            echo "No version changes to commit."
+            exit 0
+          fi
+          version="$(node -p "require('./package.json').version")"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(release): v${version}"
+          git push origin "HEAD:${{ github.event.repository.default_branch }}"
