@@ -26,6 +26,7 @@ import {
   type FaceTuning,
 } from './face'
 import { Theme } from './theme'
+import { countries } from './countries'
 
 /** High-level events the view raises back to the controller. */
 export interface ViewHandlers {
@@ -449,14 +450,33 @@ export class WidgetView {
 
   private renderDocumentSelection(): void {
     this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Select your document' }))
-    const country = this.el('input', {
-      class: 'arkyc-btn arkyc-btn-ghost',
-      placeholder: 'Country code (e.g. US)',
-      'aria-label': 'Country code',
-    }) as HTMLInputElement
-    this.body.appendChild(country)
+    const country = this.el('select', {
+      class: 'arkyc-btn arkyc-btn-ghost arkyc-text-center',
+      name: 'country',
+      autocomplete: 'country',
+      'aria-label': 'Country',
+    }) as HTMLSelectElement
+
+    const placeholder = this.el('option', {
+      value: '',
+      disabled: 'disabled',
+      selected: 'selected',
+    })
+
+    placeholder.textContent = 'Country'
+
+    country.appendChild(placeholder)
+
+    countries.forEach(({ name, iso2, flag }) => {
+      const option = this.el('option', { value: iso2 }) as HTMLOptionElement
+      option.textContent = `${flag} ${name}`
+      country.appendChild(option)
+    })
 
     const choices = this.el('div', { class: 'arkyc-choices' })
+
+    choices.appendChild(country)
+
     ;(Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
       const btn = this.button(DOCUMENT_LABELS[type], () =>
         this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
@@ -574,6 +594,22 @@ export class WidgetView {
   }
 
   /**
+   * Run `cb` once the live camera feed appears (the video has frames). The
+   * detection model may still be downloading at that point, so callers use this
+   * to replace the "starting camera" hint with a neutral one.
+   *
+   * @param video
+   * @param cb
+   */
+  private onCameraLive(video: HTMLVideoElement, cb: () => void): void {
+    if ((video.readyState ?? 0) >= 2) {
+      cb()
+      return
+    }
+    video.addEventListener('playing', cb, { once: true })
+  }
+
+  /**
    * Document capture: detect a real, well-framed, in-focus document (edge
    * projection) and auto-grab only once it's been held steady. Falls back to the
    * brightness/glare heuristic when the detector can't run.
@@ -603,10 +639,17 @@ export class WidgetView {
 
     hint.textContent = 'Starting camera…'
     let cancelled = false
+    let modelReady = false
     this.cleanups.push(() => {
       cancelled = true
     })
+    // The camera feed appears before the document scanner model finishes loading;
+    // once the video is live, stop implying the camera is still starting.
+    this.onCameraLive(video, () => {
+      if (!cancelled && !modelReady) hint.textContent = 'Getting ready…'
+    })
     void analyzer.ready().then((ok) => {
+      modelReady = true
       if (cancelled) return
       if (!ok) {
         onNoDetector()
@@ -703,10 +746,18 @@ export class WidgetView {
     }
     hint.textContent = 'Starting camera…'
     let cancelled = false
+    let modelReady = false
     this.cleanups.push(() => {
       cancelled = true
     })
+    // The camera feed appears before the detection model (MediaPipe WASM, lazily
+    // fetched from a CDN) finishes loading. Once the video is live, stop implying
+    // the camera is still starting.
+    this.onCameraLive(video, () => {
+      if (!cancelled && !modelReady) hint.textContent = 'Getting ready…'
+    })
     void analyzer.ready().then((ok) => {
+      modelReady = true
       if (cancelled) return
       if (!ok) {
         // Detector failed to load — guide with brightness and offer manual capture.
