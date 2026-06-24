@@ -27,7 +27,7 @@ export function Quickstart() {
       </p>
 
       <h2>2. Install the SDK</h2>
-      <CodeCard code={`pnpm add @arkyc/sdk`} lang="bash" />
+      <CodeCard code={['pnpm add @arkyc/sdk']} lang="bash" />
 
       <h2>3. Create a session (server)</h2>
       <p>
@@ -36,29 +36,33 @@ export function Quickstart() {
       </p>
       <CodeCard
         title="server.ts"
-        code={`import { Arkyc } from '@arkyc/sdk'
-
-const arkyc = new Arkyc({ secretKey: process.env.ARKYC_SECRET_KEY! })
-
-const { session, clientToken } = await arkyc.sessions.create({
-  userReference: 'user_456', // your id for this user
-})
-
-// Store session.id to reconcile webhooks; send clientToken to the browser.
-return { clientToken }`}
+        code={[
+          "import { Arkyc } from '@arkyc/sdk'",
+          '',
+          'const arkyc = new Arkyc({ secretKey: process.env.ARKYC_SECRET_KEY! })',
+          '',
+          'const { session, clientToken } = await arkyc.sessions.create({',
+          "  userReference: 'user_456', // your id for this user",
+          '})',
+          '',
+          '// Store session.id to reconcile webhooks; send clientToken to the browser.',
+          'return { clientToken }',
+        ]}
       />
 
       <h2>4. Embed the widget (client)</h2>
       <p>Open the widget with that token, your user completes capture and liveness.</p>
       <CodeCard
         title="client.ts"
-        code={`import { ArkycWidget } from '@arkyc/sdk/browser'
-
-ArkycWidget.open({
-  token: clientToken,
-  onComplete: (result) => console.log(result.status),
-  onError: (err) => console.error(err),
-})`}
+        code={[
+          "import { ArkycWidget } from '@arkyc/sdk/browser'",
+          '',
+          'ArkycWidget.open({',
+          '  token: clientToken,',
+          '  onComplete: (result) => console.log(result.status),',
+          '  onError: (err) => console.error(err),',
+          '})',
+        ]}
       />
 
       <h2>Handle the result</h2>

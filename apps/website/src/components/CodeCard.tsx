@@ -24,11 +24,13 @@ export function CodeCard({
   className,
 }: {
   title?: string
-  code: string
+  /** Source as a string, or an array of lines (joined with newlines) for cleaner linting. */
+  code: string | string[]
   lang?: CodeLang
   className?: string
 }) {
-  const highlighted = hljs.highlight(code, { language: lang }).value
+  const source = Array.isArray(code) ? code.join('\n') : code
+  const highlighted = hljs.highlight(source, { language: lang }).value
 
   return (
     <div

@@ -40,18 +40,20 @@ export function Webhooks() {
       <CodeCard
         title="payload.json"
         lang="json"
-        code={`{
-  "event": "verification.approved",
-  "session_id": "ses_123",
-  "organization_id": "org_123",
-  "project_id": "prj_123",
-  "user_reference": "user_456",
-  "status": "approved",
-  "decision_reason": "AUTO_APPROVED",
-  "checks": { "document": { }, "liveness": { }, "face_match": { } },
-  "assets": { "document_front": "https://…", "selfie": "https://…" },
-  "created_at": "2026-06-24T10:00:00.000Z"
-}`}
+        code={[
+          '{',
+          '  "event": "verification.approved",',
+          '  "session_id": "ses_123",',
+          '  "organization_id": "org_123",',
+          '  "project_id": "prj_123",',
+          '  "user_reference": "user_456",',
+          '  "status": "approved",',
+          '  "decision_reason": "AUTO_APPROVED",',
+          '  "checks": { "document": { }, "liveness": { }, "face_match": { } },',
+          '  "assets": { "document_front": "https://…", "selfie": "https://…" },',
+          '  "created_at": "2026-06-24T10:00:00.000Z"',
+          '}',
+        ]}
       />
 
       <h2>Verify the signature</h2>
@@ -63,27 +65,29 @@ export function Webhooks() {
       </p>
       <CodeCard
         title="webhook-handler.ts"
-        code={`import { Arkyc } from '@arkyc/sdk'
-
-const arkyc = new Arkyc({ secretKey })
-
-app.post('/webhooks/arkyc', async (req, res) => {
-  const ok = arkyc.webhooks.verify({
-    payload: req.rawBody, // the raw request body, as a string
-    secret: WEBHOOK_SECRET, // the endpoint's signing secret
-    signature: req.header('X-Arkyc-Signature'),
-    timestamp: Number(req.header('X-Arkyc-Timestamp')),
-  })
-
-  if (!ok) return res.status(400).send('invalid signature')
-
-  const event = JSON.parse(req.rawBody)
-  if (event.event === 'verification.approved') {
-    await activateUser(event.user_reference)
-  }
-
-  res.sendStatus(200)
-})`}
+        code={[
+          "import { Arkyc } from '@arkyc/sdk'",
+          '',
+          'const arkyc = new Arkyc({ secretKey })',
+          '',
+          "app.post('/webhooks/arkyc', async (req, res) => {",
+          '  const ok = arkyc.webhooks.verify({',
+          '    payload: req.rawBody, // the raw request body, as a string',
+          "    secret: WEBHOOK_SECRET, // the endpoint's signing secret",
+          "    signature: req.header('X-Arkyc-Signature'),",
+          "    timestamp: Number(req.header('X-Arkyc-Timestamp')),",
+          '  })',
+          '',
+          "  if (!ok) return res.status(400).send('invalid signature')",
+          '',
+          '  const event = JSON.parse(req.rawBody)',
+          "  if (event.event === 'verification.approved') {",
+          '    await activateUser(event.user_reference)',
+          '  }',
+          '',
+          '  res.sendStatus(200)',
+          '})',
+        ]}
       />
 
       <h2>Retries and deliveries</h2>

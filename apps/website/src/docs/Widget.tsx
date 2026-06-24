@@ -15,18 +15,18 @@ export function Widget() {
 
       <h2>Install</h2>
       <p>Use the SDK’s browser entry with a bundler, or the standalone global script for a no-bundler setup.</p>
-      <CodeCard
-        code={`// Bundler
-import { ArkycWidget } from '@arkyc/sdk/browser'`}
-      />
+      <CodeCard code={['// Bundler', "import { ArkycWidget } from '@arkyc/sdk/browser'"]} />
+      <br />
       <CodeCard
         title="no-bundler.html"
         lang="xml"
-        code={`<!-- Served from jsDelivr; exposes window.ArkycWidget -->
-<script src="https://cdn.jsdelivr.net/npm/@arkyc/widget/dist/arkyc-widget.iife.global.js"></script>
-<script>
-  ArkycWidget.open({ token: clientToken })
-</script>`}
+        code={[
+          '<!-- Served from jsDelivr; exposes window.ArkycWidget -->',
+          '<script src="https://cdn.jsdelivr.net/npm/@arkyc/widget/dist/arkyc-widget.iife.global.js"></script>',
+          '<script>',
+          '  ArkycWidget.open({ token: clientToken })',
+          '</script>',
+        ]}
       />
 
       <h2>Open as an overlay</h2>
@@ -36,21 +36,23 @@ import { ArkycWidget } from '@arkyc/sdk/browser'`}
       </p>
       <CodeCard
         title="overlay.ts"
-        code={`import { ArkycWidget } from '@arkyc/sdk/browser'
-
-const handle = ArkycWidget.open({
-  token: clientToken,                 // required — from arkyc.sessions.create()
-  widgetUrl: 'https://verify.arkyc.dev', // optional — override the hosted origin
-
-  onComplete: (result) => {           // flow reached a terminal state
-    console.log(result.status)        // 'approved' | 'requires_review' | 'rejected' | …
-  },
-  onError: (error) => showError(error), // session errored or expired
-  onClose: () => {},                  // overlay torn down (also after complete/error)
-  onEvent: (event) => {               // live firehose of named events
-    console.log(event.name, event.data)
-  },
-})`}
+        code={[
+          "import { ArkycWidget } from '@arkyc/sdk/browser'",
+          '',
+          'const handle = ArkycWidget.open({',
+          '  token: clientToken,                 // required — from arkyc.sessions.create()',
+          "  widgetUrl: 'https://verify.arkyc.dev', // optional — override the hosted origin",
+          '',
+          '  onComplete: (result) => {           // flow reached a terminal state',
+          "    console.log(result.status)        // 'approved' | 'requires_review' | 'rejected' | …",
+          '  },',
+          '  onError: (error) => showError(error), // session errored or expired',
+          '  onClose: () => {},                  // overlay torn down (also after complete/error)',
+          '  onEvent: (event) => {               // live firehose of named events',
+          '    console.log(event.name, event.data)',
+          '  },',
+          '})',
+        ]}
       />
 
       <h3>Options</h3>
@@ -183,16 +185,18 @@ const handle = ArkycWidget.open({
       </table>
       <CodeCard
         title="handle.ts"
-        code={`const handle = ArkycWidget.open({ token: clientToken })
-
-// Subscribe to one event; the call returns an unsubscribe fn.
-const off = handle.on('session.transition', (data) => {
-  updateProgress(data)
-})
-
-// Later — stop listening, or close the widget yourself.
-off()
-handle.close()`}
+        code={[
+          'const handle = ArkycWidget.open({ token: clientToken })',
+          '',
+          '// Subscribe to one event; the call returns an unsubscribe fn.',
+          "const off = handle.on('session.transition', (data) => {",
+          '  updateProgress(data)',
+          '})',
+          '',
+          '// Later — stop listening, or close the widget yourself.',
+          'off()',
+          'handle.close()',
+        ]}
       />
 
       <h2 id="events">Events</h2>
@@ -257,16 +261,18 @@ handle.close()`}
       </p>
       <CodeCard
         title="result.ts"
-        code={`onComplete: (result) => {
-  // result.status:
-  //   'approved' | 'requires_review' | 'rejected'
-  //   | 'processing' | 'expired' | 'cancelled'
-  switch (result.status) {
-    case 'approved':        return onApproved()
-    case 'requires_review': return onPending()   // a human will decide
-    default:                return onRejected()
-  }
-}`}
+        code={[
+          'onComplete: (result) => {',
+          '  // result.status:',
+          "  //   'approved' | 'requires_review' | 'rejected'",
+          "  //   | 'processing' | 'expired' | 'cancelled'",
+          '  switch (result.status) {',
+          "    case 'approved':        return onApproved()",
+          "    case 'requires_review': return onPending()   // a human will decide",
+          '    default:                return onRejected()',
+          '  }',
+          '}',
+        ]}
       />
 
       <h2>Hosted page</h2>
@@ -274,7 +280,7 @@ handle.close()`}
         Prefer a redirect (or a cross-device hand-off)? Send the user to the hosted widget URL with the token as a query
         param, the same page the overlay loads in its iframe.
       </p>
-      <CodeCard title="redirect" lang="bash" code={`https://verify.arkyc.dev?token=<clientToken>`} />
+      <CodeCard title="redirect" lang="bash" code={['https://verify.arkyc.dev?token=<clientToken>']} />
 
       <h2>Rendering &amp; permissions</h2>
       <p>

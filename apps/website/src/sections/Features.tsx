@@ -23,13 +23,15 @@ const FEATURES: Feature[] = [
     visual: (
       <CodeCard
         title="embed.ts"
-        code={`import { ArkycWidget } from '@arkyc/sdk/browser'
-
-ArkycWidget.open({
-  token: clientToken,        // from your server
-  onComplete: (r) => done(r),
-  onError: (e) => show(e),
-})`}
+        code={[
+          "import { ArkycWidget } from '@arkyc/sdk/browser'",
+          '',
+          'ArkycWidget.open({',
+          '  token: clientToken,        // from your server',
+          '  onComplete: (r) => done(r),',
+          '  onError: (e) => show(e),',
+          '})',
+        ]}
       />
     ),
   },
@@ -103,16 +105,19 @@ ArkycWidget.open({
     visual: (
       <CodeCard
         title="webhook.ts"
-        code={`import { Arkyc } from '@arkyc/sdk'
-
-const arkyc = new Arkyc({ secretKey })
-
-// Throws if the signature is invalid.
-const event = arkyc.webhooks.verify(rawBody, signature, secret)
-
-if (event.type === 'verification.approved') {
-  await activate(event.data.userReference)
-}`}
+        code={[
+          "import { Arkyc } from '@arkyc/sdk'",
+          '',
+          'const arkyc = new Arkyc({ secretKey })',
+          '',
+          'const ok = arkyc.webhooks.verify({ payload, secret, signature, timestamp })',
+          "if (!ok) throw new Error('bad signature')",
+          '',
+          'const event = JSON.parse(payload)',
+          "if (event.event === 'verification.approved') {",
+          '  await activate(event.user_reference)',
+          '}',
+        ]}
       />
     ),
   },
