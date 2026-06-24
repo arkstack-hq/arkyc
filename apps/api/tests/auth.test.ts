@@ -126,7 +126,7 @@ async function login(email: string, password: string): Promise<string> {
 
 describe('health', () => {
   it('responds OK', async () => {
-    await request(app).get('/api').expect(200).contains('"status":"OK"')
+    await request(app).get('/api').expect(200).contains('"status":"online"')
   })
 })
 
