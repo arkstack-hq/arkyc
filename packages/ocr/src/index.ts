@@ -1,17 +1,27 @@
 /**
  * @arkyc/ocr
  *
- * Driver-based OCR extraction. Drivers (`mock`, `tesseract`, `external`) share the
- * {@link OcrDriver} interface; {@link OcrDriverFactory} selects one from config so
+ * Driver-based OCR extraction. Drivers (`mock`, `tesseract`, `external`, `ai`) share
+ * the {@link OcrDriver} interface; {@link OcrDriverFactory} selects one from config so
  * call sites stay driver-agnostic. The `tesseract` driver reads text in-process
  * (Tesseract.js, lazily loaded) and runs it through the document-parser registry;
- * point `external` at any OCR HTTP service instead.
+ * `ai` hands the image to a vision LLM (Claude); point `external` at any OCR HTTP
+ * service instead.
  */
 export * from './types'
 export * from './registry'
 export { MockOcrDriver } from './drivers/mock'
 export { ExternalOcrDriver } from './drivers/external'
 export { TesseractOcrDriver } from './drivers/tesseract'
+export {
+  AnthropicOcrDriver,
+  anthropicVision,
+  scoreConfidence,
+  DEFAULT_AI_MODEL,
+  type AnthropicOcrOptions,
+  type AiVisionExtract,
+  type AiExtraction,
+} from './drivers/ai'
 export type { TesseractOcrOptions, TesseractRecognize, RecognizeOptions } from './drivers/tesseract'
 export {
   buildSharpPreprocessor,

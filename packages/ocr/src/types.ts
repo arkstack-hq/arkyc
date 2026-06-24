@@ -27,14 +27,18 @@ export interface OcrDriver {
 }
 
 /** Identifier for a registered OCR driver. */
-export type OcrDriverName = 'mock' | 'tesseract' | 'external'
+export type OcrDriverName = 'mock' | 'tesseract' | 'external' | 'ai'
 
 /** Configuration selecting + parameterising the active OCR driver. */
 export interface OcrConfig {
   driver: OcrDriverName
-  /** Base URL for the `external` driver. */
+  /** Base URL for the `external` driver, or API base override for `ai`. */
   endpoint?: string
   apiKey?: string
   /** Tesseract language(s), e.g. `eng` (the `tesseract` driver). */
   language?: string
+  /** Vision model id (the `ai` driver). */
+  model?: string
+  /** Longest image edge (px) uploaded by the `ai` driver. */
+  maxEdge?: number
 }

@@ -1,5 +1,6 @@
 import type { OcrConfig, OcrDriver } from './types'
 
+import { AnthropicOcrDriver } from './drivers/ai'
 import { ExternalOcrDriver } from './drivers/external'
 import { MockOcrDriver } from './drivers/mock'
 import { TesseractOcrDriver } from './drivers/tesseract'
@@ -24,6 +25,13 @@ export class OcrDriverFactory {
         return new TesseractOcrDriver({ language: config.language })
       case 'external':
         return new ExternalOcrDriver(config)
+      case 'ai':
+        return new AnthropicOcrDriver({
+          apiKey: config.apiKey,
+          model: config.model,
+          baseUrl: config.endpoint,
+          maxEdge: config.maxEdge,
+        })
       default:
         throw new Error(`Unknown OCR driver: ${(config as OcrConfig).driver}`)
     }

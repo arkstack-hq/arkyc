@@ -47,6 +47,8 @@ function buildOcrDriver() {
     endpoint: env('OCR_ENDPOINT'),
     apiKey: env('OCR_API_KEY'),
     language: ocrLanguage,
+    model: env('OCR_AI_MODEL'),
+    maxEdge: env('OCR_AI_MAX_EDGE') ? Number(env('OCR_AI_MAX_EDGE')) : undefined,
   })
 }
 
