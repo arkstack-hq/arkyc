@@ -357,6 +357,9 @@ importers:
 
   docs:
     devDependencies:
+      highlight.js:
+        specifier: ^11.11.1
+        version: 11.11.1
       vitepress:
         specifier: 2.0.0-alpha.17
         version: 2.0.0-alpha.17(@types/node@26.0.0)(axios@1.18.0)(idb-keyval@6.2.5)(jiti@2.7.0)(lightningcss@1.32.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@6.0.3)

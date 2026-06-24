@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { withBase } from 'vitepress'
+import hljs from 'highlight.js/lib/core'
+import typescript from 'highlight.js/lib/languages/typescript'
+import 'highlight.js/styles/atom-one-dark.css'
+
+hljs.registerLanguage('typescript', typescript)
 
 // NOTE: update REPO to the canonical GitHub URL once published.
 const REPO = 'https://github.com/arcstack/arkyc'
@@ -33,16 +38,24 @@ const features = [
 
 const quickstart = `import { Arkyc } from '@arkyc/sdk'
 
-const arkyc = new Arkyc({ secretKey: process.env.ARKYC_SECRET_KEY })
-
-// Create a verification session, hand the client token to the widget.
-const session = await arkyc.sessions.create({
-  projectId: 'prj_123',
-  userReference: 'user_456',
+const arkyc = new Arkyc({
+  secretKey: process.env.ARKYC_SECRET_KEY
 })
 
-// Later — verify a signed webhook delivery in one call.
-const event = arkyc.webhooks.verify(rawBody, signature, secret)`
+// Create a session; hand the client token to
+// the widget. The project is inferred from
+// the secret key.
+const { session, clientToken } =
+  await arkyc.sessions.create({
+    userReference: 'user_456'
+  })
+
+// Later — verify a signed webhook in one call.
+const ok = arkyc.webhooks.verify({
+  payload, secret, signature, timestamp
+})`
+
+const highlightedQuickstart = hljs.highlight(quickstart, { language: 'typescript' }).value
 </script>
 
 <template>
@@ -53,9 +66,8 @@ const event = arkyc.webhooks.verify(rawBody, signature, secret)`
         <p class="eyebrow"><span class="dot" /> Open source · MIT licensed</p>
         <h1 class="title">Identity verification<br />you can self-host.</h1>
         <p class="tagline">
-          Multi-tenant document &amp; biometric verification — capture, OCR, liveness, face match,
-          decisioning, reviews, webhooks, a typed SDK and an embeddable widget. Run the whole stack
-          yourself.
+          Multi-tenant document &amp; biometric verification — capture, OCR, liveness, face match, decisioning, reviews,
+          webhooks, a typed SDK and an embeddable widget. Run the whole stack yourself.
         </p>
         <div class="actions">
           <a class="btn btn-brand" :href="withBase('/guide/getting-started')">Get started</a>
@@ -67,7 +79,7 @@ const event = arkyc.webhooks.verify(rawBody, signature, secret)`
 
       <div class="code-card" aria-hidden="true">
         <div class="code-chrome"><span /><span /><span /></div>
-        <pre><code>{{ quickstart }}</code></pre>
+        <pre><code class="hljs" v-html="highlightedQuickstart" /></pre>
       </div>
     </section>
 
@@ -168,7 +180,10 @@ const event = arkyc.webhooks.verify(rawBody, signature, secret)`
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
   border: 1px solid transparent;
 }
 .btn-brand {
@@ -203,24 +218,25 @@ const event = arkyc.webhooks.verify(rawBody, signature, secret)`
   color: var(--vp-c-text-2);
 }
 
-/* Code card */
+/* Code card — fixed dark surface so the syntax theme reads in light & dark mode. */
 .code-card {
-  border: 1px solid var(--vp-c-divider);
+  border: 1px solid #1f2430;
   border-radius: 12px;
   overflow: hidden;
-  background: var(--vp-c-bg-soft);
+  background: #0d1117;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.18);
 }
 .code-chrome {
   display: flex;
   gap: 6px;
   padding: 12px 14px;
-  border-bottom: 1px solid var(--vp-c-divider);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .code-chrome span {
   width: 11px;
   height: 11px;
   border-radius: 9999px;
-  background: var(--vp-c-divider);
+  background: #30363d;
 }
 .code-card pre {
   margin: 0;
@@ -231,7 +247,9 @@ const event = arkyc.webhooks.verify(rawBody, signature, secret)`
 }
 .code-card code {
   font-family: var(--vp-font-family-mono);
-  color: var(--vp-c-text-1);
+  /* The atom-one-dark theme paints `.hljs`; keep the card's surface + spacing. */
+  padding: 0;
+  background: transparent;
 }
 
 /* Features */
