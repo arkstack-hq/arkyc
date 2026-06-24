@@ -33,14 +33,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Build libraries
+        run: pnpm run build:libs
+
       - name: Lint
         run: pnpm run lint
 
       - name: Typecheck
         run: pnpm run typecheck
-
-      - name: Build libraries
-        run: pnpm run build:libs
 
   test:
     name: Tests
@@ -76,6 +76,11 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # The libs are imported at runtime via their built `dist/`, so build them
+      # before running any package or API test.
+      - name: Build libraries
+        run: pnpm run build:libs
 
       - name: Configure API test env
         run: |
