@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import AdminAuditLogsPage from '@/pages/admin/AdminAuditLogsPage'
 import { AdminLayout } from '@/components/AdminLayout'
+import AdminOverviewPage from '@/pages/admin/AdminOverviewPage'
 import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
 import AdminOrganizationsPage from '@/pages/admin/AdminOrganizationsPage'
 import AdminOrganizationDetailPage from '@/pages/admin/AdminOrganizationDetailPage'
@@ -136,7 +137,8 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="settings" replace />} />
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route path="overview" element={<AdminOverviewPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="organizations" element={<AdminOrganizationsPage />} />
         <Route path="organizations/:organizationId" element={<AdminOrganizationDetailPage />} />

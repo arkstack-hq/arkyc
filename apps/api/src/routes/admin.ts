@@ -7,12 +7,16 @@ import AdminOrganizationController from '@controllers/admin/OrganizationControll
 import AdminUserController from '@controllers/admin/UserController'
 import AdminAuditLogController from '@controllers/admin/AuditLogController'
 import AdminAiAccessController from '@controllers/admin/AiAccessController'
+import AdminStatsController from '@controllers/admin/StatsController'
 
 // Platform-admin surface, above organizations. Guarded by `canAdmin(...)` after `auth`
 // only — NO `resolveOrganization`; an organization role never grants admin access.
 Router.group('/v1/admin', () => {
   // The caller's own admin standing — `auth` only (empty for non-admins).
   Router.get('/me', [AdminController, 'me'], [auth])
+
+  // Platform-wide overview statistics.
+  Router.get('/stats', [AdminStatsController, 'index'], [auth, canAdmin('admin.organizations.view')])
 
   Router.get('/settings', [SettingsController, 'show'], [auth, canAdmin('admin.settings.view')])
   Router.patch('/settings', [SettingsController, 'update'], [auth, canAdmin('admin.settings.update')])

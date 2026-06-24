@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Building2,
   ChevronsUpDown,
+  LayoutDashboard,
   LogOut,
   Moon,
   ScrollText,
@@ -62,7 +63,8 @@ interface AdminNavItem {
 }
 
 const NAV: AdminNavItem[] = [
-  { to: 'settings', label: 'Settings', icon: Settings, perm: 'admin.settings.view', end: true },
+  { to: 'overview', label: 'Overview', icon: LayoutDashboard, perm: 'admin.organizations.view', end: true },
+  { to: 'settings', label: 'Settings', icon: Settings, perm: 'admin.settings.view' },
   { to: 'organizations', label: 'Organizations', icon: Building2, perm: 'admin.organizations.view' },
   { to: 'ai-access', label: 'AI access', icon: Sparkles, perm: 'admin.ai_processing.view' },
   { to: 'users', label: 'Users', icon: Users, perm: 'admin.users.view' },
@@ -235,7 +237,7 @@ function AdminHeader({ items, scrolled }: { items: AdminNavItem[]; scrolled: boo
           </BreadcrumbItem>
           <BreadcrumbSeparator className="hidden sm:inline-flex" />
           <BreadcrumbItem>
-            <BreadcrumbPage>{current?.label ?? 'Settings'}</BreadcrumbPage>
+            <BreadcrumbPage>{current?.label ?? 'Overview'}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>

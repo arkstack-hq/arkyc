@@ -7,6 +7,33 @@ export interface AdminMe {
   permissions: AdminPermissionKey[]
 }
 
+/** Comprehensive platform-wide statistics for the admin overview. */
+export interface AdminStats {
+  totals: {
+    organizations: number
+    users: number
+    projects: number
+    sessions: number
+    api_keys: number
+    webhooks: number
+    reviews: number
+    admins: number
+  }
+  users: { active: number; restricted: number; suspended: number; admins: number }
+  sessions: {
+    total: number
+    by_status: Record<string, number>
+    approved: number
+    rejected: number
+    requires_review: number
+    approval_rate: number
+    last_7_days: number
+    last_30_days: number
+  }
+  ai_access: { pending: number; granted: number; revoked: number }
+  trend: { date: string; count: number }[]
+}
+
 /** A partial patch over the global settings sections. */
 export interface AdminSettingsPatch {
   platform?: Partial<GlobalSettings['platform']>
@@ -65,6 +92,15 @@ export class Admin {
       name: 'admin:me',
       cacheFor: CACHE,
       transform: unwrap<AdminMe>,
+    })
+  }
+
+  /** Comprehensive platform-wide statistics for the admin overview. */
+  static stats() {
+    return alova.Get('/v1/admin/stats', {
+      name: 'admin:stats',
+      cacheFor: CACHE,
+      transform: unwrap<AdminStats>,
     })
   }
 
