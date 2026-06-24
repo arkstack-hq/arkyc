@@ -25,11 +25,41 @@ export function Webhooks() {
           <code>verification.completed</code>, <code>verification.expired</code>, <code>verification.cancelled</code>
         </li>
       </ul>
+      <p>
+        A verification lands in <code>verification.requires_review</code> when a signal is borderline low document
+        quality or OCR confidence, a liveness/face-match near the threshold, or, when AI document processing is enabled,
+        a best-effort <strong>tamper or screen-replay</strong> flag on the document. These hold for a human decision
+        rather than auto-rejecting, so always treat <code>requires_review</code> as non-final.
+      </p>
+
+      <h2>Payload</h2>
+      <p>
+        Every delivery is a JSON body in this shape (snake_case). <code>checks</code> carries the per-stage summaries
+        and <code>assets</code> holds signed, time-limited image URLs when any were captured.
+      </p>
+      <CodeCard
+        title="payload.json"
+        lang="json"
+        code={`{
+  "event": "verification.approved",
+  "session_id": "ses_123",
+  "organization_id": "org_123",
+  "project_id": "prj_123",
+  "user_reference": "user_456",
+  "status": "approved",
+  "decision_reason": "AUTO_APPROVED",
+  "checks": { "document": { }, "liveness": { }, "face_match": { } },
+  "assets": { "document_front": "https://…", "selfie": "https://…" },
+  "created_at": "2026-06-24T10:00:00.000Z"
+}`}
+      />
 
       <h2>Verify the signature</h2>
       <p>
-        Verify each delivery with the project’s signing secret before trusting it. Pass the <strong>raw</strong> request
-        body — not the parsed JSON.
+        Verify each delivery before trusting it: <code>arkyc.webhooks.verify(...)</code> recomputes the HMAC over{' '}
+        <code>{'`${timestamp}.${rawBody}`'}</code> and checks the timestamp is within tolerance (5&nbsp;min, so a
+        captured body can’t be replayed). Pass the <strong>raw</strong> body string, not the parsed JSON, and the two
+        signature headers.
       </p>
       <CodeCard
         title="webhook-handler.ts"
@@ -38,17 +68,18 @@ export function Webhooks() {
 const arkyc = new Arkyc({ secretKey })
 
 app.post('/webhooks/arkyc', async (req, res) => {
-  const signature = req.headers['arkyc-signature']
+  const ok = arkyc.webhooks.verify({
+    payload: req.rawBody, // the raw request body, as a string
+    secret: WEBHOOK_SECRET, // the endpoint's signing secret
+    signature: req.header('X-Arkyc-Signature'),
+    timestamp: Number(req.header('X-Arkyc-Timestamp')),
+  })
 
-  let event
-  try {
-    event = arkyc.webhooks.verify(req.rawBody, signature, WEBHOOK_SECRET)
-  } catch {
-    return res.status(400).send('invalid signature')
-  }
+  if (!ok) return res.status(400).send('invalid signature')
 
-  if (event.type === 'verification.approved') {
-    await activateUser(event.data.userReference)
+  const event = JSON.parse(req.rawBody)
+  if (event.event === 'verification.approved') {
+    await activateUser(event.user_reference)
   }
 
   res.sendStatus(200)

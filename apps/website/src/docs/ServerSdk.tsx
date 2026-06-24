@@ -19,18 +19,24 @@ export function ServerSdk() {
 export const arkyc = new Arkyc({
   secretKey: process.env.ARKYC_SECRET_KEY!,
   // baseUrl defaults to the hosted API; override for self-hosted.
+  // workflowId: 'wf_…', // optional default workflow for every session
 })`}
       />
 
       <h2>Create a session</h2>
+      <p>
+        The project is determined by the secret key. <code>create</code> returns the session plus a one-time{' '}
+        <code>clientToken</code> for the widget.
+      </p>
       <CodeCard
-        code={`const session = await arkyc.sessions.create({
-  projectId: 'prj_123',
-  userReference: 'user_456',
+        code={`const { session, clientToken } = await arkyc.sessions.create({
+  userReference: 'user_456',     // optional: your id for the user
+  metadata: { plan: 'pro' },     // optional: stored with the session
+  // workflowId: 'wf_…',         // optional: overrides the client default
 })
 
-// session.clientToken -> hand to the widget
-// session.id          -> store to reconcile webhooks`}
+// clientToken -> hand to the widget
+// session.id  -> store to reconcile webhooks`}
       />
 
       <h2>Retrieve and cancel</h2>
@@ -41,16 +47,18 @@ await arkyc.sessions.cancel(session.id)`}
 
       <h2>Error handling</h2>
       <p>
-        Failed requests throw a typed <code>ArkycApiError</code> with the HTTP status and a machine-readable code.
+        Failed requests throw a typed <code>ArkycApiError</code> carrying the HTTP <code>status</code> and, on a 422,
+        field-level <code>errors</code>.
       </p>
       <CodeCard
         code={`import { ArkycApiError } from '@arkyc/sdk'
 
 try {
-  await arkyc.sessions.create({ projectId, userReference })
+  await arkyc.sessions.create({ userReference })
 } catch (err) {
   if (err instanceof ArkycApiError) {
-    console.error(err.status, err.code, err.message)
+    console.error(err.status, err.message)
+    if (err.errors) console.error(err.errors) // { field: [messages] }
   }
 }`}
       />

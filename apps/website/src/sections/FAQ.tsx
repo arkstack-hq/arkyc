@@ -13,7 +13,7 @@ const FAQS = [
   },
   {
     q: 'Can I use my own KYC provider?',
-    a: 'Yes, run Arkyc capture-only. Your users complete the polished document and selfie flow, and you hand the captured images and data off to your existing KYC provider or banking-as-a-service partner. Or let Arkyc verify end to end. You choose per project.',
+    a: 'Yes, run Arkyc capture-only. Your users complete the polished document and selfie flow, and you hand the captured images and data off to your existing KYC provider. Or let Arkyc verify end to end. You choose per project.',
   },
   {
     q: 'How long does integration take?',

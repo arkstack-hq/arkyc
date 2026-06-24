@@ -17,35 +17,35 @@ export function Quickstart() {
         .
       </p>
 
-      <h2>1. Create a project and get keys</h2>
+      <h2>1. Create a project and get a key</h2>
       <p>
         <a href={links.signup} target="_blank" rel="noreferrer">
           Create an account
         </a>
-        , add a project in the dashboard, and copy its <strong>secret key</strong> (server-side) and{' '}
-        <strong>publishable key</strong>. Keep the secret key on your backend only.
+        , add a project in the dashboard, and mint a <strong>secret key</strong> (<code>sk_…</code>) under the project’s
+        API keys. The key identifies the project, so keep it on your backend only, the browser never sees it.
       </p>
 
       <h2>2. Install the SDK</h2>
-      <CodeCard code={`pnpm add @arkyc/sdk`} />
+      <CodeCard code={`pnpm add @arkyc/sdk`} lang="bash" />
 
       <h2>3. Create a session (server)</h2>
       <p>
-        On your backend, create a verification session and return its short-lived <code>clientToken</code> to your
-        frontend.
+        On your backend, create a verification session and return its one-time <code>clientToken</code> to your
+        frontend. The project is inferred from the secret key.
       </p>
       <CodeCard
         title="server.ts"
         code={`import { Arkyc } from '@arkyc/sdk'
 
-const arkyc = new Arkyc({ secretKey: process.env.ARKYC_SECRET_KEY })
+const arkyc = new Arkyc({ secretKey: process.env.ARKYC_SECRET_KEY! })
 
-const session = await arkyc.sessions.create({
-  projectId: 'prj_123',
+const { session, clientToken } = await arkyc.sessions.create({
   userReference: 'user_456', // your id for this user
 })
 
-return { clientToken: session.clientToken }`}
+// Store session.id to reconcile webhooks; send clientToken to the browser.
+return { clientToken }`}
       />
 
       <h2>4. Embed the widget (client)</h2>
