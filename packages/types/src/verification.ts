@@ -49,6 +49,8 @@ export type DecisionReason =
 export interface VerificationSession extends Entity, ProjectScoped {
   /** Integrator's own reference for the end user being verified. */
   user_reference: string | null
+  /** Person's name extracted from the document (OCR), when available. */
+  name?: string | null
   status: VerificationStatus
   auto_decision: VerificationDecision | null
   final_decision: VerificationDecision | null

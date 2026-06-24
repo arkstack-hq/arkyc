@@ -37,7 +37,8 @@ export default class SessionReviewController extends BaseController {
     if (decisionReason) query = query.where({ decisionReason })
     if (projectId) query = query.where({ projectId })
 
-    const sessions = await query.latest('createdAt').paginate(perPage(req.query))
+    // Eager-load OCR so the list can show the extracted person name under the reference.
+    const sessions = await query.with('ocrResults').latest('createdAt').paginate(perPage(req.query))
 
     return new SessionCollection(sessions).additional({
       status: 'success',
