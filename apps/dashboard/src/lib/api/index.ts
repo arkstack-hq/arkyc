@@ -21,6 +21,8 @@ export { Roles } from './roles'
 export { Sessions } from './sessions'
 export { Organizations } from './organizations'
 export { Webhooks } from './webhooks'
+export { Workflows } from './workflows'
+export type { WorkflowInput } from './workflows'
 
 export {
   CACHE,

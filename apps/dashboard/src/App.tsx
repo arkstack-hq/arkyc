@@ -25,6 +25,7 @@ import RegisterPage from '@/pages/RegisterPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import SecurityPage from '@/pages/SecurityPage'
 import ReviewsPage from '@/pages/ReviewsPage'
+import WorkflowsPage from '@/pages/WorkflowsPage'
 import RoleDetailPage from '@/pages/settings/RoleDetailPage'
 import RolesPage from '@/pages/settings/RolesPage'
 import SessionDetailPage from '@/pages/sessions/SessionDetailPage'
@@ -104,6 +105,7 @@ export default function App() {
         <Route path="sessions" element={<SessionsPage />} />
         <Route path="sessions/:sessionId" element={<SessionDetailPage />} />
         <Route path="reviews" element={<ReviewsPage />} />
+        <Route path="workflows" element={<WorkflowsPage />} />
         <Route path="audit-logs" element={<AuditLogsPage />} />
 
         <Route path="projects" element={<ProjectsPage />} />

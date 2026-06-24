@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Sun,
   Users,
+  Workflow,
 } from 'lucide-react'
 import type { PermissionKey } from '@arkyc/types'
 import { OrganizationProvider, useOrganization } from '@/contexts/organization-context'
@@ -69,6 +70,7 @@ const NAV: NavItem[] = [
   { to: 'sessions', label: 'Sessions', icon: ScrollText, perm: 'sessions.view', group: 'Workspace' },
   { to: 'reviews', label: 'Reviews', icon: ClipboardCheck, perm: 'reviews.view', group: 'Workspace' },
   { to: 'projects', label: 'Projects', icon: Boxes, perm: 'projects.view', group: 'Workspace' },
+  { to: 'workflows', label: 'Workflows', icon: Workflow, perm: 'workflows.view', group: 'Workspace' },
   { to: 'members', label: 'Members', icon: Users, perm: 'members.view', group: 'Organization' },
   { to: 'audit-logs', label: 'Audit Logs', icon: ScrollText, perm: 'audit_logs.view', group: 'Organization' },
   { to: 'settings', label: 'Settings', icon: Settings, perm: 'settings.view', group: 'Organization' },
