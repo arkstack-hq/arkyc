@@ -143,6 +143,7 @@ function tally(rows: Iterable<KeyCountRow> | null | undefined, keys: readonly st
   for (const row of toArray(rows)) {
     if (row && row.key in out) out[row.key] = toCount(row.count)
   }
+
   return out
 }
 
@@ -157,5 +158,6 @@ function buildTrend(rows: DayCountRow[]): { date: string; count: number }[] {
     const key = date.toISOString().slice(0, 10)
     days.push({ date: key, count: counts.get(key) ?? 0 })
   }
+
   return days
 }
