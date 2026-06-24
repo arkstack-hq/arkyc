@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsdown'
+import { rawCssPlugin } from './packages/widget/raw-css.mjs'
 
 /**
  * Single root tsdown config for the whole workspace (workspace mode).
@@ -20,4 +21,6 @@ export default defineConfig({
   target: 'es2022',
   treeshake: true,
   unbundle: true,
+  // Inline the widget's lintable `theme.css` as a string (`virtual:arkyc-theme-css`).
+  plugins: [rawCssPlugin()],
 })

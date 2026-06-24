@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsdown'
+import { rawCssPlugin } from './raw-css.mjs'
 
 /**
  * Standalone (IIFE/UMD-style) build for the widget. Produces a single minified
@@ -17,4 +18,6 @@ export default defineConfig({
   minify: true,
   target: 'es2020',
   outExtensions: () => ({ js: '.global.js' }),
+  // Inline the widget's lintable `theme.css` as a string (`virtual:arkyc-theme-css`).
+  plugins: [rawCssPlugin()],
 })
