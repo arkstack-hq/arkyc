@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AnthropicOcrDriver, OcrDriverFactory, scoreConfidence } from '../src/index'
 import type { AiVisionExtract } from '../src/index'
 
@@ -47,6 +47,42 @@ describe('ai ocr driver', () => {
     const result = await new AnthropicOcrDriver({ extract }).extract({ image })
     expect(result.fields.firstName).toBe('Grace')
     expect(result.fields.lastName).toBeUndefined()
+  })
+})
+
+describe('ai ocr driver — http retry/timeout', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const toolResponse = () =>
+    new Response(
+      JSON.stringify({
+        content: [{ type: 'tool_use', name: 'read_document', input: fullFields }],
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    )
+
+  it('retries an overloaded (529) response, honouring retry-after', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('overloaded', { status: 529, headers: { 'retry-after': '0' } }))
+      .mockResolvedValueOnce(toolResponse())
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await new AnthropicOcrDriver({ apiKey: 'k' }).extract({ image })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(result.fields.firstName).toBe('Ada')
+    // Each attempt carries an abort signal (the per-request timeout).
+    expect((fetchMock.mock.calls[0][1] as RequestInit).signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('gives up after the retry budget and surfaces the error', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('rate limited', { status: 429, headers: { 'retry-after': '0' } }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(new AnthropicOcrDriver({ apiKey: 'k', maxRetries: 1 }).extract({ image })).rejects.toThrow(/429/)
+    expect(fetchMock).toHaveBeenCalledTimes(2) // initial + 1 retry
   })
 })
 

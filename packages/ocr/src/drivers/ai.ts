@@ -13,6 +13,10 @@ export const DEFAULT_AI_MODEL = 'claude-haiku-4-5-20251001'
  * one — small enough to be cheap, large enough to keep the MRZ legible.
  */
 const DEFAULT_MAX_EDGE = 1568
+/** Per-attempt request timeout (ms) — a hung connection must not stall a worker. */
+const DEFAULT_TIMEOUT_MS = 30_000
+/** Bounded in-driver retries on rate-limit/overload; the job queue retries beyond. */
+const DEFAULT_MAX_RETRIES = 2
 
 /** A base64 image ready for the messages API, with its detected media type. */
 interface PreparedImage {
@@ -43,6 +47,10 @@ export interface AnthropicOcrOptions {
   baseUrl?: string
   /** Longest image edge (px) to upload; defaults to {@link DEFAULT_MAX_EDGE}. */
   maxEdge?: number
+  /** Per-attempt request timeout (ms); defaults to {@link DEFAULT_TIMEOUT_MS}. */
+  timeoutMs?: number
+  /** Bounded retries on 429/529; defaults to {@link DEFAULT_MAX_RETRIES}. */
+  maxRetries?: number
   /** Override the vision call (tests). When set, `apiKey` is not required. */
   extract?: AiVisionExtract
 }
@@ -76,7 +84,14 @@ export class AnthropicOcrDriver implements OcrDriver {
     this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '')
     this.maxEdge = options.maxEdge ?? DEFAULT_MAX_EDGE
     this.vision =
-      options.extract ?? anthropicVision({ apiKey: options.apiKey as string, model: this.model, baseUrl: this.baseUrl })
+      options.extract ??
+      anthropicVision({
+        apiKey: options.apiKey as string,
+        model: this.model,
+        baseUrl: this.baseUrl,
+        timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+        maxRetries: options.maxRetries ?? DEFAULT_MAX_RETRIES,
+      })
   }
 
   async extract(request: OcrRequest): Promise<OcrResultData> {
@@ -97,19 +112,27 @@ export class AnthropicOcrDriver implements OcrDriver {
     }
   }
 
-  /** Resize (best-effort) and base64-encode the front + optional back images. */
+  /**
+   * Resize (best-effort) and base64-encode the front + optional back images.
+   *
+   * @param input
+   * @returns
+   */
   private async prepareImages(request: OcrRequest): Promise<PreparedImage[]> {
     const sources = [request.image, request.backImage].filter((b): b is Uint8Array => !!b && b.length > 0)
     return Promise.all(sources.map((bytes) => prepareImage(bytes, this.maxEdge)))
   }
 }
 
-// --- field validation + confidence scoring -------------------------------------
-
 const present = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0
 const isIsoDate = (v: unknown): boolean => present(v) && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v))
 
-/** Trim/blank-out the model's fields; drop anything empty so callers see `undefined`. */
+/**
+ * Trim/blank-out the model's fields; drop anything empty so callers see `undefined`.
+ *
+ * @param input
+ * @returns
+ */
 function normalizeFields(fields: OcrFields): OcrFields {
   const out: OcrFields = {}
   const set = (key: keyof OcrFields, value: string | undefined) => {
@@ -130,6 +153,10 @@ function normalizeFields(fields: OcrFields): OcrFields {
  * validity. Weights sum to 1.0 when every field is present and well-formed; the
  * model's self-reported legibility can only pull the score down by up to 15%, so
  * trustworthy structure dominates an unreliable self-assessment.
+ *
+ * @param fields
+ * @param legibility
+ * @returns
  */
 export function scoreConfidence(fields: OcrFields, legibility?: number): number {
   const hasName = (present(fields.firstName) && present(fields.lastName)) || present(fields.fullName)
@@ -144,8 +171,6 @@ export function scoreConfidence(fields: OcrFields, legibility?: number): number 
   const legible = clamp01(legibility ?? 1)
   return clamp01(base * (0.85 + 0.15 * legible))
 }
-
-// --- Anthropic messages API ----------------------------------------------------
 
 const SYSTEM_PROMPT =
   'You are an OCR engine for identity documents. Read the visible printed text and ' +
@@ -185,38 +210,100 @@ interface AnthropicResponse {
 
 const DOCUMENT_TYPES: readonly DocumentType[] = ['passport', 'id_card', 'drivers_license', 'residence_permit']
 
-/** Build the default vision call against the Anthropic messages API. */
-export function anthropicVision(opts: { apiKey: string; model: string; baseUrl: string }): AiVisionExtract {
+/** HTTP statuses worth a bounded retry: rate-limited / overloaded. */
+const RETRYABLE_STATUS = new Set([429, 529])
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** Exponential backoff (ms) for attempt 0, 1, 2…, capped at 8s. */
+const backoffMs = (attempt: number): number => Math.min(8_000, 500 * 2 ** attempt)
+
+/** Parse a `retry-after` header (seconds) into ms; null when absent/invalid. */
+function retryAfterMs(res: Response): number | null {
+  const header = res.headers.get('retry-after')
+  if (!header) return null
+  const seconds = Number(header)
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : null
+}
+
+/**
+ * POST with a per-attempt timeout and a bounded retry on 429/529 — honouring
+ * `retry-after`, else exponential backoff. Timeouts/network errors retry too;
+ * any other response is returned as-is for the caller to handle. The durable job
+ * queue is the longer-term retry beyond {@link DEFAULT_MAX_RETRIES}.
+ *
+ * @param url
+ * @param init
+ * @param timeoutMs
+ * @param maxRetries
+ * @returns
+ */
+async function postWithRetry(url: string, init: RequestInit, timeoutMs: number, maxRetries: number): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    let res: Response
+    try {
+      res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) })
+    } catch (error) {
+      if (attempt >= maxRetries) throw error
+      await sleep(backoffMs(attempt))
+      continue
+    }
+    if (RETRYABLE_STATUS.has(res.status) && attempt < maxRetries) {
+      await sleep(retryAfterMs(res) ?? backoffMs(attempt))
+      continue
+    }
+    return res
+  }
+}
+
+/**
+ * Build the default vision call against the Anthropic messages API.
+ *
+ * @param input
+ * @returns
+ */
+export function anthropicVision(opts: {
+  apiKey: string
+  model: string
+  baseUrl: string
+  timeoutMs?: number
+  maxRetries?: number
+}): AiVisionExtract {
   return async (request, images) => {
     const hint = request.documentType ? ` The document is a ${request.documentType}.` : ''
     const country = request.country ? ` Issuing country hint: ${request.country}.` : ''
-    const res = await fetch(`${opts.baseUrl}/v1/messages`, {
-      method: 'POST',
-      headers: {
-        'x-api-key': opts.apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
+    const res = await postWithRetry(
+      `${opts.baseUrl}/v1/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'x-api-key': opts.apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: opts.model,
+          max_tokens: 1024,
+          system: SYSTEM_PROMPT,
+          tools: [READ_TOOL],
+          tool_choice: { type: 'tool', name: 'read_document' },
+          messages: [
+            {
+              role: 'user',
+              content: [
+                ...images.map((img) => ({
+                  type: 'image',
+                  source: { type: 'base64', media_type: img.mediaType, data: img.data },
+                })),
+                { type: 'text', text: `Read this identity document and return its fields.${hint}${country}` },
+              ],
+            },
+          ],
+        }),
       },
-      body: JSON.stringify({
-        model: opts.model,
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        tools: [READ_TOOL],
-        tool_choice: { type: 'tool', name: 'read_document' },
-        messages: [
-          {
-            role: 'user',
-            content: [
-              ...images.map((img) => ({
-                type: 'image',
-                source: { type: 'base64', media_type: img.mediaType, data: img.data },
-              })),
-              { type: 'text', text: `Read this identity document and return its fields.${hint}${country}` },
-            ],
-          },
-        ],
-      }),
-    })
+      opts.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      opts.maxRetries ?? DEFAULT_MAX_RETRIES,
+    )
 
     if (!res.ok) {
       throw new Error(`AnthropicOcrDriver request failed with status ${res.status}`)
@@ -232,7 +319,12 @@ export function anthropicVision(opts: { apiKey: string; model: string; baseUrl: 
   }
 }
 
-/** Coerce the model's tool input into an {@link AiExtraction} (string-typed fields). */
+/**
+ * Coerce the model's tool input into an {@link AiExtraction} (string-typed fields).
+ *
+ * @param input
+ * @returns
+ */
 function mapToolInput(input: Record<string, unknown>): AiExtraction {
   const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
   const docType = str(input.documentType)
@@ -251,9 +343,12 @@ function mapToolInput(input: Record<string, unknown>): AiExtraction {
   }
 }
 
-// --- image preparation ---------------------------------------------------------
-
-/** Detect the media type from magic bytes; default to JPEG. */
+/**
+ * Detect the media type from magic bytes; default to JPEG.
+ *
+ * @param bytes
+ * @returns
+ */
 function detectMediaType(bytes: Uint8Array): PreparedImage['mediaType'] {
   if (bytes[0] === 0xff && bytes[1] === 0xd8) return 'image/jpeg'
   if (bytes[0] === 0x89 && bytes[1] === 0x50) return 'image/png'
@@ -288,6 +383,12 @@ async function loadSharp(): Promise<SharpFactory | null> {
  * Downscale an image to `maxEdge` and re-encode as JPEG to bound the upload (and
  * therefore the model's image-token cost). Falls back to the original bytes when
  * `sharp` isn't installed or fails — the API caps oversized images itself.
+ *
+ * @param url
+ * @param init
+ * @param timeoutMs
+ * @param maxRetries
+ * @returns
  */
 async function prepareImage(bytes: Uint8Array, maxEdge: number): Promise<PreparedImage> {
   const sharp = await loadSharp()
