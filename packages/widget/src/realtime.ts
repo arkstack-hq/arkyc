@@ -22,13 +22,24 @@ export interface WidgetRealtimeOptions {
   token: string
 }
 
+/** CDN that serves any npm package as ESM (`…/pkg@ver/+esm`). */
+const CDN = 'https://cdn.jsdelivr.net/npm/'
+
 /**
- * Import an optional transport SDK by a non-literal specifier so the bundler
- * leaves it as a runtime import (it isn't a hard dependency) and TypeScript
- * doesn't require its type declarations to be present.
+ * Import an optional transport SDK. Tries the bare package specifier first (a
+ * bundler, import map, or Node resolves it), then falls back to the jsdelivr CDN
+ * so a plain browser embed still loads it — a bare specifier like `pusher-js`
+ * isn't resolvable at runtime in the browser, which would otherwise leave the
+ * widget silently polling. Non-literal specifiers also keep the bundler from
+ * trying to resolve these (they aren't hard dependencies) and avoid needing their
+ * type declarations.
  */
-function loadOptional(specifier: string): Promise<unknown> {
-  return import(/* @vite-ignore */ /* webpackIgnore: true */ specifier)
+async function loadOptional(pkg: string, cdnPath: string): Promise<unknown> {
+  try {
+    return await import(/* @vite-ignore */ /* webpackIgnore: true */ pkg)
+  } catch {
+    return await import(/* @vite-ignore */ /* webpackIgnore: true */ `${CDN}${cdnPath}`)
+  }
 }
 
 /**
@@ -70,7 +81,7 @@ async function createPusherClient(
   config: ClientRealtime,
   options: WidgetRealtimeOptions,
 ): Promise<WidgetRealtimeClient> {
-  const mod = (await loadOptional('pusher-js')) as { default: PusherCtor }
+  const mod = (await loadOptional('pusher-js', 'pusher-js@8/+esm')) as { default: PusherCtor }
   const Pusher = mod.default
   const pusher = new Pusher(String(config.key ?? ''), {
     cluster: String(config.cluster ?? 'mt1'),
@@ -137,9 +148,9 @@ interface FirebaseDatabaseModule {
 
 async function createFirebaseClient(config: ClientRealtime): Promise<WidgetRealtimeClient> {
   const [app, auth, database] = (await Promise.all([
-    loadOptional('firebase/app'),
-    loadOptional('firebase/auth'),
-    loadOptional('firebase/database'),
+    loadOptional('firebase/app', 'firebase@11/app/+esm'),
+    loadOptional('firebase/auth', 'firebase@11/auth/+esm'),
+    loadOptional('firebase/database', 'firebase@11/database/+esm'),
   ])) as [FirebaseAppModule, FirebaseAuthModule, FirebaseDatabaseModule]
 
   const name = 'arkyc-widget-realtime'
