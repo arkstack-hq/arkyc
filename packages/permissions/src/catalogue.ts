@@ -151,6 +151,19 @@ export class Catalogue {
       admin: true,
       description: 'Manage platform billing',
     },
+
+    {
+      name: 'admin.ai_processing.view',
+      group: 'admin.ai_processing',
+      admin: true,
+      description: 'View AI processing access requests and grants',
+    },
+    {
+      name: 'admin.ai_processing.manage',
+      group: 'admin.ai_processing',
+      admin: true,
+      description: 'Grant or revoke AI processing access for projects',
+    },
   ]
 
   /** Every platform-admin permission key, derived from the admin catalogue. */

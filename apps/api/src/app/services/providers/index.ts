@@ -1,5 +1,11 @@
 import { env } from '@arkstack/common'
-import { type OcrDriverName, OcrDriverFactory, TesseractOcrDriver, createDocumentParserRegistry } from '@arkyc/ocr'
+import {
+  type OcrDriver,
+  type OcrDriverName,
+  OcrDriverFactory,
+  TesseractOcrDriver,
+  createDocumentParserRegistry,
+} from '@arkyc/ocr'
 import { type LivenessDriverName, LivenessDriverFactory } from '@arkyc/liveness'
 import { type FaceMatchDriverName, FaceMatchDriverFactory } from '@arkyc/face-match'
 import { documentParsers } from './document-parsers'
@@ -27,15 +33,18 @@ export interface ProviderSignals {
 }
 
 const ocrDriverName = env('OCR_DRIVER', 'mock') as OcrDriverName
+const ocrFallbackDriverName = env('OCR_FALLBACK_DRIVER', 'mock') as OcrDriverName
 const ocrLanguage = env('OCR_LANGUAGE', 'eng')
 
 /**
- * Build the OCR driver. For the `tesseract` engine, seed its parser registry with
- * the app's custom document parsers (see `./document-parsers`); other drivers are
- * resolved by the factory.
+ * Build an OCR driver by name. For the `tesseract` engine, seed its parser
+ * registry with the app's custom document parsers (see `./document-parsers`);
+ * other drivers are resolved by the factory.
+ *
+ * @param driver
  */
-function buildOcrDriver() {
-  if (ocrDriverName === 'tesseract') {
+function buildOcrDriver(driver: OcrDriverName): OcrDriver {
+  if (driver === 'tesseract') {
     const registry = createDocumentParserRegistry()
     for (const parser of documentParsers) registry.register(parser)
 
@@ -43,7 +52,7 @@ function buildOcrDriver() {
   }
 
   return OcrDriverFactory.create({
-    driver: ocrDriverName,
+    driver,
     endpoint: env('OCR_ENDPOINT'),
     apiKey: env('OCR_API_KEY'),
     language: ocrLanguage,
@@ -52,7 +61,30 @@ function buildOcrDriver() {
   })
 }
 
-export const ocrDriver = buildOcrDriver()
+/** Primary OCR driver selected by `OCR_DRIVER`. */
+export const ocrDriver = buildOcrDriver(ocrDriverName)
+
+/**
+ * Fallback OCR driver (`OCR_FALLBACK_DRIVER`, default `mock`). Used when the
+ * primary driver is a gated capability the project isn't permitted to use —
+ * today only the `ai` driver is gated. Reuses the primary instance when the two
+ * names match so a shared driver isn't built twice.
+ */
+export const fallbackOcrDriver =
+  ocrFallbackDriverName === ocrDriverName ? ocrDriver : buildOcrDriver(ocrFallbackDriverName)
+
+/**
+ * Resolve the OCR driver for a request. AI processing is a per-project gated
+ * capability: when it isn't enabled for the project, the `ai` primary falls back
+ * to {@link fallbackOcrDriver}. Every other primary is ungated and returned as-is.
+ *
+ * @param aiEnabled whether AI document processing is granted for the project
+ */
+export function resolveOcrDriver(aiEnabled: boolean): OcrDriver {
+  if (ocrDriverName === 'ai' && !aiEnabled) return fallbackOcrDriver
+
+  return ocrDriver
+}
 
 export const livenessDriver = LivenessDriverFactory.create({
   driver: env('LIVENESS_DRIVER', 'mock') as LivenessDriverName,

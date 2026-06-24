@@ -6,6 +6,7 @@ import ProjectController from '@controllers/dashboard/ProjectController'
 import ProjectMemberController from '@controllers/dashboard/ProjectMemberController'
 import ApiKeyController from '@controllers/dashboard/ApiKeyController'
 import WebhookEndpointController from '@controllers/dashboard/WebhookEndpointController'
+import AiAccessController from '@controllers/dashboard/AiAccessController'
 
 const scoped = (perm: PermissionKey) => [auth, resolveOrganization, can(perm)]
 
@@ -15,6 +16,10 @@ Router.group('/v1/dashboard/organizations/:organizationId/projects', () => {
   Router.get('/:projectId', [ProjectController, 'show'], scoped('projects.view'))
   Router.patch('/:projectId', [ProjectController, 'update'], scoped('projects.update'))
   Router.post('/:projectId/logo', [ProjectController, 'uploadLogo'], scoped('projects.update'))
+
+  // AI processing access (owner requests; platform admins grant/revoke)
+  Router.get('/:projectId/ai-access', [AiAccessController, 'show'], scoped('projects.view'))
+  Router.post('/:projectId/ai-access/request', [AiAccessController, 'request'], scoped('projects.update'))
 
   // Project members (project-scoped)
   Router.get('/:projectId/members', [ProjectMemberController, 'index'], scoped('members.view'))

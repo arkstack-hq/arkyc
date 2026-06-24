@@ -15,6 +15,7 @@ export default class AdminUserResource extends Resource {
       id: this.id,
       name: this.name,
       email: this.email,
+      status: this.status ?? 'active',
       last_login_at: this.lastLoginAt ?? null,
       email_verified_at: this.emailVerifiedAt ?? null,
       created_at: this.createdAt,

@@ -9,6 +9,9 @@ import { AdminPermission } from './AdminPermission'
 import { Review } from './Review'
 import { Organization } from './Organization'
 
+/** Account standing. `null` is treated as `active`. */
+export type UserStatus = 'active' | 'restricted' | 'suspended'
+
 export class User extends BaseUser {
   declare email: string
   declare phone?: string
@@ -18,6 +21,8 @@ export class User extends BaseUser {
   declare avatarUrl: string | null
   declare lastLoginAt: Date | null
   declare emailVerifiedAt: Date | null
+  /** `active` (default/null), `restricted` (read-only), or `suspended` (no login). */
+  declare status: UserStatus | null
   declare createdAt: Date
   declare updatedAt: Date
 

@@ -20,6 +20,20 @@ export class AuthorizeMiddleware {
       const user = req.authUser
       RequestException.assertFound(user, 'Unauthenticated', 401)
 
+      // Account-standing gate: a suspended user is fully blocked; a restricted
+      // user is read-only, so only `*.view` permissions are allowed through.
+      const status = (user as { status?: string }).status
+      if (status === 'suspended') {
+        next(new RequestException('Your account has been suspended.', 403))
+
+        return
+      }
+      if (status === 'restricted' && !this.permission.endsWith('.view')) {
+        next(new RequestException('Your account is restricted to read-only access.', 403))
+
+        return
+      }
+
       const organizationId = req.organization?.id ?? param(req.params.organizationId)
       RequestException.assertFound(organizationId, 'Missing organization scope', 400)
       const projectId = param(req.params.projectId) ?? null

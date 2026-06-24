@@ -7,6 +7,7 @@ import { ApiKey } from './ApiKey'
 import { VerificationSession } from './VerificationSession'
 import { WebhookEndpoint } from './WebhookEndpoint'
 import { ProjectFactory } from 'src/database/factories/ProjectFactory'
+import { AiProcessingGrant } from './AiProcessingGrant'
 
 export class Project extends Model {
   protected static override table = 'projects'
@@ -53,5 +54,14 @@ export class Project extends Model {
 
   webhookEndpoints() {
     return this.hasMany(WebhookEndpoint, 'projectId')
+  }
+
+  aiGrants() {
+    return this.hasMany(AiProcessingGrant, 'projectId')
+  }
+
+  /** The single AI-processing access record (unique per project). */
+  aiProcessingGrant() {
+    return this.hasOne(AiProcessingGrant, 'projectId')
   }
 }

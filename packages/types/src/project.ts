@@ -1,6 +1,7 @@
-import type { Entity, Id, IsoDateTime, Metadata, ProjectScoped, OrganizationScoped } from './common'
-import type { MembershipStatus } from './organization'
+import type { Entity, Id, IsoDateTime, Metadata, OrganizationScoped, ProjectScoped } from './common'
+
 import type { CaptureModel } from './settings'
+import type { MembershipStatus } from './organization'
 
 /** Deployment environment for a project. */
 export type ProjectEnvironment = 'production' | 'staging' | 'development'
@@ -72,6 +73,7 @@ export interface Project extends Entity, OrganizationScoped {
   settings: ProjectSettings
   branding: ProjectBranding
   status: ProjectStatus
+  has_ai_grant?: boolean
 }
 
 /** Links a user to a project with a role (narrower tha organization membership). */

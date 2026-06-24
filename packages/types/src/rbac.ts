@@ -80,9 +80,17 @@ export type AdminPermissionKey =
   | 'admin.audit.view'
   | 'admin.billing.view'
   | 'admin.billing.update'
+  | 'admin.ai_processing.view'
+  | 'admin.ai_processing.manage'
 
 /** The domain groups platform-admin permissions are organised under. */
-export type AdminPermissionGroup = 'admin.organizations' | 'admin.users' | 'admin.settings' | 'admin.audit' | 'admin.billing'
+export type AdminPermissionGroup =
+  | 'admin.organizations'
+  | 'admin.users'
+  | 'admin.settings'
+  | 'admin.audit'
+  | 'admin.billing'
+  | 'admin.ai_processing'
 
 /** Any permission string, organization- or platform-scope. */
 export type AnyPermissionKey = PermissionKey | AdminPermissionKey

@@ -11,6 +11,7 @@ export default class ProjectResource extends Resource {
       settings: this.settings ?? {},
       branding: this.branding ?? {},
       status: this.status,
+      has_ai_grant: this.hasAiGrant,
       created_at: this.createdAt,
     }
   }

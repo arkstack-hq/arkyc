@@ -1,11 +1,13 @@
-import { RequestException, perPage } from '@arkstack/common'
+import { Hash, RequestException, perPage } from '@arkstack/common'
 import { HttpContext } from 'clear-router/types/express'
 import { AdminRoles, PermissionSync } from '@arkyc/permissions'
 import { BaseController } from '@controllers/BaseController'
 import AdminUserCollection from '@app/http/resources/AdminUserCollection'
+import AdminUserResource from '@app/http/resources/AdminUserResource'
 import EmptyResource from '@app/http/resources/EmptyResource'
 import { permissionStore } from '@app/services/ArkormPermissionStore'
 import { platformAudit } from '@app/services/PlatformAuditLogger'
+import { toArray } from 'src/support/collection'
 import { User } from '@app/models/User'
 import { Role } from '@app/models/Role'
 import { AdminPermission } from '@app/models/AdminPermission'
@@ -36,6 +38,63 @@ export default class UserController extends BaseController {
       message: 'OK',
       code: 200,
     })
+  }
+
+  /** A single platform user with admin standing + account status. */
+  async show({ req }: HttpContext) {
+    const user = await User.where({ id: param(req.params.userId) })
+      .with('adminPermissions')
+      .first()
+    RequestException.assertFound(user, 'User not found', 404)
+
+    return new AdminUserResource(user).additional({ status: 'success', message: 'OK', code: 200 })
+  }
+
+  /** Set a user's account standing: `active`, `restricted`, or `suspended`. */
+  async setStatus({ req }: HttpContext) {
+    const userId = param(req.params.userId)
+    RequestException.assertFound(userId, 'User not found', 404)
+
+    const data = await this.validate({ status: ['required', 'in:active,restricted,suspended'] })
+    // Don't let an admin lock or restrict themselves out of the platform.
+    RequestException.abortIf(userId === req.user?.id, 'You cannot change your own account status', 422)
+
+    const user = await User.where({ id: userId }).first()
+    RequestException.assertFound(user, 'User not found', 404)
+
+    user.status = data.status
+    await user.save()
+
+    await platformAudit.recordForRequest(req, {
+      action: 'platform.user_status_changed',
+      entityType: 'user',
+      entityId: user.id,
+      metadata: { status: data.status },
+    })
+
+    return new AdminUserResource(user).additional({ status: 'success', message: 'Account status updated', code: 200 })
+  }
+
+  /** Set a new password for a user (admin reset). */
+  async resetPassword({ req }: HttpContext) {
+    const userId = param(req.params.userId)
+    RequestException.assertFound(userId, 'User not found', 404)
+
+    const data = await this.validate({ password: ['required', 'string', 'min:8'] })
+
+    const user = await User.where({ id: userId }).first()
+    RequestException.assertFound(user, 'User not found', 404)
+
+    user.password = await Hash.make(data.password)
+    await user.save()
+
+    await platformAudit.recordForRequest(req, {
+      action: 'platform.user_password_reset',
+      entityType: 'user',
+      entityId: user.id,
+    })
+
+    return new EmptyResource({}).additional({ status: 'success', message: 'Password updated', code: 200 })
   }
 
   /** Grant a user the platform-owner admin role ("sync ownership"). Idempotent. */
@@ -71,6 +130,11 @@ export default class UserController extends BaseController {
   async revokeAdmin({ req }: HttpContext) {
     const userId = param(req.params.userId)
     RequestException.assertFound(userId, 'User not found', 404)
+
+    // Never leave the platform without an admin: if this user is currently the
+    // only admin, the grant can't be revoked (covers self-revocation too).
+    const adminIds = new Set(toArray(await AdminPermission.all()).map((g) => g.userId))
+    RequestException.abortIf(adminIds.has(userId) && adminIds.size <= 1, 'Cannot revoke the last platform admin', 422)
 
     await AdminPermission.where({ userId }).delete()
 

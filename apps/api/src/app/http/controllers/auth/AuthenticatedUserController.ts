@@ -2,6 +2,7 @@ import AuthUserResource from '@app/http/resources/AuthUserResource'
 import { BaseController } from '@controllers/BaseController'
 import EmptyResource from '@app/http/resources/EmptyResource'
 import { HttpContext } from 'clear-router/types/express'
+import { RequestException } from '@arkstack/common'
 import { TwoFactorService } from '@app/services/TwoFactorService'
 import { User } from '@app/models/User'
 import { ValidationException } from 'kanun'
@@ -123,6 +124,12 @@ export default class AuthenticatedUserController extends BaseController {
 
   /** Issue a personal access token for a fully-authenticated user and stamp the login. */
   private async issueSession(user: User, message: string) {
+    // A suspended account cannot obtain a session token (blocks both the
+    // password and the post-2FA path, which both funnel through here).
+    if (user.status === 'suspended') {
+      throw new RequestException('Your account has been suspended. Please contact support.', 403)
+    }
+
     const pat = await auth.create(user)
 
     user.lastLoginAt = new Date()

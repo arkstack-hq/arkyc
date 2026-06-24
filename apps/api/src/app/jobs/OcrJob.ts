@@ -1,7 +1,8 @@
 import { Job } from '@arkstack/jobs'
 import { Storage } from '@arkstack/filesystem'
-import { ocrDriver } from '@app/services/providers'
+import { resolveOcrDriver } from '@app/services/providers'
 import { readObject, sessionObjectKey } from 'src/support/storage'
+import { aiOcrEnabledForProject } from 'src/support/ai-access'
 import { logOcrExtraction } from 'src/support/ocr-log'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { DocumentCapture } from '@app/models/DocumentCapture'
@@ -43,7 +44,10 @@ export class OcrJob extends Job {
     const image = await readObject(capture.frontImagePath)
     // Read the back too — the MRZ may be printed there (ID cards, residence permits).
     const back = capture.backImagePath ? await readObject(capture.backImagePath) : new Uint8Array(0)
-    const ocr = await ocrDriver.extract({
+    // AI processing is gated per project; fall back to OCR_FALLBACK_DRIVER when
+    // it isn't granted (no-op for non-`ai` primaries).
+    const aiEnabled = await aiOcrEnabledForProject(session)
+    const ocr = await resolveOcrDriver(aiEnabled).extract({
       image,
       backImage: back.length ? back : undefined,
       documentType: capture.documentType,
