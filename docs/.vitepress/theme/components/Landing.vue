@@ -103,11 +103,6 @@ const highlightedQuickstart = hljs.highlight(quickstart, { language: 'typescript
         <a class="btn btn-alt" :href="withBase('/guide/architecture')">How it works</a>
       </div>
     </section>
-
-    <footer class="foot">
-      <p>Released under the MIT License.</p>
-      <p class="muted">Built on Arkstack + Arkormˣ.</p>
-    </footer>
   </div>
 </template>
 
@@ -314,20 +309,5 @@ const highlightedQuickstart = hljs.highlight(quickstart, { language: 'typescript
 }
 .cta .actions {
   justify-content: center;
-}
-
-/* Footer */
-.foot {
-  padding: 32px 0 48px;
-  border-top: 1px solid var(--vp-c-divider);
-  text-align: center;
-  font-size: 13px;
-  color: var(--vp-c-text-2);
-}
-.foot p {
-  margin: 2px 0;
-}
-.foot .muted {
-  color: var(--vp-c-text-3);
 }
 </style>
