@@ -29,7 +29,9 @@ export class StatusMachine {
    */
   static readonly TRANSITIONS: Readonly<Record<VerificationStatus, readonly VerificationStatus[]>> = {
     pending: ['started', 'expired', 'cancelled'],
-    started: ['document_submitted', 'expired', 'cancelled'],
+    // `liveness_submitted` is reachable directly when a workflow runs liveness
+    // before (or instead of) document capture.
+    started: ['document_submitted', 'liveness_submitted', 'expired', 'cancelled'],
     document_submitted: ['liveness_submitted', 'processing', 'expired', 'cancelled'],
     liveness_submitted: ['processing', 'expired', 'cancelled'],
     processing: ['approved', 'rejected', 'requires_review', 'expired', 'cancelled'],

@@ -187,14 +187,11 @@ export class VerificationSessionService {
     },
   ): Promise<LivenessCheck> {
     await this.ensureMutable(session)
-    // When a workflow disables document capture, advance past the document stage
-    // so liveness can proceed; otherwise a document must come first.
-    const documentDisabled = !workflowEnables(session.workflow, 'document')
-    if (documentDisabled && session.status === 'started') {
-      await this.transition(session, 'document_submitted')
-    }
+    // Liveness normally follows the document, but a workflow can run it first
+    // (or with document disabled) — in which case it may lead from `started`.
+    const livenessLeads = this.livenessLeads(session)
     RequestException.abortIf(
-      !documentDisabled && (session.status === 'pending' || session.status === 'started'),
+      !livenessLeads && (session.status === 'pending' || session.status === 'started'),
       'Submit a document before the liveness check',
       409,
     )
@@ -245,11 +242,24 @@ export class VerificationSessionService {
       rawResponse: result.raw,
     })
 
-    if (session.status === 'document_submitted') {
+    if (session.status === 'document_submitted' || session.status === 'started') {
       await this.transition(session, 'liveness_submitted')
     }
 
     return check
+  }
+
+  /** Whether liveness runs before the document for a session (document disabled or ordered later). */
+  private livenessLeads(session: VerificationSession): boolean {
+    const workflow = session.workflow
+    if (!workflow) return false
+
+    const documentIndex = workflow.steps.findIndex((step) => step.key === 'document' && step.enabled)
+    if (documentIndex < 0) return true // document disabled — liveness leads
+
+    const livenessIndex = workflow.steps.findIndex((step) => step.key === 'liveness' && step.enabled)
+
+    return livenessIndex >= 0 && livenessIndex < documentIndex
   }
 
   /**

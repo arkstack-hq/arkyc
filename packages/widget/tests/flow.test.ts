@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import type { WorkflowConfig } from '@arkyc/types'
 import { Flow } from '../src/flow'
+
+const wf = (steps: WorkflowConfig['steps'], skip_ocr = false): WorkflowConfig => ({ steps, options: { skip_ocr } })
 
 describe('Flow step machine', () => {
   const walk = (ctx: Parameters<typeof Flow.nextStep>[1]): string[] => {
@@ -60,6 +63,54 @@ describe('Flow step machine', () => {
     expect(Flow.documentHasBack('passport')).toBe(false)
     expect(Flow.documentHasBack('id_card')).toBe(true)
     expect(Flow.documentHasBack(null)).toBe(false)
+  })
+})
+
+describe('Flow workflow ordering', () => {
+  it('uses the default step order with no workflow', () => {
+    expect(Flow.stepOrder()).toEqual(Flow.STEP_ORDER)
+  })
+
+  it('reorders stages — liveness before document', () => {
+    const workflow = wf([
+      { key: 'liveness', enabled: true },
+      { key: 'document', enabled: true },
+      { key: 'face_match', enabled: true },
+    ])
+    const order = Flow.stepOrder({ workflow })
+    expect(order.indexOf('selfie_capture')).toBeLessThan(order.indexOf('front_capture'))
+    // In passive mode the first screen after welcome is the liveness selfie.
+    expect(Flow.nextStep('welcome', { workflow, livenessMode: 'passive' })).toBe('selfie_capture')
+  })
+
+  it('drops disabled stages from the order entirely', () => {
+    const workflow = wf([
+      { key: 'document', enabled: true },
+      { key: 'liveness', enabled: false },
+      { key: 'face_match', enabled: false },
+    ])
+    const order = Flow.stepOrder({ workflow })
+    expect(order).not.toContain('selfie_capture')
+    expect(order).not.toContain('face_match')
+    expect(order).toContain('front_capture')
+  })
+
+  it('skips ocr_processing when the workflow skips OCR', () => {
+    const workflow = wf(
+      [
+        { key: 'document', enabled: true },
+        { key: 'liveness', enabled: false },
+        { key: 'face_match', enabled: false },
+      ],
+      true,
+    )
+    expect(Flow.isStepEnabled('ocr_processing', { workflow })).toBe(false)
+    // Passport front capture, OCR skipped, no later stages → straight to processing.
+    expect(Flow.nextStep('front_capture', { workflow, documentType: 'passport' })).toBe('processing')
+  })
+
+  it('runs ocr_processing by default', () => {
+    expect(Flow.isStepEnabled('ocr_processing')).toBe(true)
   })
 })
 

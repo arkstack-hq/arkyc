@@ -5,6 +5,7 @@ import type {
   LivenessMode,
   ProjectBranding,
   VerificationStatus,
+  WorkflowConfig,
 } from '@arkyc/types'
 
 /** The session view exposed by the Client/Widget API (`GET /v1/client/session`). */
@@ -22,6 +23,8 @@ export interface ClientSession {
   realtime?: ClientRealtime
   /** Project branding (colours/logo/name) so the widget themes itself at runtime. */
   branding?: ProjectBranding | null
+  /** The applied workflow (ordered, toggleable stages + skip_ocr), or null for the default flow. */
+  workflow?: WorkflowConfig | null
 }
 
 /**

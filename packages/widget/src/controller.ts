@@ -6,6 +6,7 @@ import type {
   VerificationStatus,
   WidgetResult,
   WidgetStep,
+  WorkflowConfig,
 } from '@arkyc/types'
 import { REALTIME_EVENT } from '@arkyc/types'
 import { ArkycClient, type ClientHandoff, type ClientRealtime, type ClientSession, WidgetApiError } from './client'
@@ -81,6 +82,8 @@ export class WidgetController {
   /** The session's capture model; `active` mandates a live camera (no fallback). */
   private captureModel: 'passive' | 'active' | 'both' = 'passive'
   private livenessChallenges: LivenessChallenge[] = []
+  /** The applied workflow (orders/toggles stages, skip_ocr), or null for the default flow. */
+  private workflow: WorkflowConfig | null = null
   private result: WidgetResult | null = null
   /** The session was already terminal when the widget loaded (show a close-only notice). */
   private terminalOnLoad = false
@@ -276,6 +279,7 @@ export class WidgetController {
     if (this.settled) return
     this.sessionId = session.id
     this.realtimeConfig = session.realtime ?? null
+    this.workflow = session.workflow ?? null
     // Theme from the project's branding (server-resolved) unless the integrator
     // passed branding explicitly — their value wins.
     if (this.config.branding == null && session.branding) this.view.applyBranding(session.branding)
@@ -529,6 +533,7 @@ export class WidgetController {
     return Flow.nextStep(this.step, {
       documentType: this.documentType,
       livenessMode: this.livenessMode,
+      workflow: this.workflow,
     })
   }
 
