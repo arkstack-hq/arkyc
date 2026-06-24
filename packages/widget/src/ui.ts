@@ -475,14 +475,13 @@ export class WidgetView {
     const choices = this.el('div', { class: 'arkyc-choices' })
 
     choices.appendChild(country)
-
-      ; (Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
-        const btn = this.button(DOCUMENT_LABELS[type], () =>
-          this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
-        )
-        btn.classList.add('arkyc-btn-ghost')
-        choices.appendChild(btn)
-      })
+    ;(Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
+      const btn = this.button(DOCUMENT_LABELS[type], () =>
+        this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
+      )
+      btn.classList.add('arkyc-btn-ghost')
+      choices.appendChild(btn)
+    })
     this.body.appendChild(choices)
   }
 
@@ -1164,7 +1163,7 @@ export class WidgetView {
       else if (key === 'text') node.textContent = value
       else if (key === 'html') node.innerHTML = value
       else if (key === 'value' || key === 'src' || key === 'type' || key === 'accept' || key === 'placeholder') {
-        ; (node as unknown as Record<string, string>)[key] = value
+        ;(node as unknown as Record<string, string>)[key] = value
       } else node.setAttribute(key, value)
     }
     return node
