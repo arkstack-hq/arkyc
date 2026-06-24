@@ -8,12 +8,12 @@ import type { Workflow, WorkflowStep, WorkflowStepKey } from '@arkyc/types'
 import { Workflows, errorMessage } from '@/lib/api'
 import { useCallback, useState } from 'react'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
-import { useRequest } from 'alova/client'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DEFAULT_WORKFLOW_CONFIG } from '@arkyc/types'
 import { Spinner } from '@/components/ui/spinner'
+import { useRequest } from 'alova/client'
 
 /** Human labels for the coarse verification stages. */
 const STAGE: Record<WorkflowStepKey, { label: string; description: string }> = {
@@ -58,10 +58,7 @@ export default function WorkflowsPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <PageHeader
-        title="Workflows"
-        description="Order or disable verification stages and skip OCR. Apply one with new Arkyc({ workflowId })."
-      />
+      <PageHeader title="Workflows" description="Order or disable verification stages." />
 
       <div className="mb-4 flex justify-end">
         {can('workflows.create') ? <Button onClick={() => setDraft(newDraft())}>New workflow</Button> : null}

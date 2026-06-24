@@ -2,6 +2,7 @@ import * as day from 'dayjs'
 
 import { Hash, Logger } from '@arkstack/common'
 
+import { AdminGrantCommand } from './AdminGrantCommand'
 import { Command } from '@h3ravel/musket'
 import { PersonalAccessToken } from 'src/app/models/PersonalAccessToken'
 import { User } from 'src/app/models/User'
@@ -91,6 +92,7 @@ export class UsersCommand extends Command {
         { name: 'Details', value: 'view' },
         { name: 'Edit', value: 'edit' },
         { name: 'Send Notification', value: 'notify' },
+        { name: 'Make Admin', value: 'adminize' },
         { name: 'Delete User', value: 'delete' },
         { name: Logger.log('✖ Exit', 'red', false), value: 'exit' },
       ])
@@ -104,6 +106,10 @@ export class UsersCommand extends Command {
         // handler.setInput([], [user.id], [new Argument('userId')], {}, this.program)
         // await handler.handle()
         this.info('Not Implemented')
+      } else if (action === 'adminize') {
+        const cmd = new AdminGrantCommand(this.app, this.kernel)
+        cmd.setArgument('email', user.email)
+        await cmd.handle()
       } else if (action === 'edit') {
         await this.editUser(user)
       }

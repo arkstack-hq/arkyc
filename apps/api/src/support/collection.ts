@@ -1,4 +1,9 @@
-/** Materialise an Arkormˣ collection (or null) into a plain array. */
+/**
+ * Materialise an Arkormˣ collection (or null) into a plain array.
+ *
+ * @param collection
+ * @returns
+ */
 export function toArray<T>(collection: Iterable<T> | null | undefined): T[] {
   return collection ? Array.from(collection) : []
 }

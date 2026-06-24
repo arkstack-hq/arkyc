@@ -74,6 +74,6 @@ export class Theme {
    * @returns
    */
   stylesheet(): string {
-    return themeCss.replace('/* ${this.variables()}; */', `${this.variables()};`).trim()
+    return themeCss.replace('/* {variables} */', `${this.variables()};`).trim()
   }
 }

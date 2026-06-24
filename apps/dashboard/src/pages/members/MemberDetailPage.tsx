@@ -1,15 +1,16 @@
-import { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States'
 import { Link, useParams } from 'react-router-dom'
-import { useRequest } from 'alova/client'
 import { Members, Roles, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
-import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
+
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { humanize } from '@/lib/utils'
+import { useRequest } from 'alova/client'
+import { useState } from 'react'
 
 function statusVariant(status: string): 'success' | 'warning' | 'muted' {
   if (status === 'active') return 'success'
@@ -59,7 +60,7 @@ export default function MemberDetailPage() {
         <PageHeader
           title="Member"
           actions={
-            <Link to="../" className="text-sm text-primary hover:underline">
+            <Link to="../member" className="text-sm text-primary hover:underline">
               ← Members
             </Link>
           }
@@ -72,12 +73,12 @@ export default function MemberDetailPage() {
   const currentRoleId = roleId || member.role_id
 
   return (
-    <div>
+    <div className="p-6 lg:p-8">
       <PageHeader
         title={member.user?.name ?? member.user?.email ?? 'Member'}
         description={member.user?.email ?? undefined}
         actions={
-          <Link to="../" className="text-sm text-primary hover:underline">
+          <Link to="../members" className="text-sm text-primary hover:underline">
             ← Members
           </Link>
         }

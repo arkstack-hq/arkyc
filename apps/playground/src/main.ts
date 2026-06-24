@@ -46,16 +46,13 @@ async function startVerification(): Promise<void> {
       container: widgetEl,
       // Same-origin: Vite proxies /api → the Arkyc API (see vite.config.ts).
       baseUrl: '/api',
-      // The widget streams live session events itself (no webhook endpoint to
-      // poll). Whether they arrive via pusher, firebase or polling is decided by
-      // the platform's configured transport — we just listen.
-      // onEvent: (event) => {
-      //   renderEvent(event)
-      //   if (event.name === 'session.transition') {
-      //     const status = (event.data as { status?: string })?.status
-      //     if (status) setStatus(`Status: ${status}`, 'busy')
-      //   }
-      // },
+      onEvent: (event) => {
+        renderEvent(event)
+        if (event.name === 'session.transition') {
+          const status = (event.data as { status?: string })?.status
+          if (status) setStatus(`Status: ${status}`, 'busy')
+        }
+      },
       onComplete: (result) => {
         setStatus(`Done: ${result.status}${result.decision ? ` (${result.decision})` : ''}.`, 'ok')
         void showResult(data.session.id)

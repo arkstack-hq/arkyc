@@ -278,8 +278,16 @@ export class WidgetView {
    */
   private fillBrand(): void {
     this.clear(this.brandEl)
+    const lastTenMins = Date.now() - Math.floor(Math.random() * (10 * 60 * 1000))
+
     if (this.theme.showBranding && (this.theme.logoUrl || this.theme.name)) {
-      if (this.theme.logoUrl) this.brandEl.appendChild(this.el('img', { class: 'arkyc-logo', src: this.theme.logoUrl }))
+      if (this.theme.logoUrl)
+        this.brandEl.appendChild(
+          this.el('img', {
+            class: 'arkyc-logo',
+            src: this.theme.logoUrl + '?stamp=' + lastTenMins,
+          }),
+        )
       if (this.theme.name)
         this.brandEl.appendChild(this.el('span', { class: 'arkyc-brand-name', text: this.theme.name }))
     } else {

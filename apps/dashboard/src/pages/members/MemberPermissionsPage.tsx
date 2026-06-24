@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ErrorState, Loading, PageHeader } from '@/components/States'
 import { Link, useParams } from 'react-router-dom'
-import { useRequest } from 'alova/client'
-import type { PermissionKey } from '@arkyc/types'
 import { Members, Permissions, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
-import { PageHeader, Loading, ErrorState } from '@/components/States'
-import { Button } from '@/components/ui/button'
-import { Select } from '@/components/ui/select'
+
 import { Badge } from '@/components/ui/badge'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import type { PermissionKey } from '@arkyc/types'
+import { Select } from '@/components/ui/select'
+import { useRequest } from 'alova/client'
+import { useState } from 'react'
 
 export default function MemberPermissionsPage() {
   const { memberId = '' } = useParams()
@@ -64,7 +65,7 @@ export default function MemberPermissionsPage() {
         title="Member Permissions"
         description="Role-derived and directly-assigned permissions."
         actions={
-          <Link to="../" className="text-sm text-primary hover:underline">
+          <Link to={'../members/' + memberId} className="text-sm text-primary hover:underline">
             ← Member
           </Link>
         }

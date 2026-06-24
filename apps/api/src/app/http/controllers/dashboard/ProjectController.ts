@@ -148,7 +148,9 @@ export default class ProjectController extends BaseController {
    * to `branding.logo_url` so the widget can render it.
    */
   async uploadLogo({ req }: HttpContext) {
-    const data = await this.validate({ logo: ['required', 'file', 'image', 'max:2048'] })
+    const data = await this.validate({
+      logo: ['required', 'file', 'image', 'mimes:.png,.jpg,.jpeg', 'max:2048'],
+    })
 
     const project = await Project.where({
       id: req.params.projectId,

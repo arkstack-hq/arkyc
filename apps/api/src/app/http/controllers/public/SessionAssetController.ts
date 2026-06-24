@@ -37,7 +37,6 @@ export default class SessionAssetController extends BaseController {
     return res
       .status(200)
       .set('Content-Type', 'image/jpeg')
-      .set('Content-Disposition', 'inline')
       .set('Cache-Control', 'private, max-age=300')
       .send(Buffer.from(bytes))
   }

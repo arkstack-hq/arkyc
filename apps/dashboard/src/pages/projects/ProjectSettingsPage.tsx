@@ -222,7 +222,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
             <div className="flex items-center gap-4">
               <div className="flex size-16 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
                 {logoUrl ? (
-                  <img src={logoUrl} alt="Project logo" className="size-full object-contain" />
+                  <img src={logoUrl + '?logo=' + Date.now()} alt="Project logo" className="size-full object-contain" />
                 ) : (
                   <span className="text-xs text-muted-foreground">None</span>
                 )}

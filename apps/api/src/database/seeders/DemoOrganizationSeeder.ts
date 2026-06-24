@@ -1,13 +1,13 @@
 import { SchemaBuilder, Seeder } from '@arkstack/database'
 
-import { DefaultRoles } from '@arkyc/permissions'
-import { Permission } from 'src/app/models/Permission'
 import type { AnyPermissionKey } from '@arkyc/types'
+import { DefaultRoles } from '@arkyc/permissions'
+import { Organization } from 'src/app/models/Organization'
+import { OrganizationFactory } from '../factories/OrganizationFactory'
+import { Permission } from 'src/app/models/Permission'
 import { Project } from 'src/app/models/Project'
 import { Role } from 'src/app/models/Role'
 import { RolePermission } from 'src/app/models/RolePermission'
-import { Organization } from 'src/app/models/Organization'
-import { OrganizationFactory } from '../factories/OrganizationFactory'
 import { User } from 'src/app/models/User'
 
 /**
