@@ -10,7 +10,16 @@ const canFor = (perms: PermissionKey[]) => {
 describe('permission-aware navigation', () => {
   it('shows every section to an owner (all permissions)', () => {
     const labels = visibleNavItems(() => true).map((i) => i.label)
-    expect(labels).toEqual(['Overview', 'Sessions', 'Reviews', 'Projects', 'Members', 'Audit Logs', 'Settings'])
+    expect(labels).toEqual([
+      'Overview',
+      'Sessions',
+      'Reviews',
+      'Projects',
+      'Workflows',
+      'Members',
+      'Audit Logs',
+      'Settings',
+    ])
   })
 
   it('limits a reviewer to overview + session/review sections', () => {

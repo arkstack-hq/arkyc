@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { FaceMatchResultData, LivenessResultData, OcrResultData } from '@arkyc/types'
-import { Normalize, Risk, SessionRules, TenantContext, TenantScopeError, type SessionSignals } from '../src/index'
+import {
+  Normalize,
+  OrganizationContext,
+  OrganizationScopeError,
+  Risk,
+  SessionRules,
+  type SessionSignals,
+} from '../src/index'
 
 const NOW = '2026-06-20T00:00:00.000Z'
 
@@ -77,21 +84,26 @@ describe('result normalization', () => {
   })
 })
 
-describe('tenant/project context', () => {
-  const entity = { tenant_id: 'tenant_1' }
+describe('organization/project context', () => {
+  const entity = { organization_id: 'org_1' }
 
-  it('checks tenant ownership', () => {
-    expect(TenantContext.belongsTo(entity, 'tenant_1')).toBe(true)
-    expect(TenantContext.belongsTo(entity, 'tenant_2')).toBe(false)
+  it('checks organization ownership', () => {
+    expect(OrganizationContext.belongsTo(entity, 'org_1')).toBe(true)
+    expect(OrganizationContext.belongsTo(entity, 'org_2')).toBe(false)
   })
 
   it('asserts scope or throws', () => {
-    expect(TenantContext.assertScope(entity, 'tenant_1')).toBe(entity)
-    expect(() => TenantContext.assertScope(entity, 'tenant_2')).toThrow(TenantScopeError)
+    expect(OrganizationContext.assertScope(entity, 'org_1')).toBe(entity)
+    expect(() => OrganizationContext.assertScope(entity, 'org_2')).toThrow(OrganizationScopeError)
   })
 
   it('builds canonical session storage paths', () => {
-    const path = TenantContext.storagePath({ tenantId: 't1', projectId: 'p1' }, 's1', 'documents', 'front.jpg')
-    expect(path).toBe('tenants/t1/projects/p1/sessions/s1/documents/front.jpg')
+    const path = OrganizationContext.storagePath(
+      { organizationId: 't1', projectId: 'p1' },
+      's1',
+      'documents',
+      'front.jpg',
+    )
+    expect(path).toBe('organizations/t1/projects/p1/sessions/s1/documents/front.jpg')
   })
 })

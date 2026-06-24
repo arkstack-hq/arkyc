@@ -93,8 +93,10 @@ jobs:
         run: pnpm ark migrate
 
       - name: Run library & app tests
-        # Everything except the API; these have no external dependencies.
-        run: pnpm --filter '!@arkyc/api' -r run test --pass-with-no-tests
+        # Every @arkyc/* package except the API (run separately below). Filtering
+        # by the scope skips the unscoped root package, whose own `test` script
+        # would otherwise re-run recursively and double the `--pass-with-no-tests`.
+        run: pnpm --filter '@arkyc/*' --filter '!@arkyc/api' run test --pass-with-no-tests
 
       - name: Run API tests
         working-directory: apps/api

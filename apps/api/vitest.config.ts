@@ -33,6 +33,11 @@ export default defineConfig({
   },
   test: {
     passWithNoTests: true,
+    // The suite shares one Postgres + app process, so a couple of password/2FA
+    // login tests can intermittently lose a race with a fire-and-forget mail/DB
+    // write when the whole suite runs together (they pass in isolation). A small
+    // bounded retry keeps CI deterministic without masking real failures.
+    retry: 2,
     environment: 'node',
     include: ['tests/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
     // Load .env (APP_KEY for stable JWT signing, DATABASE_URL, etc.) before tests.

@@ -13,23 +13,23 @@ import {
 } from '../src/index'
 
 function resolverStore(data: {
-  tenantRole?: PermissionKey[]
+  organizationRole?: PermissionKey[]
   projectRole?: PermissionKey[]
   direct?: PermissionKey[]
 }): PermissionResolverStore {
   return {
-    tenantRolePermissions: async () => data.tenantRole ?? [],
+    organizationRolePermissions: async () => data.organizationRole ?? [],
     projectRolePermissions: async () => data.projectRole ?? [],
     directPermissions: async () => data.direct ?? [],
   }
 }
 
-const CTX: PermissionResolutionContext = { userId: 'u1', tenantId: 't1' }
+const CTX: PermissionResolutionContext = { userId: 'u1', organizationId: 't1' }
 
 describe('Permissions.resolve', () => {
   it('unions and deduplicates across all sources', async () => {
     const store = resolverStore({
-      tenantRole: ['sessions.view', 'reviews.view'],
+      organizationRole: ['sessions.view', 'reviews.view'],
       projectRole: ['sessions.view', 'sessions.create'],
       direct: ['api_keys.view', 'reviews.view'],
     })
@@ -41,7 +41,7 @@ describe('Permissions.resolve', () => {
 
   it('ignores project role permissions when no projectId is given', async () => {
     const store = resolverStore({
-      tenantRole: ['sessions.view'],
+      organizationRole: ['sessions.view'],
       projectRole: ['settings.update'],
       direct: [],
     })
@@ -58,7 +58,7 @@ describe('Permissions.resolve', () => {
       'reviews.reject',
       'reviews.request_retry',
     ]
-    const store = resolverStore({ tenantRole: reviewer, direct: ['api_keys.view'] })
+    const store = resolverStore({ organizationRole: reviewer, direct: ['api_keys.view'] })
     const perms = await Permissions.resolve(CTX, store)
     expect(new Set(perms)).toEqual(new Set([...reviewer, 'api_keys.view']))
   })
@@ -82,7 +82,7 @@ describe('permission checks', () => {
   })
 
   it('authorize resolves then allows or denies', async () => {
-    const store = resolverStore({ tenantRole: ['sessions.view'] })
+    const store = resolverStore({ organizationRole: ['sessions.view'] })
     await expect(Permissions.authorize(CTX, 'sessions.view', store)).resolves.toBeUndefined()
     await expect(Permissions.authorize(CTX, 'sessions.cancel', store)).rejects.toBeInstanceOf(PermissionDeniedError)
   })
