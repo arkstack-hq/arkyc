@@ -21,9 +21,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  version:
-    name: Apply release version
+  release:
+    name: Version & publish
     runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       # Check out the default branch (not the detached tag commit) so the bump
       # commit lands on the branch.
@@ -39,6 +41,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
+          # Writes an .npmrc that pnpm reads; auth comes from NODE_AUTH_TOKEN.
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: pnpm install --frozen-lockfile
 
       # On `release`, use the tag; on manual dispatch, use the (optional) input —
       # an empty value makes the script default to a minor bump.
@@ -49,11 +55,26 @@ jobs:
         run: |
           if git diff --quiet; then
             echo "No version changes to commit."
-            exit 0
+          else
+            version="$(node -p "require('./package.json').version")"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore(release): v${version}"
+            git push origin "HEAD:${{ github.event.repository.default_branch }}"
           fi
-          version="$(node -p "require('./package.json').version")"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "chore(release): v${version}"
-          git push origin "HEAD:${{ github.event.repository.default_branch }}"
+
+      # Build the publishable dist/ (tsdown libs + the widget's standalone IIFE,
+      # referenced by its `./standalone` export). Apps/root/docs are private.
+      - name: Build packages
+        run: |
+          pnpm run build:libs
+          pnpm --filter @arkyc/widget run build:standalone
+
+      # Publishes every non-private @arkyc/* package, rewriting workspace:^ to
+      # ^<version>. Skipped (not failed) when NPM_TOKEN isn't configured.
+      - name: Publish to npm
+        if: ${{ env.NPM_TOKEN != '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm -r publish --access public --no-git-checks

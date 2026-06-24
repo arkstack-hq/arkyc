@@ -1,14 +1,15 @@
 /*
- * Arkyc brand tokens for VitePress — mirrors the dashboard's shadcn-uikit look:
- * indigo primary, Inter, restrained/flat surfaces. Overrides the default theme's
- * CSS variables so docs chrome (nav, links, buttons, search) is on-brand.
+ * Arkyc brand tokens for VitePress — gold primary (matching the logo + website),
+ * Inter, restrained/flat surfaces. Overrides the default theme's CSS variables so
+ * docs chrome (nav, links, buttons, search) is on-brand. brand-1 stays deep
+ * enough to carry white button text and read as a link on white (AA).
  */
 
 :root {
-  --vp-c-brand-1: #4f46e5;
-  --vp-c-brand-2: #4338ca;
-  --vp-c-brand-3: #6366f1;
-  --vp-c-brand-soft: rgba(79, 70, 229, 0.14);
+  --vp-c-brand-1: #a66f12;
+  --vp-c-brand-2: #855811;
+  --vp-c-brand-3: #c08114;
+  --vp-c-brand-soft: rgba(166, 111, 18, 0.14);
 
   --vp-c-bg: #ffffff;
   --vp-c-bg-alt: #f8fafc;
@@ -22,16 +23,16 @@
   --vp-button-brand-hover-border: transparent;
   --vp-button-brand-active-border: transparent;
 
-  /* Home hero name uses a subtle indigo gradient. */
+  /* Home hero name uses a subtle gold gradient. */
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #6366f1, #4f46e5);
+  --vp-home-hero-name-background: linear-gradient(120deg, #dfa732, #a66f12);
 }
 
 .dark {
-  --vp-c-brand-1: #818cf8;
-  --vp-c-brand-2: #6366f1;
-  --vp-c-brand-3: #a5b4fc;
-  --vp-c-brand-soft: rgba(129, 140, 248, 0.16);
+  --vp-c-brand-1: #e7bd58;
+  --vp-c-brand-2: #dfa732;
+  --vp-c-brand-3: #efd693;
+  --vp-c-brand-soft: rgba(231, 189, 88, 0.16);
 
   --vp-c-bg: #0b1120;
   --vp-c-bg-alt: #0a0f1c;
