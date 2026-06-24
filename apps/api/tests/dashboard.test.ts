@@ -106,7 +106,10 @@ describe('projects & api keys', () => {
     // The list never exposes the secret hash.
     expect(JSON.stringify(list.body)).not.toContain('keyHash')
 
-    const revoke = await authed('delete', `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys/${keyId}`)
+    const revoke = await authed(
+      'delete',
+      `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys/${keyId}`,
+    )
     expect(revoke.status).toBe(200)
     expect(revoke.body.data.revoked_at).toBeTruthy()
   })

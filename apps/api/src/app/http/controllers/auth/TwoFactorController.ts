@@ -43,8 +43,8 @@ export default class TwoFactorController extends BaseController {
 
     if ((method as TwoFactorMethod) === 'authenticator') {
       const { secret, otpauthUrl } = await TwoFactorService.setupAuthenticator(user)
-      
-return new EmptyResource({})
+
+      return new EmptyResource({})
         .additional({
           status: 'success',
           message: 'Scan the QR code with your authenticator app, then enter the 6-digit code to confirm.',

@@ -37,8 +37,8 @@ export class TwoFactorService {
   /** The user's currently selected method (may be pending confirmation). */
   static async getMethod(userId: User['id']): Promise<TwoFactorMethod | null> {
     const record = await this.record(userId)
-    
-return (record?.method as TwoFactorMethod | null) ?? null
+
+    return (record?.method as TwoFactorMethod | null) ?? null
   }
 
   /** Persist the selected method without enabling it (enrollment is a two-step flow). */
@@ -53,8 +53,8 @@ return (record?.method as TwoFactorMethod | null) ?? null
   private static async recoveryHashes(userId: User['id']): Promise<string[]> {
     const raw = (await this.record(userId))?.recoveryCodeHashes as string[] | string | null | undefined
     if (!raw) return []
-    
-return Array.isArray(raw) ? raw : (JSON.parse(raw) as string[])
+
+    return Array.isArray(raw) ? raw : (JSON.parse(raw) as string[])
   }
 
   /**
@@ -69,8 +69,8 @@ return Array.isArray(raw) ? raw : (JSON.parse(raw) as string[])
   /** Whether 2FA is fully enabled (a method is chosen and confirmed). */
   static async isEnabled(userId: User['id']): Promise<boolean> {
     const record = await this.record(userId)
-    
-return !!record?.enabledAt && !!record?.method
+
+    return !!record?.enabledAt && !!record?.method
   }
 
   /** The public 2FA status payload for the account settings screen. */
@@ -78,8 +78,8 @@ return !!record?.enabledAt && !!record?.method
     const record = await this.record(userId)
     const method = (record?.method as TwoFactorMethod | null) ?? null
     const enabled = !!record?.enabledAt && !!method
-    
-return {
+
+    return {
       enabled,
       method: enabled ? method : null,
       recovery_codes_remaining: enabled ? (await this.recoveryHashes(userId)).length : 0,
@@ -120,8 +120,8 @@ return {
     const setup = TwoFactor.createSetup(user)
     await TwoFactor.setSecret(user.id, setup.secret)
     await this.setMethod(user.id, 'authenticator')
-    
-return setup
+
+    return setup
   }
 
   /** Begin email enrollment: mark the pending method and email a setup code. */
@@ -134,11 +134,11 @@ return setup
   static async verifySetup(user: User, method: TwoFactorMethod, code: string): Promise<boolean> {
     if (method === 'authenticator') {
       const secret = await TwoFactor.getSecret(user.id)
-      
-return !!secret && TwoFactor.verifyCode(user, secret, code)
+
+      return !!secret && TwoFactor.verifyCode(user, secret, code)
     }
-    
-return this.verifyEmailCode(user, code, 'setup')
+
+    return this.verifyEmailCode(user, code, 'setup')
   }
 
   /** Confirm and enable 2FA for `method`, issuing one-time recovery codes (shown once). */
@@ -149,8 +149,8 @@ return this.verifyEmailCode(user, code, 'setup')
       { userId: user.id },
       { method, enabledAt: new Date(), recoveryCodeHashes: JSON.stringify(hashes) },
     )
-    
-return recoveryCodes
+
+    return recoveryCodes
   }
 
   /** Tear down all 2FA state for the user. */
@@ -179,8 +179,8 @@ return recoveryCodes
     } else if (method === 'email') {
       if (this.verifyEmailCode(user, code, 'login')) return true
     }
-    
-return this.consumeRecoveryCode(user.id, code)
+
+    return this.consumeRecoveryCode(user.id, code)
   }
 
   /** Consume a one-time recovery code, removing it on a successful match. */
@@ -190,11 +190,11 @@ return this.consumeRecoveryCode(user.id, code)
       if (await Hash.verify(code, hashes[i])) {
         hashes.splice(i, 1)
         await this.writeRecoveryHashes(userId, hashes)
-        
-return true
+
+        return true
       }
     }
-    
-return false
+
+    return false
   }
 }

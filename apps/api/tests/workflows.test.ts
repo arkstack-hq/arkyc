@@ -24,10 +24,9 @@ beforeAll(async () => {
 
   const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'Wf Prod' })
   fx.projectId = project.body.data.id
-  const key = await authed(
-    'post',
-    `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`,
-  ).send({ name: 'Wf key' })
+  const key = await authed('post', `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`).send({
+    name: 'Wf key',
+  })
   fx.apiKeySecret = key.body.secret
 })
 
@@ -153,9 +152,7 @@ describe('applying a workflow to a session', () => {
     expect(open.body.data.workflow.options).toEqual({ skip_ocr: true })
 
     // The widget's client-session view carries the resolved workflow.
-    const clientView = await request(app)
-      .get('/api/v1/client/session')
-      .set('X-Client-Token', open.body.client_token)
+    const clientView = await request(app).get('/api/v1/client/session').set('X-Client-Token', open.body.client_token)
     expect(clientView.status).toBe(201)
     expect(clientView.body.data.workflow.steps).toEqual([
       { key: 'document', enabled: true },

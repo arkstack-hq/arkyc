@@ -47,7 +47,11 @@ export default class OrganizationController extends BaseController {
     })
 
     const slug = (data.slug || Str.slug(data.name)).toLowerCase()
-    RequestException.abortIf(await Organization.where({ slug }).first(), 'An organization with this slug already exists', 409)
+    RequestException.abortIf(
+      await Organization.where({ slug }).first(),
+      'An organization with this slug already exists',
+      409,
+    )
 
     const organization = await Organization.create({ name: data.name, slug, settings: {} })
 

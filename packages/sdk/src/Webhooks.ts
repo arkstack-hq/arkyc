@@ -1,4 +1,4 @@
-import { WebhookSigner, type VerifyWebhookInput } from "@arkyc/webhooks";
+import { WebhookSigner, type VerifyWebhookInput } from '@arkyc/webhooks'
 
 export class Webhooks {
   /**

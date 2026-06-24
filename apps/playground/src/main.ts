@@ -48,6 +48,7 @@ async function startVerification(): Promise<void> {
       baseUrl: '/api',
       onEvent: (event) => {
         renderEvent(event)
+        console.log(event)
         if (event.name === 'session.transition') {
           const status = (event.data as { status?: string })?.status
           if (status) setStatus(`Status: ${status}`, 'busy')

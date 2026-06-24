@@ -121,7 +121,9 @@ describe('review queue + actions', () => {
     const id = await reviewableSession()
     await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/approve`).send({})
     // Full override: a finalized (approved) session can be re-decided to rejected.
-    const override = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/reject`).send({ reason: 'override' })
+    const override = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/reject`).send({
+      reason: 'override',
+    })
     expect(override.status).toBe(200)
     expect(override.body.data.final_decision).toBe('rejected')
   })

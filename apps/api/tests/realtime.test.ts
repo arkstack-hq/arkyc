@@ -47,7 +47,9 @@ beforeAll(async () => {
   const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'RT Prod' })
   fx.projectId = project.body.data.id
 
-  const key = await authed('post', `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`).send({ name: 'RT key' })
+  const key = await authed('post', `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`).send({
+    name: 'RT key',
+  })
   fx.apiKeySecret = key.body.secret
 })
 

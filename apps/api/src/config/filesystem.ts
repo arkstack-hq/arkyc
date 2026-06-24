@@ -64,7 +64,10 @@ export default (): FilesystemConfig => {
      */
     links: {
       [path.join(Arkstack.rootDir(), './public/storage')]: path.join(Arkstack.rootDir(), './storage/app/public'),
-      [path.join(Arkstack.rootDir(), './public/organizations')]: path.join(Arkstack.rootDir(), './storage/app/organizations'),
+      [path.join(Arkstack.rootDir(), './public/organizations')]: path.join(
+        Arkstack.rootDir(),
+        './storage/app/organizations',
+      ),
     },
 
     /**
