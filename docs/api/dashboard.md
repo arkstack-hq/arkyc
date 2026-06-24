@@ -56,6 +56,8 @@ is listed per route below.
 | `POST`   | `/projects`                              | `projects.create` | Create a project.                                |
 | `GET`    | `/projects/:projectId`                   | `projects.view`   | Show a project.                                  |
 | `PATCH`  | `/projects/:projectId`                   | `projects.update` | Update name/status/settings/branding/thresholds. |
+| `GET`    | `/projects/:projectId/ai-access`         | `projects.view`   | AI-processing access status for the project.     |
+| `POST`   | `/projects/:projectId/ai-access/request` | `projects.update` | Request AI document processing.                  |
 | `GET`    | `/projects/:projectId/members`           | `members.view`    | List project members.                            |
 | `POST`   | `/projects/:projectId/members`           | `members.update`  | Add a tenant member to the project.              |
 | `PATCH`  | `/projects/:projectId/members/:memberId` | `members.update`  | Change a project member's role.                  |
@@ -117,3 +119,38 @@ See [Webhooks](/integrations/webhooks) for the payload and signature.
 | `POST`  | `/roles`         | `settings.update` | Create a custom role with permissions.      |
 | `GET`   | `/roles/:roleId` | `settings.view`   | Show a role with its permission names.      |
 | `PATCH` | `/roles/:roleId` | `settings.update` | Update a role's name / description / perms. |
+
+## Admin (platform) {#admin}
+
+**Base:** `/api/v1/admin` — `Authorization: Bearer <jwt>` plus a platform
+`canAdmin('…')` permission. This surface sits **above** organizations; an
+organization role never grants admin access (no `resolveTenant`).
+
+| Method   | Path                                      | Permission                 | Description                                              |
+| -------- | ----------------------------------------- | -------------------------- | -------------------------------------------------------- |
+| `GET`    | `/me`                                     | —                          | Caller's admin standing (empty for non-admins).          |
+| `GET`    | `/settings`                               | `admin.settings.view`      | Platform settings.                                       |
+| `PATCH`  | `/settings`                               | `admin.settings.update`    | Update platform settings.                                |
+| `GET`    | `/organizations`                          | `admin.organizations.view` | List organizations (paginated).                          |
+| `GET`    | `/organizations/:organizationId`          | `admin.organizations.view` | Organization detail + counts.                            |
+| `GET`    | `/organizations/:organizationId/projects` | `admin.organizations.view` | The organization's projects (paginated).                 |
+| `GET`    | `/users`                                  | `admin.users.view`         | List users (paginated).                                  |
+| `GET`    | `/users/:userId`                          | `admin.users.view`         | User detail.                                             |
+| `POST`   | `/users/:userId/admin`                    | `admin.users.manage`       | Grant platform admin.                                    |
+| `DELETE` | `/users/:userId/admin`                    | `admin.users.manage`       | Revoke platform admin (never the last admin).            |
+| `POST`   | `/users/:userId/status`                   | `admin.users.manage`       | Set account standing: `active`/`restricted`/`suspended`. |
+| `POST`   | `/users/:userId/password`                 | `admin.users.manage`       | Reset a user's password.                                 |
+| `GET`    | `/audit-logs`                             | `admin.audit.view`         | Platform audit log.                                      |
+
+### AI document-processing access {#admin-ai-access}
+
+Gate the [AI OCR driver](/guide/providers#ai-ocr-driver) per project. Project
+owners request access (under [Projects](#projects-project-members)); admins
+list, grant, and revoke it here.
+
+| Method | Path                | Permission                   | Description                                    |
+| ------ | ------------------- | ---------------------------- | ---------------------------------------------- |
+| `GET`  | `/ai-access`        | `admin.ai_processing.view`   | List grants/requests; filter by `status`.      |
+| `GET`  | `/ai-access/count`  | `admin.ai_processing.view`   | Count of pending requests (for the nav badge). |
+| `POST` | `/ai-access/grant`  | `admin.ai_processing.manage` | Grant a project (`project_id`).                |
+| `POST` | `/ai-access/revoke` | `admin.ai_processing.manage` | Revoke a project (`project_id`).               |

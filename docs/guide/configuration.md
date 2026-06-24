@@ -35,11 +35,16 @@ the dashboard and playground read their own `.env` files (Vite). Copy each
 
 ### Providers
 
-| Variable                                                     | Default | Notes                             |
-| ------------------------------------------------------------ | ------- | --------------------------------- |
-| `OCR_DRIVER` / `LIVENESS_DRIVER` / `FACE_MATCH_DRIVER`       | `mock`  | `mock` or `external`.             |
-| `OCR_ENDPOINT` / `LIVENESS_ENDPOINT` / `FACE_MATCH_ENDPOINT` | —       | `external` HTTP endpoint.         |
-| `OCR_API_KEY` / `LIVENESS_API_KEY` / `FACE_MATCH_API_KEY`    | —       | Optional bearer for the endpoint. |
+| Variable                                                     | Default                     | Notes                                                            |
+| ------------------------------------------------------------ | --------------------------- | ---------------------------------------------------------------- |
+| `OCR_DRIVER`                                                 | `mock`                      | `mock`, `tesseract`, `ai`, or `external`.                        |
+| `LIVENESS_DRIVER` / `FACE_MATCH_DRIVER`                      | `mock`                      | `mock` or `external`.                                            |
+| `OCR_FALLBACK_DRIVER`                                        | `mock`                      | Used when `OCR_DRIVER=ai` but a project isn't granted AI access. |
+| `OCR_API_KEY`                                                | —                           | Anthropic API key for `OCR_DRIVER=ai`.                           |
+| `OCR_AI_MODEL`                                               | `claude-haiku-4-5-20251001` | Vision model for the `ai` driver.                                |
+| `OCR_AI_MAX_EDGE`                                            | `1568`                      | Longest uploaded image edge (px) for the `ai` driver.            |
+| `OCR_ENDPOINT` / `LIVENESS_ENDPOINT` / `FACE_MATCH_ENDPOINT` | —                           | `external` HTTP endpoint (or API base override for `ai`).        |
+| `LIVENESS_API_KEY` / `FACE_MATCH_API_KEY`                    | —                           | Optional bearer for the endpoint.                                |
 
 See [Provider drivers](./providers).
 
