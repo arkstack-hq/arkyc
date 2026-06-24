@@ -1,0 +1,268 @@
+name: Deploy API, Dashboard & Website
+on:
+  push:
+    branches:
+      - staging
+      - production
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    name: Staging Deployment
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: true
+    steps:
+      - name: Deploy API & dashboard on staging server
+        uses: appleboy/ssh-action@v1
+        id: ssh
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          capture_stdout: true
+          script: |
+            PNPM_VERSION="10.6.1"
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            DEPLOY_BRANCH="${{ github.ref_name }}"
+            cd "$DEPLOY_PATH"
+            git config --global --add safe.directory "$DEPLOY_PATH"
+            git fetch --all --prune
+            git checkout "$DEPLOY_BRANCH"
+            git reset --hard "origin/$DEPLOY_BRANCH"
+
+            if [ -n "${{ secrets.FIREBASE_ADMINSDK }}" ]; then
+              mkdir -p storage/app
+              printf '%s\n' '${{ secrets.FIREBASE_ADMINSDK }}' > storage/app/firebase-adminsdk.json
+              chmod 600 storage/app/firebase-adminsdk.json
+            else
+              echo "FIREBASE_ADMINSDK secret is not configured. Skipping firebase-adminsdk.json creation."
+            fi
+
+            source ~/.nvm/nvm.sh
+
+            echo "Using Node.js version: $(node -v)"
+            echo "Using pnpm version: $(pnpm -v)"
+            echo "Using pm2 version: $(pm2 -v)"
+
+            corepack enable
+            corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+            pnpm install --frozen-lockfile
+            NODE_ENV=production CLI_BUILD=true pnpm prepare
+
+            # Build the dashboard SPA from this same checkout; the web server serves apps/dashboard/dist.
+            pnpm --filter @arkyc/dashboard build
+
+            pnpm ark migrate
+            pnpm ark storage:link --force
+
+            URL="https://$(pwd | sed 's|.*/||')"
+            ROUTE_LIST_OUTPUT="$(pnpm ark route:list)"
+            printf '%s\n' "$ROUTE_LIST_OUTPUT"
+            ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
+
+            if [ -z "$ROUTES_COUNT" ]; then
+              echo "Unable to extract the published route count."
+              exit 1
+            fi
+
+            if [ -n "${{ secrets.AFTER_DEPLOY_CMD }}" ]; then
+              ${{ secrets.AFTER_DEPLOY_CMD }} && echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
+            else
+              echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
+            fi
+
+      - name: Deploy website on staging server
+        uses: appleboy/ssh-action@v1
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            PNPM_VERSION="10.6.1"
+            # The website lives in its own checkout/deploy path on the server.
+            WEBSITE_PATH="${{ secrets.WEBSITE_DEPLOY_PATH }}"
+            DEPLOY_BRANCH="${{ github.ref_name }}"
+            cd "$WEBSITE_PATH"
+            git config --global --add safe.directory "$WEBSITE_PATH"
+            git fetch --all --prune
+            git checkout "$DEPLOY_BRANCH"
+            git reset --hard "origin/$DEPLOY_BRANCH"
+
+            source ~/.nvm/nvm.sh
+
+            corepack enable
+            corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+            pnpm install --frozen-lockfile
+            pnpm --filter @arkyc/website build
+
+            if [ -n "${{ secrets.WEBSITE_AFTER_DEPLOY_CMD }}" ]; then
+              ${{ secrets.WEBSITE_AFTER_DEPLOY_CMD }}
+            fi
+
+      - name: Extract deploy meta
+        id: deploy_meta
+        run: |
+          cat <<'DEPLOY_EOF' > /tmp/deploy_output.txt
+          ${{ steps.ssh.outputs.stdout }}
+          DEPLOY_EOF
+          raw=$(grep -oP 'https://[^|]+\|.+' /tmp/deploy_output.txt)
+          url="${raw%%|*}"
+          deploy_meta="${raw#*|}"
+          branch="${deploy_meta%%|*}"
+          routes_count="${raw##*|}"
+          echo "url=$url" >> $GITHUB_OUTPUT
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+          echo "routes_count=$routes_count" >> $GITHUB_OUTPUT
+
+      - name: Publish summary
+        if: '${{steps.deploy_meta.outputs.url && steps.deploy_meta.outputs.branch && steps.deploy_meta.outputs.routes_count}}'
+        run: |
+          URL="${{steps.deploy_meta.outputs.url}}"
+          BRANCH="${{steps.deploy_meta.outputs.branch}}"
+          ROUTES_COUNT="${{steps.deploy_meta.outputs.routes_count}}"
+
+          echo "✅ Successfully Deployed Staging." >> $GITHUB_STEP_SUMMARY
+          echo "Deploy Branch: $BRANCH" >> $GITHUB_STEP_SUMMARY
+          echo "Deploy URL: $URL" >> $GITHUB_STEP_SUMMARY
+          echo "Published Routes: $ROUTES_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "Health Check: $URL/health?human" >> $GITHUB_STEP_SUMMARY
+
+  deploy-production:
+    name: Production Deployment
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: true
+
+    steps:
+      - name: Deploy API & dashboard on production server
+        uses: appleboy/ssh-action@v1
+        id: ssh
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          capture_stdout: true
+          script: |
+            PNPM_VERSION="10.6.1"
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            DEPLOY_BRANCH="production"
+            cd "$DEPLOY_PATH"
+            git config --global --add safe.directory "$DEPLOY_PATH"
+            git fetch --all --prune
+            git checkout "$DEPLOY_BRANCH"
+            git reset --hard "origin/$DEPLOY_BRANCH"
+
+            if [ -n "${{ secrets.FIREBASE_ADMINSDK }}" ]; then
+              mkdir -p storage/app
+              printf '%s\n' '${{ secrets.FIREBASE_ADMINSDK }}' > storage/app/firebase-adminsdk.json
+              chmod 600 storage/app/firebase-adminsdk.json
+            else
+              echo "FIREBASE_ADMINSDK secret is not configured. Skipping firebase-adminsdk.json creation."
+            fi
+
+            source ~/.nvm/nvm.sh
+
+            echo "Using Node.js version: $(node -v)"
+            echo "Using pnpm version: $(pnpm -v)"
+            echo "Using pm2 version: $(pm2 -v)"
+
+            corepack enable
+            corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+            pnpm install --frozen-lockfile
+            NODE_ENV=production CLI_BUILD=true pnpm prepare
+
+            # Build the dashboard SPA from this same checkout; the web server serves apps/dashboard/dist.
+            pnpm --filter @arkyc/dashboard build
+
+            pnpm ark migrate
+            pnpm ark storage:link --force
+
+            URL="https://$(pwd | sed 's|.*/||')"
+            ROUTE_LIST_OUTPUT="$(pnpm ark route:list)"
+            printf '%s\n' "$ROUTE_LIST_OUTPUT"
+            ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
+
+            if [ -z "$ROUTES_COUNT" ]; then
+              echo "Unable to extract the published route count."
+              exit 1
+            fi
+
+            if [ -n "${{ secrets.AFTER_DEPLOY_CMD }}" ]; then
+              ${{ secrets.AFTER_DEPLOY_CMD }} && echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
+            else
+              echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
+            fi
+
+      - name: Deploy website on production server
+        uses: appleboy/ssh-action@v1
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            PNPM_VERSION="10.6.1"
+            # The website lives in its own checkout/deploy path on the server.
+            WEBSITE_PATH="${{ secrets.WEBSITE_DEPLOY_PATH }}"
+            DEPLOY_BRANCH="production"
+            cd "$WEBSITE_PATH"
+            git config --global --add safe.directory "$WEBSITE_PATH"
+            git fetch --all --prune
+            git checkout "$DEPLOY_BRANCH"
+            git reset --hard "origin/$DEPLOY_BRANCH"
+
+            source ~/.nvm/nvm.sh
+
+            corepack enable
+            corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+            pnpm install --frozen-lockfile
+            pnpm --filter @arkyc/website build
+
+            if [ -n "${{ secrets.WEBSITE_AFTER_DEPLOY_CMD }}" ]; then
+              ${{ secrets.WEBSITE_AFTER_DEPLOY_CMD }}
+            fi
+
+      - name: Extract deploy meta
+        id: deploy_meta
+        run: |
+          cat <<'DEPLOY_EOF' > /tmp/deploy_output.txt
+          ${{ steps.ssh.outputs.stdout }}
+          DEPLOY_EOF
+          raw=$(grep -oP 'https://[^|]+\|.+' /tmp/deploy_output.txt)
+          url="${raw%%|*}"
+          deploy_meta="${raw#*|}"
+          branch="${deploy_meta%%|*}"
+          routes_count="${raw##*|}"
+          echo "url=$url" >> $GITHUB_OUTPUT
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+          echo "routes_count=$routes_count" >> $GITHUB_OUTPUT
+
+      - name: Publish summary
+        if: '${{steps.deploy_meta.outputs.url && steps.deploy_meta.outputs.branch && steps.deploy_meta.outputs.routes_count}}'
+        run: |
+          URL="${{steps.deploy_meta.outputs.url}}"
+          BRANCH="${{steps.deploy_meta.outputs.branch}}"
+          ROUTES_COUNT="${{steps.deploy_meta.outputs.routes_count}}"
+
+          echo "✅ Successfully Deployed Production." >> $GITHUB_STEP_SUMMARY
+          echo "Deploy Branch: $BRANCH" >> $GITHUB_STEP_SUMMARY
+          echo "Deploy URL: $URL" >> $GITHUB_STEP_SUMMARY
+          echo "Published Routes: $ROUTES_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "Health Check: $URL/health?human" >> $GITHUB_STEP_SUMMARY

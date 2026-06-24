@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging, production]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run per ref; cancel superseded runs on the same branch/PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-typecheck:
+    name: Lint, typecheck & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Build libraries
+        run: pnpm run build:libs
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    # The API integration tests need a real Postgres. Matches the DATABASE_URL in
+    # apps/api/.env.example (postgres:postgres@localhost:5432/arkstark_test).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: arkstark_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Configure API test env
+        run: |
+          cp apps/api/.env.example apps/api/.env
+          # A deterministic 32-byte app key (JWT signing, 2FA encryption, sessions).
+          sed -i 's|^APP_KEY=.*$|APP_KEY=ci-test-app-key-0123456789abcdef|' apps/api/.env
+
+      - name: Run database migrations
+        working-directory: apps/api
+        run: pnpm ark migrate
+
+      - name: Run library & app tests
+        # Everything except the API; these have no external dependencies.
+        run: pnpm --filter '!@arkyc/api' -r run test --pass-with-no-tests
+
+      - name: Run API tests
+        working-directory: apps/api
+        # Single-threaded: the suite shares one Postgres + app process, so file
+        # parallelism causes cross-test contention.
+        run: pnpm exec vitest run --no-file-parallelism
