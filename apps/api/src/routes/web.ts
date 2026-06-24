@@ -1,9 +1,12 @@
+import HealthController from 'src/app/http/controllers/HealthController'
 import { Router } from '@arkstack/driver-express'
 import { view } from '@arkstack/view'
 
-Router.get('/', async () => {
-  return await view('welcome', {
-    title: 'Welcome to Arkstack',
-    message: 'Server running — ready for requests',
+Router.get('/health', [HealthController, 'web'])
+
+Router.get('/', () => {
+  return view('welcome', {
+    version: 'v1',
+    appName: env('APP_NAME', 'Roseed'),
   })
 })
