@@ -183,7 +183,7 @@ interface DocStage {
   stage: HTMLElement
   /** Tint the frame for the current capture quality. */
   setQuality(quality: 'wait' | 'good' | 'bad'): void
-  /** Snap the bracket frame onto a detected document (or reset with `null`). */
+  /** Flag whether a document is currently detected (brightens the fixed guide). */
   setFrame(rect: DocRect | null): void
 }
 
@@ -459,7 +459,6 @@ export class WidgetView {
 
     const placeholder = this.el('option', {
       value: '',
-      disabled: 'disabled',
       selected: 'selected',
     })
 
@@ -477,13 +476,13 @@ export class WidgetView {
 
     choices.appendChild(country)
 
-    ;(Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
-      const btn = this.button(DOCUMENT_LABELS[type], () =>
-        this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
-      )
-      btn.classList.add('arkyc-btn-ghost')
-      choices.appendChild(btn)
-    })
+      ; (Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
+        const btn = this.button(DOCUMENT_LABELS[type], () =>
+          this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
+        )
+        btn.classList.add('arkyc-btn-ghost')
+        choices.appendChild(btn)
+      })
     this.body.appendChild(choices)
   }
 
@@ -1058,7 +1057,10 @@ export class WidgetView {
   }
 
   /**
-   * Build the document preview overlay: corner brackets + an animated scan line.
+   * Build the document preview overlay: a fixed card-shaped alignment guide
+   * (corner brackets + border) with an animated scan line. The guide is a target,
+   * not a tracker — it stays put so the user aligns the card to it; detection only
+   * tints it for quality and brightens it once a document is in view.
    *
    * @param video
    * @returns
@@ -1071,24 +1073,13 @@ export class WidgetView {
     for (const corner of ['tl', 'tr', 'bl', 'br']) {
       frame.appendChild(this.el('span', { class: `arkyc-corner ${corner}` }))
     }
+    frame.appendChild(this.el('div', { class: 'arkyc-scan' }))
     stage.appendChild(frame)
-    stage.appendChild(this.el('div', { class: 'arkyc-scan' }))
     return {
       stage,
       setQuality: (quality) => stage.setAttribute('data-q', quality),
-      setFrame: (rect) => {
-        if (!rect) {
-          // Reset to the default CSS inset guide.
-          frame.style.inset = ''
-          frame.style.left = frame.style.top = frame.style.width = frame.style.height = ''
-          return
-        }
-        frame.style.inset = 'auto'
-        frame.style.left = `${rect.x * 100}%`
-        frame.style.top = `${rect.y * 100}%`
-        frame.style.width = `${rect.w * 100}%`
-        frame.style.height = `${rect.h * 100}%`
-      },
+      // The guide never moves; a detected document only brightens it as feedback.
+      setFrame: (rect) => stage.setAttribute('data-detected', rect ? 'true' : 'false'),
     }
   }
 
@@ -1173,7 +1164,7 @@ export class WidgetView {
       else if (key === 'text') node.textContent = value
       else if (key === 'html') node.innerHTML = value
       else if (key === 'value' || key === 'src' || key === 'type' || key === 'accept' || key === 'placeholder') {
-        ;(node as unknown as Record<string, string>)[key] = value
+        ; (node as unknown as Record<string, string>)[key] = value
       } else node.setAttribute(key, value)
     }
     return node

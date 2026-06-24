@@ -11,6 +11,10 @@
   box-sizing: border-box;
 }
 
+.arkyc-text-center {
+  text-align: center;
+}
+
 .arkyc-root * {
   box-sizing: border-box;
 }
@@ -480,13 +484,17 @@
 
 .arkyc-doc-frame {
   position: absolute;
-  inset: 5%;
+  /* Fixed, always-visible alignment target at the ID-1 card aspect ratio
+     (85.6 × 54 mm ≈ 1.585:1), centred in the preview. */
+  top: 50%;
+  left: 50%;
+  width: 86%;
+  aspect-ratio: 1.585 / 1;
+  transform: translate(-50%, -50%);
   pointer-events: none;
-  transition:
-    left 0.18s ease,
-    top 0.18s ease,
-    width 0.18s ease,
-    height 0.18s ease;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  transition: border-color 0.3s;
 }
 
 .arkyc-corner {
@@ -531,16 +539,23 @@
 
 .arkyc-scan {
   position: absolute;
-  left: 5%;
-  right: 5%;
-  top: 8%;
+  /* Animates within the fixed guide (its parent), sweeping the card area. */
+  left: 6%;
+  right: 6%;
+  top: 6%;
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--arkyc-primary), transparent);
   box-shadow: 0 0 8px var(--arkyc-primary);
   animation: arkyc-scan 2.4s ease-in-out infinite;
 }
 
-.arkyc-doc[data-q='good'] .arkyc-corner {
+/* A document is in view: brighten the guide (quality tints still override). */
+.arkyc-doc[data-detected='true'] .arkyc-doc-frame {
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+.arkyc-doc[data-q='good'] .arkyc-corner,
+.arkyc-doc[data-q='good'] .arkyc-doc-frame {
   border-color: #16a34a;
 }
 
@@ -549,7 +564,8 @@
   box-shadow: 0 0 8px #16a34a;
 }
 
-.arkyc-doc[data-q='bad'] .arkyc-corner {
+.arkyc-doc[data-q='bad'] .arkyc-corner,
+.arkyc-doc[data-q='bad'] .arkyc-doc-frame {
   border-color: #f59e0b;
 }
 
@@ -622,11 +638,11 @@
 @keyframes arkyc-scan {
   0%,
   100% {
-    top: 8%;
+    top: 6%;
   }
 
   50% {
-    top: 88%;
+    top: 90%;
   }
 }
 
