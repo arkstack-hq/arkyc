@@ -6,7 +6,7 @@ import { Projects, Sessions } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
 import { StatusBadge, DecisionBadge } from '@/components/StatusBadge'
-import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Pagination } from '@/components/Pagination'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Select } from '@/components/ui/select'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
@@ -43,7 +43,7 @@ export default function SessionsPage() {
   const {
     data: sessions,
     page,
-    isLastPage,
+    pageCount,
     loading,
     error,
     update,
@@ -56,7 +56,7 @@ export default function SessionsPage() {
         project_id: projectId || undefined,
       }),
     {
-      append: true,
+      append: false,
       initialPage: 1,
       initialPageSize: 15,
       data: (res) => res.data,
@@ -128,6 +128,7 @@ export default function SessionsPage() {
                         <Link to={s.id} className="text-primary hover:underline">
                           {s.user_reference ?? '—'}
                         </Link>
+                        {s.name ? <div className="text-xs text-muted-foreground">{s.name}</div> : null}
                       </TD>
                       <TD>
                         <StatusBadge status={s.status} />
@@ -142,7 +143,7 @@ export default function SessionsPage() {
                 </TBody>
               </Table>
 
-              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+              <Pagination page={page} pageCount={pageCount} onPage={(p) => update({ page: p })} loading={loading} />
             </>
           )}
         </CardContent>

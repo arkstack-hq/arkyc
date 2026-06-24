@@ -9,15 +9,19 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
+  Sparkles,
   Sun,
   Users,
 } from 'lucide-react'
 import type { AdminPermissionKey } from '@arkyc/types'
+import { useRequest } from 'alova/client'
+import { AiAccess } from '@/lib/api'
 import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
 import { isDark, toggleTheme } from '@/lib/theme'
 import { Loading } from '@/components/States'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -60,6 +64,7 @@ interface AdminNavItem {
 const NAV: AdminNavItem[] = [
   { to: 'settings', label: 'Settings', icon: Settings, perm: 'admin.settings.view', end: true },
   { to: 'organizations', label: 'Organizations', icon: Building2, perm: 'admin.organizations.view' },
+  { to: 'ai-access', label: 'AI access', icon: Sparkles, perm: 'admin.ai_processing.view' },
   { to: 'users', label: 'Users', icon: Users, perm: 'admin.users.view' },
   { to: 'audit-logs', label: 'Audit log', icon: ScrollText, perm: 'admin.audit.view' },
 ]
@@ -82,14 +87,21 @@ export function AdminLayout() {
   const { isAdmin, can, loading } = useAdmin()
   const [scrolled, setScrolled] = useState(false)
 
+  // Badge the AI-access nav with the count of pending requests.
+  const { data: pendingAi } = useRequest(AiAccess.pendingCount(), {
+    immediate: can('admin.ai_processing.view'),
+    initialData: 0,
+  })
+
   if (loading) return <Loading />
   if (!isAdmin) return <Navigate to="/" replace />
 
   const items = NAV.filter((item) => can(item.perm))
+  const badges: Partial<Record<string, number>> = { 'ai-access': pendingAi }
 
   return (
     <SidebarProvider>
-      <AdminSidebar items={items} />
+      <AdminSidebar items={items} badges={badges} />
       <SidebarInset onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 12)}>
         <div className="px-3 pb-3 pt-3">
           <main className="min-h-[calc(100svh-1.5rem)] rounded-xl border border-border bg-card">
@@ -104,7 +116,7 @@ export function AdminLayout() {
   )
 }
 
-function AdminSidebar({ items }: { items: AdminNavItem[] }) {
+function AdminSidebar({ items, badges }: { items: AdminNavItem[]; badges?: Partial<Record<string, number>> }) {
   const location = useLocation()
   const seg = activeSegment(location.pathname)
 
@@ -126,16 +138,24 @@ function AdminSidebar({ items }: { items: AdminNavItem[] }) {
         <SidebarGroup>
           <SidebarGroupLabel>Administration</SidebarGroupLabel>
           <SidebarMenu>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.to}>
-                <SidebarMenuButton asChild isActive={isActiveItem(seg, item)} tooltip={item.label}>
-                  <Link to={item.to}>
-                    <item.icon />
-                    <span className="truncate group-data-[state=collapsed]/sidebar:hidden">{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {items.map((item) => {
+              const count = badges?.[item.to] ?? 0
+              return (
+                <SidebarMenuItem key={item.to}>
+                  <SidebarMenuButton asChild isActive={isActiveItem(seg, item)} tooltip={item.label}>
+                    <Link to={item.to}>
+                      <item.icon />
+                      <span className="truncate group-data-[state=collapsed]/sidebar:hidden">{item.label}</span>
+                      {count > 0 ? (
+                        <Badge variant="warning" className="ml-auto group-data-[state=collapsed]/sidebar:hidden">
+                          {count}
+                        </Badge>
+                      ) : null}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+            })}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

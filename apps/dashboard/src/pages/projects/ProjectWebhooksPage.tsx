@@ -6,7 +6,8 @@ import { Webhooks, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { formatDateTime, humanize } from '@/lib/utils'
 import { Loading, ErrorState, EmptyState } from '@/components/States'
-import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Pagination } from '@/components/Pagination'
+import { useConfirm } from '@/components/Confirm'
 import { Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -38,7 +39,7 @@ export default function ProjectWebhooksPage() {
   const {
     data: webhooks,
     page,
-    isLastPage,
+    pageCount,
     loading,
     error,
     update,
@@ -46,7 +47,7 @@ export default function ProjectWebhooksPage() {
   } = usePagination(
     (currentPage, pageSize) => Webhooks.list(organizationId, projectId!, { page: currentPage, limit: pageSize }),
     {
-      append: true,
+      append: false,
       initialPage: 1,
       initialPageSize: 15,
       data: (res) => res.data,
@@ -82,6 +83,7 @@ export default function ProjectWebhooksPage() {
     { immediate: false },
   )
 
+  const confirm = useConfirm()
   const {
     send: deleteWebhook,
     loading: deleting,
@@ -93,6 +95,15 @@ export default function ProjectWebhooksPage() {
   onDeleteSuccess(() => {
     void refreshWebhooks()
   })
+
+  const confirmDeleteWebhook = async (webhookId: string) => {
+    const ok = await confirm({
+      title: 'Delete webhook endpoint?',
+      description: 'Arkyc will stop delivering events to this endpoint.',
+      confirmLabel: 'Delete',
+    })
+    if (ok) await deleteWebhook(webhookId)
+  }
 
   const closeDialog = () => {
     setOpen(false)
@@ -174,7 +185,7 @@ export default function ProjectWebhooksPage() {
                               variant="destructive"
                               size="sm"
                               disabled={deleting}
-                              onClick={() => void deleteWebhook(webhook.id)}
+                              onClick={() => void confirmDeleteWebhook(webhook.id)}
                             >
                               Delete
                             </Button>
@@ -186,7 +197,7 @@ export default function ProjectWebhooksPage() {
                 </TBody>
               </Table>
 
-              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+              <Pagination page={page} pageCount={pageCount} onPage={(p) => update({ page: p })} loading={loading} />
             </>
           )}
         </CardContent>

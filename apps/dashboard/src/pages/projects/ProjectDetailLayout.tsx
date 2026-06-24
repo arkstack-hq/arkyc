@@ -1,10 +1,11 @@
+import { ErrorState, Loading, PageHeader } from '@/components/States'
 import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
-import { useRequest } from 'alova/client'
+import { cn, humanize } from '@/lib/utils'
+
+import { Badge } from '@/components/ui/badge'
 import { Projects } from '@/lib/api'
 import { useOrganizationId } from '@/contexts/organization-context'
-import { cn, humanize } from '@/lib/utils'
-import { PageHeader, Loading, ErrorState } from '@/components/States'
-import { Badge } from '@/components/ui/badge'
+import { useRequest } from 'alova/client'
 
 const TABS = [
   { to: '', label: 'Settings', end: true },
@@ -29,7 +30,7 @@ export default function ProjectDetailLayout() {
 
   return (
     <div className="p-6 lg:p-8">
-      <Link to="../" className="mb-3 inline-block text-sm text-muted-foreground hover:text-foreground">
+      <Link to="../projects" className="mb-3 inline-block text-sm text-muted-foreground hover:text-foreground">
         ← Projects
       </Link>
       <PageHeader

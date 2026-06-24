@@ -1,18 +1,28 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { usePagination, useRequest } from 'alova/client'
-import { Admin, type AdminUser } from '@/lib/api'
+import { Admin, type AdminUser, type UserStatus } from '@/lib/api'
 import { useAdmin } from '@/contexts/admin-context'
+import { useConfirm } from '@/components/Confirm'
 import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States'
-import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Pagination } from '@/components/Pagination'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatDateTime } from '@/lib/utils'
+import { ArrowDownRightFromSquareIcon, ShieldCloseIcon, ShieldUserIcon } from 'lucide-react'
+
+const STATUS_VARIANT: Record<UserStatus, 'success' | 'warning' | 'destructive'> = {
+  active: 'success',
+  restricted: 'warning',
+  suspended: 'destructive',
+}
 
 export default function AdminUsersPage() {
   const { can } = useAdmin()
+  const confirm = useConfirm()
   const canManage = can('admin.users.manage')
   const [search, setSearch] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -20,14 +30,14 @@ export default function AdminUsersPage() {
   const {
     data: users,
     page,
-    isLastPage,
+    pageCount,
     loading,
     error,
     update,
   } = usePagination(
     (currentPage, pageSize) => Admin.users({ page: currentPage, limit: pageSize, search: search || undefined }),
     {
-      append: true,
+      append: false,
       initialPage: 1,
       initialPageSize: 20,
       data: (res) => res.data,
@@ -37,16 +47,23 @@ export default function AdminUsersPage() {
   )
 
   const { send: grant } = useRequest((id: string) => Admin.grantUserAdmin(id), { immediate: false })
-  const { send: revoke } = useRequest((id: string) => Admin.revokeUserAdmin(id), {
-    immediate: false,
-  })
+  const { send: revoke } = useRequest((id: string) => Admin.revokeUserAdmin(id), { immediate: false })
 
   const toggleAdmin = async (user: AdminUser) => {
+    const ok = await confirm({
+      title: user.is_admin ? 'Revoke platform admin?' : 'Grant platform admin?',
+      description: user.is_admin
+        ? `Remove platform-admin access from ${user.name || user.email}.`
+        : `Give ${user.name || user.email} full platform-admin access.`,
+      confirmLabel: user.is_admin ? 'Revoke admin' : 'Make admin',
+      destructive: user.is_admin,
+    })
+    if (!ok) return
+
     setBusyId(user.id)
     try {
       if (user.is_admin) await revoke(user.id)
       else await grant(user.id)
-      // Optimistically flip the row; the list cache is invalidated by hitSource.
       update({ data: users.map((u) => (u.id === user.id ? { ...u, is_admin: !u.is_admin } : u)) })
     } finally {
       setBusyId(null)
@@ -82,38 +99,54 @@ export default function AdminUsersPage() {
                   <TR>
                     <TH>Name</TH>
                     <TH>Email</TH>
-                    <TH>Last login</TH>
-                    <TH>Platform admin</TH>
+                    <TH>Standing</TH>
                     <TH className="text-right">Actions</TH>
                   </TR>
                 </THead>
                 <TBody>
                   {users.map((user) => (
                     <TR key={user.id}>
-                      <TD className="font-medium">{user.name || '—'}</TD>
-                      <TD className="text-muted-foreground">{user.email}</TD>
-                      <TD className="whitespace-nowrap text-muted-foreground">
-                        {user.last_login_at ? formatDateTime(user.last_login_at) : '—'}
+                      <TD className="font-medium">
+                        <Link to={`/admin/users/${user.id}`} className="hover:underline">
+                          {user.name || '—'}
+                        </Link>
                       </TD>
-                      <TD>{user.is_admin ? <Badge>Admin</Badge> : <span className="text-muted-foreground">—</span>}</TD>
-                      <TD className="text-right">
-                        {canManage ? (
-                          <Button
-                            variant={user.is_admin ? 'outline' : 'default'}
-                            size="sm"
-                            disabled={busyId === user.id}
-                            onClick={() => void toggleAdmin(user)}
-                          >
-                            {busyId === user.id ? '…' : user.is_admin ? 'Revoke admin' : 'Make admin'}
-                          </Button>
+                      <TD className="text-muted-foreground">
+                        {user.email}
+                        {user.last_login_at ? (
+                          <p className="whitespace-nowrap text-muted-foreground">
+                            <small> Last seen {user.last_login_at ? formatDateTime(user.last_login_at) : '—'}</small>
+                          </p>
                         ) : null}
+                      </TD>
+                      <TD>
+                        <Badge variant={STATUS_VARIANT[user.status]}>{user.status}</Badge>
+                      </TD>
+                      <TD className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/admin/users/${user.id}`}>
+                              <ArrowDownRightFromSquareIcon />
+                            </Link>
+                          </Button>
+                          {canManage ? (
+                            <Button
+                              variant={user.is_admin ? 'outline' : 'default'}
+                              size="sm"
+                              disabled={busyId === user.id}
+                              onClick={() => void toggleAdmin(user)}
+                            >
+                              {busyId === user.id ? '…' : user.is_admin ? <ShieldCloseIcon /> : <ShieldUserIcon />}
+                            </Button>
+                          ) : null}
+                        </div>
                       </TD>
                     </TR>
                   ))}
                 </TBody>
               </Table>
 
-              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+              <Pagination page={page} pageCount={pageCount} onPage={(p) => update({ page: p })} loading={loading} />
             </>
           )}
         </CardContent>

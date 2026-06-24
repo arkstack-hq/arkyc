@@ -6,6 +6,9 @@ import { Sessions, fetchSessionMedia } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { useRealtimeChannel } from '@/contexts/realtime-context'
 import { PageHeader, Loading, ErrorState } from '@/components/States'
+import { useConfirm } from '@/components/Confirm'
+import { MediaLightbox, type MediaItem } from '@/components/MediaLightbox'
+import { Play } from 'lucide-react'
 import { StatusBadge, DecisionBadge } from '@/components/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -50,7 +53,18 @@ const num = (v: number | null | undefined, digits = 2) => (typeof v === 'number'
 const bool = (v: boolean | null | undefined) => (v == null ? '—' : v ? 'Passed' : 'Failed')
 
 /** Loads a private media artifact through the authenticated route as an object URL. */
-function SessionMedia({ organizationId, sessionId, kind }: { organizationId: string; sessionId: string; kind: string }) {
+function SessionMedia({
+  organizationId,
+  sessionId,
+  kind,
+  onOpen,
+}: {
+  organizationId: string
+  sessionId: string
+  kind: string
+  /** Open the media in the lightbox (makes the thumbnail clickable). */
+  onOpen?: () => void
+}) {
   const [url, setUrl] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
 
@@ -73,18 +87,51 @@ function SessionMedia({ organizationId, sessionId, kind }: { organizationId: str
     }
   }, [organizationId, sessionId, kind])
 
+  const interactive = !!onOpen && !failed && !!url
+
   return (
     <figure className="flex flex-col gap-1.5">
-      <div className="flex aspect-3/2 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+      <div
+        className={
+          'relative flex aspect-3/2 items-center justify-center overflow-hidden rounded-md border border-border bg-muted' +
+          (interactive ? ' cursor-pointer transition-shadow hover:ring-2 hover:ring-primary' : '')
+        }
+        role={interactive ? 'button' : undefined}
+        tabIndex={interactive ? 0 : undefined}
+        onClick={interactive ? onOpen : undefined}
+        onKeyDown={
+          interactive
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onOpen?.()
+                }
+              }
+            : undefined
+        }
+      >
         {failed ? (
           <span className="text-xs text-muted-foreground">Unavailable</span>
         ) : !url ? (
           <Spinner />
         ) : kind === 'video' ? (
-          <video src={url} controls className="h-full w-full object-contain" onError={() => setFailed(true)} />
+          // In a clickable grid the thumbnail opens the lightbox (which plays it
+          // with controls); without `onOpen` it stays inline-playable.
+          <video
+            src={url}
+            controls={!onOpen}
+            muted
+            className="h-full w-full object-contain"
+            onError={() => setFailed(true)}
+          />
         ) : (
           <img src={url} alt={kind} className="h-full w-full object-contain" onError={() => setFailed(true)} />
         )}
+        {interactive && kind === 'video' ? (
+          <span className="pointer-events-none absolute flex size-11 items-center justify-center rounded-full bg-black/50 text-white">
+            <Play className="size-5" />
+          </span>
+        ) : null}
       </div>
       <figcaption className="text-xs text-muted-foreground">{humanize(kind)}</figcaption>
     </figure>
@@ -94,9 +141,11 @@ function SessionMedia({ organizationId, sessionId, kind }: { organizationId: str
 export default function SessionDetailPage() {
   const organizationId = useOrganizationId()
   const { can } = useOrganization()
+  const confirm = useConfirm()
   const { sessionId } = useParams()
   const [reason, setReason] = useState('')
   const [retryKind, setRetryKind] = useState<'document' | 'selfie' | 'full'>('full')
+  const [lightbox, setLightbox] = useState<number | null>(null)
 
   const {
     data: raw,
@@ -131,8 +180,22 @@ export default function SessionDetailPage() {
     void send()
   })
 
+  const rejectWithConfirm = async () => {
+    const ok = await confirm({
+      title: 'Reject verification?',
+      description: 'This marks the verification as failed for the end user.',
+      confirmLabel: 'Reject',
+    })
+    if (ok) await act('reject')
+  }
+
   const media = Array.isArray(data?.media) ? data.media : []
   const images = IMAGE_KINDS.filter((k) => media.includes(k))
+  // Ordered list backing the lightbox: images first, then the liveness video.
+  const mediaItems: MediaItem[] = [
+    ...images.map((kind) => ({ kind })),
+    ...(media.includes('video') ? [{ kind: 'video' }] : []),
+  ]
   const ocrFields = data?.ocr?.fields ?? null
   const canReview = can('reviews.approve') || can('reviews.reject') || can('reviews.request_retry')
 
@@ -198,13 +261,24 @@ export default function SessionDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {images.map((kind) => (
-                    <SessionMedia key={kind} organizationId={organizationId} sessionId={data.id} kind={kind} />
+                  {images.map((kind, i) => (
+                    <SessionMedia
+                      key={kind}
+                      organizationId={organizationId}
+                      sessionId={data.id}
+                      kind={kind}
+                      onOpen={() => setLightbox(i)}
+                    />
                   ))}
                 </div>
                 {media.includes('video') ? (
                   <div className="mt-4 max-w-md">
-                    <SessionMedia organizationId={organizationId} sessionId={data.id} kind="video" />
+                    <SessionMedia
+                      organizationId={organizationId}
+                      sessionId={data.id}
+                      kind="video"
+                      onOpen={() => setLightbox(images.length)}
+                    />
                   </div>
                 ) : null}
               </CardContent>
@@ -262,7 +336,7 @@ export default function SessionDetailPage() {
                     </Button>
                   ) : null}
                   {can('reviews.reject') ? (
-                    <Button variant="destructive" onClick={() => void act('reject')} disabled={acting}>
+                    <Button variant="destructive" onClick={() => void rejectWithConfirm()} disabled={acting}>
                       Reject
                     </Button>
                   ) : null}
@@ -291,6 +365,17 @@ export default function SessionDetailPage() {
             </Card>
           ) : null}
         </div>
+      ) : null}
+
+      {lightbox != null && data ? (
+        <MediaLightbox
+          items={mediaItems}
+          index={lightbox}
+          organizationId={organizationId}
+          sessionId={data.id}
+          onIndex={setLightbox}
+          onClose={() => setLightbox(null)}
+        />
       ) : null}
     </div>
   )

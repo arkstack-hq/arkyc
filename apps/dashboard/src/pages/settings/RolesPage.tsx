@@ -4,7 +4,7 @@ import { useForm, usePagination } from 'alova/client'
 import { Roles, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
-import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Pagination } from '@/components/Pagination'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
@@ -22,13 +22,13 @@ export default function RolesPage() {
   const {
     data: roles,
     page,
-    isLastPage,
+    pageCount,
     loading,
     error,
     update,
     reload: refreshRoles,
   } = usePagination((currentPage, pageSize) => Roles.list(organizationId, { page: currentPage, limit: pageSize }), {
-    append: true,
+    append: false,
     initialPage: 1,
     initialPageSize: 15,
     data: (res) => res.data,
@@ -116,7 +116,7 @@ export default function RolesPage() {
                 </TBody>
               </Table>
 
-              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+              <Pagination page={page} pageCount={pageCount} onPage={(p) => update({ page: p })} loading={loading} />
             </>
           )}
         </CardContent>

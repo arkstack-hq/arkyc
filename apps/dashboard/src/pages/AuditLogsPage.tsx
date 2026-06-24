@@ -3,7 +3,7 @@ import { usePagination } from 'alova/client'
 import { AuditLogs } from '@/lib/api'
 import { useOrganizationId } from '@/contexts/organization-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
-import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Pagination } from '@/components/Pagination'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
@@ -18,7 +18,7 @@ export default function AuditLogsPage() {
   const {
     data: logs,
     page,
-    isLastPage,
+    pageCount,
     loading,
     error,
     update,
@@ -31,7 +31,7 @@ export default function AuditLogsPage() {
         entity_type: entityType || undefined,
       }),
     {
-      append: true,
+      append: false,
       initialPage: 1,
       initialPageSize: 15,
       data: (res) => res.data,
@@ -100,7 +100,7 @@ export default function AuditLogsPage() {
                 </TBody>
               </Table>
 
-              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+              <Pagination page={page} pageCount={pageCount} onPage={(p) => update({ page: p })} loading={loading} />
             </>
           )}
         </CardContent>

@@ -6,7 +6,8 @@ import { Sessions } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { useRealtimeChannel } from '@/contexts/realtime-context'
 import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
-import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { useConfirm } from '@/components/Confirm'
+import { Pagination } from '@/components/Pagination'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -20,6 +21,7 @@ type Action = 'approve' | 'reject' | 'retry'
 export default function ReviewsPage() {
   const organizationId = useOrganizationId()
   const { organization, can } = useOrganization()
+  const confirm = useConfirm()
 
   const [noteFor, setNoteFor] = useState<string | null>(null)
   const [actingId, setActingId] = useState<string | null>(null)
@@ -31,7 +33,7 @@ export default function ReviewsPage() {
     error,
     refresh,
     page,
-    isLastPage,
+    pageCount,
     update,
   } = usePagination(
     (currentPage, pageSize) =>
@@ -41,7 +43,7 @@ export default function ReviewsPage() {
         status: 'requires_review',
       }),
     {
-      append: true,
+      append: false,
       initialPage: 1,
       initialPageSize: 15,
       data: (res) => res.data,
@@ -89,7 +91,15 @@ export default function ReviewsPage() {
     void refresh(page)
   })
 
-  const runAction = (id: string, act: Action) => {
+  const runAction = async (id: string, act: Action) => {
+    if (act === 'reject') {
+      const ok = await confirm({
+        title: 'Reject verification?',
+        description: 'This marks the verification as failed for the end user.',
+        confirmLabel: 'Reject',
+      })
+      if (!ok) return
+    }
     setActingId(id)
     void sendAction(id, act)
   }
@@ -129,6 +139,7 @@ export default function ReviewsPage() {
                           <Link to={sessionPath(s.id)} className="text-primary hover:underline">
                             {s.user_reference ?? '—'}
                           </Link>
+                          {s.name ? <div className="text-xs text-muted-foreground">{s.name}</div> : null}
                         </TD>
                         <TD>{humanize(s.decision_reason)}</TD>
                         <TD>{s.risk_score?.toFixed(2) ?? '—'}</TD>
@@ -141,7 +152,7 @@ export default function ReviewsPage() {
                                 size="sm"
                                 variant="default"
                                 disabled={pending}
-                                onClick={() => runAction(s.id, 'approve')}
+                                onClick={() => void runAction(s.id, 'approve')}
                               >
                                 Approve
                               </Button>
@@ -151,7 +162,7 @@ export default function ReviewsPage() {
                                 size="sm"
                                 variant="destructive"
                                 disabled={pending}
-                                onClick={() => runAction(s.id, 'reject')}
+                                onClick={() => void runAction(s.id, 'reject')}
                               >
                                 Reject
                               </Button>
@@ -161,7 +172,7 @@ export default function ReviewsPage() {
                                 size="sm"
                                 variant="outline"
                                 disabled={pending}
-                                onClick={() => runAction(s.id, 'retry')}
+                                onClick={() => void runAction(s.id, 'retry')}
                               >
                                 Retry
                               </Button>
@@ -187,7 +198,7 @@ export default function ReviewsPage() {
                 </TBody>
               </Table>
 
-              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+              <Pagination page={page} pageCount={pageCount} onPage={(p) => update({ page: p })} loading={loading} />
             </>
           )}
         </CardContent>

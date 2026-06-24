@@ -26,7 +26,10 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     initialData: [],
   })
 
-  const organization = useMemo(() => organizations.find((x) => x.slug === organizationSlug) ?? null, [organizations, organizationSlug])
+  const organization = useMemo(
+    () => organizations.find((x) => x.slug === organizationSlug) ?? null,
+    [organizations, organizationSlug],
+  )
 
   // Effective permissions depend on the active organization id (reactive state).
   // `immediate` must be true when an organization is already resolved on mount (warm

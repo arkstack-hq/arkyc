@@ -14,11 +14,15 @@ export interface AdminSettingsPatch {
   capture?: Partial<GlobalSettings['capture']>
 }
 
-/** A platform user row in the admin users list. */
+/** Account standing. */
+export type UserStatus = 'active' | 'restricted' | 'suspended'
+
+/** A platform user row in the admin users list / detail. */
 export interface AdminUser {
   id: string
   name: string
   email: string
+  status: UserStatus
   last_login_at: string | null
   email_verified_at: string | null
   created_at: string
@@ -82,12 +86,12 @@ export class Admin {
     })
   }
 
-  /** List every organization on the platform. */
-  static organizations() {
-    return alova.Get('/v1/admin/organizations', {
+  /** Paginated list of every organization on the platform, newest first. */
+  static organizations(query?: { page?: number; limit?: number }) {
+    return alova.Get<Paginated<Organization>>('/v1/admin/organizations', {
       name: 'admin:organizations',
       cacheFor: CACHE,
-      transform: unwrap<Organization[]>,
+      params: params(query as Record<string, unknown>),
     })
   }
 
@@ -96,8 +100,18 @@ export class Admin {
     return alova.Get<Paginated<AdminUser>>('/v1/admin/users', {
       name: 'admin:users',
       cacheFor: CACHE,
-      hitSource: ['admin:users:grant', 'admin:users:revoke'],
+      hitSource: ['admin:users:grant', 'admin:users:revoke', 'admin:user:status'],
       params: params(query as Record<string, unknown>),
+    })
+  }
+
+  /** A single platform user (admin standing + account status). */
+  static user(userId: string) {
+    return alova.Get(`/v1/admin/users/${userId}`, {
+      name: 'admin:user',
+      cacheFor: CACHE,
+      hitSource: ['admin:users:grant', 'admin:users:revoke', 'admin:user:status', 'admin:user:password'],
+      transform: unwrap<AdminUser>,
     })
   }
 
@@ -113,6 +127,20 @@ export class Admin {
     return alova.Delete<unknown>(`/v1/admin/users/${userId}/admin`, undefined, {
       name: 'admin:users:revoke',
     })
+  }
+
+  /** Set a user's account standing (`active` / `restricted` / `suspended`). */
+  static setUserStatus(userId: string, status: UserStatus) {
+    return alova.Post(
+      `/v1/admin/users/${userId}/status`,
+      { status },
+      { name: 'admin:user:status', transform: unwrap<AdminUser> },
+    )
+  }
+
+  /** Set a new password for a user (admin reset). */
+  static resetUserPassword(userId: string, password: string) {
+    return alova.Post<unknown>(`/v1/admin/users/${userId}/password`, { password }, { name: 'admin:user:password' })
   }
 
   /** Paginated platform-admin audit log, newest first. */

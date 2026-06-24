@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Check, Copy, Workflow as WorkflowIcon } from 'lucid
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States'
+import { useConfirm } from '@/components/Confirm'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import type { Workflow, WorkflowStep, WorkflowStepKey } from '@arkyc/types'
@@ -120,15 +121,21 @@ function WorkflowCard({
   onDeleted: () => void
   organizationId: string
 }) {
+  const confirm = useConfirm()
   const { send: remove, loading: deleting } = useRequest(() => Workflows.remove(organizationId, workflow.id), {
     immediate: false,
   })
 
   const onDelete = useCallback(async () => {
-    if (!window.confirm(`Delete the workflow "${workflow.name}"? In-flight sessions keep their settings.`)) return
+    const ok = await confirm({
+      title: 'Delete workflow?',
+      description: `Delete the workflow “${workflow.name}”. In-flight sessions keep their settings.`,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
     await remove()
     onDeleted()
-  }, [remove, onDeleted, workflow.name])
+  }, [confirm, remove, onDeleted, workflow.name])
 
   return (
     <Card>

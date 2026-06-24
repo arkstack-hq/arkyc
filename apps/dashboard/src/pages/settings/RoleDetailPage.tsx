@@ -18,7 +18,11 @@ export default function RoleDetailPage() {
 
   const { data: role, loading: roleLoading, error: roleError } = useRequest(Roles.get(organizationId, roleId))
 
-  const { data: catalogue, loading: catalogueLoading, error: catalogueError } = useRequest(Permissions.list(organizationId))
+  const {
+    data: catalogue,
+    loading: catalogueLoading,
+    error: catalogueError,
+  } = useRequest(Permissions.list(organizationId))
 
   if (roleLoading || catalogueLoading) return <Loading />
   if (roleError) return <ErrorState error={roleError} />

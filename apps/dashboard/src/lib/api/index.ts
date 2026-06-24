@@ -9,7 +9,9 @@
 
 export { ApiKeys } from './api-keys'
 export { Admin } from './admin'
-export type { AdminMe, AdminSettingsPatch, AdminUser } from './admin'
+export type { AdminMe, AdminSettingsPatch, AdminUser, UserStatus } from './admin'
+export { AiAccess } from './ai-access'
+export type { AiAccessGrant, AiAccessStatus, AdminOrganizationDetail, AdminProject } from './ai-access'
 export { Auth } from './auth'
 export type { TwoFactorChallenge, TwoFactorMethod, TwoFactorStatus } from './auth'
 export { AuditLogs } from './audit-logs'

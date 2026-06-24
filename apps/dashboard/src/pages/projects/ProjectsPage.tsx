@@ -1,22 +1,23 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useForm, usePagination } from 'alova/client'
-import type { ProjectEnvironment } from '@arkyc/types'
-import { Boxes } from 'lucide-react'
-import { Projects, errorMessage } from '@/lib/api'
-import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
-import { formatDateTime, humanize } from '@/lib/utils'
-import { PageHeader, Loading, ErrorState, EmptyState } from '@/components/States'
-import { InfiniteScroll } from '@/components/InfiniteScroll'
-import { Button } from '@/components/ui/button'
+import { Boxes, Sparkles } from 'lucide-react'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import { Projects, errorMessage } from '@/lib/api'
+import { formatDateTime, humanize } from '@/lib/utils'
+import { useForm, usePagination } from 'alova/client'
+import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
+
 import { Badge } from '@/components/ui/badge'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Link } from 'react-router-dom'
+import { Pagination } from '@/components/Pagination'
+import type { ProjectEnvironment } from '@arkyc/types'
+import { Select } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
-import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { useState } from 'react'
 
 const ENVIRONMENTS: ProjectEnvironment[] = ['production', 'staging', 'development']
 
@@ -33,13 +34,13 @@ export default function ProjectsPage() {
   const {
     data: projects,
     page,
-    isLastPage,
+    pageCount,
     loading,
     error,
     update,
     reload,
   } = usePagination((currentPage, pageSize) => Projects.list(organizationId, { page: currentPage, limit: pageSize }), {
-    append: true,
+    append: false,
     initialPage: 1,
     initialPageSize: 15,
     data: (res) => res.data,
@@ -102,7 +103,9 @@ export default function ProjectsPage() {
                         <p className="text-xs text-muted-foreground">{humanize(project.environment)}</p>
                       </div>
                     </div>
-                    <Badge variant={statusVariant(project.status)}>{humanize(project.status)}</Badge>
+                    <Badge variant={statusVariant(project.status)}>
+                      {humanize(project.status)} {project.has_ai_grant ? <Sparkles size={12} className="ml-1" /> : null}
+                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1">
@@ -117,7 +120,7 @@ export default function ProjectsPage() {
             ))}
           </div>
 
-          <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+          <Pagination page={page} pageCount={pageCount} onPage={(p) => update({ page: p })} loading={loading} />
         </>
       )}
 

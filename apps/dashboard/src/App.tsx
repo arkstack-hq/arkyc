@@ -4,7 +4,10 @@ import AdminAuditLogsPage from '@/pages/admin/AdminAuditLogsPage'
 import { AdminLayout } from '@/components/AdminLayout'
 import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
 import AdminOrganizationsPage from '@/pages/admin/AdminOrganizationsPage'
+import AdminOrganizationDetailPage from '@/pages/admin/AdminOrganizationDetailPage'
+import AdminAiAccessPage from '@/pages/admin/AdminAiAccessPage'
 import AdminUsersPage from '@/pages/admin/AdminUsersPage'
+import AdminUserDetailPage from '@/pages/admin/AdminUserDetailPage'
 import AuditLogsPage from '@/pages/AuditLogsPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import { Loading } from '@/components/States'
@@ -136,7 +139,10 @@ export default function App() {
         <Route index element={<Navigate to="settings" replace />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="organizations" element={<AdminOrganizationsPage />} />
+        <Route path="organizations/:organizationId" element={<AdminOrganizationDetailPage />} />
+        <Route path="ai-access" element={<AdminAiAccessPage />} />
         <Route path="users" element={<AdminUsersPage />} />
+        <Route path="users/:userId" element={<AdminUserDetailPage />} />
         <Route path="audit-logs" element={<AdminAuditLogsPage />} />
       </Route>
 

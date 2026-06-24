@@ -5,7 +5,8 @@ import { ApiKeys, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { formatDateTime } from '@/lib/utils'
 import { Loading, ErrorState, EmptyState } from '@/components/States'
-import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Pagination } from '@/components/Pagination'
+import { useConfirm } from '@/components/Confirm'
 import { KeyRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -23,7 +24,7 @@ export default function ProjectApiKeysPage() {
   const {
     data: keys,
     page,
-    isLastPage,
+    pageCount,
     loading,
     error,
     update,
@@ -31,7 +32,7 @@ export default function ProjectApiKeysPage() {
   } = usePagination(
     (currentPage, pageSize) => ApiKeys.list(organizationId, projectId!, { page: currentPage, limit: pageSize }),
     {
-      append: true,
+      append: false,
       initialPage: 1,
       initialPageSize: 15,
       data: (res) => res.data,
@@ -62,6 +63,7 @@ export default function ProjectApiKeysPage() {
     void refreshKeys()
   })
 
+  const confirm = useConfirm()
   const {
     send: revokeKey,
     loading: revoking,
@@ -69,6 +71,15 @@ export default function ProjectApiKeysPage() {
   } = useRequest((keyId: string) => ApiKeys.revoke(organizationId, projectId!, keyId), {
     immediate: false,
   })
+
+  const confirmRevoke = async (key: { id: string; name: string }) => {
+    const ok = await confirm({
+      title: 'Revoke API key?',
+      description: `Revoke “${key.name}”. Any integration using it will immediately stop working.`,
+      confirmLabel: 'Revoke',
+    })
+    if (ok) await revokeKey(key.id)
+  }
 
   onRevokeSuccess(() => {
     void refreshKeys()
@@ -130,7 +141,7 @@ export default function ProjectApiKeysPage() {
                             variant="destructive"
                             size="sm"
                             disabled={revoking}
-                            onClick={() => void revokeKey(key.id)}
+                            onClick={() => void confirmRevoke(key)}
                           >
                             Revoke
                           </Button>
@@ -141,7 +152,7 @@ export default function ProjectApiKeysPage() {
                 </TBody>
               </Table>
 
-              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+              <Pagination page={page} pageCount={pageCount} onPage={(p) => update({ page: p })} loading={loading} />
             </>
           )}
         </CardContent>

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState, Loading, PageHeader } from '@/components/States'
+import { useConfirm } from '@/components/Confirm'
 import { Link, useParams } from 'react-router-dom'
 import { Members, Permissions, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
@@ -40,6 +41,7 @@ export default function MemberPermissionsPage() {
     void refreshPerms()
   })
 
+  const confirm = useConfirm()
   const {
     send: removePermission,
     loading: removing,
@@ -48,6 +50,15 @@ export default function MemberPermissionsPage() {
   } = useRequest((permission: PermissionKey) => Members.removePermission(organizationId, memberId, permission), {
     immediate: false,
   })
+
+  const confirmRemove = async (permission: PermissionKey) => {
+    const ok = await confirm({
+      title: 'Remove permission?',
+      description: `Remove the “${permission}” permission from this member.`,
+      confirmLabel: 'Remove',
+    })
+    if (ok) await removePermission(permission)
+  }
 
   onRemoveSuccess(() => {
     void refreshPerms()
@@ -114,7 +125,7 @@ export default function MemberPermissionsPage() {
                         aria-label={`Remove ${p}`}
                         className="text-muted-foreground hover:text-destructive disabled:opacity-50"
                         disabled={removing}
-                        onClick={() => void removePermission(p)}
+                        onClick={() => void confirmRemove(p)}
                       >
                         ✕
                       </button>

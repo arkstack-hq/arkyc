@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { usePagination } from 'alova/client'
 import { Admin } from '@/lib/api'
 import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States'
-import { InfiniteScroll } from '@/components/InfiniteScroll'
+import { Pagination } from '@/components/Pagination'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
@@ -14,7 +14,7 @@ export default function AdminAuditLogsPage() {
   const {
     data: logs,
     page,
-    isLastPage,
+    pageCount,
     loading,
     error,
     update,
@@ -26,7 +26,7 @@ export default function AdminAuditLogsPage() {
         action: action || undefined,
       }),
     {
-      append: true,
+      append: false,
       initialPage: 1,
       initialPageSize: 20,
       data: (res) => res.data,
@@ -80,7 +80,7 @@ export default function AdminAuditLogsPage() {
                 </TBody>
               </Table>
 
-              <InfiniteScroll onLoadMore={() => update({ page: page + 1 })} isLast={isLastPage} loading={loading} />
+              <Pagination page={page} pageCount={pageCount} onPage={(p) => update({ page: p })} loading={loading} />
             </>
           )}
         </CardContent>

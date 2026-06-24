@@ -54,7 +54,11 @@ export class Sessions {
   }
 
   /** Ask the user to retry part of the flow. `kind` is required by the API. */
-  static requestRetry(organizationId: string, id: string, input: { kind: 'document' | 'selfie' | 'full'; reason?: string }) {
+  static requestRetry(
+    organizationId: string,
+    id: string,
+    input: { kind: 'document' | 'selfie' | 'full'; reason?: string },
+  ) {
     return alova.Post<unknown>(`${t(organizationId)}/sessions/${id}/request-retry`, input, {
       name: 'session:retry',
     })
