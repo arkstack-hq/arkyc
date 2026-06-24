@@ -45,6 +45,27 @@ const STEP_INSTRUCTIONS: Partial<Record<WidgetStep, { title: string; body: strin
  * terminal result it surfaces the outcome and (in hosted mode) posts
  * `arkyc:complete` / `arkyc:error` / `arkyc:close` to the parent window.
  */
+/**
+ * Re-base the server-resolved project logo onto the API origin the widget is
+ * actually talking to. The stored `logo_url` carries the API's own host, which a
+ * handed-off phone cannot reach — it reaches the API through the absolute
+ * `baseUrl` passed in the handoff link. Rewriting the origin (keeping the path)
+ * makes the logo load on whatever device runs the widget. Only applied when
+ * `baseUrl` is absolute; the integrator's own branding is never re-based.
+ */
+function rebaseBrandingLogo<T extends { logo_url?: string | null }>(branding: T, baseUrl: string | undefined): T {
+  const logo = branding.logo_url
+  if (!logo || !baseUrl || !/^https?:\/\//i.test(baseUrl)) return branding
+  try {
+    const base = new URL(baseUrl)
+    const resolved = new URL(logo, base)
+    if (resolved.origin === base.origin) return branding
+    return { ...branding, logo_url: `${base.origin}${resolved.pathname}${resolved.search}${resolved.hash}` }
+  } catch {
+    return branding
+  }
+}
+
 export class WidgetController {
   private readonly client: ArkycClient
   private readonly view: WidgetView
@@ -282,7 +303,8 @@ export class WidgetController {
     this.workflow = session.workflow ?? null
     // Theme from the project's branding (server-resolved) unless the integrator
     // passed branding explicitly — their value wins.
-    if (this.config.branding == null && session.branding) this.view.applyBranding(session.branding)
+    if (this.config.branding == null && session.branding)
+      this.view.applyBranding(rebaseBrandingLogo(session.branding, this.config.baseUrl))
     this.observe(session.status)
     if (Flow.isTerminal(session.status)) return this.showTerminal(session.status)
     this.resolveLiveness(session)
