@@ -1,6 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AnthropicOcrDriver, OcrDriverFactory, scoreConfidence } from '../src/index'
+import type { OcrAuthenticity } from '@arkyc/types'
+import { AnthropicOcrDriver, OcrDriverFactory, applyAuthenticity, scoreConfidence } from '../src/index'
 import type { AiVisionExtract } from '../src/index'
+
+const genuine: OcrAuthenticity = {
+  genuine: true,
+  confidence: 1,
+  screenReplay: false,
+  photocopy: false,
+  digitalTampering: false,
+  physicalTampering: false,
+  observations: [],
+}
 
 const image = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3])
 
@@ -48,15 +59,38 @@ describe('ai ocr driver', () => {
     expect(result.fields.firstName).toBe('Grace')
     expect(result.fields.lastName).toBeUndefined()
   })
+
+  it('surfaces a genuine authenticity read without touching confidence', async () => {
+    const extract: AiVisionExtract = async () => ({ fields: fullFields, legibility: 1, authenticity: genuine })
+    const result = await new AnthropicOcrDriver({ extract }).extract({ image })
+    expect(result.authenticity?.genuine).toBe(true)
+    expect(result.confidence).toBeCloseTo(1, 5)
+    expect((result.raw as { authenticity: OcrAuthenticity }).authenticity.genuine).toBe(true)
+  })
+
+  it('caps confidence into the review band when authenticity is flagged', async () => {
+    const flagged: OcrAuthenticity = {
+      ...genuine,
+      genuine: false,
+      confidence: 0.15,
+      screenReplay: true,
+      observations: ['visible moiré pattern'],
+    }
+    const extract: AiVisionExtract = async () => ({ fields: fullFields, legibility: 1, authenticity: flagged })
+    const result = await new AnthropicOcrDriver({ extract }).extract({ image })
+    // A clean field read (≈1) is pulled down so the session routes to review.
+    expect(result.confidence).toBeLessThanOrEqual(0.5)
+    expect(result.authenticity?.screenReplay).toBe(true)
+  })
 })
 
 describe('ai ocr driver — http retry/timeout', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  const toolResponse = () =>
+  const toolResponse = (input: Record<string, unknown> = fullFields) =>
     new Response(
       JSON.stringify({
-        content: [{ type: 'tool_use', name: 'read_document', input: fullFields }],
+        content: [{ type: 'tool_use', name: 'read_document', input }],
       }),
       { status: 200, headers: { 'content-type': 'application/json' } },
     )
@@ -73,6 +107,33 @@ describe('ai ocr driver — http retry/timeout', () => {
     expect(result.fields.firstName).toBe('Ada')
     // Each attempt carries an abort signal (the per-request timeout).
     expect((fetchMock.mock.calls[0][1] as RequestInit).signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('maps the model authenticity flags off the tool response', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      toolResponse({
+        ...fullFields,
+        digitalTampering: true,
+        authenticityConfidence: 0.1,
+        authenticityObservations: ['date font does not match', '   ', 42],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await new AnthropicOcrDriver({ apiKey: 'k' }).extract({ image })
+    expect(result.authenticity?.genuine).toBe(false)
+    expect(result.authenticity?.digitalTampering).toBe(true)
+    expect(result.authenticity?.observations).toEqual(['date font does not match'])
+    expect(result.confidence).toBeLessThanOrEqual(0.5)
+  })
+
+  it('omits authenticity entirely when the model reports nothing about it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(toolResponse())
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await new AnthropicOcrDriver({ apiKey: 'k' }).extract({ image })
+    expect(result.authenticity).toBeUndefined()
+    expect(result.confidence).toBeCloseTo(1, 5)
   })
 
   it('gives up after the retry budget and surfaces the error', async () => {
@@ -109,5 +170,26 @@ describe('scoreConfidence', () => {
   it('needs a document number of at least four characters', () => {
     expect(scoreConfidence({ documentNumber: 'AB' })).toBe(0)
     expect(scoreConfidence({ documentNumber: 'X1234567' })).toBeCloseTo(0.22, 5)
+  })
+})
+
+describe('applyAuthenticity', () => {
+  it('leaves the score untouched when genuine or unassessed', () => {
+    expect(applyAuthenticity(1, undefined)).toBe(1)
+    expect(applyAuthenticity(0.9, genuine)).toBe(0.9)
+  })
+
+  it('caps a flagged document at the suspect ceiling and the model confidence', () => {
+    const flagged = { ...genuine, genuine: false, confidence: 0.15, photocopy: true }
+    expect(applyAuthenticity(1, flagged)).toBeCloseTo(0.15, 5)
+    // Even an over-confident model can't push a flagged doc above the 0.5 ceiling.
+    expect(applyAuthenticity(1, { ...flagged, confidence: 0.95 })).toBeCloseTo(0.5, 5)
+  })
+
+  it('never raises a low field score', () => {
+    expect(applyAuthenticity(0.3, { ...genuine, genuine: false, confidence: 0.95, photocopy: true })).toBeCloseTo(
+      0.3,
+      5,
+    )
   })
 })

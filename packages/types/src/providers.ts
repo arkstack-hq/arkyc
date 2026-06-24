@@ -14,11 +14,35 @@ export interface OcrFields {
   nationality?: string
 }
 
+/**
+ * Best-effort, image-only authenticity read from an OCR driver capable of it
+ * (the `ai` vision driver). Advisory anti-spoofing signals — a flagged document
+ * is routed to manual review, never auto-rejected on the model's say-so.
+ */
+export interface OcrAuthenticity {
+  /** False when any tamper/replay signal fired. */
+  genuine: boolean
+  /** Model's authenticity confidence in [0, 1]: 1 = clearly an original, 0 = clearly fake/replayed. */
+  confidence: number
+  /** Looks like a photo of a screen (moiré, screen glare/banding, bezel) — a replay attack. */
+  screenReplay: boolean
+  /** Looks like a photo/scan of a printout or photocopy rather than the physical document. */
+  photocopy: boolean
+  /** Signs of digital editing (mismatched fonts, misaligned/recoloured text, cloned regions, edited photo/dates). */
+  digitalTampering: boolean
+  /** Signs of physical tampering (substituted photo, peeled laminate, scratched/overwritten fields). */
+  physicalTampering: boolean
+  /** Brief human-readable observations supporting the flags. */
+  observations: string[]
+}
+
 /** The shape returned by any OCR driver. */
 export interface OcrResultData {
   fields: OcrFields
   /** Overall extraction confidence in [0, 1]. */
   confidence: number
+  /** Best-effort authenticity assessment, when the driver supports it. */
+  authenticity?: OcrAuthenticity
   /** Raw provider payload, retained for audit/debugging. */
   raw?: unknown
 }

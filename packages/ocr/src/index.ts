@@ -17,6 +17,7 @@ export {
   AnthropicOcrDriver,
   anthropicVision,
   scoreConfidence,
+  applyAuthenticity,
   DEFAULT_AI_MODEL,
   type AnthropicOcrOptions,
   type AiVisionExtract,

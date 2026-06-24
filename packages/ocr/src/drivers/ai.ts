@@ -1,35 +1,53 @@
-import type { DocumentType, OcrFields, OcrResultData } from '@arkyc/types'
+import type { DocumentType, OcrAuthenticity, OcrFields, OcrResultData } from '@arkyc/types'
 import type { OcrDriver, OcrRequest } from '../types'
 
 const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
 
-/** Anthropic's default API base; override for a gateway/proxy. */
+/**
+ * Anthropic's default API base; override for a gateway/proxy.
+ */
 const DEFAULT_BASE_URL = 'https://api.anthropic.com'
-/** A small, cheap vision model is plenty for reading printed/MRZ document text. */
+
+/**
+ * A small, cheap vision model is plenty for reading printed/MRZ document text.
+ */
 export const DEFAULT_AI_MODEL = 'claude-haiku-4-5-20251001'
+
 /**
  * Longest edge (px) we upload. The API downsamples anything larger anyway and
  * bills by the resampled size, so this is a cost/bandwidth bound, not a quality
  * one — small enough to be cheap, large enough to keep the MRZ legible.
  */
 const DEFAULT_MAX_EDGE = 1568
-/** Per-attempt request timeout (ms) — a hung connection must not stall a worker. */
+
+/**
+ * Per-attempt request timeout (ms) — a hung connection must not stall a worker.
+ */
 const DEFAULT_TIMEOUT_MS = 30_000
-/** Bounded in-driver retries on rate-limit/overload; the job queue retries beyond. */
+
+/**
+ * Bounded in-driver retries on rate-limit/overload; the job queue retries beyond.
+ */
 const DEFAULT_MAX_RETRIES = 2
 
-/** A base64 image ready for the messages API, with its detected media type. */
+/**
+ * A base64 image ready for the messages API, with its detected media type.
+ */
 interface PreparedImage {
   mediaType: 'image/jpeg' | 'image/png' | 'image/webp'
   data: string
 }
 
-/** Raw fields the vision model returned, before validation/scoring. */
+/**
+ * Raw fields the vision model returned, before validation/scoring.
+ */
 export interface AiExtraction {
   fields: OcrFields
   /** The model's own legibility self-assessment in [0, 1], if it gave one. */
   legibility?: number
   documentType?: DocumentType | null
+  /** Best-effort tamper/replay read; omitted when the model reported nothing. */
+  authenticity?: OcrAuthenticity
 }
 
 /**
@@ -66,7 +84,11 @@ export interface AnthropicOcrOptions {
  * decision engine's `ocrConfidenceThreshold` is meaningful. The model's own
  * legibility read is folded in only as a small soft penalty.
  *
- * This reads the document; it does not assess authenticity/tampering.
+ * It also asks the model for a best-effort, image-only authenticity read
+ * (screen-replay, photocopy, digital/physical tampering). That signal is
+ * advisory: a fired flag only *caps* the OCR confidence (see
+ * {@link applyAuthenticity}) so a suspicious document routes to manual review —
+ * an LLM's authenticity guess never auto-rejects a user on its own.
  */
 export class AnthropicOcrDriver implements OcrDriver {
   readonly name = 'ai'
@@ -98,16 +120,19 @@ export class AnthropicOcrDriver implements OcrDriver {
     const images = await this.prepareImages(request)
     const raw = await this.vision(request, images)
     const fields = normalizeFields(raw.fields)
-    const confidence = scoreConfidence(fields, raw.legibility)
+    const authenticity = raw.authenticity
+    const confidence = applyAuthenticity(scoreConfidence(fields, raw.legibility), authenticity)
 
     return {
       fields,
       confidence,
+      ...(authenticity ? { authenticity } : {}),
       raw: {
         provider: 'ai',
         model: this.model,
         legibility: raw.legibility ?? null,
         documentType: raw.documentType ?? request.documentType ?? null,
+        authenticity: authenticity ?? null,
       },
     }
   }
@@ -172,11 +197,58 @@ export function scoreConfidence(fields: OcrFields, legibility?: number): number 
   return clamp01(base * (0.85 + 0.15 * legible))
 }
 
+/**
+ * Hard ceiling on OCR confidence once any authenticity flag fires. Below the
+ * default `ocrConfidenceThreshold` (0.8), so a flagged document routes to manual
+ * review regardless of how cleanly its fields read.
+ */
+const SUSPECT_CONFIDENCE_CEILING = 0.5
+
+/**
+ * Fold the authenticity read into the field-derived confidence. Only ever lowers
+ * the score, and only when a concrete flag fired — a genuine (or unassessed)
+ * document is returned untouched. A flagged document is capped at both the
+ * model's own authenticity confidence and {@link SUSPECT_CONFIDENCE_CEILING},
+ * which lands it in manual review rather than auto-approval. This is deliberately
+ * conservative: the LLM's authenticity guess can demote, never reject outright.
+ *
+ * @param fieldScore
+ * @param authenticity
+ * @returns
+ */
+export function applyAuthenticity(fieldScore: number, authenticity?: OcrAuthenticity): number {
+  if (!authenticity || authenticity.genuine) return fieldScore
+  return Math.min(fieldScore, clamp01(authenticity.confidence), SUSPECT_CONFIDENCE_CEILING)
+}
+
 const SYSTEM_PROMPT =
   'You are an OCR engine for identity documents. Read the visible printed text and ' +
   'the machine-readable zone (MRZ) if present, and return the fields exactly as ' +
   'printed. Do not guess, infer, or correct values you cannot clearly read — omit a ' +
-  'field rather than fabricate it. Dates must be ISO 8601 (YYYY-MM-DD).'
+  'field rather than fabricate it. Dates must be ISO 8601 (YYYY-MM-DD).\n\n' +
+  'Identity documents print BOTH a date of issue and a date of expiry — never ' +
+  'confuse them. `expiryDate` is only the expiry/expiration/"valid until"/"date of ' +
+  'expiry" value (in an MRZ, the second date field, not the first). `issueDate` is ' +
+  'the "date of issue"/"issued"/"valid from" value. The expiry is later than the ' +
+  'issue date. If a document shows only an issue date and no expiry, return the ' +
+  'issue date in `issueDate` and leave `expiryDate` empty — do not put the issue ' +
+  'date in `expiryDate`.\n\n' +
+  'ALSO assess document authenticity, to the best of your ability, from the image ' +
+  'alone — and report it. Be conservative: raise a flag only on a clear, visible ' +
+  'sign. A genuine document that was merely photographed imperfectly (blur, glare ' +
+  'on a glossy original, a shadow, a crop) must NOT be flagged. Set `screenReplay` ' +
+  'when the image looks like a photo of a screen — moiré or a visible pixel grid, ' +
+  'backlit glow, refresh banding, or a device bezel (a replay attack). Set ' +
+  '`photocopy` when it looks like a photo or scan of a printout/photocopy rather ' +
+  'than the physical document — flat matte paper, halftone dot printing, no ' +
+  'security features or hologram. Set `digitalTampering` for signs of digital ' +
+  'editing — mismatched fonts or kerning, misaligned or recoloured text, smudged ' +
+  'or cloned regions, a pasted-in portrait, or altered dates. Set ' +
+  '`physicalTampering` for a substituted photo, peeled or lifted laminate, or ' +
+  'scratched-out / overwritten fields. Give `authenticityConfidence` from 0 ' +
+  '(clearly fake or replayed) to 1 (clearly an authentic original), and list brief ' +
+  'supporting notes in `authenticityObservations`. You read and assess the ' +
+  'document; you do not make the final accept/reject decision.'
 
 const READ_TOOL = {
   name: 'read_document',
@@ -189,7 +261,15 @@ const READ_TOOL = {
       fullName: { type: 'string', description: 'Full name if given/surname cannot be separated.' },
       dateOfBirth: { type: 'string', description: 'Date of birth, ISO 8601 YYYY-MM-DD.' },
       documentNumber: { type: 'string', description: 'Document/serial number as printed.' },
-      expiryDate: { type: 'string', description: 'Expiry date, ISO 8601 YYYY-MM-DD.' },
+      issueDate: {
+        type: 'string',
+        description: 'Date of issue ("issued"/"valid from"/"issue date"), ISO 8601 YYYY-MM-DD. NOT the expiry.',
+      },
+      expiryDate: {
+        type: 'string',
+        description:
+          'Expiry date ("date of expiry"/"valid until"/"expiry date"), ISO 8601 YYYY-MM-DD. Must be the expiry, never the issue date; omit if the document shows no expiry.',
+      },
       nationality: { type: 'string', description: 'ISO 3166-1 alpha-3 country code if determinable.' },
       documentType: {
         type: 'string',
@@ -199,26 +279,62 @@ const READ_TOOL = {
         type: 'number',
         description: 'How clearly the document text could be read, 0 (illegible) to 1 (crisp).',
       },
+      screenReplay: {
+        type: 'boolean',
+        description: 'Looks like a photo of a screen (moiré, pixel grid, backlit glow, refresh banding, bezel).',
+      },
+      photocopy: {
+        type: 'boolean',
+        description: 'Looks like a photo/scan of a printout or photocopy rather than the physical document.',
+      },
+      digitalTampering: {
+        type: 'boolean',
+        description:
+          'Signs of digital editing: mismatched fonts, misaligned/recoloured text, cloned regions, edited photo/dates.',
+      },
+      physicalTampering: {
+        type: 'boolean',
+        description:
+          'Signs of physical tampering: substituted photo, peeled laminate, scratched-out/overwritten fields.',
+      },
+      authenticityConfidence: {
+        type: 'number',
+        description: 'Authenticity confidence, 0 (clearly fake/replayed) to 1 (clearly an authentic original).',
+      },
+      authenticityObservations: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Brief notes supporting any authenticity flag raised.',
+      },
     },
   },
 } as const
 
-/** Minimal shape of the messages-API response we read. */
+/**
+ * Minimal shape of the messages-API response we read.
+ *
+ */
 interface AnthropicResponse {
   content?: Array<{ type: string; name?: string; input?: Record<string, unknown> }>
 }
 
 const DOCUMENT_TYPES: readonly DocumentType[] = ['passport', 'id_card', 'drivers_license', 'residence_permit']
 
-/** HTTP statuses worth a bounded retry: rate-limited / overloaded. */
+/**
+ * HTTP statuses worth a bounded retry: rate-limited / overloaded.
+ */
 const RETRYABLE_STATUS = new Set([429, 529])
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** Exponential backoff (ms) for attempt 0, 1, 2…, capped at 8s. */
+/**
+ * Exponential backoff (ms) for attempt 0, 1, 2…, capped at 8s.
+ */
 const backoffMs = (attempt: number): number => Math.min(8_000, 500 * 2 ** attempt)
 
-/** Parse a `retry-after` header (seconds) into ms; null when absent/invalid. */
+/**
+ * Parse a `retry-after` header (seconds) into ms; null when absent/invalid.
+ */
 function retryAfterMs(res: Response): number | null {
   const header = res.headers.get('retry-after')
   if (!header) return null
@@ -340,7 +456,42 @@ function mapToolInput(input: Record<string, unknown>): AiExtraction {
     },
     legibility: typeof input.legibility === 'number' ? input.legibility : undefined,
     documentType: docType && (DOCUMENT_TYPES as readonly string[]).includes(docType) ? (docType as DocumentType) : null,
+    authenticity: mapAuthenticity(input),
   }
+}
+
+/**
+ * Build the {@link OcrAuthenticity} read from the model's tool input. Returns
+ * `undefined` when the model reported nothing assessable (no flags, no
+ * confidence, no notes) so a driver that can't see authenticity stays silent.
+ *
+ * @param input
+ * @returns
+ */
+function mapAuthenticity(input: Record<string, unknown>): OcrAuthenticity | undefined {
+  const bool = (v: unknown): boolean => v === true
+  const screenReplay = bool(input.screenReplay)
+  const photocopy = bool(input.photocopy)
+  const digitalTampering = bool(input.digitalTampering)
+  const physicalTampering = bool(input.physicalTampering)
+  const flagged = screenReplay || photocopy || digitalTampering || physicalTampering
+
+  const observations = Array.isArray(input.authenticityObservations)
+    ? input.authenticityObservations
+        .filter((o): o is string => typeof o === 'string' && o.trim().length > 0)
+        .map((o) => o.trim())
+        .slice(0, 6)
+    : []
+
+  const reported = typeof input.authenticityConfidence === 'number'
+  // The model said nothing about authenticity at all — don't fabricate a verdict.
+  if (!flagged && !reported && observations.length === 0) return undefined
+
+  // A flagged document with no explicit score defaults to clearly-suspect (0.2);
+  // an unflagged read defaults to clearly-genuine (1).
+  const confidence = clamp01(reported ? (input.authenticityConfidence as number) : flagged ? 0.2 : 1)
+
+  return { genuine: !flagged, confidence, screenReplay, photocopy, digitalTampering, physicalTampering, observations }
 }
 
 /**
