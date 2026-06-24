@@ -15,8 +15,8 @@ const description =
   'Open-source, multi-tenant identity verification — document capture, OCR, liveness, face match, decisioning, reviews, webhooks, SDK and widget.'
 
 const head: HeadConfig[] = [
-  ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}logo.svg` }],
-  ['meta', { name: 'theme-color', content: '#4f46e5' }],
+  ['link', { rel: 'icon', type: 'image/png', href: `${base}arkyc-icon.png` }],
+  ['meta', { name: 'theme-color', content: '#e2a93b' }],
   ['meta', { name: 'description', content: description }],
   ['meta', { property: 'og:type', content: 'website' }],
   ['meta', { property: 'og:site_name', content: 'Arkyc' }],
@@ -51,7 +51,7 @@ export default defineConfig({
   sitemap: { hostname: `${siteUrl}/` },
 
   themeConfig: {
-    logo: '/logo.svg',
+    logo: '/arkyc-logo.png',
 
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
