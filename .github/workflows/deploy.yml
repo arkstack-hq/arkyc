@@ -80,9 +80,9 @@ jobs:
             # --- Build the standalone API artifact (flat node_modules, prod-only) ---
             rm -rf "$RELEASE"
             pnpm --filter=@arkyc/api deploy --prod "$RELEASE"
-            # `.arkstack` is gitignored, so pnpm deploy skips the compiled server — copy it.
-            rm -rf "$RELEASE/.arkstack"
-            cp -r apps/api/.arkstack "$RELEASE/.arkstack"
+            # `dist` is gitignored, so pnpm deploy skips the compiled server — copy it.
+            rm -rf "$RELEASE/dist"
+            cp -r apps/api/dist "$RELEASE/dist"
             # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
@@ -224,9 +224,9 @@ jobs:
             # --- Build the standalone API artifact (flat node_modules, prod-only) ---
             rm -rf "$RELEASE"
             pnpm --filter=@arkyc/api deploy --prod "$RELEASE"
-            # `.arkstack` is gitignored, so pnpm deploy skips the compiled server — copy it.
-            rm -rf "$RELEASE/.arkstack"
-            cp -r apps/api/.arkstack "$RELEASE/.arkstack"
+            # `dist` is gitignored, so pnpm deploy skips the compiled server — copy it.
+            rm -rf "$RELEASE/dist"
+            cp -r apps/api/dist "$RELEASE/dist"
             # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
