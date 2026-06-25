@@ -116,6 +116,26 @@ describe('global settings', () => {
   })
 })
 
+describe('environment snapshot', () => {
+  it('returns a secret-safe runtime-config snapshot for an admin', async () => {
+    const res = await admin('get', '/config', ctx.ownerToken)
+    expect(res.status).toBe(200)
+    expect(typeof res.body.data.node_env).toBe('string')
+    expect(Array.isArray(res.body.data.sections)).toBe(true)
+
+    const items = res.body.data.sections.flatMap((section: { items: unknown[] }) => section.items)
+    const password = items.find((item: { label: string }) => item.label === 'Password')
+    // Secrets must never echo their value — only a configured/not-set indicator.
+    expect(['Configured', 'Not set']).toContain(password.value)
+    expect(['set', 'unset']).toContain(password.status)
+  })
+
+  it('denies the snapshot for a non-admin user (403)', async () => {
+    const res = await admin('get', '/config', ctx.userToken)
+    expect(res.status).toBe(403)
+  })
+})
+
 describe('admin organizations surface', () => {
   it('lists organizations for the platform owner', async () => {
     const res = await admin('get', '/organizations', ctx.ownerToken)

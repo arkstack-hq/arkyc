@@ -21,6 +21,9 @@ Router.group('/v1/admin', () => {
   Router.get('/settings', [SettingsController, 'show'], [auth, canAdmin('admin.settings.view')])
   Router.patch('/settings', [SettingsController, 'update'], [auth, canAdmin('admin.settings.update')])
 
+  // Read-only runtime-config snapshot (secret-safe) for spotting config drift.
+  Router.get('/config', [SettingsController, 'environment'], [auth, canAdmin('admin.settings.view')])
+
   Router.get('/organizations', [AdminOrganizationController, 'index'], [auth, canAdmin('admin.organizations.view')])
   Router.get(
     '/organizations/:organizationId',

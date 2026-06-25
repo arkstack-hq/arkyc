@@ -34,6 +34,28 @@ export interface AdminStats {
   trend: { date: string; count: number }[]
 }
 
+/** A single config value on the environment panel. The server never sends secret values. */
+export interface EnvItem {
+  label: string
+  /** `ok` plain value · `warn` insecure default · `set`/`unset` secret indicators. */
+  status: 'ok' | 'warn' | 'set' | 'unset'
+  value: string
+}
+
+/** A titled group of related config values. */
+export interface EnvSection {
+  title: string
+  items: EnvItem[]
+}
+
+/** Secret-safe snapshot of the API's effective runtime configuration. */
+export interface EnvironmentConfig {
+  generated_at: string
+  node_env: string
+  version: string
+  sections: EnvSection[]
+}
+
 /** A partial patch over the global settings sections. */
 export interface AdminSettingsPatch {
   platform?: Partial<GlobalSettings['platform']>
@@ -111,6 +133,15 @@ export class Admin {
       cacheFor: CACHE,
       hitSource: ['admin:settings:update'],
       transform: unwrap<GlobalSettings>,
+    })
+  }
+
+  /** The API's effective runtime configuration (secret-safe) for spotting drift. */
+  static environment() {
+    return alova.Get('/v1/admin/config', {
+      name: 'admin:config',
+      cacheFor: CACHE,
+      transform: unwrap<EnvironmentConfig>,
     })
   }
 

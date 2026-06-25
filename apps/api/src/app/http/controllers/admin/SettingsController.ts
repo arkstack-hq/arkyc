@@ -1,8 +1,10 @@
 import { HttpContext } from 'clear-router/types/express'
 import { BaseController } from '@controllers/BaseController'
+import EnvironmentResource from '@app/http/resources/EnvironmentResource'
 import GlobalSettingsResource from '@app/http/resources/GlobalSettingsResource'
 import { settings } from '@app/services/GlobalSettingsService'
 import type { DeepPartial } from '@app/services/GlobalSettingsService'
+import { buildEnvironmentSnapshot } from '@app/services/EnvironmentSnapshot'
 import { platformAudit } from '@app/services/PlatformAuditLogger'
 import { realtime } from '@app/services/RealtimeService'
 import type { GlobalSettings } from '@arkyc/types'
@@ -18,6 +20,21 @@ export default class SettingsController extends BaseController {
     const current = await settings.current()
 
     return new GlobalSettingsResource(current).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
+  }
+
+  /**
+   * The API's effective runtime configuration (secret-safe), so admins can spot
+   * config drift between environments. Read-only; secrets are reported only as
+   * configured/not-set.
+   */
+  async environment() {
+    const snapshot = await buildEnvironmentSnapshot()
+
+    return new EnvironmentResource(snapshot).additional({
       status: 'success',
       message: 'OK',
       code: 200,
