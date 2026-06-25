@@ -43,7 +43,7 @@ jobs:
       - name: Build docs
         env:
           # base_path/base_url adapt to project-site vs custom-domain automatically.
-          DOCS_BASE: ${{ steps.pages.outputs.base_path }}
+          # DOCS_BASE: ${{ steps.pages.outputs.base_path }}
           DOCS_SITE_URL: ${{ steps.pages.outputs.base_url }}
           GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
         run: pnpm --filter @arkyc/docs build
