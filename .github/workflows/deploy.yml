@@ -120,6 +120,12 @@ jobs:
             pm2 startOrReload "$DEPLOY_PATH/ecosystem.config.cjs" --update-env
             pm2 save
 
+            # Reload nginx so it picks up this docroot's .nginx include (proxy -> API).
+            # Guarded: no-ops on non-nginx hosts or when the caller can't reload it.
+            if command -v nginx >/dev/null 2>&1; then
+              nginx -t && { systemctl reload nginx 2>/dev/null || nginx -s reload; } || echo "nginx reload skipped"
+            fi
+
             echo "https://$(basename "$DEPLOY_PATH")|$DEPLOY_BRANCH|$ROUTES_COUNT"
 
       - name: Deploy website on staging server
@@ -287,6 +293,12 @@ jobs:
             # --- (Re)start the standalone API under PM2 ---
             pm2 startOrReload "$DEPLOY_PATH/ecosystem.config.cjs" --update-env
             pm2 save
+
+            # Reload nginx so it picks up this docroot's .nginx include (proxy -> API).
+            # Guarded: no-ops on non-nginx hosts or when the caller can't reload it.
+            if command -v nginx >/dev/null 2>&1; then
+              nginx -t && { systemctl reload nginx 2>/dev/null || nginx -s reload; } || echo "nginx reload skipped"
+            fi
 
             echo "https://$(basename "$DEPLOY_PATH")|$DEPLOY_BRANCH|$ROUTES_COUNT"
 
