@@ -17,5 +17,8 @@ Router.get('/', () => {
 // Auto-load every other route file in this directory (grouped by concern),
 // excluding this entrypoint and the web routes.
 await Router.group('/', resolveRuntimeDir('src/routes')).when((e: string) => {
-  return !e.includes('/api.') && !e.includes('/web.')
+  const name = e.split(/[\\/]/).pop() ?? e
+
+  return !name.startsWith('api.') && !name.startsWith('web.')
 })
+
