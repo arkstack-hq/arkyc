@@ -30,7 +30,8 @@ export default class ClientSessionController extends BaseController {
     const session = await sessionService.start(req.verificationSession!)
     const project = await Project.where({ id: session.projectId }).first()
     const handoff = project?.settings?.handoff
-    const frontendUrl = String(req.headers.origin ?? config('app.frontend_url') ?? '').replace(/\/$/, '')
+    // const frontendUrl = String(req.headers.origin ?? config('app.website_url', config('app.frontend_url', ''))).replace(/\/$/, '')
+    const frontendUrl = String(config('app.website_url', config('app.frontend_url', ''))).replace(/\/$/, '')
 
     return new ClientSessionResource(
       session,

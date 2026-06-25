@@ -102,6 +102,7 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
         ok('Name', app.name),
         ok('App URL', app.url),
         ok('Frontend URL', app.frontend_url),
+        ok('Website URL', app.website_url),
         appKeyItem,
       ],
     },

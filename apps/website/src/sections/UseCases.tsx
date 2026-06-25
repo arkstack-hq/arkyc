@@ -21,7 +21,7 @@ const MODES = [
     title: 'Bring your own provider',
     body: 'Use Arkyc purely for the polished capture experience, then forward the document images and selfie to your existing KYC provider. You keep your provider, your users get a flow they’ll actually finish.',
     points: ['Guided, on-brand capture flow', 'Live quality hints + auto-capture', 'Export the captured images & data'],
-    best: 'Best for: BaaS or an existing KYC vendor',
+    best: 'Best for: Existing KYC vendor',
     accent: true,
   },
 ]
