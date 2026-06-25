@@ -29,17 +29,16 @@ export default defineConfig([
     plugins:
       env === 'dev' && process.env.CLI_BUILD !== 'true'
         ? [
-          run({
-            env: Object.assign({}, process.env, {
-              NODE_ENV: env,
+            run({
+              env: Object.assign({}, process.env, {
+                NODE_ENV: env,
+              }),
+              execArgv: ['-r', 'source-map-support/register'],
+              allowRestarts: true,
+              input: path.join(Arkstack.rootDir(), 'src/server.ts'),
             }),
-            execArgv: ['-r', 'source-map-support/register'],
-            allowRestarts: true,
-            input: path.join(Arkstack.rootDir(), 'src/server.ts'),
-          })
-        ]
-        : [
-        ],
+          ]
+        : [],
     outExtensions: (e) => {
       return {
         js: e.format === 'es' ? '.js' : '.cjs',

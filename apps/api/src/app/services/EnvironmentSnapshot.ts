@@ -1,5 +1,5 @@
-import { version } from '../../../package.json'
 import { settings } from './GlobalSettingsService'
+import { version } from '../../../package.json'
 
 /**
  * A single config value as shown on the admin "Environment" panel.
@@ -85,6 +85,14 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
     ? { label: 'App key', value: 'Configured', status: 'set' }
     : { label: 'App key', value: 'Insecure default', status: 'warn' }
 
+  // `mock` analyzer drivers return fixed demo fields — fine for dev, a real
+  // problem in production, so warn when one is left in place there.
+  const driver = (label: string, value: unknown): EnvItem => {
+    const name = str(value) || 'mock'
+
+    return { label, value: name, status: nodeEnv === 'production' && name === 'mock' ? 'warn' : 'ok' }
+  }
+
   const sections: EnvSection[] = [
     {
       title: 'Application',
@@ -123,6 +131,19 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
         ok('Default disk', filesystem.default),
         secret('S3 bucket', filesystem.disks.s3?.bucket),
         secret('GCS bucket', filesystem.disks.gcs?.bucket),
+      ],
+    },
+    {
+      title: 'Document analysis',
+      items: [
+        driver('OCR driver', env('OCR_DRIVER', 'mock')),
+        driver('OCR fallback', env('OCR_FALLBACK_DRIVER', 'mock')),
+        ok('OCR language', env('OCR_LANGUAGE', 'eng')),
+        ok('AI model', env('OCR_AI_MODEL') ?? '—'),
+        ok('AI endpoint', env('OCR_ENDPOINT') ?? 'default'),
+        secret('AI API key', env('OCR_API_KEY')),
+        driver('Liveness driver', env('LIVENESS_DRIVER', 'mock')),
+        driver('Face-match driver', env('FACE_MATCH_DRIVER', 'mock')),
       ],
     },
     {

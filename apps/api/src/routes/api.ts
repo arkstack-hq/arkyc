@@ -21,4 +21,3 @@ await Router.group('/', resolveRuntimeDir('src/routes')).when((e: string) => {
 
   return !name.startsWith('api.') && !name.startsWith('web.')
 })
-
