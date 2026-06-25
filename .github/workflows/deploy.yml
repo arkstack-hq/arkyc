@@ -101,7 +101,11 @@ jobs:
             VITE_API_URL="$API_ORIGIN" \
             VITE_PROD_API_URL="$API_ORIGIN" \
               pnpm --filter @arkyc/dashboard build
-            pnpm --filter @arkyc/website build
+            # The website bakes the dashboard + docs URLs into its static bundle
+            # (apps/website/.env is gitignored, so set them here explicitly).
+            VITE_DASHBOARD_URL="https://app.arkyc.toneflix.net" \
+            VITE_DOCS_URL="https://arkyc.dev" \
+              pnpm --filter @arkyc/website build
 
             # --- App key: generated once on first setup, only when APP_KEY is
             #     unset. Regenerating would break encrypted data (2FA) + sessions. ---
@@ -280,7 +284,11 @@ jobs:
             VITE_API_URL="$API_ORIGIN" \
             VITE_PROD_API_URL="$API_ORIGIN" \
               pnpm --filter @arkyc/dashboard build
-            pnpm --filter @arkyc/website build
+            # The website bakes the dashboard + docs URLs into its static bundle
+            # (apps/website/.env is gitignored, so set them here explicitly).
+            VITE_DASHBOARD_URL="https://app.arkyc.toneflix.net" \
+            VITE_DOCS_URL="https://arkyc.dev" \
+              pnpm --filter @arkyc/website build
 
             # --- App key: generated once on first setup, only when APP_KEY is
             #     unset. Regenerating would break encrypted data (2FA) + sessions. ---

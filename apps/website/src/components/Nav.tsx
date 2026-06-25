@@ -19,6 +19,13 @@ export function Nav() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Before scroll the bar is transparent over the dark hero, so links/logo need
+  // light text; once scrolled the bar is white, so they switch to dark.
+  const navLinkClass = cn(
+    'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+    scrolled ? 'text-slate-600 hover:text-ink' : 'text-white/80 hover:text-white',
+  )
+
   return (
     <header
       className={cn(
@@ -28,25 +35,17 @@ export function Nav() {
     >
       <Container className="flex h-16 items-center justify-between">
         <Link to="/" aria-label="Arkyc home">
-          <Logo />
+          <Logo dark={!scrolled} />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
           {primaryNav.map((item) =>
             item.href.startsWith('/#') ? (
-              <a
-                key={item.label}
-                href={item.href}
-                className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:text-ink"
-              >
+              <a key={item.label} href={item.href} className={navLinkClass}>
                 {item.label}
               </a>
             ) : (
-              <Link
-                key={item.label}
-                to={item.href}
-                className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:text-ink"
-              >
+              <Link key={item.label} to={item.href} className={navLinkClass}>
                 {item.label}
               </Link>
             ),
@@ -54,7 +53,7 @@ export function Nav() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <ButtonLink href={links.login} variant="ghost">
+          <ButtonLink href={links.login} variant={scrolled ? 'ghost' : 'ghostLight'}>
             Log in
           </ButtonLink>
           <ButtonLink href={links.signup} variant="brand">
@@ -63,7 +62,10 @@ export function Nav() {
         </div>
 
         <button
-          className="inline-flex size-10 items-center justify-center rounded-md text-ink md:hidden"
+          className={cn(
+            'inline-flex size-10 items-center justify-center rounded-md md:hidden',
+            scrolled ? 'text-ink' : 'text-white',
+          )}
           aria-label="Toggle menu"
           onClick={() => setOpen((v) => !v)}
         >
