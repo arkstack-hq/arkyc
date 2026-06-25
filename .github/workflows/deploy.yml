@@ -140,6 +140,16 @@ jobs:
             rm -rf "$RELEASE/dist" "$RELEASE/.arkstack"
             cp -r apps/api/dist "$RELEASE/dist"
             cp -r apps/api/.arkstack "$RELEASE/.arkstack"
+            # arkormx writes the camelCase -> column map to .arkormx/column-mappings.json
+            # at migrate time; it's gitignored, so pnpm deploy skips it. The server reads
+            # it relative to its cwd (current/), so ship the freshly-generated map into the
+            # artifact — without it the ORM falls back to raw attribute names and queries
+            # blow up with `column "firstName" does not exist`.
+            if [ -d apps/api/.arkormx ]; then
+              cp -r apps/api/.arkormx "$RELEASE/.arkormx"
+            else
+              echo "::warning::apps/api/.arkormx missing after migrate — column mappings will be absent in the artifact."
+            fi
             # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
@@ -323,6 +333,16 @@ jobs:
             rm -rf "$RELEASE/dist" "$RELEASE/.arkstack"
             cp -r apps/api/dist "$RELEASE/dist"
             cp -r apps/api/.arkstack "$RELEASE/.arkstack"
+            # arkormx writes the camelCase -> column map to .arkormx/column-mappings.json
+            # at migrate time; it's gitignored, so pnpm deploy skips it. The server reads
+            # it relative to its cwd (current/), so ship the freshly-generated map into the
+            # artifact — without it the ORM falls back to raw attribute names and queries
+            # blow up with `column "firstName" does not exist`.
+            if [ -d apps/api/.arkormx ]; then
+              cp -r apps/api/.arkormx "$RELEASE/.arkormx"
+            else
+              echo "::warning::apps/api/.arkormx missing after migrate — column mappings will be absent in the artifact."
+            fi
             # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
