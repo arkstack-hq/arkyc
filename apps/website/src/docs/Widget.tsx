@@ -41,7 +41,7 @@ export function Widget() {
           '',
           'const handle = ArkycWidget.open({',
           '  token: clientToken,                 // required — from arkyc.sessions.create()',
-          "  widgetUrl: 'https://verify.arkyc.dev', // optional — override the hosted origin",
+          "  widgetUrl: 'https://verify.arkyc.toneflix.net', // optional — override the hosted origin",
           '',
           '  onComplete: (result) => {           // flow reached a terminal state',
           "    console.log(result.status)        // 'approved' | 'requires_review' | 'rejected' | …",
@@ -88,8 +88,8 @@ export function Widget() {
               <code>string</code>
             </td>
             <td>
-              Hosted widget origin. Defaults to <code>https://verify.arkyc.dev</code>. Set this when self-hosting the
-              widget.
+              Hosted widget origin. Defaults to <code>https://verify.arkyc.toneflix.net</code>. Set this when
+              self-hosting the widget.
             </td>
           </tr>
           <tr>
@@ -280,7 +280,7 @@ export function Widget() {
         Prefer a redirect (or a cross-device hand-off)? Send the user to the hosted widget URL with the token as a query
         param, the same page the overlay loads in its iframe.
       </p>
-      <CodeCard title="redirect" lang="bash" code={['https://verify.arkyc.dev?token=<clientToken>']} />
+      <CodeCard title="redirect" lang="bash" code={['https://verify.arkyc.toneflix.net?token=<clientToken>']} />
 
       <h2>Rendering &amp; permissions</h2>
       <p>

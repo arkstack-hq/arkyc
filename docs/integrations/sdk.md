@@ -17,7 +17,7 @@ import { Arkyc } from '@arkyc/sdk'
 
 const arkyc = new Arkyc({
   secretKey: process.env.ARKYC_SECRET_KEY!, // sk_…
-  baseUrl: 'http://localhost:3100', // optional; default https://api.arkyc.dev
+  baseUrl: 'http://localhost:3100', // optional; default https://api.arkyc.toneflix.net
 })
 ```
 

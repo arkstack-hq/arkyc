@@ -41,7 +41,7 @@ export interface CreatedSession {
 export interface ArkycOptions {
   /** Project secret API key (`sk_…`). */
   secretKey: string
-  /** API base URL (default `https://api.arkyc.dev`). */
+  /** API base URL (default `https://api.arkyc.toneflix.net`). */
   baseUrl?: string
   /**
    * Optional workflow applied to every session this client opens (the workflow's
@@ -73,7 +73,7 @@ export type WidgetEventListener = (data: unknown) => void
 export interface OpenWidgetOptions {
   /** The session's client token (from `arkyc.sessions.create`). */
   token: string
-  /** Hosted widget origin (default `https://verify.arkyc.dev`). */
+  /** Hosted widget origin (default `https://verify.arkyc.toneflix.net`). */
   widgetUrl?: string
   onComplete?: (result: WidgetResult) => void
   onError?: (error: unknown) => void

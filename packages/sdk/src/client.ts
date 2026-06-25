@@ -13,7 +13,7 @@ import { Webhooks } from './Webhooks'
  * ```
  */
 export class Arkyc {
-  private static DEFAULT_BASE_URL = 'https://api.arkyc.dev'
+  private static DEFAULT_BASE_URL = 'https://api.arkyc.toneflix.net'
   private readonly secretKey: string
   private readonly baseUrl: string
   private readonly fetchImpl: typeof fetch

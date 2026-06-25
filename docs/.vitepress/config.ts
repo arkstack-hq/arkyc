@@ -7,7 +7,7 @@ import { defineConfig, type HeadConfig } from 'vitepress'
 // Normalize to a leading + trailing slash (VitePress requires both), so a raw
 // GitHub Pages base_path like "/Arkyc" works unchanged.
 const base = `/${(process.env.DOCS_BASE || '').replace(/^\/|\/$/g, '')}/`.replace(/^\/\/$/, '/')
-const siteUrl = (process.env.DOCS_SITE_URL || 'https://arkyc.dev').replace(/\/$/, '')
+const siteUrl = (process.env.DOCS_SITE_URL || 'https://docs.arkyc.toneflix.net').replace(/\/$/, '')
 const gaId = process.env.GA_MEASUREMENT_ID
 const repo = 'https://github.com/arcstack/arkyc'
 

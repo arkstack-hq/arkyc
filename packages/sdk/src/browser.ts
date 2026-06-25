@@ -12,7 +12,7 @@ import type { OpenWidgetOptions, WidgetEventListener, WidgetHandle, WidgetResult
  * ```
  */
 export class ArkycWidget {
-  private static DEFAULT_WIDGET_URL = 'https://verify.arkyc.dev'
+  private static DEFAULT_WIDGET_URL = 'https://verify.arkyc.toneflix.net'
 
   /**
    * Open the verification widget for a client token. Returns a close handle.

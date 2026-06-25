@@ -4,7 +4,7 @@ const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL as string | undefined)
 
 // The open-source / white-label documentation (separate VitePress site).
 // Override per-environment with VITE_DOCS_URL.
-const DOCS_URL = (import.meta.env.VITE_DOCS_URL as string | undefined) ?? 'https://arkyc.dev'
+const DOCS_URL = (import.meta.env.VITE_DOCS_URL as string | undefined) ?? 'https://docs.arkyc.toneflix.net'
 
 export const links = {
   login: `${DASHBOARD_URL}/login`,
