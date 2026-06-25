@@ -1,6 +1,16 @@
 # Proxies all requests to the local Express process.
 # automatically via:  include /var/www/server-config-path/.ngin*;
 
+# Serve Let's Encrypt HTTP-01 challenges from disk (the docroot) instead of
+# proxying them to Express. Without this, the `location /` proxy below forwards
+# /.well-known/acme-challenge/... to the app and cert issuance/renewal fails
+# (the browser then sees ERR_SSL_VERSION_OR_CIPHER_MISMATCH). `^~` makes this
+# prefix win over the proxy.
+location ^~ /.well-known/acme-challenge/ {
+    default_type "text/plain";
+    try_files $uri =404;
+}
+
 location / {
     proxy_pass         http://127.0.0.1:3100;
     proxy_http_version 1.1;
