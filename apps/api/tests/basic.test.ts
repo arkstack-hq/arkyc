@@ -22,4 +22,11 @@ describe('starter template', () => {
   it('can test a route', async () => {
     await request(app).get('/api').expect(200).contains('"status":"online"')
   })
+
+  it('reports a healthy storage round-trip', async () => {
+    const res = await request(app).get('/api/health').expect(200)
+
+    expect(res.body.checks.storage.status).toBe('online')
+    expect(res.body.checks.storage.latencyMs).toBeGreaterThanOrEqual(0)
+  })
 })

@@ -1,4 +1,5 @@
 import { BaseController } from '@controllers/BaseController'
+import { Storage } from '@arkstack/filesystem'
 import { DB } from 'arkormx'
 import { HttpContext } from 'clear-router/types/express'
 import { version } from '../../../../package.json'
@@ -13,6 +14,11 @@ type HealthReport = {
   timestamp: string
   checks: {
     database: {
+      status: 'online' | 'offline'
+      latencyMs: number
+      message: string
+    }
+    storage: {
       status: 'online' | 'offline'
       latencyMs: number
       message: string
@@ -45,17 +51,60 @@ export default class HealthController extends BaseController {
     }
   }
 
+  private static async checkStorage() {
+    const startedAt = Date.now()
+    const key = `health/storage-check-${process.pid}-${startedAt}.txt`
+    const token = `ok-${startedAt}`
+
+    try {
+      await Storage.disk().put(key, token, { visibility: 'private' })
+
+      const bytes = await Storage.disk().getBytes(key)
+      const readBack = Buffer.from(bytes).toString('utf8')
+
+      await Storage.disk().delete(key)
+
+      if (readBack !== token) {
+        return {
+          status: 'offline' as const,
+          latencyMs: Date.now() - startedAt,
+          message: 'Storage read-back did not match what was written',
+        }
+      }
+
+      return {
+        status: 'online' as const,
+        latencyMs: Date.now() - startedAt,
+        message: 'Storage write/read/delete round-trip succeeded',
+      }
+    } catch {
+      // Best-effort cleanup; ignore if the object was never written.
+      try {
+        await Storage.disk().delete(key)
+      } catch {
+        /* noop */
+      }
+
+      return {
+        status: 'offline' as const,
+        latencyMs: Date.now() - startedAt,
+        message: 'Storage round-trip check failed',
+      }
+    }
+  }
+
   private static async buildReport(scope: HealthScope): Promise<HealthReport> {
-    const database = await this.checkDatabase()
+    const [database, storage] = await Promise.all([this.checkDatabase(), this.checkStorage()])
 
     return {
       name: this.getName(scope),
       scope,
-      status: database.status === 'online' ? 'online' : 'degraded',
+      status: database.status === 'online' && storage.status === 'online' ? 'online' : 'degraded',
       version,
       timestamp: new Date().toISOString(),
       checks: {
         database,
+        storage,
       },
     }
   }
@@ -74,6 +123,9 @@ export default class HealthController extends BaseController {
       `database.status=${report.checks.database.status}`,
       `database.latency_ms=${report.checks.database.latencyMs}`,
       `database.message=${report.checks.database.message}`,
+      `storage.status=${report.checks.storage.status}`,
+      `storage.latency_ms=${report.checks.storage.latencyMs}`,
+      `storage.message=${report.checks.storage.message}`,
     ].join('\n')
   }
 
@@ -129,6 +181,11 @@ export default class HealthController extends BaseController {
       '          <p class="label">Database</p>',
       `          <p class="value">${report.checks.database.message}</p>`,
       `          <p class="value"><code>Status: ${report.checks.database.status} | Latency: ${report.checks.database.latencyMs} ms</code></p>`,
+      '        </article>',
+      '        <article class="panel">',
+      '          <p class="label">Storage</p>',
+      `          <p class="value">${report.checks.storage.message}</p>`,
+      `          <p class="value"><code>Status: ${report.checks.storage.status} | Latency: ${report.checks.storage.latencyMs} ms</code></p>`,
       '        </article>',
       '      </div>',
       '    </section>',
