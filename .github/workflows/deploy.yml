@@ -296,6 +296,9 @@ jobs:
               pnpm --filter @arkyc/dashboard build
             # The website bakes the dashboard + docs URLs into its static bundle
             # (apps/website/.env is gitignored, so set them here explicitly).
+            VITE_API_ENV=production \
+            VITE_API_URL="$API_ORIGIN" \
+            VITE_PROD_API_URL="$API_ORIGIN" \
             VITE_DASHBOARD_URL="https://app.arkyc.toneflix.net" \
             VITE_DOCS_URL="https://docs.arkyc.toneflix.net" \
               pnpm --filter @arkyc/website build
