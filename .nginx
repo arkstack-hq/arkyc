@@ -9,6 +9,11 @@
 # isn't swallowed by the proxy below.
 
 location / {
+    # Allow large verification uploads. The API validates the liveness video up
+    # to 50 MB and document/selfie images up to 10 MB (multipart/form-data); the
+    # nginx default of 1 MB would 413 them before they reach Express.
+    client_max_body_size 64m;
+
     proxy_pass         http://127.0.0.1:3100;
     proxy_http_version 1.1;
 
