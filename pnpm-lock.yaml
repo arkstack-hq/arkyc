@@ -311,6 +311,12 @@ importers:
 
   apps/website:
     dependencies:
+      '@arkyc/types':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@arkyc/widget':
+        specifier: ^1.0.0
+        version: 1.0.0(firebase@11.10.0)(pusher-js@8.5.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -581,6 +587,20 @@ packages:
       '@h3ravel/musket':
         optional: true
       clear-router:
+        optional: true
+
+  '@arkyc/types@1.0.0':
+    resolution: {integrity: sha512-9xSPC4GOKg4tBDMTAX/hDLHdmwQ62S+1e0E4M3EEZ6xznHzVbyr0gppaafkwywBLcnBzkxeW2ifdfwdUW2yDug==}
+
+  '@arkyc/widget@1.0.0':
+    resolution: {integrity: sha512-JoiQ30yCs1+2YH1V5NyhiLzG8FYsoadAWcXuSExSJA8ir5eeAubi7IG0BcorjxccMEfNNAvWeAmxSwYgKTaByA==}
+    peerDependencies:
+      firebase: ^11.0.0
+      pusher-js: ^8.0.0
+    peerDependenciesMeta:
+      firebase:
+        optional: true
+      pusher-js:
         optional: true
 
   '@asamuzakjp/css-color@5.1.11':
@@ -6925,6 +6945,16 @@ snapshots:
     optionalDependencies:
       '@h3ravel/musket': 2.2.1(@types/node@26.0.0)
       clear-router: 2.8.9(@h3ravel/support@2.2.0(@types/node@26.0.0))(express@5.2.1)(reflect-metadata@0.2.2)
+
+  '@arkyc/types@1.0.0': {}
+
+  '@arkyc/widget@1.0.0(firebase@11.10.0)(pusher-js@8.5.0)':
+    dependencies:
+      '@arkyc/types': 1.0.0
+      qrcode-generator: 1.5.2
+    optionalDependencies:
+      firebase: 11.10.0
+      pusher-js: 8.5.0
 
   '@asamuzakjp/css-color@5.1.11':
     dependencies:

@@ -189,7 +189,7 @@ button:disabled {
   display: inline-flex;
   gap: 2px;
   padding: 3px;
-  background: #0d1320;
+  background: #200d0e;
   border: 1px solid var(--border);
   border-radius: 9px;
 }

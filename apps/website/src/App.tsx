@@ -1,13 +1,15 @@
-import { useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { Nav } from '@/components/Nav'
+
+import { DocsLayout } from '@/docs/DocsLayout'
 import { Footer } from '@/components/Footer'
 import { Home } from '@/pages/Home'
-import { DocsLayout } from '@/docs/DocsLayout'
+import { Nav } from '@/components/Nav'
 import { Quickstart } from '@/docs/Quickstart'
-import { Widget } from '@/docs/Widget'
 import { ServerSdk } from '@/docs/ServerSdk'
+import VerifyPage from './pages/VerifyPage'
 import { Webhooks } from '@/docs/Webhooks'
+import { Widget } from '@/docs/Widget'
+import { useEffect } from 'react'
 
 /** Scroll to top on route change, unless navigating to a hash anchor. */
 function ScrollToTop() {
@@ -25,6 +27,7 @@ export default function App() {
       <Nav />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/verify" element={<VerifyPage />} />
         <Route path="/docs" element={<DocsLayout />}>
           <Route index element={<Quickstart />} />
           <Route path="widget" element={<Widget />} />

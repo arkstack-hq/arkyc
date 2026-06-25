@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build": "tsdown && pnpm --filter @arkyc/api run build",
+    "play": "pnpm --filter @arkyc/playground dev",
     "build:libs": "tsdown",
     "dev": "pnpm --filter @arkyc/api run dev",
     "dev:libs": "tsdown --watch",
