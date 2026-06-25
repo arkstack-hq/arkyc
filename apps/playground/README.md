@@ -32,6 +32,14 @@ pnpm --filter @arkyc/playground dev
 
 Click **Start verification**, complete the widget flow, and the decision appears under **Result**.
 
+## Local vs Remote
+
+The **API target** toggle in the header switches which Arkyc API the playground uses — both the
+widget's proxy path (`/api/local` vs `/api/remote`) and the server SDK follow it. `Local` uses
+`ARKYC_API_URL` / `ARKYC_SECRET_KEY`; `Remote` uses `ARKYC_REMOTE_API_URL` / `ARKYC_REMOTE_SECRET_KEY`
+(defaulting to the hosted API). A target with no secret key is shown disabled, and the selection is
+remembered across reloads.
+
 ## Webhooks (optional)
 
 To see live deliveries:

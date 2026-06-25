@@ -20,6 +20,55 @@ const widgetEl = $('widget')
 const resultEl = $('result')
 const eventsEl = $('events')
 const eventCountEl = $('event-count')
+const targetLocalBtn = $<HTMLButtonElement>('target-local')
+const targetRemoteBtn = $<HTMLButtonElement>('target-remote')
+const targetUrlEl = $('target-url')
+
+type Target = 'local' | 'remote'
+const TARGET_KEY = 'arkyc-pg-target'
+
+/** Which API the playground acts against; persisted across reloads. */
+let target: Target = localStorage.getItem(TARGET_KEY) === 'remote' ? 'remote' : 'local'
+
+type TargetInfo = { apiUrl: string; configured: boolean }
+let targetConfig: Partial<Record<Target, TargetInfo>> = {}
+
+function refreshTargetUrl(): void {
+  const apiUrl = targetConfig[target]?.apiUrl
+  targetUrlEl.textContent = apiUrl ? `→ ${apiUrl}` : ''
+}
+
+function applyTarget(next: Target): void {
+  target = next
+  localStorage.setItem(TARGET_KEY, next)
+  targetLocalBtn.dataset.active = String(next === 'local')
+  targetRemoteBtn.dataset.active = String(next === 'remote')
+  refreshTargetUrl()
+}
+
+/** Pull target availability so we can label the URL and disable unconfigured ones. */
+async function loadTargetConfig(): Promise<void> {
+  try {
+    const res = await fetch('/pg/config')
+    const data = (await res.json()) as { targets?: Partial<Record<Target, TargetInfo>> }
+    targetConfig = data.targets ?? {}
+  } catch {
+    /* config endpoint is best-effort */
+  }
+  targetLocalBtn.disabled = targetConfig.local?.configured === false
+  targetRemoteBtn.disabled = targetConfig.remote?.configured === false
+  if (targetLocalBtn.disabled) targetLocalBtn.title = 'Set ARKYC_SECRET_KEY in apps/playground/.env'
+  if (targetRemoteBtn.disabled) targetRemoteBtn.title = 'Set ARKYC_REMOTE_SECRET_KEY in apps/playground/.env'
+  // If the saved target isn't usable, fall back to the other one.
+  if (targetConfig[target]?.configured === false) {
+    const fallback: Target = target === 'remote' ? 'local' : 'remote'
+    if (targetConfig[fallback]?.configured) applyTarget(fallback)
+  }
+  refreshTargetUrl()
+}
+
+targetLocalBtn.addEventListener('click', () => applyTarget('local'))
+targetRemoteBtn.addEventListener('click', () => applyTarget('remote'))
 
 function setStatus(message: string, tone: 'idle' | 'busy' | 'ok' | 'error' = 'idle'): void {
   statusEl.textContent = message
@@ -33,7 +82,7 @@ async function startVerification(): Promise<void> {
   setStatus('Creating session…', 'busy')
 
   try {
-    const res = await fetch('/pg/session', { method: 'POST' })
+    const res = await fetch('/pg/session', { method: 'POST', headers: { 'x-arkyc-target': target } })
     const data = (await res.json()) as StartResponse
     if (!res.ok) throw new Error(data.error || `Failed to create session (${res.status})`)
 
@@ -44,8 +93,8 @@ async function startVerification(): Promise<void> {
     ArkycWidget.mount({
       token: data.clientToken,
       container: widgetEl,
-      // Same-origin: Vite proxies /api → the Arkyc API (see vite.config.ts).
-      baseUrl: '/api',
+      // Same-origin: Vite proxies /api/<target> → the chosen Arkyc API (vite.config.ts).
+      baseUrl: `/api/${target}`,
       onEvent: (event) => {
         renderEvent(event)
         console.log(event)
@@ -73,7 +122,9 @@ async function startVerification(): Promise<void> {
 /** Re-fetch the session server-side to show its authoritative decision. */
 async function showResult(sessionId: string): Promise<void> {
   try {
-    const res = await fetch(`/pg/session/${encodeURIComponent(sessionId)}`)
+    const res = await fetch(`/pg/session/${encodeURIComponent(sessionId)}`, {
+      headers: { 'x-arkyc-target': target },
+    })
     const data = (await res.json()) as { session?: unknown; error?: string }
     if (!res.ok) throw new Error(data.error || `Failed to fetch session (${res.status})`)
     resultEl.textContent = JSON.stringify(data.session, null, 2)
@@ -112,3 +163,5 @@ function renderEvent(event: WidgetEvent): void {
 
 startBtn.addEventListener('click', () => void startVerification())
 resetEvents()
+applyTarget(target)
+void loadTargetConfig()

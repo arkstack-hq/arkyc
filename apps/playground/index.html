@@ -15,6 +15,14 @@
           Create a verification session on the server (via <code>@arkyc/sdk</code>), run it in the embedded
           <code>@arkyc/widget</code>, then watch the decision and live events land.
         </p>
+        <div class="targetbar">
+          <span class="targetbar__label">API target</span>
+          <div class="toggle" role="group" aria-label="API target">
+            <button id="target-local" type="button" class="toggle__btn" data-active="true">Local</button>
+            <button id="target-remote" type="button" class="toggle__btn">Remote</button>
+          </div>
+          <span id="target-url" class="targetbar__url"></span>
+        </div>
       </header>
 
       <section class="card">
