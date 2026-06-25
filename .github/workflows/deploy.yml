@@ -101,9 +101,12 @@ jobs:
             # --legacy: pnpm v10's default deploy requires inject-workspace-packages;
             # legacy mode resolves the @arkyc/* workspace deps without that global flag.
             pnpm --filter=@arkyc/api deploy --prod --legacy "$RELEASE"
-            # `dist` is gitignored, so pnpm deploy skips the compiled server — copy it.
-            rm -rf "$RELEASE/dist"
+            # `dist` (compiled server) and `.arkstack` (framework manifest + the
+            # tsconfig the route loader reads at runtime) are gitignored, so pnpm
+            # deploy skips them — copy both into the artifact.
+            rm -rf "$RELEASE/dist" "$RELEASE/.arkstack"
             cp -r apps/api/dist "$RELEASE/dist"
+            cp -r apps/api/.arkstack "$RELEASE/.arkstack"
             # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
@@ -266,9 +269,12 @@ jobs:
             # --legacy: pnpm v10's default deploy requires inject-workspace-packages;
             # legacy mode resolves the @arkyc/* workspace deps without that global flag.
             pnpm --filter=@arkyc/api deploy --prod --legacy "$RELEASE"
-            # `dist` is gitignored, so pnpm deploy skips the compiled server — copy it.
-            rm -rf "$RELEASE/dist"
+            # `dist` (compiled server) and `.arkstack` (framework manifest + the
+            # tsconfig the route loader reads at runtime) are gitignored, so pnpm
+            # deploy skips them — copy both into the artifact.
+            rm -rf "$RELEASE/dist" "$RELEASE/.arkstack"
             cp -r apps/api/dist "$RELEASE/dist"
+            cp -r apps/api/.arkstack "$RELEASE/.arkstack"
             # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
