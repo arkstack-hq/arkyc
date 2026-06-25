@@ -191,9 +191,9 @@ export class UsersCommand extends Command {
 
     const fields: Array<[string, string]> = [
       ['ID', String(user.id)],
-      ['Name', String(user.name)],
-      ['Email', String(user.email)],
-      ['Phone', String(user.phone || 'N/A')],
+      ['Name', String(user.getAttribute('name'))],
+      ['Email', String(user.getAttribute('email'))],
+      ['Phone', String(user.getAttribute('phone') || 'N/A')],
       ['Avatar URL', String(user.getAttribute('avatarUrl') || 'N/A')],
       ['Two-Factor Method', String(twoFa?.method || 'N/A')],
       ['Two-Factor Enabled At', twoFa?.enabledAt ? dayjs(twoFa.enabledAt).format('YYYY-MM-DD h:mm A') : 'N/A'],
