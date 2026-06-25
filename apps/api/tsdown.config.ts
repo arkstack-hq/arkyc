@@ -11,6 +11,10 @@ const dist = path.relative(Arkstack.rootDir(), outputDir())
 export default defineConfig([
   {
     unbundle: true,
+    // Wipe the output dir on build/prepare so a renamed/removed/added source file
+    // can't leave a stale emitted module behind (which would wedge the next boot).
+    // Skipped for the live dev watcher so its running server isn't disrupted.
+    clean: env !== 'dev' || process.env.CLI_BUILD === 'true',
     tsconfig: 'tsconfig.json',
     entry: ['src/**/*.ts'],
     platform: 'node',
@@ -25,16 +29,17 @@ export default defineConfig([
     plugins:
       env === 'dev' && process.env.CLI_BUILD !== 'true'
         ? [
-            run({
-              env: Object.assign({}, process.env, {
-                NODE_ENV: env,
-              }),
-              execArgv: ['-r', 'source-map-support/register'],
-              allowRestarts: true,
-              input: path.join(Arkstack.rootDir(), 'src/server.ts'),
+          run({
+            env: Object.assign({}, process.env, {
+              NODE_ENV: env,
             }),
-          ]
-        : [],
+            execArgv: ['-r', 'source-map-support/register'],
+            allowRestarts: true,
+            input: path.join(Arkstack.rootDir(), 'src/server.ts'),
+          })
+        ]
+        : [
+        ],
     outExtensions: (e) => {
       return {
         js: e.format === 'es' ? '.js' : '.cjs',
@@ -47,7 +52,14 @@ export default defineConfig([
           const chunk = e.chunks[i]
           if (chunk && chunk.fileName.endsWith('.js')) {
             let code = readFileSync(path.join(chunk.outDir, chunk.fileName), 'utf-8')
-            code = code.replace(/src\//g, `${dist}/`).replace(/(?<!\.d)\.ts(?=\b|$)/g, '.js')
+            // Remap module specifiers from source (`src/…`, `.ts`) to their built
+            // location (`${dist}/…`, `.js`). Scoped to import/export/require
+            // specifiers so unrelated string data and comments are never rewritten.
+            code = code.replace(
+              /(?<![\w.])(from|import|require)(\s*\(?\s*)(["'])([^"'\n]+)\3/g,
+              (_m, kw, gap, quote, spec) =>
+                `${kw}${gap}${quote}${spec.replace(/^src\//, `${dist}/`).replace(/(?<!\.d)\.ts$/, '.js')}${quote}`,
+            )
             writeFileSync(path.join(chunk.outDir, chunk.fileName), code, 'utf-8')
           }
         }
