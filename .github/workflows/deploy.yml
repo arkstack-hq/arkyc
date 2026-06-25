@@ -83,10 +83,14 @@ jobs:
             # `.arkstack` is gitignored, so pnpm deploy skips the compiled server — copy it.
             rm -rf "$RELEASE/.arkstack"
             cp -r apps/api/.arkstack "$RELEASE/.arkstack"
-            # Wire shared state into the artifact, then link public storage.
+            # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
-            ( cd "$RELEASE" && pnpm exec ark storage:link --force )
+            # Public storage symlinks (the `ark storage:link` equivalent — ark isn't
+            # bundled in the prod artifact). Targets resolve via current/storage -> shared.
+            mkdir -p "$RELEASE/public" "$SHARED/storage/app/public" "$SHARED/storage/app/organizations"
+            ln -sfn "$RELEASE/storage/app/public" "$RELEASE/public/storage"
+            ln -sfn "$RELEASE/storage/app/organizations" "$RELEASE/public/organizations"
 
             # --- (Re)start the standalone API under PM2 ---
             pm2 startOrReload "$DEPLOY_PATH/ecosystem.config.cjs" --update-env
@@ -127,7 +131,7 @@ jobs:
           cat <<'DEPLOY_EOF' > /tmp/deploy_output.txt
           ${{ steps.ssh.outputs.stdout }}
           DEPLOY_EOF
-          raw=$(grep -oP 'https://[^|]+\|.+' /tmp/deploy_output.txt)
+          raw=$(grep -oP 'https://[^|]+\|.+' /tmp/deploy_output.txt | tail -n 1)
           url="${raw%%|*}"
           deploy_meta="${raw#*|}"
           branch="${deploy_meta%%|*}"
@@ -223,10 +227,14 @@ jobs:
             # `.arkstack` is gitignored, so pnpm deploy skips the compiled server — copy it.
             rm -rf "$RELEASE/.arkstack"
             cp -r apps/api/.arkstack "$RELEASE/.arkstack"
-            # Wire shared state into the artifact, then link public storage.
+            # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
-            ( cd "$RELEASE" && pnpm exec ark storage:link --force )
+            # Public storage symlinks (the `ark storage:link` equivalent — ark isn't
+            # bundled in the prod artifact). Targets resolve via current/storage -> shared.
+            mkdir -p "$RELEASE/public" "$SHARED/storage/app/public" "$SHARED/storage/app/organizations"
+            ln -sfn "$RELEASE/storage/app/public" "$RELEASE/public/storage"
+            ln -sfn "$RELEASE/storage/app/organizations" "$RELEASE/public/organizations"
 
             # --- (Re)start the standalone API under PM2 ---
             pm2 startOrReload "$DEPLOY_PATH/ecosystem.config.cjs" --update-env
@@ -267,7 +275,7 @@ jobs:
           cat <<'DEPLOY_EOF' > /tmp/deploy_output.txt
           ${{ steps.ssh.outputs.stdout }}
           DEPLOY_EOF
-          raw=$(grep -oP 'https://[^|]+\|.+' /tmp/deploy_output.txt)
+          raw=$(grep -oP 'https://[^|]+\|.+' /tmp/deploy_output.txt | tail -n 1)
           url="${raw%%|*}"
           deploy_meta="${raw#*|}"
           branch="${deploy_meta%%|*}"
