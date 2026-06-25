@@ -67,9 +67,10 @@ jobs:
             pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
 
-            # --- Migrations + route count run from the full build (reliable toolchain) ---
-            pnpm ark migrate
-            ROUTE_LIST_OUTPUT="$(pnpm ark route:list)"
+            # --- Migrations + route count run from apps/api, where the `ark` CLI
+            #     resolves (it isn't on PATH at the workspace root) ---
+            ( cd apps/api && pnpm ark migrate )
+            ROUTE_LIST_OUTPUT="$(cd apps/api && pnpm ark route:list)"
             printf '%s\n' "$ROUTE_LIST_OUTPUT"
             ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
             if [ -z "$ROUTES_COUNT" ]; then
@@ -211,9 +212,10 @@ jobs:
             pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
 
-            # --- Migrations + route count run from the full build (reliable toolchain) ---
-            pnpm ark migrate
-            ROUTE_LIST_OUTPUT="$(pnpm ark route:list)"
+            # --- Migrations + route count run from apps/api, where the `ark` CLI
+            #     resolves (it isn't on PATH at the workspace root) ---
+            ( cd apps/api && pnpm ark migrate )
+            ROUTE_LIST_OUTPUT="$(cd apps/api && pnpm ark route:list)"
             printf '%s\n' "$ROUTE_LIST_OUTPUT"
             ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
             if [ -z "$ROUTES_COUNT" ]; then
