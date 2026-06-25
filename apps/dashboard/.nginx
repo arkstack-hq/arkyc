@@ -1,0 +1,20 @@
+# Static single-page app (React Router) served by nginx from this site's docroot.
+# TinyCP includes this file into the site's server block via:
+#   include /var/www/<domain>/.ngin*;
+# TinyCP already points `root` at the docroot, so we only add locations here.
+#
+# The dashboard talks to the API at its own origin (https://api.arkyc.toneflix.net),
+# baked into the build via VITE_API_URL — so nothing is proxied here.
+
+# Long-cache the content-hashed Vite build assets.
+location /assets/ {
+    access_log off;
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+    try_files $uri =404;
+}
+
+# SPA fallback: hand client-side routes back to index.html.
+location / {
+    try_files $uri $uri/ /index.html;
+}

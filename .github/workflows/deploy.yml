@@ -9,6 +9,19 @@ on:
 permissions:
   contents: read
 
+# --- Production topology (three TinyCP sites, three docroots) -----------------
+#   api.arkyc.toneflix.net   -> /var/www/api.arkyc.toneflix.net   (monorepo build
+#                               checkout + the running API; its root .nginx proxies
+#                               to the Express process on :3100)
+#   app.arkyc.toneflix.net   -> /var/www/app.arkyc.toneflix.net   (dashboard static)
+#   arkyc.toneflix.net       -> /var/www/arkyc.toneflix.net       (website static;
+#     + www alias              www.arkyc.toneflix.net is a TinyCP alias of the apex)
+#
+# Everything builds in the one monorepo checkout (the API docroot); the two SPA
+# bundles are published into their own docroots, each with its own .nginx include.
+# Paths/domains are hardcoded on purpose — they aren't secrets and staying explicit
+# keeps the open-source deploy auditable. Only SSH creds + Firebase live in secrets.
+
 jobs:
   deploy-staging:
     name: Staging Deployment
@@ -19,7 +32,7 @@ jobs:
       group: deploy-staging
       cancel-in-progress: true
     steps:
-      - name: Deploy API & dashboard on staging server
+      - name: Deploy all apps on staging server
         uses: appleboy/ssh-action@v1
         id: ssh
         with:
@@ -31,12 +44,19 @@ jobs:
           script: |
             set -e
             PNPM_VERSION="10.6.1"
-            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             DEPLOY_BRANCH="${{ github.ref_name }}"
+
+            # --- TinyCP sites / docroots (see header) ---
+            API_DOCROOT="/var/www/api.arkyc.toneflix.net"
+            APP_DOCROOT="/var/www/app.arkyc.toneflix.net"
+            WEB_DOCROOT="/var/www/arkyc.toneflix.net"
+            API_ORIGIN="https://api.arkyc.toneflix.net"
+
+            DEPLOY_PATH="$API_DOCROOT"     # build checkout + API site docroot
             SHARED="$DEPLOY_PATH/shared"   # persistent across deploys
             RELEASE="$DEPLOY_PATH/current" # the standalone API artifact we run
 
-            # --- Update the build checkout (build source only) ---
+            # --- Update the build checkout (build source + API docroot) ---
             cd "$DEPLOY_PATH"
             git config --global --add safe.directory "$DEPLOY_PATH"
             git fetch --all --prune
@@ -70,11 +90,18 @@ jobs:
             # The build checkout reads the same .env for migrations.
             ln -sfn "$SHARED/.env" apps/api/.env
 
-            # --- Build everything this server needs ---
+            # --- Build everything this server serves ---
             pnpm install --frozen-lockfile
             pnpm run build:libs
             pnpm --filter @arkyc/api build
-            pnpm --filter @arkyc/dashboard build
+            # The dashboard bakes the API origin into its static bundle at build
+            # time (apps/dashboard/.env is gitignored, so set it here explicitly).
+            VITE_API_ENV=production \
+            VITE_APP_ENV=production \
+            VITE_API_URL="$API_ORIGIN" \
+            VITE_PROD_API_URL="$API_ORIGIN" \
+              pnpm --filter @arkyc/dashboard build
+            pnpm --filter @arkyc/website build
 
             # --- App key: generated once on first setup, only when APP_KEY is
             #     unset. Regenerating would break encrypted data (2FA) + sessions. ---
@@ -120,40 +147,27 @@ jobs:
             pm2 startOrReload "$DEPLOY_PATH/ecosystem.config.cjs" --update-env
             pm2 save
 
-            # Reload nginx so it picks up this docroot's .nginx include (proxy -> API).
+            # --- Publish the static SPAs into their own site docroots ---
+            # Each docroot is a separate TinyCP site that includes its .nginx (SPA
+            # fallback). Refresh the hashed assets dir and overwrite index.html etc;
+            # leave the rest of the docroot (e.g. .well-known for Let's Encrypt) alone.
+            mkdir -p "$APP_DOCROOT"
+            rm -rf "$APP_DOCROOT/assets"
+            cp -rT apps/dashboard/dist "$APP_DOCROOT"
+            cp apps/dashboard/.nginx "$APP_DOCROOT/.nginx"
+
+            mkdir -p "$WEB_DOCROOT"
+            rm -rf "$WEB_DOCROOT/assets"
+            cp -rT apps/website/dist "$WEB_DOCROOT"
+            cp apps/website/.nginx "$WEB_DOCROOT/.nginx"
+
+            # Reload nginx so every site picks up its .nginx include (API proxy + SPAs).
             # Guarded: no-ops on non-nginx hosts or when the caller can't reload it.
             if command -v nginx >/dev/null 2>&1; then
               nginx -t && { systemctl reload nginx 2>/dev/null || nginx -s reload; } || echo "nginx reload skipped"
             fi
 
-            echo "https://$(basename "$DEPLOY_PATH")|$DEPLOY_BRANCH|$ROUTES_COUNT"
-
-      - name: Deploy website on staging server
-        uses: appleboy/ssh-action@v1
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            set -e
-            PNPM_VERSION="10.6.1"
-            # The website lives in its own checkout/deploy path on the server.
-            WEBSITE_PATH="${{ secrets.WEBSITE_DEPLOY_PATH }}"
-            DEPLOY_BRANCH="${{ github.ref_name }}"
-            cd "$WEBSITE_PATH"
-            git config --global --add safe.directory "$WEBSITE_PATH"
-            git fetch --all --prune
-            git checkout "$DEPLOY_BRANCH"
-            git reset --hard "origin/$DEPLOY_BRANCH"
-
-            source ~/.nvm/nvm.sh
-            corepack enable
-            corepack prepare "pnpm@${PNPM_VERSION}" --activate
-
-            pnpm install --frozen-lockfile
-            pnpm --filter @arkyc/website build
-            # Static build — the web server serves apps/website/dist directly; no restart needed.
+            echo "$API_ORIGIN|$DEPLOY_BRANCH|$ROUTES_COUNT"
 
       - name: Extract deploy meta
         id: deploy_meta
@@ -179,7 +193,9 @@ jobs:
 
           echo "✅ Successfully Deployed Staging." >> $GITHUB_STEP_SUMMARY
           echo "Deploy Branch: $BRANCH" >> $GITHUB_STEP_SUMMARY
-          echo "Deploy URL: $URL" >> $GITHUB_STEP_SUMMARY
+          echo "Website: https://arkyc.toneflix.net" >> $GITHUB_STEP_SUMMARY
+          echo "Dashboard: https://app.arkyc.toneflix.net" >> $GITHUB_STEP_SUMMARY
+          echo "API: $URL" >> $GITHUB_STEP_SUMMARY
           echo "Published Routes: $ROUTES_COUNT" >> $GITHUB_STEP_SUMMARY
           echo "Health Check: $URL/health?human" >> $GITHUB_STEP_SUMMARY
 
@@ -193,7 +209,7 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - name: Deploy API & dashboard on production server
+      - name: Deploy all apps on production server
         uses: appleboy/ssh-action@v1
         id: ssh
         with:
@@ -205,12 +221,19 @@ jobs:
           script: |
             set -e
             PNPM_VERSION="10.6.1"
-            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             DEPLOY_BRANCH="production"
+
+            # --- TinyCP sites / docroots (see header) ---
+            API_DOCROOT="/var/www/api.arkyc.toneflix.net"
+            APP_DOCROOT="/var/www/app.arkyc.toneflix.net"
+            WEB_DOCROOT="/var/www/arkyc.toneflix.net"
+            API_ORIGIN="https://api.arkyc.toneflix.net"
+
+            DEPLOY_PATH="$API_DOCROOT"     # build checkout + API site docroot
             SHARED="$DEPLOY_PATH/shared"   # persistent across deploys
             RELEASE="$DEPLOY_PATH/current" # the standalone API artifact we run
 
-            # --- Update the build checkout (build source only) ---
+            # --- Update the build checkout (build source + API docroot) ---
             cd "$DEPLOY_PATH"
             git config --global --add safe.directory "$DEPLOY_PATH"
             git fetch --all --prune
@@ -244,11 +267,18 @@ jobs:
             # The build checkout reads the same .env for migrations.
             ln -sfn "$SHARED/.env" apps/api/.env
 
-            # --- Build everything this server needs ---
+            # --- Build everything this server serves ---
             pnpm install --frozen-lockfile
             pnpm run build:libs
             pnpm --filter @arkyc/api build
-            pnpm --filter @arkyc/dashboard build
+            # The dashboard bakes the API origin into its static bundle at build
+            # time (apps/dashboard/.env is gitignored, so set it here explicitly).
+            VITE_API_ENV=production \
+            VITE_APP_ENV=production \
+            VITE_API_URL="$API_ORIGIN" \
+            VITE_PROD_API_URL="$API_ORIGIN" \
+              pnpm --filter @arkyc/dashboard build
+            pnpm --filter @arkyc/website build
 
             # --- App key: generated once on first setup, only when APP_KEY is
             #     unset. Regenerating would break encrypted data (2FA) + sessions. ---
@@ -294,40 +324,27 @@ jobs:
             pm2 startOrReload "$DEPLOY_PATH/ecosystem.config.cjs" --update-env
             pm2 save
 
-            # Reload nginx so it picks up this docroot's .nginx include (proxy -> API).
+            # --- Publish the static SPAs into their own site docroots ---
+            # Each docroot is a separate TinyCP site that includes its .nginx (SPA
+            # fallback). Refresh the hashed assets dir and overwrite index.html etc;
+            # leave the rest of the docroot (e.g. .well-known for Let's Encrypt) alone.
+            mkdir -p "$APP_DOCROOT"
+            rm -rf "$APP_DOCROOT/assets"
+            cp -rT apps/dashboard/dist "$APP_DOCROOT"
+            cp apps/dashboard/.nginx "$APP_DOCROOT/.nginx"
+
+            mkdir -p "$WEB_DOCROOT"
+            rm -rf "$WEB_DOCROOT/assets"
+            cp -rT apps/website/dist "$WEB_DOCROOT"
+            cp apps/website/.nginx "$WEB_DOCROOT/.nginx"
+
+            # Reload nginx so every site picks up its .nginx include (API proxy + SPAs).
             # Guarded: no-ops on non-nginx hosts or when the caller can't reload it.
             if command -v nginx >/dev/null 2>&1; then
               nginx -t && { systemctl reload nginx 2>/dev/null || nginx -s reload; } || echo "nginx reload skipped"
             fi
 
-            echo "https://$(basename "$DEPLOY_PATH")|$DEPLOY_BRANCH|$ROUTES_COUNT"
-
-      - name: Deploy website on production server
-        uses: appleboy/ssh-action@v1
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            set -e
-            PNPM_VERSION="10.6.1"
-            # The website lives in its own checkout/deploy path on the server.
-            WEBSITE_PATH="${{ secrets.WEBSITE_DEPLOY_PATH }}"
-            DEPLOY_BRANCH="production"
-            cd "$WEBSITE_PATH"
-            git config --global --add safe.directory "$WEBSITE_PATH"
-            git fetch --all --prune
-            git checkout "$DEPLOY_BRANCH"
-            git reset --hard "origin/$DEPLOY_BRANCH"
-
-            source ~/.nvm/nvm.sh
-            corepack enable
-            corepack prepare "pnpm@${PNPM_VERSION}" --activate
-
-            pnpm install --frozen-lockfile
-            pnpm --filter @arkyc/website build
-            # Static build — the web server serves apps/website/dist directly; no restart needed.
+            echo "$API_ORIGIN|$DEPLOY_BRANCH|$ROUTES_COUNT"
 
       - name: Extract deploy meta
         id: deploy_meta
@@ -353,6 +370,8 @@ jobs:
 
           echo "✅ Successfully Deployed Production." >> $GITHUB_STEP_SUMMARY
           echo "Deploy Branch: $BRANCH" >> $GITHUB_STEP_SUMMARY
-          echo "Deploy URL: $URL" >> $GITHUB_STEP_SUMMARY
+          echo "Website: https://arkyc.toneflix.net" >> $GITHUB_STEP_SUMMARY
+          echo "Dashboard: https://app.arkyc.toneflix.net" >> $GITHUB_STEP_SUMMARY
+          echo "API: $URL" >> $GITHUB_STEP_SUMMARY
           echo "Published Routes: $ROUTES_COUNT" >> $GITHUB_STEP_SUMMARY
           echo "Health Check: $URL/health?human" >> $GITHUB_STEP_SUMMARY
