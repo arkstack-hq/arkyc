@@ -13,6 +13,7 @@ type HealthReport = {
   status: 'online' | 'degraded'
   version: string
   timestamp: string
+  routes: number
   checks: {
     database: {
       status: 'online' | 'offline'
@@ -94,8 +95,21 @@ export default class HealthController extends BaseController {
     }
   }
 
+  /** Number of routes registered on the router — confirms route loading worked. */
+  private static async countRoutes(): Promise<number> {
+    try {
+      return (await Router.list()).length
+    } catch {
+      return 0
+    }
+  }
+
   private static async buildReport(scope: HealthScope): Promise<HealthReport> {
-    const [database, storage] = await Promise.all([this.checkDatabase(), this.checkStorage()])
+    const [database, storage, routes] = await Promise.all([
+      this.checkDatabase(),
+      this.checkStorage(),
+      this.countRoutes(),
+    ])
 
     return {
       name: this.getName(scope),
@@ -103,6 +117,7 @@ export default class HealthController extends BaseController {
       status: database.status === 'online' && storage.status === 'online' ? 'online' : 'degraded',
       version,
       timestamp: new Date().toISOString(),
+      routes,
       checks: {
         database,
         storage,
@@ -121,6 +136,7 @@ export default class HealthController extends BaseController {
       `status=${report.status}`,
       `version=${report.version}`,
       `timestamp=${report.timestamp}`,
+      `routes=${report.routes}`,
       `database.status=${report.checks.database.status}`,
       `database.latency_ms=${report.checks.database.latencyMs}`,
       `database.message=${report.checks.database.message}`,
@@ -177,6 +193,10 @@ export default class HealthController extends BaseController {
       '        <article class="panel">',
       '          <p class="label">Checked At</p>',
       `          <p class="value"><code>${report.timestamp}</code></p>`,
+      '        </article>',
+      '        <article class="panel">',
+      '          <p class="label">Routes</p>',
+      `          <p class="value"><code>${report.routes}</code> registered</p>`,
       '        </article>',
       '        <article class="panel">',
       '          <p class="label">Database</p>',
