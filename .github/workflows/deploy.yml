@@ -64,7 +64,7 @@ jobs:
             # --- Build everything this server needs ---
             pnpm install --frozen-lockfile
             pnpm run build:libs
-            NODE_ENV=production pnpm --filter @arkyc/api build
+            pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
 
             # --- Migrations + route count run from the full build (reliable toolchain) ---
@@ -208,7 +208,7 @@ jobs:
             # --- Build everything this server needs ---
             pnpm install --frozen-lockfile
             pnpm run build:libs
-            NODE_ENV=production pnpm --filter @arkyc/api build
+            pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
 
             # --- Migrations + route count run from the full build (reliable toolchain) ---

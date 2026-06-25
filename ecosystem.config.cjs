@@ -13,7 +13,7 @@ module.exports = {
       // resolved relative to this file at $DEPLOY_PATH. It runs entirely from its
       // own flat node_modules — independent of the monorepo workspace.
       cwd: './current',
-      // Production server entry emitted by `NODE_ENV=production ark build`.
+      // Production server entry emitted by `ark build` (it self-sets NODE_ENV=production).
       script: 'dist/server.js',
       exec_mode: 'fork',
       instances: 1,
