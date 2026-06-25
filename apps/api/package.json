@@ -40,6 +40,7 @@
     "@arkyc/realtime": "workspace:^",
     "@arkyc/types": "workspace:^",
     "@arkyc/webhooks": "workspace:^",
+    "@faker-js/faker": "^10.5.0",
     "@h3ravel/musket": "^2.2.1",
     "@h3ravel/support": "^2.2.0",
     "@kanun-hq/plugin-file": "^0.1.12",
@@ -58,7 +59,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@eslint/markdown": "^8.0.2",
-    "@faker-js/faker": "^10.5.0",
     "@rollup/plugin-run": "^3.1.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

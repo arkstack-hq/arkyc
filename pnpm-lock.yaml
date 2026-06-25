@@ -110,6 +110,9 @@ importers:
       '@arkyc/webhooks':
         specifier: workspace:^
         version: link:../../packages/webhooks
+      '@faker-js/faker':
+        specifier: ^10.5.0
+        version: 10.5.0
       '@h3ravel/musket':
         specifier: ^2.2.1
         version: 2.2.1(@types/node@26.0.0)
@@ -159,9 +162,6 @@ importers:
       '@eslint/markdown':
         specifier: ^8.0.2
         version: 8.0.2
-      '@faker-js/faker':
-        specifier: ^10.5.0
-        version: 10.5.0
       '@rollup/plugin-run':
         specifier: ^3.1.0
         version: 3.1.0(rollup@4.62.2)
