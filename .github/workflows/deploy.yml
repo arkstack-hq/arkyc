@@ -55,30 +55,33 @@ jobs:
             corepack enable
             corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
+            # Install, then build everything this server runs: the workspace libs,
+            # the API (-> apps/api/.arkstack/build), and the dashboard SPA (served
+            # statically from apps/dashboard/dist).
             pnpm install --frozen-lockfile
-            NODE_ENV=production CLI_BUILD=true pnpm prepare
-
-            # Build the dashboard SPA from this same checkout; the web server serves apps/dashboard/dist.
+            pnpm run build:libs
+            NODE_ENV=production pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
 
+            # Apply migrations and (re)link public storage.
             pnpm ark migrate
             pnpm ark storage:link --force
 
+            # Collect the published route count for the run summary.
             URL="https://$(pwd | sed 's|.*/||')"
             ROUTE_LIST_OUTPUT="$(pnpm ark route:list)"
             printf '%s\n' "$ROUTE_LIST_OUTPUT"
             ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
-
             if [ -z "$ROUTES_COUNT" ]; then
               echo "Unable to extract the published route count."
               exit 1
             fi
 
-            if [ -n "${{ secrets.AFTER_DEPLOY_CMD }}" ]; then
-              ${{ secrets.AFTER_DEPLOY_CMD }} && echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
-            else
-              echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
-            fi
+            # (Re)start the API under PM2 — zero-downtime reload, persisted for boot.
+            pm2 startOrReload ecosystem.config.cjs --update-env
+            pm2 save
+
+            echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
 
       - name: Deploy website on staging server
         uses: appleboy/ssh-action@v1
@@ -105,10 +108,7 @@ jobs:
 
             pnpm install --frozen-lockfile
             pnpm --filter @arkyc/website build
-
-            if [ -n "${{ secrets.WEBSITE_AFTER_DEPLOY_CMD }}" ]; then
-              ${{ secrets.WEBSITE_AFTER_DEPLOY_CMD }}
-            fi
+            # Static build — the web server serves apps/website/dist directly; no restart needed.
 
       - name: Extract deploy meta
         id: deploy_meta
@@ -184,30 +184,33 @@ jobs:
             corepack enable
             corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
+            # Install, then build everything this server runs: the workspace libs,
+            # the API (-> apps/api/.arkstack/build), and the dashboard SPA (served
+            # statically from apps/dashboard/dist).
             pnpm install --frozen-lockfile
-            NODE_ENV=production CLI_BUILD=true pnpm prepare
-
-            # Build the dashboard SPA from this same checkout; the web server serves apps/dashboard/dist.
+            pnpm run build:libs
+            NODE_ENV=production pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
 
+            # Apply migrations and (re)link public storage.
             pnpm ark migrate
             pnpm ark storage:link --force
 
+            # Collect the published route count for the run summary.
             URL="https://$(pwd | sed 's|.*/||')"
             ROUTE_LIST_OUTPUT="$(pnpm ark route:list)"
             printf '%s\n' "$ROUTE_LIST_OUTPUT"
             ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
-
             if [ -z "$ROUTES_COUNT" ]; then
               echo "Unable to extract the published route count."
               exit 1
             fi
 
-            if [ -n "${{ secrets.AFTER_DEPLOY_CMD }}" ]; then
-              ${{ secrets.AFTER_DEPLOY_CMD }} && echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
-            else
-              echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
-            fi
+            # (Re)start the API under PM2 — zero-downtime reload, persisted for boot.
+            pm2 startOrReload ecosystem.config.cjs --update-env
+            pm2 save
+
+            echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
 
       - name: Deploy website on production server
         uses: appleboy/ssh-action@v1
@@ -234,10 +237,7 @@ jobs:
 
             pnpm install --frozen-lockfile
             pnpm --filter @arkyc/website build
-
-            if [ -n "${{ secrets.WEBSITE_AFTER_DEPLOY_CMD }}" ]; then
-              ${{ secrets.WEBSITE_AFTER_DEPLOY_CMD }}
-            fi
+            # Static build — the web server serves apps/website/dist directly; no restart needed.
 
       - name: Extract deploy meta
         id: deploy_meta
