@@ -50,9 +50,18 @@ jobs:
 
             # --- Persistent shared state ($DEPLOY_PATH/shared): .env + storage ---
             mkdir -p "$SHARED/storage/app"
+            # Keep .env in the shared dir. On first run, adopt an existing real
+            # apps/api/.env (config from a prior setup); otherwise seed from the
+            # example and stop, so placeholder DB creds are never used.
             if [ ! -f "$SHARED/.env" ]; then
-              cp apps/api/.env.example "$SHARED/.env"
-              echo "::warning::Seeded $SHARED/.env from .env.example — set APP_KEY, DATABASE_URL, etc."
+              if [ -f apps/api/.env ] && [ ! -L apps/api/.env ]; then
+                cp apps/api/.env "$SHARED/.env"
+                echo "Adopted existing apps/api/.env into $SHARED/.env"
+              else
+                cp apps/api/.env.example "$SHARED/.env"
+                echo "::error::Seeded $SHARED/.env from .env.example — set APP_KEY, DATABASE_URL, etc. then re-run."
+                exit 1
+              fi
             fi
             if [ -n "${{ secrets.FIREBASE_ADMINSDK }}" ]; then
               printf '%s\n' '${{ secrets.FIREBASE_ADMINSDK }}' > "$SHARED/storage/app/firebase-adminsdk.json"
@@ -195,9 +204,18 @@ jobs:
 
             # --- Persistent shared state ($DEPLOY_PATH/shared): .env + storage ---
             mkdir -p "$SHARED/storage/app"
+            # Keep .env in the shared dir. On first run, adopt an existing real
+            # apps/api/.env (config from a prior setup); otherwise seed from the
+            # example and stop, so placeholder DB creds are never used.
             if [ ! -f "$SHARED/.env" ]; then
-              cp apps/api/.env.example "$SHARED/.env"
-              echo "::warning::Seeded $SHARED/.env from .env.example — set APP_KEY, DATABASE_URL, etc."
+              if [ -f apps/api/.env ] && [ ! -L apps/api/.env ]; then
+                cp apps/api/.env "$SHARED/.env"
+                echo "Adopted existing apps/api/.env into $SHARED/.env"
+              else
+                cp apps/api/.env.example "$SHARED/.env"
+                echo "::error::Seeded $SHARED/.env from .env.example — set APP_KEY, DATABASE_URL, etc. then re-run."
+                exit 1
+              fi
             fi
             if [ -n "${{ secrets.FIREBASE_ADMINSDK }}" ]; then
               printf '%s\n' '${{ secrets.FIREBASE_ADMINSDK }}' > "$SHARED/storage/app/firebase-adminsdk.json"
