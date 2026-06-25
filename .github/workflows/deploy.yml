@@ -106,16 +106,18 @@ jobs:
             # --- App key: generated once on first setup, only when APP_KEY is
             #     unset. Regenerating would break encrypted data (2FA) + sessions. ---
             if ! grep -qE '^APP_KEY=.+' "$SHARED/.env"; then
-              ( cd apps/api && pnpm ark key:generate --no-interaction )
+              ( cd apps/api && NODE_ENV=production pnpm ark key:generate --no-interaction )
               # Ensure the generated key persists to the shared .env; keep the symlink.
               cp -L apps/api/.env "$SHARED/.env" 2>/dev/null || true
               ln -sfn "$SHARED/.env" apps/api/.env
             fi
 
             # --- Migrations + route count run from apps/api, where the `ark` CLI
-            #     resolves (it isn't on PATH at the workspace root) ---
-            ( cd apps/api && pnpm ark migrate )
-            ROUTE_LIST_OUTPUT="$(cd apps/api && pnpm ark route:list)"
+            #     resolves (it isn't on PATH at the workspace root). NODE_ENV=production
+            #     makes ark load resources from `dist` (matching the running server),
+            #     not from `src` — so the route count reflects the deployed artifact. ---
+            ( cd apps/api && NODE_ENV=production pnpm ark migrate )
+            ROUTE_LIST_OUTPUT="$(cd apps/api && NODE_ENV=production pnpm ark route:list)"
             printf '%s\n' "$ROUTE_LIST_OUTPUT"
             ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
             if [ -z "$ROUTES_COUNT" ]; then
@@ -283,16 +285,18 @@ jobs:
             # --- App key: generated once on first setup, only when APP_KEY is
             #     unset. Regenerating would break encrypted data (2FA) + sessions. ---
             if ! grep -qE '^APP_KEY=.+' "$SHARED/.env"; then
-              ( cd apps/api && pnpm ark key:generate --no-interaction )
+              ( cd apps/api && NODE_ENV=production pnpm ark key:generate --no-interaction )
               # Ensure the generated key persists to the shared .env; keep the symlink.
               cp -L apps/api/.env "$SHARED/.env" 2>/dev/null || true
               ln -sfn "$SHARED/.env" apps/api/.env
             fi
 
             # --- Migrations + route count run from apps/api, where the `ark` CLI
-            #     resolves (it isn't on PATH at the workspace root) ---
-            ( cd apps/api && pnpm ark migrate )
-            ROUTE_LIST_OUTPUT="$(cd apps/api && pnpm ark route:list)"
+            #     resolves (it isn't on PATH at the workspace root). NODE_ENV=production
+            #     makes ark load resources from `dist` (matching the running server),
+            #     not from `src` — so the route count reflects the deployed artifact. ---
+            ( cd apps/api && NODE_ENV=production pnpm ark migrate )
+            ROUTE_LIST_OUTPUT="$(cd apps/api && NODE_ENV=production pnpm ark route:list)"
             printf '%s\n' "$ROUTE_LIST_OUTPUT"
             ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
             if [ -z "$ROUTES_COUNT" ]; then
