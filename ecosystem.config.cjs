@@ -9,7 +9,10 @@ module.exports = {
   apps: [
     {
       name: 'arkyc-api',
-      cwd: './apps/api',
+      // The standalone API artifact built by `pnpm deploy` (see deploy.yml),
+      // resolved relative to this file at $DEPLOY_PATH. It runs entirely from its
+      // own flat node_modules — independent of the monorepo workspace.
+      cwd: './current',
       // Production server entry emitted by `ark build` (apps/api `build` script).
       script: '.arkstack/build/server.js',
       exec_mode: 'fork',
@@ -24,7 +27,7 @@ module.exports = {
     // deploy's `pm2 startOrReload ecosystem.config.cjs` picks it up automatically.
     // {
     //   name: 'arkyc-worker',
-    //   cwd: './apps/api',
+    //   cwd: './current',
     //   script: 'node_modules/.bin/ark',
     //   args: 'queue:work',
     //   autorestart: true,

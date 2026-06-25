@@ -29,46 +29,46 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           capture_stdout: true
           script: |
+            set -e
             PNPM_VERSION="10.6.1"
             DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             DEPLOY_BRANCH="${{ github.ref_name }}"
+            SHARED="$DEPLOY_PATH/shared"   # persistent across deploys
+            RELEASE="$DEPLOY_PATH/current" # the standalone API artifact we run
+
+            # --- Update the build checkout (build source only) ---
             cd "$DEPLOY_PATH"
             git config --global --add safe.directory "$DEPLOY_PATH"
             git fetch --all --prune
             git checkout "$DEPLOY_BRANCH"
             git reset --hard "origin/$DEPLOY_BRANCH"
 
-            if [ -n "${{ secrets.FIREBASE_ADMINSDK }}" ]; then
-              mkdir -p storage/app
-              printf '%s\n' '${{ secrets.FIREBASE_ADMINSDK }}' > storage/app/firebase-adminsdk.json
-              chmod 600 storage/app/firebase-adminsdk.json
-            else
-              echo "FIREBASE_ADMINSDK secret is not configured. Skipping firebase-adminsdk.json creation."
-            fi
-
             source ~/.nvm/nvm.sh
-
-            echo "Using Node.js version: $(node -v)"
-            echo "Using pnpm version: $(pnpm -v)"
-            echo "Using pm2 version: $(pm2 -v)"
-
+            echo "node $(node -v) · pnpm $(pnpm -v) · pm2 $(pm2 -v)"
             corepack enable
             corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-            # Install, then build everything this server runs: the workspace libs,
-            # the API (-> apps/api/.arkstack/build), and the dashboard SPA (served
-            # statically from apps/dashboard/dist).
+            # --- Persistent shared state ($DEPLOY_PATH/shared): .env + storage ---
+            mkdir -p "$SHARED/storage/app"
+            if [ ! -f "$SHARED/.env" ]; then
+              cp apps/api/.env.example "$SHARED/.env"
+              echo "::warning::Seeded $SHARED/.env from .env.example — set APP_KEY, DATABASE_URL, etc."
+            fi
+            if [ -n "${{ secrets.FIREBASE_ADMINSDK }}" ]; then
+              printf '%s\n' '${{ secrets.FIREBASE_ADMINSDK }}' > "$SHARED/storage/app/firebase-adminsdk.json"
+              chmod 600 "$SHARED/storage/app/firebase-adminsdk.json"
+            fi
+            # The build checkout reads the same .env for migrations.
+            ln -sfn "$SHARED/.env" apps/api/.env
+
+            # --- Build everything this server needs ---
             pnpm install --frozen-lockfile
             pnpm run build:libs
             NODE_ENV=production pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
 
-            # Apply migrations and (re)link public storage.
+            # --- Migrations + route count run from the full build (reliable toolchain) ---
             pnpm ark migrate
-            pnpm ark storage:link --force
-
-            # Collect the published route count for the run summary.
-            URL="https://$(pwd | sed 's|.*/||')"
             ROUTE_LIST_OUTPUT="$(pnpm ark route:list)"
             printf '%s\n' "$ROUTE_LIST_OUTPUT"
             ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
@@ -77,11 +77,22 @@ jobs:
               exit 1
             fi
 
-            # (Re)start the API under PM2 — zero-downtime reload, persisted for boot.
-            pm2 startOrReload ecosystem.config.cjs --update-env
+            # --- Build the standalone API artifact (flat node_modules, prod-only) ---
+            rm -rf "$RELEASE"
+            pnpm --filter=@arkyc/api deploy --prod "$RELEASE"
+            # `.arkstack` is gitignored, so pnpm deploy skips the compiled server — copy it.
+            rm -rf "$RELEASE/.arkstack"
+            cp -r apps/api/.arkstack "$RELEASE/.arkstack"
+            # Wire shared state into the artifact, then link public storage.
+            ln -sfn "$SHARED/.env" "$RELEASE/.env"
+            ln -sfn "$SHARED/storage" "$RELEASE/storage"
+            ( cd "$RELEASE" && pnpm exec ark storage:link --force )
+
+            # --- (Re)start the standalone API under PM2 ---
+            pm2 startOrReload "$DEPLOY_PATH/ecosystem.config.cjs" --update-env
             pm2 save
 
-            echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
+            echo "https://$(basename "$DEPLOY_PATH")|$DEPLOY_BRANCH|$ROUTES_COUNT"
 
       - name: Deploy website on staging server
         uses: appleboy/ssh-action@v1
@@ -91,6 +102,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            set -e
             PNPM_VERSION="10.6.1"
             # The website lives in its own checkout/deploy path on the server.
             WEBSITE_PATH="${{ secrets.WEBSITE_DEPLOY_PATH }}"
@@ -102,7 +114,6 @@ jobs:
             git reset --hard "origin/$DEPLOY_BRANCH"
 
             source ~/.nvm/nvm.sh
-
             corepack enable
             corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
@@ -158,46 +169,46 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           capture_stdout: true
           script: |
+            set -e
             PNPM_VERSION="10.6.1"
             DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             DEPLOY_BRANCH="production"
+            SHARED="$DEPLOY_PATH/shared"   # persistent across deploys
+            RELEASE="$DEPLOY_PATH/current" # the standalone API artifact we run
+
+            # --- Update the build checkout (build source only) ---
             cd "$DEPLOY_PATH"
             git config --global --add safe.directory "$DEPLOY_PATH"
             git fetch --all --prune
             git checkout "$DEPLOY_BRANCH"
             git reset --hard "origin/$DEPLOY_BRANCH"
 
-            if [ -n "${{ secrets.FIREBASE_ADMINSDK }}" ]; then
-              mkdir -p storage/app
-              printf '%s\n' '${{ secrets.FIREBASE_ADMINSDK }}' > storage/app/firebase-adminsdk.json
-              chmod 600 storage/app/firebase-adminsdk.json
-            else
-              echo "FIREBASE_ADMINSDK secret is not configured. Skipping firebase-adminsdk.json creation."
-            fi
-
             source ~/.nvm/nvm.sh
-
-            echo "Using Node.js version: $(node -v)"
-            echo "Using pnpm version: $(pnpm -v)"
-            echo "Using pm2 version: $(pm2 -v)"
-
+            echo "node $(node -v) · pnpm $(pnpm -v) · pm2 $(pm2 -v)"
             corepack enable
             corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-            # Install, then build everything this server runs: the workspace libs,
-            # the API (-> apps/api/.arkstack/build), and the dashboard SPA (served
-            # statically from apps/dashboard/dist).
+            # --- Persistent shared state ($DEPLOY_PATH/shared): .env + storage ---
+            mkdir -p "$SHARED/storage/app"
+            if [ ! -f "$SHARED/.env" ]; then
+              cp apps/api/.env.example "$SHARED/.env"
+              echo "::warning::Seeded $SHARED/.env from .env.example — set APP_KEY, DATABASE_URL, etc."
+            fi
+            if [ -n "${{ secrets.FIREBASE_ADMINSDK }}" ]; then
+              printf '%s\n' '${{ secrets.FIREBASE_ADMINSDK }}' > "$SHARED/storage/app/firebase-adminsdk.json"
+              chmod 600 "$SHARED/storage/app/firebase-adminsdk.json"
+            fi
+            # The build checkout reads the same .env for migrations.
+            ln -sfn "$SHARED/.env" apps/api/.env
+
+            # --- Build everything this server needs ---
             pnpm install --frozen-lockfile
             pnpm run build:libs
             NODE_ENV=production pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
 
-            # Apply migrations and (re)link public storage.
+            # --- Migrations + route count run from the full build (reliable toolchain) ---
             pnpm ark migrate
-            pnpm ark storage:link --force
-
-            # Collect the published route count for the run summary.
-            URL="https://$(pwd | sed 's|.*/||')"
             ROUTE_LIST_OUTPUT="$(pnpm ark route:list)"
             printf '%s\n' "$ROUTE_LIST_OUTPUT"
             ROUTES_COUNT="$(printf '%s\n' "$ROUTE_LIST_OUTPUT" | sed -nE 's/.*Total routes[[:space:]]+([0-9]+).*/\1/p' | tail -n 1)"
@@ -206,11 +217,22 @@ jobs:
               exit 1
             fi
 
-            # (Re)start the API under PM2 — zero-downtime reload, persisted for boot.
-            pm2 startOrReload ecosystem.config.cjs --update-env
+            # --- Build the standalone API artifact (flat node_modules, prod-only) ---
+            rm -rf "$RELEASE"
+            pnpm --filter=@arkyc/api deploy --prod "$RELEASE"
+            # `.arkstack` is gitignored, so pnpm deploy skips the compiled server — copy it.
+            rm -rf "$RELEASE/.arkstack"
+            cp -r apps/api/.arkstack "$RELEASE/.arkstack"
+            # Wire shared state into the artifact, then link public storage.
+            ln -sfn "$SHARED/.env" "$RELEASE/.env"
+            ln -sfn "$SHARED/storage" "$RELEASE/storage"
+            ( cd "$RELEASE" && pnpm exec ark storage:link --force )
+
+            # --- (Re)start the standalone API under PM2 ---
+            pm2 startOrReload "$DEPLOY_PATH/ecosystem.config.cjs" --update-env
             pm2 save
 
-            echo "$URL|$DEPLOY_BRANCH|$ROUTES_COUNT"
+            echo "https://$(basename "$DEPLOY_PATH")|$DEPLOY_BRANCH|$ROUTES_COUNT"
 
       - name: Deploy website on production server
         uses: appleboy/ssh-action@v1
@@ -220,6 +242,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            set -e
             PNPM_VERSION="10.6.1"
             # The website lives in its own checkout/deploy path on the server.
             WEBSITE_PATH="${{ secrets.WEBSITE_DEPLOY_PATH }}"
@@ -231,7 +254,6 @@ jobs:
             git reset --hard "origin/$DEPLOY_BRANCH"
 
             source ~/.nvm/nvm.sh
-
             corepack enable
             corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
