@@ -76,6 +76,15 @@ jobs:
             pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
 
+            # --- App key: generated once on first setup, only when APP_KEY is
+            #     unset. Regenerating would break encrypted data (2FA) + sessions. ---
+            if ! grep -qE '^APP_KEY=.+' "$SHARED/.env"; then
+              ( cd apps/api && pnpm ark key:generate --no-interaction )
+              # Ensure the generated key persists to the shared .env; keep the symlink.
+              cp -L apps/api/.env "$SHARED/.env" 2>/dev/null || true
+              ln -sfn "$SHARED/.env" apps/api/.env
+            fi
+
             # --- Migrations + route count run from apps/api, where the `ark` CLI
             #     resolves (it isn't on PATH at the workspace root) ---
             ( cd apps/api && pnpm ark migrate )
@@ -229,6 +238,15 @@ jobs:
             pnpm run build:libs
             pnpm --filter @arkyc/api build
             pnpm --filter @arkyc/dashboard build
+
+            # --- App key: generated once on first setup, only when APP_KEY is
+            #     unset. Regenerating would break encrypted data (2FA) + sessions. ---
+            if ! grep -qE '^APP_KEY=.+' "$SHARED/.env"; then
+              ( cd apps/api && pnpm ark key:generate --no-interaction )
+              # Ensure the generated key persists to the shared .env; keep the symlink.
+              cp -L apps/api/.env "$SHARED/.env" 2>/dev/null || true
+              ln -sfn "$SHARED/.env" apps/api/.env
+            fi
 
             # --- Migrations + route count run from apps/api, where the `ark` CLI
             #     resolves (it isn't on PATH at the workspace root) ---
