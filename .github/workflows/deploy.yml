@@ -98,7 +98,9 @@ jobs:
 
             # --- Build the standalone API artifact (flat node_modules, prod-only) ---
             rm -rf "$RELEASE"
-            pnpm --filter=@arkyc/api deploy --prod "$RELEASE"
+            # --legacy: pnpm v10's default deploy requires inject-workspace-packages;
+            # legacy mode resolves the @arkyc/* workspace deps without that global flag.
+            pnpm --filter=@arkyc/api deploy --prod --legacy "$RELEASE"
             # `dist` is gitignored, so pnpm deploy skips the compiled server — copy it.
             rm -rf "$RELEASE/dist"
             cp -r apps/api/dist "$RELEASE/dist"
@@ -261,7 +263,9 @@ jobs:
 
             # --- Build the standalone API artifact (flat node_modules, prod-only) ---
             rm -rf "$RELEASE"
-            pnpm --filter=@arkyc/api deploy --prod "$RELEASE"
+            # --legacy: pnpm v10's default deploy requires inject-workspace-packages;
+            # legacy mode resolves the @arkyc/* workspace deps without that global flag.
+            pnpm --filter=@arkyc/api deploy --prod --legacy "$RELEASE"
             # `dist` is gitignored, so pnpm deploy skips the compiled server — copy it.
             rm -rf "$RELEASE/dist"
             cp -r apps/api/dist "$RELEASE/dist"
