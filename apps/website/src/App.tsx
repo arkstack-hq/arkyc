@@ -1,9 +1,8 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
-import { DocsLayout } from '@/docs/DocsLayout'
-import { Footer } from '@/components/Footer'
+import { DocsLayout } from '@/layouts/DocsLayout'
 import { Home } from '@/pages/Home'
-import { Nav } from '@/components/Nav'
+import { MainLayout } from './layouts/MainLayout'
 import { Quickstart } from '@/docs/Quickstart'
 import { ServerSdk } from '@/docs/ServerSdk'
 import VerifyPage from './pages/VerifyPage'
@@ -24,19 +23,23 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
-      <Nav />
+
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/verify" element={<VerifyPage />} />
-        <Route path="/docs" element={<DocsLayout />}>
-          <Route index element={<Quickstart />} />
-          <Route path="widget" element={<Widget />} />
-          <Route path="sdk" element={<ServerSdk />} />
-          <Route path="webhooks" element={<Webhooks />} />
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Home />} />
+
+          <Route path="/docs" element={<DocsLayout />}>
+            <Route index element={<Quickstart />} />
+            <Route path="widget" element={<Widget />} />
+            <Route path="sdk" element={<ServerSdk />} />
+            <Route path="webhooks" element={<Webhooks />} />
+          </Route>
         </Route>
+
+        <Route path="/verify" element={<VerifyPage />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <Footer />
     </>
   )
 }
