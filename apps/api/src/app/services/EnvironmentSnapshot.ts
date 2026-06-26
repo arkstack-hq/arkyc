@@ -63,7 +63,7 @@ const secret = (label: string, value: unknown): EnvItem =>
  * values never leave the server.
  */
 export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
-  const nodeEnv = str(process.env.NODE_ENV) || 'development'
+  const nodeEnv = str(env('APP_DEBUG', 'development'))
 
   const app = config('app')
   const db = config('database')
@@ -140,8 +140,8 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
         driver('OCR driver', env('OCR_DRIVER', 'mock')),
         driver('OCR fallback', env('OCR_FALLBACK_DRIVER', 'mock')),
         ok('OCR language', env('OCR_LANGUAGE', 'eng')),
-        ok('AI model', env('OCR_AI_MODEL') ?? '—'),
-        ok('AI endpoint', env('OCR_ENDPOINT') ?? 'default'),
+        ok('AI model', env('OCR_AI_MODEL', '—')),
+        ok('AI endpoint', env('OCR_ENDPOINT', 'default')),
         secret('AI API key', env('OCR_API_KEY')),
         driver('Liveness driver', env('LIVENESS_DRIVER', 'mock')),
         driver('Face-match driver', env('FACE_MATCH_DRIVER', 'mock')),
@@ -151,7 +151,7 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
       title: 'Realtime',
       items: [
         ok('Active transport', current.realtime.transport),
-        ok('Env transport', process.env.REALTIME_TRANSPORT ?? 'off'),
+        ok('Env transport', env('REALTIME_TRANSPORT', 'off')),
         ok('Pusher host', realtime.pusher?.host ?? 'hosted'),
         ok('Pusher cluster', realtime.pusher?.cluster),
         secret('Firebase project', realtime.firebase?.projectId),

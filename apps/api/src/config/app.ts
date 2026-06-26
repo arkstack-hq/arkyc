@@ -1,10 +1,18 @@
-export default () => {
+import { AppConfig, env } from '@arkstack/common'
+
+export default (): AppConfig => {
   return {
-    env: env<string>('APP_ENV', 'local'),
-    key: env<string>('APP_KEY', 'change-me'),
-    url: env<string>('APP_URL', 'http://localhost'),
-    name: env<string>('APP_NAME', 'Arkstack'),
-    frontend_url: env<string>('FRONTEND_URL', 'http://localhost:3000'),
-    website_url: env<string>('WEBSITE_URL', 'http://localhost:3000'),
+    env: env('APP_ENV', 'local'),
+    key: env('APP_KEY', 'change-me'),
+    url: env('APP_URL', 'http://localhost'),
+    name: env('APP_NAME', 'Arkstack'),
+    host: env('APP_HOST', '0.0.0.0'),
+    website_url: env('WEBSITE_URL', 'http://localhost:3000'),
+    frontend_url: env('FRONTEND_URL', 'http://localhost:3000'),
+    debug: env('APP_DEBUG', false),
+    timezone: env('APP_TIMEZONE', 'UTC'),
+    locale: env('APP_LOCALE', 'en'),
+    fallback_locale: env('APP_FALLBACK_LOCALE', 'en'),
+    faker_locale: env('APP_FAKER_LOCALE', 'en_US'),
   }
 }
