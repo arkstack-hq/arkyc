@@ -8,11 +8,11 @@ import type {
   WidgetStep,
   WorkflowConfig,
 } from '@arkyc/types'
-import { REALTIME_EVENT } from '@arkyc/types'
+import { REALTIME_EVENT, workflowAddressConfig } from '@arkyc/types'
 import { ArkycClient, type ClientHandoff, type ClientRealtime, type ClientSession, WidgetApiError } from './client'
 import { Flow } from './flow'
 import { Theme } from './theme'
-import { WidgetView, type ViewHandlers } from './ui'
+import { WidgetView, type AddressFormData, type ViewHandlers } from './ui'
 import { isDesktopDevice } from './device'
 import { renderQrSvg } from './qr'
 import { createWidgetRealtimeClient, type WidgetRealtimeClient } from './realtime'
@@ -103,6 +103,10 @@ export class WidgetController {
   /** The session's capture model; `active` mandates a live camera (no fallback). */
   private captureModel: 'passive' | 'active' | 'both' = 'passive'
   private livenessChallenges: LivenessChallenge[] = []
+  /** The address-entry form data, captured before the address submission. */
+  private addressData: AddressFormData | null = null
+  /** Device coordinates resolved on the address step (when the user opts in). */
+  private addressCoords: { latitude: number; longitude: number } | null = null
   /** The applied workflow (orders/toggles stages, skip_ocr), or null for the default flow. */
   private workflow: WorkflowConfig | null = null
   private result: WidgetResult | null = null
@@ -278,6 +282,7 @@ export class WidgetController {
           })
           await this.enter(this.next())
         }),
+      onAddress: (data) => void this.run(() => this.onAddress(data)),
       onAcknowledge: () => this.finishResult(),
       onUsePhone: () => void this.run(() => this.startHandoff()),
       onContinueHere: () => {
@@ -490,6 +495,9 @@ export class WidgetController {
       case 'ocr_processing':
         await this.delay(this.transientMs)
         return this.enter(this.next())
+      case 'address_processing':
+        await this.submitAddress()
+        return this.enter(this.next())
       case 'passive_liveness':
         await this.client.submitLiveness({ selfie: this.selfie, signals: this.config.signals })
         return this.enter(this.next())
@@ -548,6 +556,52 @@ export class WidgetController {
       // manually waved through.
       strictCapture: this.livenessMode === 'active',
       handoffAvailable: this.handoffReady,
+      addressMethods: workflowAddressConfig(this.workflow)?.methods ?? [],
+    })
+  }
+
+  /** Store the entered address, resolve device location if opted in, then verify. */
+  private async onAddress(data: AddressFormData): Promise<void> {
+    this.addressData = data
+    this.addressCoords = data.useLocation ? await this.geolocate() : null
+
+    return this.enter('address_processing')
+  }
+
+  /** Submit the captured address evidence to the Client API. */
+  private async submitAddress(): Promise<void> {
+    const data = this.addressData
+    if (!data) return
+
+    await this.client.submitAddress({
+      line1: data.line1,
+      line2: data.line2,
+      city: data.city,
+      region: data.region,
+      postalCode: data.postalCode,
+      country: data.country,
+      poa: data.poa,
+      latitude: this.addressCoords?.latitude ?? null,
+      longitude: this.addressCoords?.longitude ?? null,
+      signals: this.config.signals,
+    })
+  }
+
+  /**
+   * Resolve the device's coordinates via the Geolocation API. Resolves to `null`
+   * on denial/unavailability/timeout — the `device_location` method then simply
+   * has no coordinates to check (routing the session to review).
+   */
+  private geolocate(): Promise<{ latitude: number; longitude: number } | null> {
+    const geo = this.nav?.geolocation
+    if (!geo) return Promise.resolve(null)
+
+    return new Promise((resolve) => {
+      geo.getCurrentPosition(
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        () => resolve(null),
+        { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
+      )
     })
   }
 

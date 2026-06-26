@@ -1,4 +1,4 @@
-import type { DocumentType, LivenessChallenge, LivenessMode } from '@arkyc/types'
+import type { DocumentType, LivenessChallenge, LivenessMode, PostalAddress } from '@arkyc/types'
 
 import { BaseController } from '@controllers/BaseController'
 import ClientSessionResource, { type ClientRealtime } from '@app/http/resources/ClientSessionResource'
@@ -175,6 +175,46 @@ export default class ClientSessionController extends BaseController {
       .setStatusCode(201)
   }
 
+  /**
+   * Submit address verification (opt-in stage). Carries the user's claimed
+   * address fields, an optional proof-of-address image (`poa`), and optional
+   * device coordinates — the workflow's configured methods decide which are used.
+   */
+  async address({ req }: HttpContext) {
+    const data = await this.validate({
+      line1: ['nullable', 'string', 'max:255'],
+      line2: ['nullable', 'string', 'max:255'],
+      city: ['nullable', 'string', 'max:120'],
+      region: ['nullable', 'string', 'max:120'],
+      postal_code: ['nullable', 'string', 'max:32'],
+      country: ['nullable', 'string', 'max:2'],
+      poa: ['nullable', 'file', 'image', 'max:10240'],
+      latitude: ['nullable', 'numeric', 'between:-90,90'],
+      longitude: ['nullable', 'numeric', 'between:-180,180'],
+      address_score: ['nullable', 'numeric', 'between:0,1'],
+      address_passed: ['nullable', 'boolean'],
+    })
+
+    const claimed = this.claimedAddress(data)
+    await sessionService.submitAddress(req.verificationSession!, {
+      claimed,
+      poaImage: data.poa as FileLike | undefined,
+      latitude: data.latitude as number | undefined,
+      longitude: data.longitude as number | undefined,
+      countryHint: (data.country as string | undefined) ?? claimed?.country ?? null,
+      signals: this.signals(data),
+    })
+
+    return new ClientSessionResource(req.verificationSession!)
+      .additional({
+        status: 'success',
+        message: 'Address received',
+        code: 201,
+      })
+      .response()
+      .setStatusCode(201)
+  }
+
   /** Finalise the session — runs the decision engine and lands a verdict. */
   async complete({ req }: HttpContext) {
     const data = await this.validate({
@@ -208,6 +248,20 @@ export default class ClientSessionController extends BaseController {
     }
   }
 
+  /** Build a claimed {@link PostalAddress} from the form fields, or null when blank. */
+  private claimedAddress(data: Record<string, unknown>): PostalAddress | null {
+    const address: PostalAddress = {
+      line1: (data.line1 as string | undefined) || undefined,
+      line2: (data.line2 as string | undefined) || undefined,
+      city: (data.city as string | undefined) || undefined,
+      region: (data.region as string | undefined) || undefined,
+      postalCode: (data.postal_code as string | undefined) || undefined,
+      country: (data.country as string | undefined) || undefined,
+    }
+
+    return Object.values(address).some(Boolean) ? address : null
+  }
+
   /** Map validated body fields to provider signal hints. */
   private signals(data: Record<string, unknown>): ProviderSignals {
     return {
@@ -219,6 +273,8 @@ export default class ClientSessionController extends BaseController {
       multipleFaces: data.multiple_faces as boolean | undefined,
       faceSimilarity: data.face_similarity as number | undefined,
       faceMatchPassed: data.face_match_passed as boolean | undefined,
+      addressScore: data.address_score as number | undefined,
+      addressPassed: data.address_passed as boolean | undefined,
     }
   }
 }

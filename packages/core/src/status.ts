@@ -29,13 +29,16 @@ export class StatusMachine {
    */
   static readonly TRANSITIONS: Readonly<Record<VerificationStatus, readonly VerificationStatus[]>> = {
     pending: ['started', 'expired', 'cancelled'],
-    // `liveness_submitted` is reachable directly when a workflow runs liveness
-    // before (or instead of) document capture.
-    started: ['document_submitted', 'liveness_submitted', 'expired', 'cancelled'],
-    document_submitted: ['liveness_submitted', 'processing', 'expired', 'cancelled'],
+    // Submit stages (`document`, `address`, `liveness`) are reorderable per
+    // workflow, so a submit status can be reached directly from `started` and
+    // flows forward into the next enabled submit stage or straight to `processing`.
+    started: ['document_submitted', 'address_submitted', 'liveness_submitted', 'expired', 'cancelled'],
+    document_submitted: ['address_submitted', 'liveness_submitted', 'processing', 'expired', 'cancelled'],
+    // `address` is the opt-in stage — between document and liveness in canonical order.
+    address_submitted: ['liveness_submitted', 'processing', 'expired', 'cancelled'],
     liveness_submitted: ['processing', 'expired', 'cancelled'],
     processing: ['approved', 'rejected', 'requires_review', 'expired', 'cancelled'],
-    requires_review: ['approved', 'rejected', 'started', 'document_submitted', 'cancelled'],
+    requires_review: ['approved', 'rejected', 'started', 'document_submitted', 'address_submitted', 'cancelled'],
     approved: [],
     rejected: [],
     expired: [],

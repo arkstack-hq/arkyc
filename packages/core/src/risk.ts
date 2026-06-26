@@ -36,6 +36,7 @@ export class Risk {
       input.document.ocrConfidence,
       input.liveness.score,
       input.faceMatch.similarityScore,
+      input.address.score,
     ].map(Risk.clamp01)
 
     let risk = 1 - mean(positives)
@@ -44,7 +45,9 @@ export class Risk {
       input.document.expired ||
       !input.liveness.passed ||
       !input.faceMatch.passed ||
-      input.liveness.multipleFaces === true
+      input.liveness.multipleFaces === true ||
+      // A failed address only floors risk when it's a rejecting failure.
+      (!input.address.passed && input.address.onFail === 'reject')
 
     if (hardFailure) {
       risk = Math.max(risk, 0.9)

@@ -25,11 +25,13 @@ export default defineConfig(({ mode }) => {
       apiUrl: localApiUrl,
       secretKey: env.ARKYC_SECRET_KEY || '',
       webhookSecret: env.ARKYC_WEBHOOK_SECRET || '',
+      workflowId: env.ARKYC_WORKFLOW_ID || '',
     },
     remote: {
       apiUrl: remoteApiUrl,
       secretKey: env.ARKYC_REMOTE_SECRET_KEY || '',
       webhookSecret: env.ARKYC_REMOTE_WEBHOOK_SECRET || '',
+      workflowId: env.ARKYC_REMOTE_WORKFLOW_ID || '',
     },
   }
 

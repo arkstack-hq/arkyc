@@ -8,6 +8,7 @@ function goodInput(): DecisionInput {
     document: { qualityScore: 0.9, ocrConfidence: 0.92, expired: false },
     liveness: { passed: true, score: 0.95, multipleFaces: false },
     faceMatch: { passed: true, similarityScore: 0.85 },
+    address: { passed: true, score: 0.9, onFail: 'review' },
   }
 }
 
@@ -57,6 +58,32 @@ describe('DecisionEngine.decide', () => {
       },
       decision: 'requires_review',
       reason: 'MULTIPLE_FACES_DETECTED',
+    },
+    {
+      name: 'reviews a failed address when on_fail is review',
+      mutate: (i) => {
+        i.address.passed = false
+        i.address.onFail = 'review'
+      },
+      decision: 'requires_review',
+      reason: 'ADDRESS_VERIFICATION_FAILED',
+    },
+    {
+      name: 'rejects a failed address when on_fail is reject',
+      mutate: (i) => {
+        i.address.passed = false
+        i.address.onFail = 'reject'
+      },
+      decision: 'rejected',
+      reason: 'ADDRESS_VERIFICATION_FAILED',
+    },
+    {
+      name: 'reviews low address confidence',
+      mutate: (i) => {
+        i.address.score = 0.4
+      },
+      decision: 'requires_review',
+      reason: 'ADDRESS_LOW_CONFIDENCE',
     },
     {
       name: 'reviews low document quality',

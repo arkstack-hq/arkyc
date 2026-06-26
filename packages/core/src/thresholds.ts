@@ -11,6 +11,7 @@ export class Thresholds {
     ocrConfidenceThreshold: 0.8,
     livenessThreshold: 0.85,
     faceMatchThreshold: 0.75,
+    addressThreshold: 0.6,
   }
 
   /**

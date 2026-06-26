@@ -9,17 +9,19 @@ import type {
   LivenessChallenge,
   LivenessMode,
   Metadata,
+  PostalAddress,
   VerificationStatus,
 } from '@arkyc/types'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { Project } from '@app/models/Project'
 import { Workflow } from '@app/models/Workflow'
-import { type WorkflowConfig, workflowEnables, workflowRunsOcr } from '@arkyc/types'
+import { type WorkflowConfig, workflowAddressConfig, workflowEnables, workflowRunsOcr } from '@arkyc/types'
 import { DocumentCapture } from '@app/models/DocumentCapture'
 import { LivenessCheck } from '@app/models/LivenessCheck'
+import { AddressVerification } from '@app/models/AddressVerification'
 import { sessionObjectKey } from 'src/support/storage'
 import { transitionTo } from 'src/support/session-transition'
-import { type ProviderSignals, livenessDriver } from './providers'
+import { type ProviderSignals, addressVerifier, livenessDriver } from './providers'
 import { settings } from './GlobalSettingsService'
 import { BiometricJob, OcrJob } from '@app/jobs'
 
@@ -263,6 +265,70 @@ export class VerificationSessionService {
   }
 
   /**
+   * Persist address verification (opt-in stage). Runs the workflow's configured
+   * methods inline through the address verifier and stores the result. Idempotent
+   * inputs (claimed address, optional proof-of-address image, device coords) are
+   * stored alongside the verdict so a reviewer can see what was checked.
+   */
+  async submitAddress(
+    session: VerificationSession,
+    input: {
+      claimed?: PostalAddress | null
+      poaImage?: FileLike
+      latitude?: number | null
+      longitude?: number | null
+      countryHint?: string | null
+      signals?: ProviderSignals
+    },
+  ): Promise<AddressVerification> {
+    await this.ensureMutable(session)
+
+    const config = workflowAddressConfig(session.workflow)
+    RequestException.abortIf(!config, 'Address verification is not enabled for this session', 409)
+
+    let poaPath: string | null = null
+    if (input.poaImage) {
+      poaPath = sessionObjectKey(session, 'address/proof.jpg')
+      await Storage.disk().put(poaPath, input.poaImage, { visibility: 'private' })
+    }
+
+    const coords =
+      input.latitude != null && input.longitude != null
+        ? { latitude: input.latitude, longitude: input.longitude }
+        : null
+
+    const result = await addressVerifier.verify({
+      methods: config!.methods,
+      claimed: input.claimed ?? null,
+      poaImage: input.poaImage?.buffer ?? null,
+      coords,
+      countryHint: input.countryHint ?? null,
+      hints: { passed: input.signals?.addressPassed, score: input.signals?.addressScore },
+    })
+
+    const verification = await AddressVerification.create({
+      organizationId: session.organizationId,
+      projectId: session.projectId,
+      sessionId: session.id,
+      claimedAddress: input.claimed ?? null,
+      documentImagePath: poaPath,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
+      passed: result.passed,
+      score: result.score,
+      methods: result.methods,
+      provider: addressVerifier.name,
+      rawResponse: result.raw,
+    })
+
+    if (session.status === 'started' || session.status === 'document_submitted') {
+      await this.transition(session, 'address_submitted')
+    }
+
+    return verification
+  }
+
+  /**
    * Finalise: require a document + liveness, move to `processing`, and enqueue
    * the biometric job (face match + decision). A worker lands the final outcome.
    */
@@ -273,6 +339,10 @@ export class VerificationSessionService {
     if (workflowEnables(session.workflow, 'document')) {
       const capture = await DocumentCapture.where({ sessionId: session.id }).first()
       RequestException.assertFound(capture, 'No document has been submitted', 409)
+    }
+    if (workflowEnables(session.workflow, 'address')) {
+      const address = await AddressVerification.where({ sessionId: session.id }).first()
+      RequestException.assertFound(address, 'Address verification has not been submitted', 409)
     }
     if (workflowEnables(session.workflow, 'liveness')) {
       const liveness = await LivenessCheck.where({ sessionId: session.id }).first()

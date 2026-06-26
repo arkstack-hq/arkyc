@@ -14,6 +14,7 @@ import { webhookService } from '@app/services/WebhookService'
 const EVENT_NAMES: WebhookEventName[] = [
   'verification.started',
   'verification.document_submitted',
+  'verification.address_submitted',
   'verification.processing',
   'verification.requires_review',
   'verification.approved',

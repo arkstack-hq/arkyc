@@ -22,6 +22,7 @@ export interface FlowContext {
 /** The widget screens that make up each coarse verification stage, in stage-local order. */
 const STAGE_STEPS: Record<WorkflowStepKey, WidgetStep[]> = {
   document: ['document_selection', 'front_capture', 'back_capture', 'ocr_processing'],
+  address: ['address_entry', 'address_processing'],
   liveness: ['active_liveness', 'selfie_capture', 'passive_liveness'],
   face_match: ['face_match'],
 }

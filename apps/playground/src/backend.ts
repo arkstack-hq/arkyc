@@ -1,6 +1,7 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
-import type { Plugin } from 'vite'
 import { Arkyc, WebhookSigner } from '@arkyc/sdk'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+
+import type { Plugin } from 'vite'
 
 /** One switchable API target (local or remote) and its server-side secrets. */
 export interface ArkycTargetConfig {
@@ -10,6 +11,8 @@ export interface ArkycTargetConfig {
   apiUrl: string
   /** Signing secret of the webhook endpoint pointed at this playground. */
   webhookSecret: string
+  /** Optional workflow to apply to every session (e.g. to enable the address stage). */
+  workflowId?: string
 }
 
 /** The two targets the UI toggles between. */
@@ -61,7 +64,7 @@ export function arkycBackend(options: ArkycBackendOptions): Plugin {
     let client = clients.get(target)
     if (!client) {
       const cfg = options.targets[target]
-      client = new Arkyc({ secretKey: cfg.secretKey, baseUrl: cfg.apiUrl })
+      client = new Arkyc({ secretKey: cfg.secretKey, baseUrl: cfg.apiUrl, workflowId: cfg.workflowId || null })
       clients.set(target, client)
     }
     return client

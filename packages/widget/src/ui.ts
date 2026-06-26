@@ -1,4 +1,5 @@
 import type {
+  AddressMethod,
   DocumentType,
   LivenessChallenge,
   ProjectBranding,
@@ -6,6 +7,20 @@ import type {
   VerificationStatus,
   WidgetStep,
 } from '@arkyc/types'
+
+/** The data the address-entry screen collects before submission. */
+export interface AddressFormData {
+  line1: string | null
+  line2: string | null
+  city: string | null
+  region: string | null
+  postalCode: string | null
+  country: string | null
+  /** Proof-of-address image, when the `poa_document` method is configured. */
+  poa: Blob | null
+  /** Whether the user opted to share device location (`device_location` method). */
+  useLocation: boolean
+}
 
 import { Camera } from './capture'
 import type { Facing } from './capture'
@@ -46,6 +61,8 @@ export interface ViewHandlers {
   onUsePhone(): void
   /** The user chose to keep verifying on this (desktop) device instead of handing off. */
   onContinueHere(): void
+  /** The address-entry form was submitted (opt-in address stage). */
+  onAddress(data: AddressFormData): void
 }
 
 /** Per-render data the view needs for the current step. */
@@ -63,6 +80,8 @@ export interface ViewState {
   allowSkip?: boolean
   /** The challenge sequence to prompt for the active-liveness screen. */
   livenessChallenges?: LivenessChallenge[]
+  /** The address methods to collect for, on the address-entry screen. */
+  addressMethods?: AddressMethod[]
   /**
    * Capture model demands a live camera (`capture_model === 'active'`). When set,
    * the active-liveness screen must NOT offer a manual/file fallback on
@@ -359,6 +378,10 @@ export class WidgetView {
         return this.renderActiveLiveness(state.livenessChallenges ?? [], state.allowSkip, state.requireLiveCamera)
       case 'ocr_processing':
         return this.renderProcessing('Reading your document…')
+      case 'address_entry':
+        return this.renderAddressForm(state.addressMethods ?? [])
+      case 'address_processing':
+        return this.renderProcessing('Verifying your address…')
       case 'passive_liveness':
         return this.renderProcessing('Checking liveness…')
       case 'face_match':
@@ -1132,6 +1155,67 @@ export class WidgetView {
       this.body.appendChild(this.el('p', { class: 'arkyc-p', text: r.copy }))
     }
     this.footer.appendChild(this.button('Done', () => this.handlers.onAcknowledge()))
+  }
+
+  /** The address-entry form (opt-in address stage). Inputs shown depend on methods. */
+  private renderAddressForm(methods: AddressMethod[]): void {
+    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Your address' }))
+    this.body.appendChild(
+      this.el('p', { class: 'arkyc-p', text: 'Enter your residential address so we can verify it.' }),
+    )
+
+    const form = this.el('div', { class: 'arkyc-form' })
+    const field = (placeholder: string): HTMLInputElement => {
+      const input = this.el<HTMLInputElement>('input', { class: 'arkyc-input', type: 'text', placeholder })
+      form.appendChild(input)
+      return input
+    }
+    const line1 = field('Address line 1')
+    const line2 = field('Address line 2 (optional)')
+    const city = field('City')
+    const region = field('State / region')
+    const postal = field('Postal code')
+    const country = field('Country code (e.g. NG)')
+    this.body.appendChild(form)
+
+    let poa: Blob | null = null
+    if (methods.includes('poa_document')) {
+      this.body.appendChild(
+        this.el('p', { class: 'arkyc-p', text: 'Upload a proof of address (utility bill or bank statement).' }),
+      )
+      const file = this.el<HTMLInputElement>('input', { class: 'arkyc-input', type: 'file', accept: 'image/*' })
+      file.addEventListener('change', () => {
+        poa = file.files?.[0] ?? null
+      })
+      this.body.appendChild(file)
+    }
+
+    let useLocation = false
+    if (methods.includes('device_location')) {
+      const label = this.el('label', { class: 'arkyc-check' })
+      const cb = this.el<HTMLInputElement>('input', { type: 'checkbox' })
+      cb.addEventListener('change', () => {
+        useLocation = cb.checked
+      })
+      label.appendChild(cb)
+      label.appendChild(this.el('span', { text: 'Use my current location to confirm my address' }))
+      this.body.appendChild(label)
+    }
+
+    this.footer.appendChild(
+      this.button('Continue', () =>
+        this.handlers.onAddress({
+          line1: line1.value.trim() || null,
+          line2: line2.value.trim() || null,
+          city: city.value.trim() || null,
+          region: region.value.trim() || null,
+          postalCode: postal.value.trim() || null,
+          country: country.value.trim().toUpperCase() || null,
+          poa,
+          useLocation,
+        }),
+      ),
+    )
   }
 
   private button(label: string, onClick: () => void, extraClass?: string): HTMLButtonElement {

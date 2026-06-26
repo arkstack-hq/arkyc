@@ -54,12 +54,13 @@ export default class SessionReviewController extends BaseController {
    */
   async show({ req, res }: HttpContext) {
     const session = await this.scoped(req)
-    const [document, ocr, liveness, faceMatch, portrait] = await Promise.all([
+    const [document, ocr, liveness, faceMatch, portrait, address] = await Promise.all([
       session.documentCaptures().latest('createdAt').first(),
       session.ocrResults().latest('createdAt').first(),
       session.livenessChecks().latest('createdAt').first(),
       session.faceMatchChecks().latest('createdAt').first(),
       session.documentPortraits().latest('createdAt').first(),
+      session.addressVerifications().latest('createdAt').first(),
     ])
 
     const media: string[] = []
@@ -98,6 +99,14 @@ export default class SessionReviewController extends BaseController {
           : null,
         face_match: faceMatch
           ? { similarity_score: faceMatch.similarityScore, confidence: faceMatch.confidence, passed: faceMatch.passed }
+          : null,
+        address: address
+          ? {
+              passed: address.passed,
+              score: address.score,
+              claimed_address: address.claimedAddress ?? null,
+              methods: address.methods,
+            }
           : null,
         media,
       },

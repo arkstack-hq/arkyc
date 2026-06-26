@@ -65,6 +65,26 @@ export interface ProviderSignalHints {
   multiple_faces?: boolean
   face_similarity?: number
   face_match_passed?: boolean
+  address_score?: number
+  address_passed?: boolean
+}
+
+/** Input for the address-verification submission (opt-in stage). */
+export interface AddressInput {
+  /** The claimed address the user entered. */
+  line1?: string | null
+  line2?: string | null
+  city?: string | null
+  region?: string | null
+  postalCode?: string | null
+  /** ISO 3166-1 alpha-2 country code. */
+  country?: string | null
+  /** Proof-of-address document image. */
+  poa?: Blob | null
+  /** Captured device coordinates. */
+  latitude?: number | null
+  longitude?: number | null
+  signals?: ProviderSignalHints
 }
 
 /** Input for the document-front submission. */
@@ -205,6 +225,33 @@ export class ArkycClient {
     if (input.challenges) form.append('challenges', JSON.stringify(input.challenges))
     appendSignals(form, input.signals)
     return this.request('POST', '/v1/client/liveness', form)
+  }
+
+  /**
+   * Submit address verification (opt-in stage). Sends the claimed address plus
+   * whichever evidence was gathered (proof-of-address image, device coordinates).
+   *
+   * @param input
+   * @returns
+   */
+  submitAddress(input: AddressInput): Promise<ClientSession> {
+    const form = new FormData()
+    const fields: Record<string, string | null | undefined> = {
+      line1: input.line1,
+      line2: input.line2,
+      city: input.city,
+      region: input.region,
+      postal_code: input.postalCode,
+      country: input.country,
+    }
+    for (const [key, value] of Object.entries(fields)) {
+      if (value) form.append(key, value)
+    }
+    if (input.poa) form.append('poa', input.poa, 'proof-of-address.jpg')
+    if (input.latitude != null) form.append('latitude', String(input.latitude))
+    if (input.longitude != null) form.append('longitude', String(input.longitude))
+    appendSignals(form, input.signals)
+    return this.request('POST', '/v1/client/address', form)
   }
 
   /**

@@ -53,9 +53,14 @@ Without `ARKYC_WEBHOOK_SECRET`, deliveries are still shown but marked `unverifie
 
 ## Env
 
-| Variable               | Purpose                                                          |
-| ---------------------- | ---------------------------------------------------------------- |
-| `ARKYC_SECRET_KEY`     | Project secret key the backend uses to create/retrieve sessions. |
-| `ARKYC_API_URL`        | Arkyc API base URL (default `http://localhost:3100`).            |
-| `ARKYC_WEBHOOK_SECRET` | Webhook endpoint signing secret, to verify deliveries.           |
-| `PORT`                 | Playground dev-server port (default `5174`).                     |
+| Variable               | Purpose                                                                          |
+| ---------------------- | -------------------------------------------------------------------------------- |
+| `ARKYC_SECRET_KEY`     | Project secret key the backend uses to create/retrieve sessions.                 |
+| `ARKYC_API_URL`        | Arkyc API base URL (default `http://localhost:3100`).                            |
+| `ARKYC_WEBHOOK_SECRET` | Webhook endpoint signing secret, to verify deliveries.                           |
+| `ARKYC_WORKFLOW_ID`    | Optional workflow applied to every session (e.g. one with the address stage on). |
+| `PORT`                 | Playground dev-server port (default `5174`).                                     |
+
+> The `Remote` target mirrors each of the above with an `ARKYC_REMOTE_` prefix
+> (`ARKYC_REMOTE_SECRET_KEY`, `ARKYC_REMOTE_API_URL`, `ARKYC_REMOTE_WEBHOOK_SECRET`,
+> `ARKYC_REMOTE_WORKFLOW_ID`).

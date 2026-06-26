@@ -10,6 +10,7 @@ const STATUS_VARIANT: Record<VerificationStatus, BadgeProps['variant']> = {
   pending: 'muted',
   started: 'secondary',
   document_submitted: 'secondary',
+  address_submitted: 'secondary',
   liveness_submitted: 'secondary',
   expired: 'muted',
   cancelled: 'muted',

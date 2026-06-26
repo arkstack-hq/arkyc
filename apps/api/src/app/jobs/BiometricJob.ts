@@ -1,6 +1,6 @@
 import { Job } from '@arkstack/jobs'
 import { type DecisionInput, DecisionEngine, SessionRules } from '@arkyc/core'
-import { workflowEnables, workflowRunsOcr } from '@arkyc/types'
+import { workflowAddressConfig, workflowEnables, workflowRunsOcr } from '@arkyc/types'
 import { faceMatchDriver } from '@app/services/providers'
 import { audit } from '@app/services/AuditLogger'
 import { readObject } from 'src/support/storage'
@@ -11,6 +11,7 @@ import { OcrResult } from '@app/models/OcrResult'
 import { DocumentPortrait } from '@app/models/DocumentPortrait'
 import { LivenessCheck } from '@app/models/LivenessCheck'
 import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
+import { AddressVerification } from '@app/models/AddressVerification'
 import { Project } from '@app/models/Project'
 
 export interface BiometricJobHints {
@@ -47,17 +48,20 @@ export class BiometricJob extends Job {
     const runsDocument = workflowEnables(workflow, 'document')
     const runsOcr = workflowRunsOcr(workflow)
     const runsLiveness = workflowEnables(workflow, 'liveness')
+    const runsAddress = workflowEnables(workflow, 'address')
     const runsFaceMatch = workflowEnables(workflow, 'face_match') && runsOcr && runsLiveness
 
     const capture = runsDocument ? await DocumentCapture.where({ sessionId: session.id }).first() : null
     const ocr = runsOcr ? await OcrResult.where({ sessionId: session.id }).first() : null
     const liveness = runsLiveness ? await LivenessCheck.where({ sessionId: session.id }).first() : null
+    const address = runsAddress ? await AddressVerification.where({ sessionId: session.id }).first() : null
 
     // Stages that run must have landed their results before deciding. OCR is
     // async, so an early run throws to retry with backoff.
     if (runsDocument && !capture) throw new Error('Document capture is not ready yet')
     if (runsOcr && !ocr) throw new Error('OCR result is not ready yet')
     if (runsLiveness && !liveness) throw new Error('Liveness result is not ready yet')
+    if (runsAddress && !address) throw new Error('Address verification is not ready yet')
 
     let faceMatch: { passed: boolean; similarityScore: number } | null = null
     if (runsFaceMatch) {
@@ -101,6 +105,11 @@ export class BiometricJob extends Job {
           }
         : { passed: true, score: 1, multipleFaces: false },
       faceMatch: faceMatch ?? { passed: true, similarityScore: 1 },
+      // Disabled address passes through; when on, a failure flags review (or
+      // rejects when the workflow's on_fail is 'reject').
+      address: runsAddress
+        ? { passed: address!.passed, score: address!.score, onFail: workflowAddressConfig(workflow)?.on_fail }
+        : { passed: true, score: 1 },
     }
 
     const project = await Project.where({ id: session.projectId }).first()

@@ -9,6 +9,8 @@ Router.group('/v1/client', () => {
   Router.post('/document/front', [ClientSessionController, 'documentFront'], [clientTokenAuth])
   Router.post('/document/back', [ClientSessionController, 'documentBack'], [clientTokenAuth])
   Router.post('/liveness', [ClientSessionController, 'liveness'], [clientTokenAuth])
+  // Opt-in address-verification stage (custom workflows only).
+  Router.post('/address', [ClientSessionController, 'address'], [clientTokenAuth])
   Router.post('/complete', [ClientSessionController, 'complete'], [clientTokenAuth])
   // Pusher channel-auth scoped to this session's own channel (widget realtime).
   Router.post('/realtime/auth', [ClientSessionController, 'realtimeAuth'], [clientTokenAuth])

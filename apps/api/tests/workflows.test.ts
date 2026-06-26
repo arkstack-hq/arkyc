@@ -50,6 +50,7 @@ describe('workflows CRUD', () => {
     expect(res.body.data.steps).toEqual([
       { key: 'liveness', enabled: true },
       { key: 'document', enabled: true },
+      { key: 'address', enabled: false },
       { key: 'face_match', enabled: false },
     ])
     expect(res.body.data.options).toEqual({ skip_ocr: true })
@@ -158,6 +159,7 @@ describe('applying a workflow to a session', () => {
       { key: 'document', enabled: true },
       { key: 'liveness', enabled: false },
       { key: 'face_match', enabled: false },
+      { key: 'address', enabled: false },
     ])
   })
 
@@ -230,6 +232,81 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
 
     const final = await retrieve(open.body.data.id)
     expect(final.body.data.status).toBe('approved')
+  })
+
+  const addressSteps = (onFail: 'review' | 'reject') => [
+    { key: 'document', enabled: true },
+    { key: 'address', enabled: true, config: { methods: ['geocode_lookup'], on_fail: onFail } },
+    { key: 'liveness', enabled: false },
+    { key: 'face_match', enabled: false },
+  ]
+
+  it('runs an address-enabled workflow and approves when it passes (mock)', async () => {
+    const workflowId = await makeWorkflow('With address', addressSteps('review'), { skip_ocr: true })
+    const open = await openSession({ workflow_id: workflowId })
+    const token = open.body.client_token
+    await client('get', 'session', token)
+    await client('post', 'document/front', token).send({})
+    const addr = await client('post', 'address', token).send({
+      line1: '31 Gwarri Avenue',
+      city: 'Kaduna',
+      country: 'NG',
+    })
+    expect(addr.status).toBe(201)
+    const done = await client('post', 'complete', token).send({})
+    expect(done.status).toBe(202)
+
+    const final = await retrieve(open.body.data.id)
+    expect(final.body.data.status).toBe('approved')
+  })
+
+  it('flags review when address fails and on_fail is review', async () => {
+    const workflowId = await makeWorkflow('Address review', addressSteps('review'), { skip_ocr: true })
+    const open = await openSession({ workflow_id: workflowId })
+    const token = open.body.client_token
+    await client('get', 'session', token)
+    await client('post', 'document/front', token).send({})
+    await client('post', 'address', token).send({ city: 'Kaduna', country: 'NG', address_passed: false })
+    await client('post', 'complete', token).send({})
+
+    const final = await retrieve(open.body.data.id)
+    expect(final.body.data.status).toBe('requires_review')
+    expect(final.body.data.decision_reason).toBe('ADDRESS_VERIFICATION_FAILED')
+  })
+
+  it('rejects when address fails and on_fail is reject', async () => {
+    const workflowId = await makeWorkflow('Address reject', addressSteps('reject'), { skip_ocr: true })
+    const open = await openSession({ workflow_id: workflowId })
+    const token = open.body.client_token
+    await client('get', 'session', token)
+    await client('post', 'document/front', token).send({})
+    await client('post', 'address', token).send({ city: 'Lagos', country: 'NG', address_passed: false })
+    await client('post', 'complete', token).send({})
+
+    const final = await retrieve(open.body.data.id)
+    expect(final.body.data.status).toBe('rejected')
+  })
+
+  it('requires the address submission before completing when the stage is on', async () => {
+    const workflowId = await makeWorkflow('Address required', addressSteps('review'), { skip_ocr: true })
+    const open = await openSession({ workflow_id: workflowId })
+    const token = open.body.client_token
+    await client('get', 'session', token)
+    await client('post', 'document/front', token).send({})
+    const done = await client('post', 'complete', token).send({})
+    expect(done.status).toBe(409)
+  })
+
+  it('rejects an address stage configured with no methods', async () => {
+    const res = await wf('post').send({
+      name: 'Bad address',
+      steps: [
+        { key: 'document', enabled: true },
+        { key: 'address', enabled: true, config: { methods: [] } },
+      ],
+      options: {},
+    })
+    expect(res.status).toBe(422)
   })
 
   it('exposes signed asset URLs on retrieve and gates them by signature', async () => {

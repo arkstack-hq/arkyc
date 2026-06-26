@@ -1,16 +1,18 @@
-import { WebhookPayload, WebhookSigner } from '@arkyc/webhooks'
-import { SessionRules } from '@arkyc/core'
 import type { VerificationStatus, WebhookChecks, WebhookEvent, WebhookEventName } from '@arkyc/types'
-import { VerificationSession } from '@app/models/VerificationSession'
-import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
-import { WebhookDelivery } from '@app/models/WebhookDelivery'
+import { WebhookPayload, WebhookSigner } from '@arkyc/webhooks'
+
+import { AddressVerification } from '@app/models/AddressVerification'
 import { DocumentCapture } from '@app/models/DocumentCapture'
-import { OcrResult } from '@app/models/OcrResult'
-import { LivenessCheck } from '@app/models/LivenessCheck'
 import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
-import { toArray } from 'src/support/collection'
-import { buildSessionAssets } from '@app/services/SessionAssetService'
+import { LivenessCheck } from '@app/models/LivenessCheck'
+import { OcrResult } from '@app/models/OcrResult'
+import { SessionRules } from '@arkyc/core'
+import { VerificationSession } from '@app/models/VerificationSession'
+import { WebhookDelivery } from '@app/models/WebhookDelivery'
+import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
 import { WebhookJob } from '@app/jobs'
+import { buildSessionAssets } from '@app/services/SessionAssetService'
+import { toArray } from 'src/support/collection'
 
 /** Read the OCR parse stage from a stored driver `rawResponse`, if present. */
 function ocrParseStage(raw: unknown): 'mrz' | 'custom' | 'generic' | undefined {
@@ -26,6 +28,7 @@ function ocrParseStage(raw: unknown): 'mrz' | 'custom' | 'generic' | undefined {
 const STATUS_EVENT: Partial<Record<VerificationStatus, WebhookEventName>> = {
   started: 'verification.started',
   document_submitted: 'verification.document_submitted',
+  address_submitted: 'verification.address_submitted',
   processing: 'verification.processing',
   requires_review: 'verification.requires_review',
   approved: 'verification.approved',
@@ -72,7 +75,11 @@ export class WebhookService {
         attempts: 0,
         nextRetryAt: null,
       })
-      await WebhookJob.dispatch(delivery.id)
+      try {
+        await WebhookJob.dispatch(delivery.id)
+      } catch {
+        /* recorded on the delivery row; a worker retries it */
+      }
     }
   }
 
@@ -189,6 +196,15 @@ export class WebhookService {
 
     const faceMatch = await FaceMatchCheck.where({ sessionId: session.id }).first()
     if (faceMatch) checks.face_match = { passed: faceMatch.passed, similarity_score: faceMatch.similarityScore }
+
+    const address = await AddressVerification.where({ sessionId: session.id }).first()
+    if (address) {
+      checks.address = {
+        passed: address.passed,
+        score: address.score,
+        methods: address.methods.map((m) => m.method),
+      }
+    }
 
     return checks
   }

@@ -17,6 +17,7 @@ import { OcrResult } from './OcrResult'
 import { DocumentPortrait } from './DocumentPortrait'
 import { LivenessCheck } from './LivenessCheck'
 import { FaceMatchCheck } from './FaceMatchCheck'
+import { AddressVerification } from './AddressVerification'
 import { Review } from './Review'
 import { ReviewNote } from './ReviewNote'
 import { VerificationSessionFactory } from 'src/database/factories/VerificationSessionFactory'
@@ -113,6 +114,10 @@ export class VerificationSession extends Model {
 
   faceMatchChecks() {
     return this.hasMany(FaceMatchCheck, 'sessionId')
+  }
+
+  addressVerifications() {
+    return this.hasMany(AddressVerification, 'sessionId')
   }
 
   reviews() {

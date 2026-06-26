@@ -1,4 +1,5 @@
 import type { Entity, Id, IsoDate, ProjectScoped } from './common'
+import type { AddressMethod } from './workflow'
 
 /** Supported identity document categories. */
 export type DocumentType = 'passport' | 'id_card' | 'drivers_license' | 'residence_permit'
@@ -76,6 +77,47 @@ export interface FaceMatchResultData {
   raw?: unknown
 }
 
+/** A normalized postal address. Any field may be absent depending on the source. */
+export interface PostalAddress {
+  line1?: string
+  line2?: string
+  city?: string
+  /** State / province / region. */
+  region?: string
+  postalCode?: string
+  /** Country as resolved (ISO code or name). */
+  country?: string
+  /** Geocoordinates, when a method resolves them. */
+  latitude?: number
+  longitude?: number
+}
+
+/** One method's contribution to address verification. */
+export interface AddressMethodResult {
+  method: AddressMethod
+  /** Whether this method produced a usable, valid result. */
+  passed: boolean
+  /** Method confidence in [0, 1]. */
+  confidence: number
+  /** The address this method resolved/extracted, when any. */
+  resolved?: PostalAddress
+  /** Human-readable note (e.g. why it failed). */
+  note?: string
+  raw?: unknown
+}
+
+/** The shape returned by an address verifier — the aggregate of its methods. */
+export interface AddressResultData {
+  passed: boolean
+  /** Overall confidence in [0, 1]. */
+  score: number
+  /** Per-method breakdown. */
+  methods: AddressMethodResult[]
+  /** Whether the methods agree (country/locality) when two or more ran. */
+  consistent: boolean
+  raw?: unknown
+}
+
 /** A captured identity document (front and optional back) for a session. */
 export interface DocumentCapture extends Entity, ProjectScoped {
   session_id: Id
@@ -123,6 +165,25 @@ export interface FaceMatchCheck extends Entity, ProjectScoped {
   similarity_score: number
   confidence: number
   passed: boolean
+  provider: string
+  raw_response: unknown
+}
+
+/** Persisted address-verification result for a session. */
+export interface AddressVerification extends Entity, ProjectScoped {
+  session_id: Id
+  /** The address the user claimed (typed in the widget), when provided. */
+  claimed_address: PostalAddress | null
+  /** Proof-of-address document image, when the `poa_document` method ran. */
+  document_image_path: string | null
+  /** Captured device coordinates, when the `device_location` method ran. */
+  latitude: number | null
+  longitude: number | null
+  passed: boolean
+  /** Overall confidence in [0, 1]. */
+  score: number
+  /** Per-method breakdown. */
+  methods: AddressMethodResult[]
   provider: string
   raw_response: unknown
 }

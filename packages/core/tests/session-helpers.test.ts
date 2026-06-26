@@ -43,6 +43,7 @@ describe('risk scoring', () => {
       document: { qualityScore: 1, ocrConfidence: 1, expired: false },
       liveness: { passed: true, score: 1, multipleFaces: false },
       faceMatch: { passed: true, similarityScore: 1 },
+      address: { passed: true, score: 1 },
     })
     expect(strong).toBeLessThan(0.1)
 
@@ -50,6 +51,7 @@ describe('risk scoring', () => {
       document: { qualityScore: 0.9, ocrConfidence: 0.9, expired: false },
       liveness: { passed: false, score: 0.2, multipleFaces: false },
       faceMatch: { passed: true, similarityScore: 0.9 },
+      address: { passed: true, score: 0.9 },
     })
     expect(failed).toBeGreaterThanOrEqual(0.9)
   })

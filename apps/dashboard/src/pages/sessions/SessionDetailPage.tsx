@@ -35,6 +35,12 @@ interface SessionDetail {
   document?: { country?: string | null; document_type?: string | null; quality_score?: number | null } | null
   liveness?: { score?: number | null; passed?: boolean | null; spoof_signals?: Record<string, unknown> | null } | null
   face_match?: { similarity_score?: number | null; confidence?: number | null; passed?: boolean | null } | null
+  address?: {
+    passed?: boolean | null
+    score?: number | null
+    claimed_address?: Record<string, unknown> | null
+    methods?: { method: string; passed: boolean; confidence: number; note?: string }[] | null
+  } | null
   media?: string[]
 }
 
@@ -315,6 +321,29 @@ export default function SessionDetailPage() {
               <Row label="Face similarity">{num(data.face_match?.similarity_score)}</Row>
             </CardContent>
           </Card>
+
+          {data.address ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Address verification</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-0">
+                <Row label="Address verified">{bool(data.address.passed)}</Row>
+                <Row label="Address score">{num(data.address.score)}</Row>
+                <Row label="Claimed address">
+                  {data.address.claimed_address
+                    ? Object.values(data.address.claimed_address).filter(Boolean).join(', ') || '—'
+                    : '—'}
+                </Row>
+                {(data.address.methods ?? []).map((m) => (
+                  <Row key={m.method} label={humanize(m.method)}>
+                    {bool(m.passed)} · {num(m.confidence)}
+                    {m.note ? ` · ${m.note}` : ''}
+                  </Row>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
 
           {canReview ? (
             <Card className="md:col-span-2">

@@ -5,6 +5,7 @@ import type { DecisionReason, VerificationStatus } from './verification'
 export type WebhookEventName =
   | 'verification.started'
   | 'verification.document_submitted'
+  | 'verification.address_submitted'
   | 'verification.processing'
   | 'verification.requires_review'
   | 'verification.approved'
@@ -29,6 +30,12 @@ export interface WebhookChecks {
   face_match?: {
     passed: boolean
     similarity_score: number
+  }
+  address?: {
+    passed: boolean
+    score: number
+    /** Which corroboration methods ran. */
+    methods: string[]
   }
 }
 

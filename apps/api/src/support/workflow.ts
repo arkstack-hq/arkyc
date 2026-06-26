@@ -1,8 +1,34 @@
-import { WORKFLOW_STEP_KEYS, type WorkflowOptions, type WorkflowStep, type WorkflowStepKey } from '@arkyc/types'
+import {
+  ADDRESS_METHODS,
+  AVAILABLE_WORKFLOW_STEP_KEYS,
+  DEFAULT_ADDRESS_CONFIG,
+  type AddressMethod,
+  type AddressStepConfig,
+  type WorkflowOptions,
+  type WorkflowStep,
+  type WorkflowStepKey,
+} from '@arkyc/types'
 
 import { ValidationException } from 'kanun'
 
-const KEY_SET = new Set<WorkflowStepKey>(WORKFLOW_STEP_KEYS)
+const KEY_SET = new Set<WorkflowStepKey>(AVAILABLE_WORKFLOW_STEP_KEYS)
+const METHOD_SET = new Set<AddressMethod>(ADDRESS_METHODS)
+
+/** Validate + canonicalise the address stage's config (methods + on_fail). */
+function normalizeAddressConfig(raw: unknown): AddressStepConfig {
+  const methodsRaw = (raw as { methods?: unknown })?.methods
+  const methods = Array.isArray(methodsRaw)
+    ? [...new Set(methodsRaw.filter((m): m is AddressMethod => METHOD_SET.has(m as AddressMethod)))]
+    : []
+
+  if (methods.length === 0) {
+    throw ValidationException.withMessages({ steps: ['The address stage needs at least one method.'] })
+  }
+
+  const onFail = (raw as { on_fail?: unknown })?.on_fail
+
+  return { methods, on_fail: onFail === 'reject' ? 'reject' : 'review' }
+}
 
 /**
  * Normalise raw step input into a complete, ordered, de-duplicated stage list.
@@ -10,7 +36,7 @@ const KEY_SET = new Set<WorkflowStepKey>(WORKFLOW_STEP_KEYS)
  * The caller's order is preserved (that's the whole point of a workflow); any
  * stage they omit is appended as disabled so the stored config always names
  * every stage. Rejects unknown keys and an all-disabled workflow (≥1 stage must
- * run).
+ * run). The opt-in `address` stage carries its method config when enabled.
  */
 export function normalizeWorkflowSteps(raw: unknown): WorkflowStep[] {
   if (!Array.isArray(raw)) {
@@ -18,6 +44,7 @@ export function normalizeWorkflowSteps(raw: unknown): WorkflowStep[] {
   }
 
   const enabledByKey = new Map<WorkflowStepKey, boolean>()
+  const configByKey = new Map<WorkflowStepKey, AddressStepConfig>()
   const order: WorkflowStepKey[] = []
 
   for (const entry of raw) {
@@ -31,10 +58,18 @@ export function normalizeWorkflowSteps(raw: unknown): WorkflowStep[] {
     }
     if (!enabledByKey.has(key)) order.push(key) // first occurrence sets position
     enabledByKey.set(key, enabled) // last occurrence wins
+    if (key === 'address' && enabled) {
+      configByKey.set(key, normalizeAddressConfig((entry as { config?: unknown })?.config))
+    }
   }
 
-  const steps: WorkflowStep[] = order.map((key) => ({ key, enabled: enabledByKey.get(key)! }))
-  for (const key of WORKFLOW_STEP_KEYS) {
+  const steps: WorkflowStep[] = order.map((key) => {
+    const step: WorkflowStep = { key, enabled: enabledByKey.get(key)! }
+    if (key === 'address' && step.enabled) step.config = configByKey.get(key) ?? DEFAULT_ADDRESS_CONFIG
+
+    return step
+  })
+  for (const key of AVAILABLE_WORKFLOW_STEP_KEYS) {
     if (!enabledByKey.has(key)) steps.push({ key, enabled: false })
   }
 

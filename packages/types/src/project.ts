@@ -18,6 +18,8 @@ export interface VerificationThresholds {
   ocrConfidenceThreshold: number
   livenessThreshold: number
   faceMatchThreshold: number
+  /** Minimum address-verification confidence before flagging for review. */
+  addressThreshold: number
 }
 
 /** Visual branding applied to the widget for a project. */

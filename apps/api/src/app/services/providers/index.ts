@@ -8,6 +8,7 @@ import {
 } from '@arkyc/ocr'
 import { type LivenessDriverName, LivenessDriverFactory } from '@arkyc/liveness'
 import { type FaceMatchDriverName, FaceMatchDriverFactory } from '@arkyc/face-match'
+import { type AddressDriverName, AddressVerifierFactory } from './address'
 import { documentParsers } from './document-parsers'
 
 /**
@@ -30,6 +31,8 @@ export interface ProviderSignals {
   multipleFaces?: boolean
   faceSimilarity?: number
   faceMatchPassed?: boolean
+  addressScore?: number
+  addressPassed?: boolean
 }
 
 const ocrDriverName = env('OCR_DRIVER', 'mock') as OcrDriverName
@@ -96,4 +99,17 @@ export const faceMatchDriver = FaceMatchDriverFactory.create({
   driver: env('FACE_MATCH_DRIVER', 'mock') as FaceMatchDriverName,
   endpoint: env('FACE_MATCH_ENDPOINT'),
   apiKey: env('FACE_MATCH_API_KEY'),
+})
+
+/**
+ * Address verifier (opt-in `address` stage). `mock` is the deterministic default;
+ * `live` corroborates the address via openrouteservice (forward geocoding) and
+ * Nominatim (reverse geocoding from device location).
+ */
+export const addressVerifier = AddressVerifierFactory.create({
+  driver: env('ADDRESS_DRIVER', 'mock') as AddressDriverName,
+  orsApiKey: env('ADDRESS_ORS_API_KEY'),
+  orsUrl: env('ADDRESS_ORS_URL'),
+  nominatimUrl: env('ADDRESS_NOMINATIM_URL'),
+  userAgent: env('ADDRESS_USER_AGENT'),
 })

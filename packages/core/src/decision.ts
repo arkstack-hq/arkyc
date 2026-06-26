@@ -29,11 +29,25 @@ export interface DecisionFaceMatchInput {
   similarityScore: number
 }
 
+/** Address-verification signals fed to the decision engine. */
+export interface DecisionAddressInput {
+  passed: boolean
+  /** Overall address-verification confidence in [0, 1]. */
+  score: number
+  /**
+   * What a failed result does: flag for `review` (default) or `reject`, driven
+   * by the workflow's address config. A low-confidence (but not failed) result
+   * is always review, never a reject.
+   */
+  onFail?: 'review' | 'reject'
+}
+
 /** The complete set of signals the decision engine evaluates. */
 export interface DecisionInput {
   document: DecisionDocumentInput
   liveness: DecisionLivenessInput
   faceMatch: DecisionFaceMatchInput
+  address: DecisionAddressInput
 }
 
 /** The decision engine's verdict for a session. */
@@ -80,6 +94,11 @@ export class DecisionEngine {
     if (!input.faceMatch.passed) {
       return verdict('rejected', 'FACE_MATCH_FAILED')
     }
+    // Address only rejects when the workflow opts in (`on_fail: 'reject'`);
+    // otherwise a failed address falls through to manual review below.
+    if (!input.address.passed && input.address.onFail === 'reject') {
+      return verdict('rejected', 'ADDRESS_VERIFICATION_FAILED')
+    }
 
     // --- Manual review (borderline / ambiguous signals) ---
     if (input.liveness.multipleFaces === true) {
@@ -96,6 +115,13 @@ export class DecisionEngine {
     }
     if (input.faceMatch.similarityScore < t.faceMatchThreshold) {
       return verdict('requires_review', 'FACE_MATCH_LOW_CONFIDENCE')
+    }
+    // A failed address that didn't reject (on_fail: 'review') lands here.
+    if (!input.address.passed) {
+      return verdict('requires_review', 'ADDRESS_VERIFICATION_FAILED')
+    }
+    if (input.address.score < t.addressThreshold) {
+      return verdict('requires_review', 'ADDRESS_LOW_CONFIDENCE')
     }
 
     // --- All checks cleared ---
