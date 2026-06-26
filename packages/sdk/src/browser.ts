@@ -10,9 +10,49 @@ import type { OpenWidgetOptions, WidgetEventListener, WidgetHandle, WidgetResult
  * import { ArkycWidget } from '@arkyc/sdk/browser'
  * ArkycWidget.open({ token: clientToken, onComplete: (r) => console.log(r.status) })
  * ```
+ *
+ * Self-hosting the widget page? Point the launcher at your own origin without
+ * editing call sites, in priority order:
+ *
+ * 1. per call — `ArkycWidget.open({ widgetUrl, ... })`
+ * 2. once, in code — `ArkycWidget.configure({ widgetUrl })` at app bootstrap
+ * 3. no code — set a global before the SDK loads (works for bundlers and the
+ *    `<script>` build alike), e.g. in your HTML:
+ *    `<script>globalThis.ARKYC_WIDGET_URL = 'https://verify.example.com'</script>`
+ *    or wired from your build env: `globalThis.ARKYC_WIDGET_URL = import.meta.env.VITE_ARKYC_WIDGET_URL`
  */
 export class ArkycWidget {
-  private static DEFAULT_WIDGET_URL = 'https://app.arkyc.toneflix.net/verify'
+  /** Built-in fallback when no override is configured. */
+  private static DEFAULT_WIDGET_URL = 'https://arkyc.toneflix.net/verify'
+
+  /** Programmatic default set once via {@link ArkycWidget.configure}. */
+  private static configuredWidgetUrl: string | undefined
+
+  /**
+   * Set launcher-wide defaults once (e.g. at app bootstrap) so individual
+   * `open()` calls don't need to repeat them. Currently the hosted widget URL —
+   * for self-hosted widget pages.
+   *
+   * @param options
+   */
+  static configure(options: { widgetUrl?: string }): void {
+    if (options.widgetUrl) ArkycWidget.configuredWidgetUrl = options.widgetUrl
+  }
+
+  /**
+   * Resolve the hosted widget URL: explicit per-call value, then a
+   * {@link ArkycWidget.configure | configured} default, then the runtime global
+   * `globalThis.ARKYC_WIDGET_URL` (settable from HTML or a build define), then
+   * the built-in default.
+   *
+   * @param explicit
+   * @returns
+   */
+  private static resolveWidgetUrl(explicit?: string): string {
+    const fromGlobal = (globalThis as { ARKYC_WIDGET_URL?: string }).ARKYC_WIDGET_URL
+
+    return explicit ?? ArkycWidget.configuredWidgetUrl ?? fromGlobal ?? ArkycWidget.DEFAULT_WIDGET_URL
+  }
 
   /**
    * Open the verification widget for a client token. Returns a close handle.
@@ -27,7 +67,7 @@ export class ArkycWidget {
     const win = options.win ?? globalThis.window
     if (!doc || !win) throw new Error('ArkycWidget.open must run in a browser environment.')
 
-    const widgetUrl = (options.widgetUrl ?? ArkycWidget.DEFAULT_WIDGET_URL).replace(/\/$/, '')
+    const widgetUrl = ArkycWidget.resolveWidgetUrl(options.widgetUrl).replace(/\/$/, '')
     const src = `${widgetUrl}?token=${encodeURIComponent(options.token)}`
 
     const overlay = doc.createElement('div')

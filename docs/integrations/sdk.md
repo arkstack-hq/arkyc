@@ -103,5 +103,27 @@ ArkycWidget.open({
 })
 ```
 
+By default the launcher opens the Arkyc-hosted widget page. If you host that
+page yourself, point the launcher at your origin — in priority order:
+
+```ts
+// 1. Per call.
+ArkycWidget.open({ token, widgetUrl: 'https://verify.example.com' })
+
+// 2. Once, at app startup — every open() picks it up.
+ArkycWidget.configure({ widgetUrl: 'https://verify.example.com' })
+```
+
+```html
+<!-- 3. No code: set a global before the SDK loads. Works for bundlers and the
+     <script> build alike, and can be wired from your build env. -->
+<script>
+  globalThis.ARKYC_WIDGET_URL = 'https://verify.example.com'
+</script>
+```
+
+Resolution order is `open({ widgetUrl })` → `configure({ widgetUrl })` →
+`globalThis.ARKYC_WIDGET_URL` → the built-in default.
+
 For full control (inline mode, branding, talking to your own API origin), use
 the [`@arkyc/widget`](/integrations/widget) package directly.

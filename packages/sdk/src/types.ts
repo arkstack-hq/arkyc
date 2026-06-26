@@ -73,7 +73,7 @@ export type WidgetEventListener = (data: unknown) => void
 export interface OpenWidgetOptions {
   /** The session's client token (from `arkyc.sessions.create`). */
   token: string
-  /** Hosted widget origin (default `https://app.arkyc.toneflix.net/verify`). */
+  /** Hosted widget origin (default `https://arkyc.toneflix.net/verify`). */
   widgetUrl?: string
   onComplete?: (result: WidgetResult) => void
   onError?: (error: unknown) => void
