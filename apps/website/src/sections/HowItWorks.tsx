@@ -1,6 +1,7 @@
+import { RevealGroup, RevealItem } from '@/components/Reveal'
+
 import { Container } from '@/components/Container'
 import { SectionHeading } from '@/components/SectionHeading'
-import { RevealGroup, RevealItem } from '@/components/Reveal'
 
 const STEPS = [
   {
@@ -16,7 +17,7 @@ const STEPS = [
   {
     n: '03',
     title: 'Embed the widget',
-    body: 'Open the widget with that token — the user completes document capture, liveness and selfie.',
+    body: 'Open the widget with that token, the user completes document capture, liveness and selfie.',
   },
   {
     n: '04',

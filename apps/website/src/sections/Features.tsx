@@ -68,7 +68,7 @@ const FEATURES: Feature[] = [
   {
     eyebrow: 'Reviews',
     title: 'Humans in the loop',
-    body: 'Borderline sessions land in a review queue. Approve, reject, request a retry, or leave a note — every action captured in a tenant-scoped audit trail.',
+    body: 'Borderline sessions land in a review queue. Approve, reject, request a retry, or leave a note, every is action captured in a tenant-scoped audit trail.',
     points: ['Approve / reject / retry / note', 'Realtime queue updates', 'Full audit log'],
     visual: (
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-lg">

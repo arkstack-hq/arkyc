@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
+import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
+import { links, primaryNav } from '@/lib/site'
+import { useEffect, useState } from 'react'
+
+import { ButtonLink } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { Logo } from '@/components/Logo'
-import { ButtonLink } from '@/components/Button'
-import { links, primaryNav } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const { pathname } = useLocation()
+  const hasBanner = ['/'].includes(pathname)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -23,7 +26,7 @@ export function Nav() {
   // light text; once scrolled the bar is white, so they switch to dark.
   const navLinkClass = cn(
     'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-    scrolled ? 'text-slate-600 hover:text-ink' : 'text-white/80 hover:text-white',
+    scrolled || !hasBanner ? 'text-slate-600 hover:text-ink' : 'text-white/80 hover:text-white',
   )
 
   return (

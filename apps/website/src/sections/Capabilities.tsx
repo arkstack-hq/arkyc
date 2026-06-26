@@ -1,7 +1,8 @@
+import { RevealGroup, RevealItem } from '@/components/Reveal'
 import { ScanLine, ShieldCheck, Workflow } from 'lucide-react'
+
 import { Container } from '@/components/Container'
 import { SectionHeading } from '@/components/SectionHeading'
-import { RevealGroup, RevealItem } from '@/components/Reveal'
 
 const CARDS = [
   {
@@ -12,12 +13,12 @@ const CARDS = [
   {
     icon: Workflow,
     title: 'Verify',
-    body: 'OCR, passive and active liveness, and face match run asynchronously off the request path on a Postgres-backed job queue — swappable provider drivers behind a stable contract.',
+    body: 'OCR, passive and active liveness, and face match run asynchronously off the request path on a Postgres-backed job queue and swappable provider drivers behind a stable contract.',
   },
   {
     icon: ShieldCheck,
     title: 'Decide',
-    body: 'Per-project thresholds turn the signals into a risk score and an automated decision — approved, requires review, or rejected — with a review queue for the edge cases.',
+    body: 'Per-project thresholds turn the signals into a risk score and an automated decision, approved, requires review, or rejected with a review queue for the edge cases.',
   },
 ]
 
@@ -28,7 +29,7 @@ export function Capabilities() {
         <SectionHeading
           eyebrow="One platform"
           title="Everything between “sign up” and “verified”"
-          subtitle="Capture, verify and decide — without stitching together point solutions or building the pipeline yourself."
+          subtitle="Capture, verify and decide without stitching together point solutions or building the pipeline yourself."
         />
 
         <RevealGroup className="mt-14 grid gap-6 md:grid-cols-3">
