@@ -7,7 +7,7 @@ import 'highlight.js/styles/atom-one-dark.css'
 hljs.registerLanguage('typescript', typescript)
 
 // NOTE: update REPO to the canonical GitHub URL once published.
-const REPO = 'https://github.com/arcstack/arkyc'
+const REPO = 'https://github.com/arkstack-hq/arkyc'
 
 const features = [
   {

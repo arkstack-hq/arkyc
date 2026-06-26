@@ -9,7 +9,7 @@ import { defineConfig, type HeadConfig } from 'vitepress'
 const base = `/${(process.env.DOCS_BASE || '').replace(/^\/|\/$/g, '')}/`.replace(/^\/\/$/, '/')
 const siteUrl = (process.env.DOCS_SITE_URL || 'https://docs.arkyc.toneflix.net').replace(/\/$/, '')
 const gaId = process.env.GA_MEASUREMENT_ID
-const repo = 'https://github.com/arcstack/arkyc'
+const repo = 'https://github.com/arkstack-hq/arkyc'
 
 const description =
   'Open-source, multi-tenant identity verification — document capture, OCR, liveness, face match, decisioning, reviews, webhooks, SDK and widget.'
