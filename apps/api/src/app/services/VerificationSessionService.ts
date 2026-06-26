@@ -217,8 +217,7 @@ export class VerificationSessionService {
       await Storage.disk().put(videoPath, input.video, { visibility: 'private' })
     }
 
-    const liveness = livenessDriver()
-    const result = await liveness.check({
+    const result = await livenessDriver.check({
       selfie: input.selfie?.buffer ?? EMPTY_IMAGE,
       video: input.video?.buffer ?? null,
       mode: input.mode ?? 'passive',
@@ -239,7 +238,7 @@ export class VerificationSessionService {
       score: result.score,
       passed: result.passed,
       spoofSignals: result.spoofSignals,
-      provider: liveness.name,
+      provider: livenessDriver.name,
       rawResponse: result.raw,
     })
 

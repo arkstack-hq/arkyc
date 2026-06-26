@@ -64,8 +64,7 @@ export class BiometricJob extends Job {
       const portrait = await DocumentPortrait.where({ sessionId: session.id }).first()
       if (!portrait) throw new Error('Document portrait is not ready yet')
 
-      const faceMatcher = faceMatchDriver()
-      const result = await faceMatcher.compare({
+      const result = await faceMatchDriver.compare({
         documentPortrait: await readObject(portrait.portraitImagePath),
         selfie: await readObject(liveness!.selfieImagePath),
         hints: { similarityScore: this.hints.faceSimilarity, passed: this.hints.faceMatchPassed },
@@ -79,7 +78,7 @@ export class BiometricJob extends Job {
         similarityScore: result.similarityScore,
         confidence: result.confidence,
         passed: result.passed,
-        provider: faceMatcher.name,
+        provider: faceMatchDriver.name,
         rawResponse: result.raw,
       })
       faceMatch = { passed: result.passed, similarityScore: result.similarityScore }
