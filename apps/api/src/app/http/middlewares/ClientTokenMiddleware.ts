@@ -1,7 +1,7 @@
-import { RequestException } from '@arkstack/common'
 import type { NextFunction, Request, Response } from 'express'
 import { Token } from '@arkyc/auth'
 import { VerificationSession } from '@app/models/VerificationSession'
+import { sendApiError } from 'src/support/apiErrors'
 
 function readToken(req: Request): string | null {
   const auth = req.headers.authorization
@@ -19,20 +19,21 @@ function readToken(req: Request): string | null {
  * attaches `req.verificationSession`.
  */
 export class ClientTokenMiddleware {
-  async handler(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  async handler(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const token = readToken(req)
-      RequestException.assertFound(token, 'Missing client token', 401)
+      if (!token) return sendApiError(res, 'missing_client_token')
 
       const session = await VerificationSession.where({
         clientTokenHash: Token.hash(token),
       }).first()
-      RequestException.assertFound(session, 'Invalid client token', 401)
-      RequestException.abortIf(new Date(session.expiresAt).getTime() <= Date.now(), 'Session expired', 401)
+      if (!session) return sendApiError(res, 'invalid_client_token')
+      if (new Date(session.expiresAt).getTime() <= Date.now()) return sendApiError(res, 'session_expired')
 
       req.verificationSession = session
       next()
     } catch (error) {
+      // Unexpected (e.g. DB) errors are beyond our control — let the framework render them.
       next(error)
     }
   }

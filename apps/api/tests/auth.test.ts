@@ -203,7 +203,11 @@ describe('public API-key surface', () => {
     expect(ok.status).toBe(200)
     expect(ok.body.data.organization_id).toBe(fx.organizationId)
 
-    await request(app).get('/api/v1/ping/project').set('Authorization', 'Bearer sk_live_bogus').expect(401)
+    const bad = await request(app).get('/api/v1/ping/project').set('Authorization', 'Bearer sk_live_bogus').expect(401)
+    expect(bad.body.error).toBe('invalid_api_key')
+
+    const missing = await request(app).get('/api/v1/ping/project').expect(401)
+    expect(missing.body.error).toBe('missing_api_key')
   })
 })
 
@@ -213,7 +217,12 @@ describe('client-token surface', () => {
     expect(ok.status).toBe(201)
     expect(ok.body.data.id).toBe(fx.sessionId)
 
-    await request(app).get('/api/v1/client/session').set('X-Client-Token', 'nope').expect(401)
+    // Errors we control carry a stable `error` key (clients branch on it, not the message).
+    const bad = await request(app).get('/api/v1/client/session').set('X-Client-Token', 'nope').expect(401)
+    expect(bad.body.error).toBe('invalid_client_token')
+
+    const missing = await request(app).get('/api/v1/client/session').expect(401)
+    expect(missing.body.error).toBe('missing_client_token')
   })
 })
 
