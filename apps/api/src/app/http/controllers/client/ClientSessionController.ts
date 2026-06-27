@@ -179,6 +179,9 @@ export default class ClientSessionController extends BaseController {
    * Submit address verification (opt-in stage). Carries the user's claimed
    * address fields, an optional proof-of-address image (`poa`), and optional
    * device coordinates — the workflow's configured methods decide which are used.
+   *
+   * @param param0
+   * @returns
    */
   async address({ req }: HttpContext) {
     const data = await this.validate({

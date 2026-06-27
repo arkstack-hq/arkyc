@@ -86,6 +86,24 @@ describe('DecisionEngine.decide', () => {
       reason: 'ADDRESS_LOW_CONFIDENCE',
     },
     {
+      name: 'reviews a passed address below the workflow auto-verify threshold',
+      mutate: (i) => {
+        i.address.score = 0.7 // clears the project default (0.6) ...
+        i.address.threshold = 0.8 // ... but not the workflow's stricter gate
+      },
+      decision: 'requires_review',
+      reason: 'ADDRESS_LOW_CONFIDENCE',
+    },
+    {
+      name: 'auto-verifies a passed address above the workflow threshold (below project default)',
+      mutate: (i) => {
+        i.address.score = 0.55 // below the project default (0.6) ...
+        i.address.threshold = 0.5 // ... but the workflow lowered the bar
+      },
+      decision: 'approved',
+      reason: 'AUTO_APPROVED',
+    },
+    {
       name: 'reviews low document quality',
       mutate: (i) => {
         i.document.qualityScore = 0.5

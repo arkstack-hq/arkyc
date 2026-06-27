@@ -388,6 +388,26 @@ function WorkflowEditor({
                           <option value="reject">Reject</option>
                         </select>
                       </label>
+                      <label className="mt-1 flex items-center gap-2 text-sm">
+                        Auto-verify at score
+                        <input
+                          type="number"
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          value={step.config?.auto_approve_threshold ?? ''}
+                          onChange={(e) =>
+                            patchAddress(i, {
+                              auto_approve_threshold: e.target.value === '' ? undefined : Number(e.target.value),
+                            })
+                          }
+                          placeholder="0.60"
+                          className="w-20 rounded-md border border-input bg-background px-2 py-1 text-sm"
+                        />
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        A passed address scoring below this is held for manual review. Blank uses the project default.
+                      </p>
                     </div>
                   ) : null}
                 </li>

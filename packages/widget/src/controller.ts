@@ -12,11 +12,11 @@ import { REALTIME_EVENT, workflowAddressConfig } from '@arkyc/types'
 import { ArkycClient, type ClientHandoff, type ClientRealtime, type ClientSession, WidgetApiError } from './client'
 import { Flow } from './flow'
 import { Theme } from './theme'
-import { WidgetView, type AddressFormData, type ViewHandlers } from './ui'
+import { WidgetView, type AddressFormData } from './ui'
 import { isDesktopDevice } from './device'
 import { renderQrSvg } from './qr'
 import { createWidgetRealtimeClient, type WidgetRealtimeClient } from './realtime'
-import type { BaseWidgetOptions, WidgetControllerConfig, WidgetEventListener } from './types'
+import type { BaseWidgetOptions, ViewHandlers, WidgetControllerConfig, WidgetEventListener } from './types'
 
 /** Per-step lead-in copy shown before each capture/liveness step. */
 const STEP_INSTRUCTIONS: Partial<Record<WidgetStep, { title: string; body: string; cta?: string }>> = {
@@ -283,6 +283,7 @@ export class WidgetController {
           await this.enter(this.next())
         }),
       onAddress: (data) => void this.run(() => this.onAddress(data)),
+      onShareLocation: () => this.shareLocation(),
       onAcknowledge: () => this.finishResult(),
       onUsePhone: () => void this.run(() => this.startHandoff()),
       onContinueHere: () => {
@@ -340,7 +341,11 @@ export class WidgetController {
     await this.pollHandoff()
   }
 
-  /** Build the hosted-page URL the QR encodes (carries the session token). */
+  /** Build the hosted-page URL the QR encodes (carries the session token).
+   *
+   * @param target
+   * @returns
+   */
   private buildHandoffUrl(target: string): string {
     const sep = target.includes('?') ? '&' : '?'
     let url = `${target}${sep}token=${encodeURIComponent(this.config.token)}`
@@ -351,7 +356,12 @@ export class WidgetController {
     return url
   }
 
-  /** Watch the session while the user verifies on the other device; mirror the result. */
+  /**
+   * Watch the session while the user verifies on the other
+   * device; mirror the result.
+   *
+   * @returns
+   */
   private async pollHandoff(): Promise<void> {
     const rt = await this.resolveRealtime()
     if (rt) {
@@ -392,6 +402,11 @@ export class WidgetController {
    * status, or null if `active()` went false or the tick budget elapsed (push can
    * miss events / disconnect; the budget bounds the wait). An initial fetch
    * catches a session that finished before we subscribed.
+   *
+   * @param rt
+   * @param budget
+   * @param active
+   * @returns
    */
   private pushWatch(
     rt: WidgetRealtimeClient,
@@ -436,7 +451,11 @@ export class WidgetController {
     })
   }
 
-  /** Resolve which liveness flow to run from the session's capture model. */
+  /**
+   * Resolve which liveness flow to run from the session's capture model.
+   *
+   * @param session
+   */
   private resolveLiveness(session: ClientSession): void {
     this.livenessChallenges = session.liveness_challenges ?? []
     const model = session.capture_model ?? 'passive'
@@ -472,7 +491,12 @@ export class WidgetController {
     }
   }
 
-  /** Enter a step: render it, and drive any automatic (processing) work. */
+  /**
+   * Enter a step: render it, and drive any automatic (processing) work.
+   *
+   * @param step
+   * @returns
+   */
   private async enter(step: WidgetStep): Promise<void> {
     if (this.settled) return
     this.step = step
@@ -509,7 +533,10 @@ export class WidgetController {
     }
   }
 
-  /** Watch the session until it reaches a terminal status (then show the result). */
+  /** Watch the session until it reaches a terminal status (then show the result).
+   *
+   * @returns
+   */
   private async poll(): Promise<void> {
     const rt = await this.resolveRealtime()
     if (rt) {
@@ -534,7 +561,11 @@ export class WidgetController {
     this.render()
   }
 
-  /** A session that was already terminal on load: a notice with only a Close button. */
+  /**
+   * A session that was already terminal on load: a notice with only a Close button.
+   *
+   * @param status
+   */
   private showTerminal(status: VerificationStatus): void {
     this.result = { status, decision: Flow.statusToDecision(status) }
     this.step = 'result'
@@ -560,15 +591,35 @@ export class WidgetController {
     })
   }
 
-  /** Store the entered address, resolve device location if opted in, then verify. */
+  /**
+   * Store the entered address, resolve device location if opted in, then verify.
+   *
+   * @param data
+   * @returns
+   */
   private async onAddress(data: AddressFormData): Promise<void> {
     this.addressData = data
-    this.addressCoords = data.useLocation ? await this.geolocate() : null
+    // Coordinates are normally resolved up front by `shareLocation` when the user
+    // ticks "use my location" (so the prompt is immediate); geolocate here only as
+    // a fallback, and clear them if they opted out.
+    if (!data.useLocation) this.addressCoords = null
+    else if (!this.addressCoords) this.addressCoords = await this.geolocate()
 
     return this.enter('address_processing')
   }
 
-  /** Submit the captured address evidence to the Client API. */
+  /** Request the device's location (from the address-entry "use my location" opt-in). */
+  private async shareLocation(): Promise<boolean> {
+    this.addressCoords = await this.geolocate()
+
+    return !!this.addressCoords
+  }
+
+  /**
+   * Submit the captured address evidence to the Client API.
+   *
+   * @returns
+   */
   private async submitAddress(): Promise<void> {
     const data = this.addressData
     if (!data) return
@@ -591,6 +642,8 @@ export class WidgetController {
    * Resolve the device's coordinates via the Geolocation API. Resolves to `null`
    * on denial/unavailability/timeout — the `device_location` method then simply
    * has no coordinates to check (routing the session to review).
+   *
+   * @returns
    */
   private geolocate(): Promise<{ latitude: number; longitude: number } | null> {
     const geo = this.nav?.geolocation

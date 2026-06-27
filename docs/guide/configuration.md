@@ -45,8 +45,12 @@ the dashboard and playground read their own `.env` files (Vite). Copy each
 | `OCR_AI_MAX_EDGE`                                            | `1568`                      | Longest uploaded image edge (px) for the `ai` driver.            |
 | `OCR_ENDPOINT` / `LIVENESS_ENDPOINT` / `FACE_MATCH_ENDPOINT` | —                           | `external` HTTP endpoint (or API base override for `ai`).        |
 | `LIVENESS_API_KEY` / `FACE_MATCH_API_KEY`                    | —                           | Optional bearer for the endpoint.                                |
+| `ADDRESS_DRIVER`                                             | `mock`                      | `mock` or `live` (address stage; opt-in workflows).              |
+| `ADDRESS_ORS_API_KEY`                                        | —                           | openrouteservice key for the `live` driver's `geocode_lookup`.   |
+| `ADDRESS_ORS_URL` / `ADDRESS_NOMINATIM_URL`                  | public endpoints            | Geocoder base overrides (forward / reverse).                     |
+| `ADDRESS_USER_AGENT`                                         | `Arkyc/1.0 (…)`             | User-Agent sent to Nominatim (per its usage policy).             |
 
-See [Provider drivers](./providers).
+See [Provider drivers](./providers) and [Workflows](./workflows).
 
 ### Storage
 

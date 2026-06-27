@@ -65,9 +65,23 @@ passive liveness → face match → processing → result. Back capture is skipp
 single-sided documents (e.g. passports); the final `processing` screen polls the
 session to a terminal status.
 
+The exact stages (and their order) follow the session's
+[workflow](/guide/workflows) — a custom workflow can also insert an **address**
+step, where the user enters their residential address and, depending on the
+configured methods, uploads a proof-of-address image or shares their device
+location.
+
 Capture uses `getUserMedia` + a canvas frame grab, with a file-input fallback.
 The widget talks **only** to the Client API with the `X-Client-Token` header — it
 never sees your secret key.
+
+### Device location (address stage)
+
+The `device_location` address method calls `navigator.geolocation`, which needs a
+**secure context** and, in the hosted/overlay iframe, the `geolocation`
+permission. The SDK launcher sets `allow="camera; microphone; geolocation"` on the
+iframe automatically. The user opts in with a checkbox before any prompt fires;
+Continue stays disabled until a location fix is captured.
 
 ## Hosted mode + the SDK launcher
 

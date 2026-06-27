@@ -14,7 +14,7 @@ import { ValidationException } from 'kanun'
 const KEY_SET = new Set<WorkflowStepKey>(AVAILABLE_WORKFLOW_STEP_KEYS)
 const METHOD_SET = new Set<AddressMethod>(ADDRESS_METHODS)
 
-/** Validate + canonicalise the address stage's config (methods + on_fail). */
+/** Validate + canonicalise the address stage's config (methods + on_fail + threshold). */
 function normalizeAddressConfig(raw: unknown): AddressStepConfig {
   const methodsRaw = (raw as { methods?: unknown })?.methods
   const methods = Array.isArray(methodsRaw)
@@ -26,8 +26,20 @@ function normalizeAddressConfig(raw: unknown): AddressStepConfig {
   }
 
   const onFail = (raw as { on_fail?: unknown })?.on_fail
+  const config: AddressStepConfig = { methods, on_fail: onFail === 'reject' ? 'reject' : 'review' }
 
-  return { methods, on_fail: onFail === 'reject' ? 'reject' : 'review' }
+  const thresholdRaw = (raw as { auto_approve_threshold?: unknown })?.auto_approve_threshold
+  if (thresholdRaw != null && thresholdRaw !== '') {
+    const threshold = Number(thresholdRaw)
+    if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
+      throw ValidationException.withMessages({
+        steps: ['The address auto-verify threshold must be between 0 and 1.'],
+      })
+    }
+    config.auto_approve_threshold = threshold
+  }
+
+  return config
 }
 
 /**

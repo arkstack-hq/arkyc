@@ -30,3 +30,4 @@ export type { AddressConfig, AddressDriverName, AddressRequest, AddressVerifier 
 export { formatAddress } from './types'
 export { MockAddressVerifier } from './mock'
 export { LiveAddressVerifier } from './live'
+export { countryName } from './aggregate'

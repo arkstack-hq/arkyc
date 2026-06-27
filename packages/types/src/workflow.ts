@@ -51,6 +51,12 @@ export interface AddressStepConfig {
    * session for a human; `reject` fails it outright.
    */
   on_fail: AddressOnFail
+  /**
+   * Minimum address-verification confidence in [0, 1] to auto-verify the address.
+   * A passed address scoring below this is routed to manual review (the gate is
+   * never a rejection). Omitted falls back to the project `addressThreshold`.
+   */
+  auto_approve_threshold?: number
 }
 
 /** The default address config applied when the stage is enabled without one. */

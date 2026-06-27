@@ -1,13 +1,14 @@
 # Provider drivers
 
-OCR, liveness, and face matching are **driver-based** — the active driver is
-chosen by config, so call sites stay provider-agnostic.
+OCR, liveness, face matching, and address verification are **driver-based** — the
+active driver is chosen by config, so call sites stay provider-agnostic.
 
 | Provider   | Drivers                               |
 | ---------- | ------------------------------------- |
 | OCR        | `mock`, `tesseract`, `ai`, `external` |
 | Liveness   | `mock`, `external`                    |
 | Face match | `mock`, `external`                    |
+| Address    | `mock`, `live`                        |
 
 - **`mock`** — deterministic, for dev and tests. Reads optional hint signals from
   the request so you can drive any outcome without a real provider.
@@ -96,6 +97,32 @@ AI document processing isn't available to every project. Project owners
 project's sessions use the fallback driver. See the
 [admin AI-access endpoints](/api/dashboard#admin-ai-access).
 
+## Address {#address}
+
+The **address** stage is opt-in (custom [workflows](./workflows#address-stage)
+only). Its driver corroborates the user's claimed residential address:
+
+- **`mock`** — deterministic; honors the `address_score` / `address_passed`
+  request hints, for dev and tests.
+- **`live`** — real geocoding. `geocode_lookup` forward-geocodes the typed
+  address via **openrouteservice**; `device_location` reverse-geocodes the
+  device's GPS fix via **Nominatim** (OpenStreetMap). Each checks that the
+  resolved country matches what the user entered. `poa_document` is capture-only
+  and routes to manual review.
+
+```bash
+ADDRESS_DRIVER=live
+ADDRESS_ORS_API_KEY=...                         # openrouteservice key (geocode_lookup)
+ADDRESS_ORS_URL=https://api.openrouteservice.org/geocode/search   # optional override
+ADDRESS_NOMINATIM_URL=https://nominatim.openstreetmap.org         # optional override
+ADDRESS_USER_AGENT=Arkyc/1.0 (address-verification)               # optional; Nominatim policy
+```
+
+The `live` driver lives in the API (`apps/api/.../providers/address`) — it's
+server-only but mirrors the other drivers' factory shape. See
+[Workflows → Address stage](./workflows#address-stage) for the per-workflow
+methods, `on_fail`, and the `auto_approve_threshold` gate.
+
 ## Result shapes
 
 Each `external` endpoint receives the image bytes and must return JSON matching
@@ -118,6 +145,7 @@ body or the `complete` payload) so you can script outcomes:
 - OCR: `confidence`, `expired`
 - Liveness: `score`, `passed`, `multipleFaces`
 - Face match: `similarityScore`, `passed`
+- Address: `address_score`, `address_passed`
 
 This is what the [playground](/guide/getting-started#_7-run-a-verification-with-the-playground)
 and the widget's mock signal hints use to demonstrate the full flow without any

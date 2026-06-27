@@ -7,10 +7,10 @@ export function Widget() {
     <Prose>
       <h1>Embed the widget</h1>
       <p>
-        The widget runs the guided capture flow document, selfie and liveness, and talks only to Arkyc using the
-        one-time client token from your server. Launch it two ways: as an <strong>overlay</strong> the SDK opens over
-        your page, or by sending the user to the <strong>hosted</strong> page. Both load the same hosted widget; the
-        token is the only thing the browser needs.
+        The widget runs the guided capture flow document, selfie and liveness, plus an optional address step on custom
+        workflows, and talks only to Arkyc using the one-time client token from your server. Launch it two ways: as an{' '}
+        <strong>overlay</strong> the SDK opens over your page, or by sending the user to the <strong>hosted</strong>{' '}
+        page. Both load the same hosted widget; the token is the only thing the browser needs.
       </p>
 
       <h2>Install</h2>

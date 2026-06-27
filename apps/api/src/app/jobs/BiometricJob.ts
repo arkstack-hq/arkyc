@@ -49,6 +49,7 @@ export class BiometricJob extends Job {
     const runsOcr = workflowRunsOcr(workflow)
     const runsLiveness = workflowEnables(workflow, 'liveness')
     const runsAddress = workflowEnables(workflow, 'address')
+    const addressConfig = workflowAddressConfig(workflow)
     const runsFaceMatch = workflowEnables(workflow, 'face_match') && runsOcr && runsLiveness
 
     const capture = runsDocument ? await DocumentCapture.where({ sessionId: session.id }).first() : null
@@ -106,9 +107,15 @@ export class BiometricJob extends Job {
         : { passed: true, score: 1, multipleFaces: false },
       faceMatch: faceMatch ?? { passed: true, similarityScore: 1 },
       // Disabled address passes through; when on, a failure flags review (or
-      // rejects when the workflow's on_fail is 'reject').
+      // rejects when the workflow's on_fail is 'reject'), and a passed-but-
+      // low-confidence result is gated to review by the workflow's threshold.
       address: runsAddress
-        ? { passed: address!.passed, score: address!.score, onFail: workflowAddressConfig(workflow)?.on_fail }
+        ? {
+            passed: address!.passed,
+            score: address!.score,
+            onFail: addressConfig?.on_fail,
+            threshold: addressConfig?.auto_approve_threshold,
+          }
         : { passed: true, score: 1 },
     }
 

@@ -57,6 +57,7 @@ export class LiveAddressVerifier implements AddressVerifier {
         passed: countryOk && hit.confidence >= MIN_GEOCODE_CONFIDENCE,
         confidence: hit.confidence,
         resolved: hit.address,
+        resolvedLabel: hit.label,
         note: countryOk ? undefined : 'Resolved to a different country',
         raw: hit.raw,
       }
@@ -75,6 +76,7 @@ export class LiveAddressVerifier implements AddressVerifier {
         passed: countryOk,
         confidence: countryOk ? 0.8 : 0.2,
         resolved: hit.address,
+        resolvedLabel: hit.displayName,
         note: countryOk ? undefined : 'Device is in a different country',
         raw: hit.raw,
       }

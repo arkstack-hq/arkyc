@@ -1,7 +1,8 @@
 import type { DocumentAnalyzer, DocumentTuning } from './document'
 import type { FaceAnalyzer, FaceTuning } from './face'
-import type { ProjectBranding, WidgetResult } from '@arkyc/types'
+import type { DocumentType, LivenessChallenge, ProjectBranding, WidgetResult } from '@arkyc/types'
 
+import type { AddressFormData } from './ui'
 import type { ProviderSignalHints } from './client'
 import type { WidgetRealtimeFactory } from './realtime'
 
@@ -156,4 +157,28 @@ export interface WidgetHandle {
    * stream (events are only delivered while at least one listener is active).
    */
   on: (event: string, listener: WidgetEventListener) => () => void
+}
+
+/** High-level events the view raises back to the controller. */
+export interface ViewHandlers {
+  onClose(): void
+  onStart(): void
+  onDocumentSelected(type: DocumentType, country: string): void
+  /** A capture screen produced an image (or `null` when skipped in demo mode). */
+  onImage(blob: Blob | null): void
+  /**
+   * Active liveness finished: the recorded video (or `null`), the performed
+   * sequence, and a still selfie frame grabbed from the live video (or `null`).
+   */
+  onActiveLiveness(video: Blob | null, performed: LivenessChallenge[], selfie?: Blob | null): void
+  /** The result screen was acknowledged ("Done"). */
+  onAcknowledge(): void
+  /** The user chose to continue the verification on another device (handoff). */
+  onUsePhone(): void
+  /** The user chose to keep verifying on this (desktop) device instead of handing off. */
+  onContinueHere(): void
+  /** The address-entry form was submitted (opt-in address stage). */
+  onAddress(data: AddressFormData): void
+  /** Request the device's location (address stage); resolves true when shared. */
+  onShareLocation(): boolean | Promise<boolean>
 }

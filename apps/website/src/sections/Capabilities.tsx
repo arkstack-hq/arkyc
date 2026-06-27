@@ -13,7 +13,7 @@ const CARDS = [
   {
     icon: Workflow,
     title: 'Verify',
-    body: 'OCR, passive and active liveness, and face match run asynchronously off the request path on a Postgres-backed job queue and swappable provider drivers behind a stable contract.',
+    body: 'OCR, passive and active liveness, face match, and optional address verification run asynchronously off the request path on a Postgres-backed job queue and swappable provider drivers behind a stable contract.',
   },
   {
     icon: ShieldCheck,

@@ -77,7 +77,9 @@ export class ArkycWidget {
 
     const iframe = doc.createElement('iframe')
     iframe.src = src
-    iframe.allow = 'camera; microphone'
+    // `geolocation` is needed for the address stage's device-location method; a
+    // cross-origin iframe denies it unless explicitly allowed here.
+    iframe.allow = 'camera; microphone; geolocation'
     iframe.style.cssText =
       'width:100%;max-width:480px;height:100%;max-height:720px;border:0;border-radius:12px;background:#fff;'
     overlay.appendChild(iframe)

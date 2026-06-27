@@ -15,13 +15,14 @@ does. They're documented for custom flows.
 
 ## Endpoints
 
-| Method | Path                        | Description                                                |
-| ------ | --------------------------- | ---------------------------------------------------------- |
-| `GET`  | `/v1/client/session`        | Fetch the session; marks it `started` on first load.       |
-| `POST` | `/v1/client/document/front` | Submit the document front; runs OCR + portrait extraction. |
-| `POST` | `/v1/client/document/back`  | Submit the document back (skipped for single-sided docs).  |
-| `POST` | `/v1/client/liveness`       | Submit the selfie / passive liveness frame.                |
-| `POST` | `/v1/client/complete`       | Finalize — run the decision engine and land the verdict.   |
+| Method | Path                        | Description                                                                    |
+| ------ | --------------------------- | ------------------------------------------------------------------------------ |
+| `GET`  | `/v1/client/session`        | Fetch the session; marks it `started` on first load.                           |
+| `POST` | `/v1/client/document/front` | Submit the document front; runs OCR + portrait extraction.                     |
+| `POST` | `/v1/client/document/back`  | Submit the document back (skipped for single-sided docs).                      |
+| `POST` | `/v1/client/liveness`       | Submit the selfie / passive liveness frame.                                    |
+| `POST` | `/v1/client/address`        | Submit the claimed address (only when the workflow enables the address stage). |
+| `POST` | `/v1/client/complete`       | Finalize — run the decision engine and land the verdict.                       |
 
 ## Uploads
 
@@ -36,6 +37,26 @@ X-Client-Token: <token>
 Content-Type: multipart/form-data
 
 image=@front.jpg
+```
+
+## Address
+
+When the [workflow](/guide/workflows#address-stage) enables the address stage,
+submit the claimed address fields (`multipart/form-data`). Depending on the
+configured methods, include a `poa` proof-of-address image and/or device
+`latitude` / `longitude`. With `mock`, the `address_score` / `address_passed`
+hints script the outcome.
+
+```http
+POST /api/v1/client/address
+X-Client-Token: <token>
+Content-Type: multipart/form-data
+
+line1=31 Gwarri Avenue
+city=Kaduna
+country=NG
+latitude=10.48342
+longitude=7.43488
 ```
 
 ## Completing

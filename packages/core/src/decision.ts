@@ -40,6 +40,12 @@ export interface DecisionAddressInput {
    * is always review, never a reject.
    */
   onFail?: 'review' | 'reject'
+  /**
+   * Workflow-configured minimum confidence to auto-verify the address. A passed
+   * address scoring below this routes to manual review. Falls back to the
+   * project `addressThreshold` when omitted.
+   */
+  threshold?: number
 }
 
 /** The complete set of signals the decision engine evaluates. */
@@ -120,7 +126,9 @@ export class DecisionEngine {
     if (!input.address.passed) {
       return verdict('requires_review', 'ADDRESS_VERIFICATION_FAILED')
     }
-    if (input.address.score < t.addressThreshold) {
+    // Auto-verify gate: the workflow can set its own minimum address confidence;
+    // a passed address below it is held for manual review (never rejected here).
+    if (input.address.score < (input.address.threshold ?? t.addressThreshold)) {
       return verdict('requires_review', 'ADDRESS_LOW_CONFIDENCE')
     }
 

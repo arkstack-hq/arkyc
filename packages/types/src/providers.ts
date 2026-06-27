@@ -101,6 +101,12 @@ export interface AddressMethodResult {
   confidence: number
   /** The address this method resolved/extracted, when any. */
   resolved?: PostalAddress
+  /**
+   * The provider's full, human-readable address string for the resolved hit —
+   * e.g. Nominatim's `display_name` or openrouteservice's `label`. Shown to
+   * reviewers so they see the exact place the provider detected.
+   */
+  resolvedLabel?: string
   /** Human-readable note (e.g. why it failed). */
   note?: string
   raw?: unknown

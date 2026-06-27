@@ -15,6 +15,8 @@ interface OrsFeature {
 export interface GeocodeHit {
   address: PostalAddress
   confidence: number
+  /** The provider's full formatted address string (ORS `label`), when present. */
+  label?: string
   raw: unknown
 }
 
@@ -53,7 +55,7 @@ export async function orsForward(config: AddressConfig, text: string, country?: 
     longitude: lon,
   }
 
-  return { address, confidence: clamp01(Number(p.confidence ?? 0.5)), raw: feature }
+  return { address, confidence: clamp01(Number(p.confidence ?? 0.5)), label: str(p.label), raw: feature }
 }
 
 /**
@@ -64,7 +66,7 @@ export async function nominatimReverse(
   config: AddressConfig,
   lat: number,
   lon: number,
-): Promise<{ address: PostalAddress; raw: unknown } | null> {
+): Promise<{ address: PostalAddress; displayName?: string; raw: unknown } | null> {
   const url = new URL(`${config.nominatimUrl ?? NOMINATIM_URL}/reverse`)
   url.searchParams.set('format', 'jsonv2')
   url.searchParams.set('lat', String(lat))
@@ -79,7 +81,7 @@ export async function nominatimReverse(
   })
   if (!res.ok) throw new Error(`Nominatim reverse geocode failed (${res.status})`)
 
-  const data = (await res.json()) as { address?: Record<string, string> }
+  const data = (await res.json()) as { address?: Record<string, string>; display_name?: string }
   const a = data.address
   if (!a) return null
 
@@ -94,5 +96,5 @@ export async function nominatimReverse(
     longitude: lon,
   }
 
-  return { address, raw: data }
+  return { address, displayName: data.display_name || undefined, raw: data }
 }

@@ -1,5 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
+
 import { arkycBackend } from './src/backend'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 /**
  * Playground dev server.
@@ -53,6 +55,6 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    plugins: [arkycBackend({ targets })],
+    plugins: [arkycBackend({ targets }), basicSsl()],
   }
 })

@@ -42,28 +42,8 @@ import {
 } from './face'
 import { Theme } from './theme'
 import { countries } from './countries'
-
-/** High-level events the view raises back to the controller. */
-export interface ViewHandlers {
-  onClose(): void
-  onStart(): void
-  onDocumentSelected(type: DocumentType, country: string): void
-  /** A capture screen produced an image (or `null` when skipped in demo mode). */
-  onImage(blob: Blob | null): void
-  /**
-   * Active liveness finished: the recorded video (or `null`), the performed
-   * sequence, and a still selfie frame grabbed from the live video (or `null`).
-   */
-  onActiveLiveness(video: Blob | null, performed: LivenessChallenge[], selfie?: Blob | null): void
-  /** The result screen was acknowledged ("Done"). */
-  onAcknowledge(): void
-  /** The user chose to continue the verification on another device (handoff). */
-  onUsePhone(): void
-  /** The user chose to keep verifying on this (desktop) device instead of handing off. */
-  onContinueHere(): void
-  /** The address-entry form was submitted (opt-in address stage). */
-  onAddress(data: AddressFormData): void
-}
+import { createDom, type Dom } from './h'
+import type { ViewHandlers } from './types'
 
 /** Per-render data the view needs for the current step. */
 export interface ViewState {
@@ -215,18 +195,6 @@ interface StepDots {
   markDone(index: number): void
 }
 
-interface ElProps {
-  class?: string
-  text?: string
-  html?: string
-  type?: string
-  src?: string
-  accept?: string
-  placeholder?: string
-  value?: string
-  [attr: string]: string | undefined
-}
-
 /**
  * Renders the widget's screens into a host element. DOM- and camera-injectable
  * so it can run under a fake DOM in tests. The view owns capture-screen camera
@@ -249,6 +217,8 @@ export class WidgetView {
   private timers: ReturnType<typeof setInterval>[] = []
   /** Extra teardown run on each re-render (cancels in-flight detection loops). */
   private cleanups: (() => void)[] = []
+  /** DOM hyperscript helpers (`h`/`append`/`field`) bound to this view's document (see {@link createDom}). */
+  private readonly dom: Dom
 
   constructor(
     private readonly doc: Document,
@@ -260,36 +230,33 @@ export class WidgetView {
     docAnalyzer: DocumentAnalyzer | null = createDefaultDocumentAnalyzer(),
     docTuning: DocumentTuning = DEFAULT_DOCUMENT_TUNING,
   ) {
+    this.dom = createDom(doc)
     this.camera = new Camera(doc, nav)
     this.analyzer = analyzer
     this.tuning = tuning
     this.docAnalyzer = docAnalyzer
     this.docTuning = docTuning
-    this.root = this.el('div', { class: 'arkyc-root' })
+    this.root = this.dom.h('div', { class: 'arkyc-root' })
 
-    this.styleEl = this.el('style', { text: theme.stylesheet() })
+    this.styleEl = this.dom.h('style', { text: theme.stylesheet() })
     this.root.appendChild(this.styleEl)
 
-    const card = this.el('div', { class: 'arkyc-card' })
-    const header = this.el('div', { class: 'arkyc-header' })
-    this.brandEl = this.el('div', { class: 'arkyc-brand' })
+    this.brandEl = this.dom.h('div', { class: 'arkyc-brand' })
     this.fillBrand()
-    header.appendChild(this.brandEl)
-    const close = this.el('button', {
-      class: 'arkyc-close',
-      html: '&times;',
-      'aria-label': 'Close',
-    })
-    close.addEventListener('click', () => this.handlers.onClose())
-    header.appendChild(close)
+    this.body = this.dom.h('div', { class: 'arkyc-body' })
+    this.footer = this.dom.h('div', { class: 'arkyc-footer' })
 
-    this.body = this.el('div', { class: 'arkyc-body' })
-    this.footer = this.el('div', { class: 'arkyc-footer' })
+    const header = this.dom.h('div', { class: 'arkyc-header' }, [
+      this.brandEl,
+      this.dom.h('button', {
+        class: 'arkyc-close',
+        html: '&times;',
+        'aria-label': 'Close',
+        on: { click: () => this.handlers.onClose() },
+      }),
+    ])
 
-    card.appendChild(header)
-    card.appendChild(this.body)
-    card.appendChild(this.footer)
-    this.root.appendChild(card)
+    this.root.appendChild(this.dom.h('div', { class: 'arkyc-card' }, [header, this.body, this.footer]))
   }
 
   /**
@@ -299,20 +266,18 @@ export class WidgetView {
   private fillBrand(): void {
     this.clear(this.brandEl)
     const lastTenMins = Date.now() - Math.floor(Math.random() * (10 * 60 * 1000))
+    const branded = this.theme.showBranding && (this.theme.logoUrl || this.theme.name)
 
-    if (this.theme.showBranding && (this.theme.logoUrl || this.theme.name)) {
-      if (this.theme.logoUrl)
-        this.brandEl.appendChild(
-          this.el('img', {
-            class: 'arkyc-logo',
-            src: this.theme.logoUrl + '?stamp=' + lastTenMins,
-          }),
-        )
-      if (this.theme.name)
-        this.brandEl.appendChild(this.el('span', { class: 'arkyc-brand-name', text: this.theme.name }))
-    } else {
-      this.brandEl.appendChild(this.el('p', { class: 'arkyc-title', text: 'Verify your identity' }))
-    }
+    this.dom.append(
+      this.brandEl,
+      branded
+        ? [
+            this.theme.logoUrl &&
+              this.dom.h('img', { class: 'arkyc-logo', src: `${this.theme.logoUrl}?stamp=${lastTenMins}` }),
+            this.theme.name && this.dom.h('span', { class: 'arkyc-brand-name', text: this.theme.name }),
+          ]
+        : this.dom.h('p', { class: 'arkyc-title', text: 'Verify your identity' }),
+    )
   }
 
   /**
@@ -399,24 +364,22 @@ export class WidgetView {
   /** Prepend a decorative illustration for the given screen, when one exists. */
   private appendArt(key: WidgetStep | 'welcome'): void {
     const art = STEP_ART[key]
-    if (art) this.body.appendChild(this.el('div', { class: 'arkyc-illus', html: art }))
+    if (art) this.body.appendChild(this.dom.h('div', { class: 'arkyc-illus', html: art }))
   }
 
   private renderWelcome(handoffAvailable?: boolean): void {
     this.appendArt('welcome')
-    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Verify your identity' }))
-    this.body.appendChild(
-      this.el('p', {
+    this.dom.append(this.body, [
+      this.dom.h('h2', { class: 'arkyc-h', text: 'Verify your identity' }),
+      this.dom.h('p', {
         class: 'arkyc-p',
         text: 'You will need a government-issued ID and a moment to take a selfie. Your data is processed securely.',
       }),
-    )
-    this.footer.appendChild(this.button('Get started', () => this.handlers.onStart()))
-    if (handoffAvailable) {
-      this.footer.appendChild(
-        this.button('Continue on your phone', () => this.handlers.onUsePhone(), 'arkyc-btn-ghost'),
-      )
-    }
+    ])
+    this.dom.append(this.footer, [
+      this.button('Get started', () => this.handlers.onStart()),
+      handoffAvailable && this.button('Continue on your phone', () => this.handlers.onUsePhone(), 'arkyc-btn-ghost'),
+    ])
   }
 
   /** A neutral connecting screen shown while the widget bootstraps the session. */
@@ -439,8 +402,10 @@ export class WidgetView {
     this.clear(this.footer)
     this.root.classList.remove('arkyc-handoff')
     this.appendArt(step)
-    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: title }))
-    this.body.appendChild(this.el('p', { class: 'arkyc-p', text: body }))
+    this.dom.append(this.body, [
+      this.dom.h('h2', { class: 'arkyc-h', text: title }),
+      this.dom.h('p', { class: 'arkyc-p', text: body }),
+    ])
     this.footer.appendChild(this.button(cta, onContinue))
   }
 
@@ -455,15 +420,15 @@ export class WidgetView {
     this.clear(this.footer)
     // Keep the QR prominent (edge-to-edge in fullscreen) rather than a small dialog.
     this.root.classList.add('arkyc-handoff')
-    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Continue on your phone' }))
-    this.body.appendChild(
-      this.el('p', { class: 'arkyc-p', text: 'Scan this code with your phone camera to finish verifying there.' }),
-    )
-    this.body.appendChild(this.el('div', { class: 'arkyc-qr', html: qrSvg }))
-    const waiting = this.el('div', { class: 'arkyc-handoff-wait' })
-    waiting.appendChild(this.el('div', { class: 'arkyc-spinner sm' }))
-    waiting.appendChild(this.el('span', { text: 'Waiting for your phone…' }))
-    this.body.appendChild(waiting)
+    this.dom.append(this.body, [
+      this.dom.h('h2', { class: 'arkyc-h', text: 'Continue on your phone' }),
+      this.dom.h('p', { class: 'arkyc-p', text: 'Scan this code with your phone camera to finish verifying there.' }),
+      this.dom.h('div', { class: 'arkyc-qr', html: qrSvg }),
+      this.dom.h('div', { class: 'arkyc-handoff-wait' }, [
+        this.dom.h('div', { class: 'arkyc-spinner sm' }),
+        this.dom.h('span', { text: 'Waiting for your phone…' }),
+      ]),
+    ])
     if (allowContinueHere) {
       this.footer.appendChild(
         this.button('Continue on this device', () => this.handlers.onContinueHere(), 'arkyc-btn-ghost'),
@@ -472,59 +437,43 @@ export class WidgetView {
   }
 
   private renderDocumentSelection(): void {
-    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Select your document' }))
-    const country = this.el('select', {
+    this.body.appendChild(this.dom.h('h2', { class: 'arkyc-h', text: 'Select your document' }))
+    const country = this.dom.field('Country', {
       class: 'arkyc-btn arkyc-btn-ghost arkyc-text-center',
       name: 'country',
       autocomplete: 'country',
-      'aria-label': 'Country',
-    }) as HTMLSelectElement
-
-    const placeholder = this.el('option', {
-      value: '',
-      selected: 'selected',
+      choices: countries.map(({ name, iso2, flag }) => ({ value: iso2, label: `${flag} ${name}` })),
     })
 
-    placeholder.textContent = 'Country'
-
-    country.appendChild(placeholder)
-
-    countries.forEach(({ name, iso2, flag }) => {
-      const option = this.el('option', { value: iso2 }) as HTMLOptionElement
-      option.textContent = `${flag} ${name}`
-      country.appendChild(option)
-    })
-
-    const choices = this.el('div', { class: 'arkyc-choices' })
-
-    choices.appendChild(country)
-    ;(Object.keys(DOCUMENT_LABELS) as DocumentType[]).forEach((type) => {
+    const buttons = (Object.keys(DOCUMENT_LABELS) as DocumentType[]).map((type) => {
       const btn = this.button(DOCUMENT_LABELS[type], () =>
         this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
       )
       btn.classList.add('arkyc-btn-ghost')
-      choices.appendChild(btn)
+      return btn
     })
-    this.body.appendChild(choices)
+
+    this.body.appendChild(this.dom.h('div', { class: 'arkyc-choices' }, [country, ...buttons]))
   }
 
   private renderCapture(title: string, facing: Facing, allowSkip?: boolean, selfie = false, strict = false): void {
     // Documents in the active flow are strict: detection-gated only (no manual
     // bypass). Selfies are always pure auto, so strictness only changes documents.
     const strictDoc = strict && !selfie
-    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: title }))
-    this.body.appendChild(this.el('p', { class: 'arkyc-p', text: 'Position it clearly in frame, then capture.' }))
-
-    const fileInput = this.el('input', {
+    const fileInput = this.dom.h<HTMLInputElement>('input', {
       type: 'file',
       accept: 'image/*',
       class: 'arkyc-hidden',
-    }) as HTMLInputElement
-    fileInput.addEventListener('change', () => this.handlers.onImage(Camera.fileFromInput(fileInput)))
-    this.body.appendChild(fileInput)
+      on: { change: () => this.handlers.onImage(Camera.fileFromInput(fileInput)) },
+    })
+    this.dom.append(this.body, [
+      this.dom.h('h2', { class: 'arkyc-h', text: title }),
+      this.dom.h('p', { class: 'arkyc-p', text: 'Position it clearly in frame, then capture.' }),
+      fileInput,
+    ])
 
     if (this.camera.supported) {
-      const video = this.el('video', {
+      const video = this.dom.h('video', {
         class: `arkyc-preview${selfie ? ' selfie' : ''}`,
       }) as HTMLVideoElement
 
@@ -536,7 +485,7 @@ export class WidgetView {
       this.body.appendChild(mount)
 
       // Live guidance hint (quality for documents, framing for selfies).
-      const hint = this.el('p', { class: 'arkyc-p arkyc-hint' }) as HTMLParagraphElement
+      const hint = this.dom.h('p', { class: 'arkyc-p arkyc-hint' }) as HTMLParagraphElement
       this.body.appendChild(hint)
 
       // After a capture, wait for an explicit "Continue" so the user can review
@@ -548,7 +497,7 @@ export class WidgetView {
         this.destroy() // stop the camera + detection timers
         if (blob) {
           const url = URL.createObjectURL(blob)
-          const still = this.el('img', {
+          const still = this.dom.h('img', {
             class: `arkyc-preview${selfie ? ' selfie' : ''}`,
             src: url,
           }) as HTMLImageElement
@@ -595,13 +544,13 @@ export class WidgetView {
       }
     } else if (strictDoc) {
       // Strict document capture with no camera — surface as unsupported.
-      this.body.appendChild(this.el('div', { class: 'arkyc-badge err', html: '!' }))
-      this.body.appendChild(
-        this.el('p', {
+      this.dom.append(this.body, [
+        this.dom.h('div', { class: 'arkyc-badge err', html: '!' }),
+        this.dom.h('p', {
           class: 'arkyc-p',
           text: 'This step needs a working camera to scan your document. Please retry on a device with a camera.',
         }),
-      )
+      ])
     } else {
       const upload = this.button('Upload photo', () => fileInput.click())
       this.footer.appendChild(upload)
@@ -832,12 +781,11 @@ export class WidgetView {
     allowSkip?: boolean,
     requireLiveCamera?: boolean,
   ): void {
-    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Liveness check' }))
-    const prompt = this.el('p', {
+    const prompt = this.dom.h('p', {
       class: 'arkyc-p',
       text: 'Follow the on-screen prompts. Keep your face centred in the circle.',
     })
-    this.body.appendChild(prompt)
+    this.dom.append(this.body, [this.dom.h('h2', { class: 'arkyc-h', text: 'Liveness check' }), prompt])
 
     const fileFallback = !this.camera.supported || !this.camera.canRecord
 
@@ -845,7 +793,7 @@ export class WidgetView {
       if (requireLiveCamera) {
         // capture_model = active: a live camera is mandatory. Do NOT offer a
         // manual "I did it" path — surface the device as unsupported instead.
-        this.body.appendChild(this.el('div', { class: 'arkyc-badge err', html: '!' }))
+        this.body.appendChild(this.dom.h('div', { class: 'arkyc-badge err', html: '!' }))
         prompt.textContent =
           'This check needs camera access on a supported device. Please retry on a device with a working camera.'
         if (allowSkip) {
@@ -866,11 +814,10 @@ export class WidgetView {
       return
     }
 
-    const video = this.el('video', { class: 'arkyc-preview selfie' }) as HTMLVideoElement
+    const video = this.dom.h<HTMLVideoElement>('video', { class: 'arkyc-preview selfie' })
     const face = this.buildFaceStage(video)
     const dots = this.buildDots(challenges.length)
-    if (challenges.length > 1) this.body.appendChild(dots.el)
-    this.body.appendChild(face.stage)
+    this.dom.append(this.body, [challenges.length > 1 && dots.el, face.stage])
 
     let recording: { stop(): Promise<Blob> } | null = null
     let index = 0
@@ -1016,18 +963,17 @@ export class WidgetView {
    * @returns
    */
   private buildFaceStage(video: HTMLVideoElement): FaceStage {
-    const stage = this.el('div', { class: 'arkyc-stage' })
-    stage.setAttribute('data-state', 'wait')
-    stage.appendChild(video)
-
-    const ring = this.el('div', {
+    const ring = this.dom.h('div', {
       class: 'arkyc-ring',
       html: '<svg viewBox="0 0 100 100"><circle class="arkyc-ring-track" cx="50" cy="50" r="46"/><circle class="arkyc-ring-arc" cx="50" cy="50" r="46"/></svg>',
     })
-    stage.appendChild(ring)
-    const cue = this.el('div', { class: 'arkyc-cue' })
-    stage.appendChild(cue)
-    stage.appendChild(this.el('div', { class: 'arkyc-check', html: CHECK_ICON }))
+    const cue = this.dom.h('div', { class: 'arkyc-cue' })
+    const stage = this.dom.h('div', { class: 'arkyc-stage', 'data-state': 'wait' }, [
+      video,
+      ring,
+      cue,
+      this.dom.h('div', { class: 'arkyc-check', html: CHECK_ICON }),
+    ])
 
     const arc = ring.querySelector('.arkyc-ring-arc') as SVGCircleElement | null
     const circumference = 2 * Math.PI * 46
@@ -1057,13 +1003,8 @@ export class WidgetView {
    * @param doc
    */
   private buildDots(count: number): StepDots {
-    const el = this.el('div', { class: 'arkyc-dots' })
-    const dots: HTMLElement[] = []
-    for (let i = 0; i < count; i += 1) {
-      const dot = this.el('div', { class: 'arkyc-dot' })
-      dots.push(dot)
-      el.appendChild(dot)
-    }
+    const dots = Array.from({ length: count }, () => this.dom.h('div', { class: 'arkyc-dot' }))
+    const el = this.dom.h('div', { class: 'arkyc-dots' }, dots)
     return {
       el,
       setActive: (index) =>
@@ -1088,15 +1029,11 @@ export class WidgetView {
    * @returns
    */
   private buildDocStage(video: HTMLVideoElement): DocStage {
-    const stage = this.el('div', { class: 'arkyc-doc' })
-    stage.setAttribute('data-q', 'wait')
-    stage.appendChild(video)
-    const frame = this.el('div', { class: 'arkyc-doc-frame' })
-    for (const corner of ['tl', 'tr', 'bl', 'br']) {
-      frame.appendChild(this.el('span', { class: `arkyc-corner ${corner}` }))
-    }
-    frame.appendChild(this.el('div', { class: 'arkyc-scan' }))
-    stage.appendChild(frame)
+    const frame = this.dom.h('div', { class: 'arkyc-doc-frame' }, [
+      ...['tl', 'tr', 'bl', 'br'].map((corner) => this.dom.h('span', { class: `arkyc-corner ${corner}` })),
+      this.dom.h('div', { class: 'arkyc-scan' }),
+    ])
+    const stage = this.dom.h('div', { class: 'arkyc-doc', 'data-q': 'wait' }, [video, frame])
     return {
       stage,
       setQuality: (quality) => stage.setAttribute('data-q', quality),
@@ -1106,8 +1043,10 @@ export class WidgetView {
   }
 
   private renderProcessing(label: string): void {
-    this.body.appendChild(this.el('div', { class: 'arkyc-spinner' }))
-    this.body.appendChild(this.el('p', { class: 'arkyc-p', text: label }))
+    this.dom.append(this.body, [
+      this.dom.h('div', { class: 'arkyc-spinner' }),
+      this.dom.h('p', { class: 'arkyc-p', text: label }),
+    ])
   }
 
   private renderResult(
@@ -1116,16 +1055,20 @@ export class WidgetView {
     opts: { terminal?: boolean; status?: VerificationStatus } = {},
   ): void {
     if (errorMessage) {
-      this.body.appendChild(this.el('div', { class: 'arkyc-badge err', html: '!' }))
-      this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Something went wrong' }))
-      this.body.appendChild(this.el('p', { class: 'arkyc-p', text: errorMessage }))
+      this.dom.append(this.body, [
+        this.dom.h('div', { class: 'arkyc-badge err', html: '!' }),
+        this.dom.h('h2', { class: 'arkyc-h', text: 'Something went wrong' }),
+        this.dom.h('p', { class: 'arkyc-p', text: errorMessage }),
+      ])
     } else if (opts.terminal) {
       // The session was already finished/expired when this device opened it (e.g.
       // a stale handoff link). Show a notice, not the live result — and only Close.
       const n = TERMINAL_NOTICE[opts.status ?? 'expired'] ?? EXPIRED_NOTICE
-      this.body.appendChild(this.el('div', { class: `arkyc-badge ${n.cls}`, text: n.icon }))
-      this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: n.title }))
-      this.body.appendChild(this.el('p', { class: 'arkyc-p', text: n.copy }))
+      this.dom.append(this.body, [
+        this.dom.h('div', { class: `arkyc-badge ${n.cls}`, text: n.icon }),
+        this.dom.h('h2', { class: 'arkyc-h', text: n.title }),
+        this.dom.h('p', { class: 'arkyc-p', text: n.copy }),
+      ])
       this.footer.appendChild(this.button('Close', () => this.handlers.onClose()))
       return
     } else {
@@ -1150,77 +1093,118 @@ export class WidgetView {
         },
       } as const
       const r = map[decision ?? 'requires_review'] ?? map.requires_review
-      this.body.appendChild(this.el('div', { class: `arkyc-badge ${r.cls}`, text: r.icon }))
-      this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: r.title }))
-      this.body.appendChild(this.el('p', { class: 'arkyc-p', text: r.copy }))
+      this.dom.append(this.body, [
+        this.dom.h('div', { class: `arkyc-badge ${r.cls}`, text: r.icon }),
+        this.dom.h('h2', { class: 'arkyc-h', text: r.title }),
+        this.dom.h('p', { class: 'arkyc-p', text: r.copy }),
+      ])
     }
     this.footer.appendChild(this.button('Done', () => this.handlers.onAcknowledge()))
   }
 
-  /** The address-entry form (opt-in address stage). Inputs shown depend on methods. */
+  /**
+   * The address-entry form (opt-in address stage). Inputs shown depend on methods.
+   *
+   * @param methods
+   */
   private renderAddressForm(methods: AddressMethod[]): void {
-    this.body.appendChild(this.el('h2', { class: 'arkyc-h', text: 'Your address' }))
+    this.body.appendChild(this.dom.h('h2', { class: 'arkyc-h', text: 'Your address' }))
     this.body.appendChild(
-      this.el('p', { class: 'arkyc-p', text: 'Enter your residential address so we can verify it.' }),
+      this.dom.h('p', { class: 'arkyc-p', text: 'Enter your residential address so we can verify it.' }),
     )
 
-    const form = this.el('div', { class: 'arkyc-form' })
-    const field = (placeholder: string): HTMLInputElement => {
-      const input = this.el<HTMLInputElement>('input', { class: 'arkyc-input', type: 'text', placeholder })
-      form.appendChild(input)
-      return input
-    }
-    const line1 = field('Address line 1')
-    const line2 = field('Address line 2 (optional)')
-    const city = field('City')
-    const region = field('State / region')
-    const postal = field('Postal code')
-    const country = field('Country code (e.g. NG)')
-    this.body.appendChild(form)
+    const line1 = this.dom.field('Address line 1', { autocomplete: 'address-line1', name: 'street' })
+    const line2 = this.dom.field('Address line 2 (optional)', { autocomplete: 'address-line2', name: 'town' })
+    const city = this.dom.field('City', { autocomplete: 'address-level2', name: 'city' })
+    const region = this.dom.field('State / region', { autocomplete: 'address-level1', name: 'state' })
+    const postal = this.dom.field('ZIP/Postal code', { autocomplete: 'postal-code', name: 'zip' })
+    const country = this.dom.field('Country', {
+      name: 'country_iso2',
+      choices: countries.map((e) => ({
+        value: e.iso2,
+        label: `${e.flag} ${e.name}`,
+      })),
+    })
+    this.body.appendChild(
+      this.dom.h('div', { class: 'arkyc-addr-form' }, [line1, line2, city, region, postal, country]),
+    )
 
     let poa: Blob | null = null
     if (methods.includes('poa_document')) {
-      this.body.appendChild(
-        this.el('p', { class: 'arkyc-p', text: 'Upload a proof of address (utility bill or bank statement).' }),
-      )
-      const file = this.el<HTMLInputElement>('input', { class: 'arkyc-input', type: 'file', accept: 'image/*' })
-      file.addEventListener('change', () => {
-        poa = file.files?.[0] ?? null
+      const file = this.dom.h<HTMLInputElement>('input', {
+        class: 'arkyc-addr-input',
+        type: 'file',
+        accept: 'image/*',
+        on: { change: () => (poa = file.files?.[0] ?? null) },
       })
-      this.body.appendChild(file)
+      this.dom.append(this.body, [
+        this.dom.h('p', { class: 'arkyc-p', text: 'Upload a proof of address (utility bill or bank statement).' }),
+        file,
+      ])
     }
 
     let useLocation = false
-    if (methods.includes('device_location')) {
-      const label = this.el('label', { class: 'arkyc-check' })
-      const cb = this.el<HTMLInputElement>('input', { type: 'checkbox' })
-      cb.addEventListener('change', () => {
-        useLocation = cb.checked
+    const requiresLocation = methods.includes('device_location')
+
+    const submit = this.button('Continue', () =>
+      this.handlers.onAddress({
+        line1: line1.value.trim() || null,
+        line2: line2.value.trim() || null,
+        city: city.value.trim() || null,
+        region: region.value.trim() || null,
+        postalCode: postal.value.trim() || null,
+        country: country.value.trim().toUpperCase() || null,
+        poa,
+        useLocation,
+      }),
+    )
+
+    if (requiresLocation) {
+      const status = this.dom.h('p', { class: 'arkyc-p' })
+      const cb = this.dom.h<HTMLInputElement>('input', {
+        type: 'checkbox',
+        // Request location the moment they opt in, so the browser permission
+        // prompt appears immediately (not silently at submit) — and show the result.
+        on: {
+          change: () => {
+            if (!cb.checked) {
+              useLocation = false
+              status.textContent = ''
+              submit.setAttribute('disabled', 'true')
+              return
+            }
+            status.textContent = 'Requesting your location…'
+            submit.setAttribute('disabled', 'true')
+            void Promise.resolve(this.handlers.onShareLocation()).then((ok) => {
+              useLocation = ok
+              cb.checked = ok
+              if (ok) submit.removeAttribute('disabled')
+              else submit.setAttribute('disabled', 'true')
+              status.textContent = ok
+                ? 'Location shared ✓'
+                : 'Couldn’t access your location, allow location access to continue.'
+            })
+          },
+        },
       })
-      label.appendChild(cb)
-      label.appendChild(this.el('span', { text: 'Use my current location to confirm my address' }))
-      this.body.appendChild(label)
+      // Continue stays disabled until the user opts in and we actually capture a
+      // location fix — this method can't run without coordinates.
+      submit.setAttribute('disabled', 'true')
+      this.body.appendChild(
+        this.dom.h('label', { class: 'arkyc-addr-opt' }, [
+          cb,
+          this.dom.h('span', { text: 'Allow access to my current location to confirm my address' }),
+        ]),
+      )
+      this.body.appendChild(status)
     }
 
-    this.footer.appendChild(
-      this.button('Continue', () =>
-        this.handlers.onAddress({
-          line1: line1.value.trim() || null,
-          line2: line2.value.trim() || null,
-          city: city.value.trim() || null,
-          region: region.value.trim() || null,
-          postalCode: postal.value.trim() || null,
-          country: country.value.trim().toUpperCase() || null,
-          poa,
-          useLocation,
-        }),
-      ),
-    )
+    this.footer.appendChild(submit)
   }
 
   private button(label: string, onClick: () => void, extraClass?: string): HTMLButtonElement {
     const cls = extraClass ? `arkyc-btn ${extraClass}` : 'arkyc-btn'
-    const btn = this.el('button', { class: cls, text: label }) as HTMLButtonElement
+    const btn = this.dom.h('button', { class: cls, text: label }) as HTMLButtonElement
     // Guard against accidental double-clicks: a button fires once, then disables
     // and shows an inline loader while its (usually async) handler runs. The next
     // screen re-renders a fresh button, so this only spans the in-flight gap.
@@ -1237,19 +1221,5 @@ export class WidgetView {
 
   private clear(node: HTMLElement): void {
     while (node.firstChild) node.removeChild(node.firstChild)
-  }
-
-  private el<T extends HTMLElement = HTMLElement>(tag: string, props: ElProps = {}): T {
-    const node = this.doc.createElement(tag) as T
-    for (const [key, value] of Object.entries(props)) {
-      if (value == null) continue
-      if (key === 'class') node.className = value
-      else if (key === 'text') node.textContent = value
-      else if (key === 'html') node.innerHTML = value
-      else if (key === 'value' || key === 'src' || key === 'type' || key === 'accept' || key === 'placeholder') {
-        ;(node as unknown as Record<string, string>)[key] = value
-      } else node.setAttribute(key, value)
-    }
-    return node
   }
 }

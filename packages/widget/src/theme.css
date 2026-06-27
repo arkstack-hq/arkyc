@@ -197,6 +197,60 @@
   border: 1px solid var(--arkyc-border);
 }
 
+/* Address-entry form (opt-in address stage). */
+.arkyc-addr-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  text-align: left;
+}
+
+.arkyc-addr-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  font-size: 14px;
+  color: var(--arkyc-fg);
+  background: var(--arkyc-bg);
+  border: 1px solid var(--arkyc-border);
+  border-radius: var(--arkyc-radius);
+  outline: none;
+}
+
+.arkyc-addr-input[type='file'] {
+  max-width: 340px;
+  padding: 7px 9px;
+}
+
+.arkyc-addr-input:focus {
+  border-color: var(--arkyc-primary);
+}
+
+.arkyc-addr-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  font-size: 14px;
+  color: var(--arkyc-fg);
+  text-align: left;
+  cursor: pointer;
+}
+
+.arkyc-addr-opt input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+select.arkyc-addr-input {
+  color: #757575;
+}
+
 .arkyc-choices {
   display: flex;
   flex-direction: column;

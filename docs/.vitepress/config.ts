@@ -71,6 +71,7 @@ export default defineConfig({
         {
           text: 'Concepts',
           items: [
+            { text: 'Workflows', link: '/guide/workflows' },
             { text: 'Multi-tenancy', link: '/guide/multi-tenancy' },
             { text: 'RBAC & permissions', link: '/guide/rbac' },
             { text: 'Provider drivers', link: '/guide/providers' },

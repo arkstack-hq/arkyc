@@ -98,6 +98,38 @@ const FEATURES: Feature[] = [
     ),
   },
   {
+    eyebrow: 'Workflows',
+    title: 'Build the flow, including address',
+    body: 'Compose verification stages per workflow document, liveness, face match, and an opt-in address stage. Verify a residential address by geocoding it, reverse-geocoding the device location, or a proof-of-address upload, and set the score that auto-verifies.',
+    points: [
+      'Toggle & reorder stages',
+      'Geocode · device location · proof of address',
+      'Auto-verify threshold, else review',
+    ],
+    visual: (
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-lg">
+        <div className="mb-4 text-sm font-semibold text-ink">Address stage</div>
+        {[
+          ['Geocode lookup', 'openrouteservice'],
+          ['Device location', 'Nominatim / OSM'],
+          ['Proof of address', 'manual review'],
+        ].map(([label, hint]) => (
+          <div key={label} className="mb-3 flex items-center gap-3 last:mb-0">
+            <span className="flex size-5 items-center justify-center rounded-full bg-brand-600 text-white">
+              <Check className="size-3.5" />
+            </span>
+            <span className="text-sm font-medium text-ink">{label}</span>
+            <span className="ml-auto text-xs text-slate-500">{hint}</span>
+          </div>
+        ))}
+        <div className="mt-5 flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3 text-sm">
+          <span className="text-slate-600">Auto-verify at</span>
+          <span className="font-semibold tabular-nums text-ink">score ≥ 0.60</span>
+        </div>
+      </div>
+    ),
+  },
+  {
     eyebrow: 'Webhooks',
     title: 'Signed webhooks, verified in one call',
     body: 'Every verification event is delivered to your endpoint, HMAC-SHA256 signed, with retries and a deliveries log. Verify the signature with the SDK.',

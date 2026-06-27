@@ -7,6 +7,7 @@ import SessionCollection from '@app/http/resources/SessionCollection'
 import { audit } from '@app/services/AuditLogger'
 import { type RetryKind, reviewService } from '@app/services/ReviewService'
 import { readObject } from 'src/support/storage'
+import { countryName } from '@app/services/providers/address'
 
 const param = (value: unknown): string | undefined => (Array.isArray(value) ? value[0] : value) as string | undefined
 
@@ -104,7 +105,11 @@ export default class SessionReviewController extends BaseController {
           ? {
               passed: address.passed,
               score: address.score,
-              claimed_address: address.claimedAddress ?? null,
+              // Resolve the ISO country code (e.g. `NG`) to its display name
+              // (`Nigeria`) so the reviewer reads a place, not a code.
+              claimed_address: address.claimedAddress
+                ? { ...address.claimedAddress, country: countryName(address.claimedAddress.country ?? '') || null }
+                : null,
               methods: address.methods,
             }
           : null,

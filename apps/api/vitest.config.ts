@@ -63,6 +63,7 @@ export default defineConfig({
       OCR_DRIVER: 'mock',
       LIVENESS_DRIVER: 'mock',
       FACE_MATCH_DRIVER: 'mock',
+      ADDRESS_DRIVER: 'mock',
     },
   },
 })

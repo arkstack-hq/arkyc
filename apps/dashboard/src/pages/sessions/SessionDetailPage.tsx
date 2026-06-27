@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useRequest } from 'alova/client'
-import { realtimeChannels, type VerificationDecision, type VerificationStatus } from '@arkyc/types'
+import { realtimeChannels } from '@arkyc/types'
 import { Sessions, fetchSessionMedia } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { useRealtimeChannel } from '@/contexts/realtime-context'
@@ -16,33 +16,7 @@ import { Select } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { formatDateTime, humanize } from '@/lib/utils'
-
-/** The dashboard session-detail payload (base session + checks + media). */
-interface SessionDetail {
-  id: string
-  project_id: string
-  user_reference?: string | null
-  status: VerificationStatus
-  auto_decision?: VerificationDecision | null
-  final_decision?: VerificationDecision | null
-  decision_reason?: string | null
-  risk_score?: number | null
-  reviewed_at?: string | null
-  completed_at?: string | null
-  created_at: string
-  expires_at: string
-  ocr?: { fields?: Record<string, unknown> | null; confidence?: number | null } | null
-  document?: { country?: string | null; document_type?: string | null; quality_score?: number | null } | null
-  liveness?: { score?: number | null; passed?: boolean | null; spoof_signals?: Record<string, unknown> | null } | null
-  face_match?: { similarity_score?: number | null; confidence?: number | null; passed?: boolean | null } | null
-  address?: {
-    passed?: boolean | null
-    score?: number | null
-    claimed_address?: Record<string, unknown> | null
-    methods?: { method: string; passed: boolean; confidence: number; note?: string }[] | null
-  } | null
-  media?: string[]
-}
+import type { SessionDetail } from '@/types/core'
 
 const IMAGE_KINDS = ['document_front', 'document_back', 'portrait', 'selfie'] as const
 
@@ -335,12 +309,16 @@ export default function SessionDetailPage() {
                     ? Object.values(data.address.claimed_address).filter(Boolean).join(', ') || '—'
                     : '—'}
                 </Row>
-                {(data.address.methods ?? []).map((m) => (
-                  <Row key={m.method} label={humanize(m.method)}>
-                    {bool(m.passed)} · {num(m.confidence)}
-                    {m.note ? ` · ${m.note}` : ''}
-                  </Row>
-                ))}
+                {(data.address.methods ?? []).map((m) => {
+                  const detected = m.resolvedLabel ?? m.raw?.display_name
+                  return (
+                    <Row key={m.method} label={humanize(m.method)}>
+                      {bool(m.passed)} · {num(m.confidence)}
+                      {m.note ? ` · ${m.note}` : ''}
+                      {detected ? <span className="block text-muted-foreground">Detected: {detected}</span> : null}
+                    </Row>
+                  )
+                })}
               </CardContent>
             </Card>
           ) : null}

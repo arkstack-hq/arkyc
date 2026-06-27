@@ -11,7 +11,7 @@ export const norm = (s?: string): string =>
     .trim()
 
 /** English display name for an ISO 3166-1 alpha-2 code (e.g. `NG` → `Nigeria`), else the input. */
-function countryName(value: string): string {
+export function countryName(value: string): string {
   if (!/^[a-z]{2}$/i.test(value)) return value
   try {
     return new Intl.DisplayNames(['en'], { type: 'region' }).of(value.toUpperCase()) ?? value
