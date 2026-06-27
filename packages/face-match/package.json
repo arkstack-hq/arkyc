@@ -3,6 +3,25 @@
   "version": "1.2.0",
   "description": "Driver-based face matching",
   "license": "MIT",
+  "keywords": [
+    "arkyc",
+    "kyc",
+    "identity-verification",
+    "identity",
+    "verification",
+    "face-match",
+    "face-recognition",
+    "biometrics"
+  ],
+  "homepage": "https://docs.arkyc.toneflix.net",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arkstack-hq/arkyc.git",
+    "directory": "packages/face-match"
+  },
+  "bugs": {
+    "url": "https://github.com/arkstack-hq/arkyc/issues"
+  },
   "type": "module",
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",

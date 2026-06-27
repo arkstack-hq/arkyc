@@ -3,6 +3,26 @@
   "version": "1.2.0",
   "description": "Arkyc TypeScript SDK (server + browser)",
   "license": "MIT",
+  "keywords": [
+    "arkyc",
+    "kyc",
+    "identity-verification",
+    "identity",
+    "verification",
+    "sdk",
+    "api-client",
+    "webhooks",
+    "widget"
+  ],
+  "homepage": "https://docs.arkyc.toneflix.net",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arkstack-hq/arkyc.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/arkstack-hq/arkyc/issues"
+  },
   "type": "module",
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",

@@ -3,6 +3,26 @@
   "version": "1.2.0",
   "description": "Server-side realtime event broadcasting (soketi/firebase) for Arkyc",
   "license": "MIT",
+  "keywords": [
+    "arkyc",
+    "kyc",
+    "identity-verification",
+    "identity",
+    "verification",
+    "realtime",
+    "websockets",
+    "soketi",
+    "firebase"
+  ],
+  "homepage": "https://docs.arkyc.toneflix.net",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arkstack-hq/arkyc.git",
+    "directory": "packages/realtime"
+  },
+  "bugs": {
+    "url": "https://github.com/arkstack-hq/arkyc/issues"
+  },
   "type": "module",
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",

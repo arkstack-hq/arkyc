@@ -3,6 +3,26 @@
   "version": "1.2.0",
   "description": "Driver-based OCR extraction",
   "license": "MIT",
+  "keywords": [
+    "arkyc",
+    "kyc",
+    "identity-verification",
+    "identity",
+    "verification",
+    "ocr",
+    "document-parsing",
+    "tesseract",
+    "mrz"
+  ],
+  "homepage": "https://docs.arkyc.toneflix.net",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arkstack-hq/arkyc.git",
+    "directory": "packages/ocr"
+  },
+  "bugs": {
+    "url": "https://github.com/arkstack-hq/arkyc/issues"
+  },
   "type": "module",
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",

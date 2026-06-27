@@ -3,6 +3,25 @@
   "version": "1.2.0",
   "description": "Role-based access control resolution and enforcement",
   "license": "MIT",
+  "keywords": [
+    "arkyc",
+    "kyc",
+    "identity-verification",
+    "identity",
+    "verification",
+    "permissions",
+    "rbac",
+    "access-control"
+  ],
+  "homepage": "https://docs.arkyc.toneflix.net",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arkstack-hq/arkyc.git",
+    "directory": "packages/permissions"
+  },
+  "bugs": {
+    "url": "https://github.com/arkstack-hq/arkyc/issues"
+  },
   "type": "module",
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
