@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/liveness",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Driver-based passive liveness detection",
   "license": "MIT",
   "type": "module",

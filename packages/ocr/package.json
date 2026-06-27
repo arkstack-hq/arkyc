@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/ocr",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Driver-based OCR extraction",
   "license": "MIT",
   "type": "module",
