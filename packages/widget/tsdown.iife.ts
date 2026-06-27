@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineConfig } from 'tsdown'
 import { rawCssPlugin } from './raw-css.mjs'
 
@@ -15,12 +16,7 @@ export default defineConfig({
   entry: { 'arkyc-widget': 'src/index.ts' },
   format: ['iife'],
   globalName: 'Arkyc',
-  // A `<script>`/CDN bundle must be self-contained — inline the workspace + npm
-  // deps that the ESM build would otherwise leave external (else the global
-  // references undefined `_arkyc_types` / `qrcode_generator` at runtime).
   noExternal: [/^@arkyc\//, 'qrcode-generator'],
-  // Lift the launcher (and API client) directly onto `window`, so a `<script>`
-  // embed uses `ArkycWidget.open(...)` rather than `Arkyc.ArkycWidget.open(...)`.
   footer: 'var ArkycWidget=Arkyc.ArkycWidget;var ArkycClient=Arkyc.ArkycClient;',
   dts: false,
   clean: false,
@@ -28,8 +24,8 @@ export default defineConfig({
   minify: true,
   target: 'es2020',
   outExtensions: () => ({ js: '.global.js' }),
-  // Bake the widget's default Client API base from env at build time (see client.ts).
-  define: { __ARKYC_API_BASE__: JSON.stringify(process.env.ARKYC_API_URL ?? '') },
-  // Inline the widget's lintable `theme.css` as a string (`virtual:arkyc-theme-css`).
+  define: {
+    __ARKYC_API_BASE__: JSON.stringify(process.env.ARKYC_API_URL ?? '')
+  },
   plugins: [rawCssPlugin()],
 })

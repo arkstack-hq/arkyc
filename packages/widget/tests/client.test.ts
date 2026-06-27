@@ -16,7 +16,9 @@ describe('ArkycClient', () => {
   })
 
   it('sends the client token and unwraps the envelope on getSession', async () => {
-    const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'started', expires_at: '2099-01-01' }))
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      envelope({ id: 's1', status: 'started', expires_at: '2099-01-01' }),
+    )
     const client = new ArkycClient({
       token: 'ct_abc',
       baseUrl: 'https://api.test/v1/client/',
@@ -26,7 +28,7 @@ describe('ArkycClient', () => {
     const session = await client.getSession()
 
     expect(session).toEqual({ id: 's1', status: 'started', expires_at: '2099-01-01' })
-    const [url, init] = fetchMock.mock.calls[0]
+    const [url, init] = fetchMock.mock.calls[0]!
     // `baseUrl` owns the prefix; the widget appends only the endpoint path.
     expect(url).toBe('https://api.test/v1/client/session')
     expect((init as RequestInit).method).toBe('GET')
@@ -34,16 +36,20 @@ describe('ArkycClient', () => {
   })
 
   it('defaults to the hosted Client API base when no baseUrl is given', async () => {
-    const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'started', expires_at: 'x' }))
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      envelope({ id: 's1', status: 'started', expires_at: 'x' }),
+    )
     const client = new ArkycClient({ token: 'ct', fetch: fetchMock as never })
 
     await client.getSession()
 
-    expect(fetchMock.mock.calls[0][0]).toBe(`${DEFAULT_CLIENT_BASE_URL}/session`)
+    expect(fetchMock.mock.calls[0]![0]).toBe(`${DEFAULT_CLIENT_BASE_URL}/session`)
   })
 
   it('posts the document front as multipart form data with hints', async () => {
-    const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'document_submitted', expires_at: 'x' }))
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      envelope({ id: 's1', status: 'document_submitted', expires_at: 'x' }),
+    )
     const client = new ArkycClient({ token: 'ct', baseUrl: 'https://api.test/v1/client', fetch: fetchMock as never })
 
     await client.submitDocumentFront({
@@ -53,7 +59,7 @@ describe('ArkycClient', () => {
       signals: { quality_score: 0.9, expired: false },
     })
 
-    const [url, init] = fetchMock.mock.calls[0]
+    const [url, init] = fetchMock.mock.calls[0]!
     expect(url).toBe('https://api.test/v1/client/document/front')
     const body = (init as RequestInit).body as FormData
     expect(body).toBeInstanceOf(FormData)
@@ -67,18 +73,22 @@ describe('ArkycClient', () => {
   })
 
   it('posts complete as JSON', async () => {
-    const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'processing', expires_at: 'x' }))
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      envelope({ id: 's1', status: 'processing', expires_at: 'x' }),
+    )
     const client = new ArkycClient({ token: 'ct', fetch: fetchMock as never })
 
     await client.complete({ signals: { face_similarity: 0.8 } })
 
-    const [, init] = fetchMock.mock.calls[0]
+    const [, init] = fetchMock.mock.calls[0]!
     expect((init as RequestInit).headers).toMatchObject({ 'Content-Type': 'application/json' })
     expect(JSON.parse((init as RequestInit).body as string)).toEqual({ face_similarity: 0.8 })
   })
 
   it('throws a typed WidgetApiError on a non-2xx response', async () => {
-    const fetchMock = vi.fn(async () => envelope(null, { ok: false, status: 401, message: 'Session expired' }))
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      envelope(null, { ok: false, status: 401, message: 'Session expired' }),
+    )
     const client = new ArkycClient({ token: 'ct', fetch: fetchMock as never })
 
     await expect(client.getSession()).rejects.toMatchObject({

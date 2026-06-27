@@ -165,7 +165,8 @@ export interface ArkycClientOptions {
  */
 declare const __ARKYC_API_BASE__: string | undefined
 export const DEFAULT_CLIENT_BASE_URL =
-  (typeof __ARKYC_API_BASE__ === 'string' ? __ARKYC_API_BASE__ : '') || 'https://api.arkyc.toneflix.net/api/v1/client'
+  (typeof __ARKYC_API_BASE__ === 'string' ? __ARKYC_API_BASE__ : '') ||
+  'https://api.arkyc.toneflix.net/api/v1/client'
 
 /**
  * Resolve the request base: an explicit `baseUrl` overrides the build-time

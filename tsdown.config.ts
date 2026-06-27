@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineConfig } from 'tsdown'
 import { rawCssPlugin } from './packages/widget/raw-css.mjs'
 
@@ -11,8 +12,6 @@ import { rawCssPlugin } from './packages/widget/raw-css.mjs'
  */
 export default defineConfig({
   workspace: ['packages/*'],
-  // Glob so packages exposing extra entrypoints (e.g. @arkyc/sdk's `browser`)
-  // build them too; matches only files that exist per package.
   entry: ['src/{index,browser}.ts'],
   format: 'esm',
   dts: true,
@@ -21,7 +20,8 @@ export default defineConfig({
   target: 'es2022',
   treeshake: true,
   unbundle: true,
-  define: { __ARKYC_API_BASE__: JSON.stringify(process.env.ARKYC_API_URL ?? '') },
-  // Inline the widget's lintable `theme.css` as a string (`virtual:arkyc-theme-css`).
+  define: {
+    __ARKYC_API_BASE__: JSON.stringify(process.env.ARKYC_API_URL ?? ''),
+  },
   plugins: [rawCssPlugin()],
 })
