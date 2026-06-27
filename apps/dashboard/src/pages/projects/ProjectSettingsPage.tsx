@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState, Loading } from '@/components/States'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
+import { Theme } from '@arkyc/widget'
 import { AiAccess, type AiAccessGrant, type AiAccessStatus, Projects, errorMessage } from '@/lib/api'
 import { useForm, useRequest } from 'alova/client'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
@@ -15,6 +16,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { useParams } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { PopoverPicker } from '@/components/SpeechBubble'
 
 const AI_STATUS: Record<
   AiAccessStatus,
@@ -120,7 +122,7 @@ function formFromProject(project: Project): FormState {
     name: project.name ?? '',
     brandName: project.branding?.name ?? '',
     showBranding: project.branding?.show_branding !== false,
-    primaryColor: project.branding?.primary_color ?? '#000000',
+    primaryColor: project.branding?.primary_color ?? 'rgb(255, 255, 255)',
     theme: project.branding?.theme ?? 'light',
     borderRadius: project.branding?.border_radius != null ? String(project.branding.border_radius) : '',
     documentQualityThreshold:
@@ -138,7 +140,9 @@ function ProjectSettingsForm({ project }: { project: Project }) {
   const organizationId = useOrganizationId()
   const { can } = useOrganization()
   const { projectId } = useParams()
+  const rgbBase = Theme.rgb(formFromProject(project))
   const [saved, setSaved] = useState(false)
+  const [color, setColor] = useState(rgbBase.obj)
 
   const {
     form,
@@ -207,7 +211,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
     error: logoError,
     onSuccess: onLogoUploaded,
   } = useRequest((file: File) => Projects.uploadLogo(organizationId, projectId!, file), { immediate: false })
-  onLogoUploaded(({ data }) => setLogoUrl((data as Project).branding?.logo_url ?? null))
+  onLogoUploaded(({ data }) => setLogoUrl(data.branding?.logo_url ?? null))
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -265,36 +269,54 @@ function ProjectSettingsForm({ project }: { project: Project }) {
               />
               Show name &amp; logo in the widget header
             </label>
-            <Field>
-              <FieldLabel htmlFor="primary-color">Primary color</FieldLabel>
-              <InputGroup>
-                <InputGroupInput
-                  id="primary-color"
-                  type="text"
-                  value={form.primaryColor}
-                  onChange={(e) => set('primaryColor', e.target.value)}
-                  placeholder="#000000"
-                />
-              </InputGroup>
-            </Field>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="theme">Theme</Label>
-              <Select id="theme" value={form.theme} onChange={(e) => set('theme', e.target.value as 'light' | 'dark')}>
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </Select>
-            </div>
-            <Field>
-              <FieldLabel htmlFor="border-radius">Border radius</FieldLabel>
-              <InputGroup>
-                <InputGroupInput
-                  id="border-radius"
-                  type="number"
-                  value={form.borderRadius}
-                  onChange={(e) => set('borderRadius', e.target.value)}
-                />
-              </InputGroup>
-            </Field>
+
+            <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Field>
+                <FieldLabel htmlFor="primary-color">Primary color</FieldLabel>
+                <InputGroup>
+                  <InputGroupInput
+                    id="primary-color"
+                    type="text"
+                    value={form.primaryColor}
+                    onChange={(e) => set('primaryColor', e.target.value)}
+                    placeholder="rgb(255, 255, 255)"
+                    readOnly
+                  />
+
+                  <InputGroupAddon align="inline-end">
+                    <PopoverPicker
+                      color={color}
+                      onChange={(e) => {
+                        setColor(e)
+                        set('primaryColor', `rgb(${[e.r, e.g, e.b].join(',')})`)
+                      }}
+                    />
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="theme">Theme</FieldLabel>
+                <Select
+                  id="theme"
+                  value={form.theme}
+                  onChange={(e) => set('theme', e.target.value as 'light' | 'dark')}
+                >
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="border-radius">Border radius</FieldLabel>
+                <InputGroup>
+                  <InputGroupInput
+                    id="border-radius"
+                    type="number"
+                    value={form.borderRadius}
+                    onChange={(e) => set('borderRadius', e.target.value)}
+                  />
+                </InputGroup>
+              </Field>
+            </FieldGroup>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="logo">Logo</Label>

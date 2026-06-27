@@ -1,4 +1,5 @@
 import type { ProjectBranding } from '@arkyc/types'
+import type { RgbData } from './types'
 import themeCss from 'virtual:arkyc-theme-css'
 
 const LIGHT = {
@@ -75,5 +76,21 @@ export class Theme {
    */
   stylesheet(): string {
     return themeCss.replace('/* {variables} */', `${this.variables()};`).trim()
+  }
+
+  static rgb(p: { primaryColor: string }): RgbData {
+    const obj: RgbData['obj'] = Object.fromEntries(p
+      .primaryColor.match(/\d+/g)
+      ?.map((v, i) => [['r', 'g', 'b'][i], Number(v)]) ?? [],
+    ) ?? { r: 50, g: 100, b: 150 }
+
+    return {
+      obj,
+      str: `rgb(${[obj.r, obj.g, obj.b].join(',')})`
+    }
+  }
+
+  rgb(p: { primaryColor: string }): RgbData {
+    return Theme.rgb(p)
   }
 }

@@ -1,10 +1,15 @@
 import type { DocumentAnalyzer, DocumentTuning } from './document'
-import type { FaceAnalyzer, FaceTuning } from './face'
 import type { DocumentType, LivenessChallenge, ProjectBranding, WidgetResult } from '@arkyc/types'
+import type { FaceAnalyzer, FaceTuning } from './face'
 
 import type { AddressFormData } from './ui'
 import type { ProviderSignalHints } from './client'
 import type { WidgetRealtimeFactory } from './realtime'
+
+export interface RgbData {
+  obj: { r: number; g: number; b: number }
+  str: string
+}
 
 /**
  * An event surfaced to consumers through `onEvent` / `handle.on(name, cb)`. The

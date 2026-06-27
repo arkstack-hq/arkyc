@@ -1,340 +1,360 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Arkyc widget — playground</title>
-    <style>
-      :root {
-        font-family:
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          'Segoe UI',
-          Roboto,
-          sans-serif;
-        color-scheme: light;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: #f1f5f9;
-        color: #0f172a;
-        padding: 24px;
-      }
-      h1 {
-        font-size: 20px;
-        margin: 0 0 4px;
-      }
-      .sub {
-        color: #64748b;
-        font-size: 13px;
-        margin: 0 0 20px;
-      }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arkyc widget — playground</title>
+  <style>
+    :root {
+      font-family:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 4px;
+    }
+
+    .sub {
+      color: #64748b;
+      font-size: 13px;
+      margin: 0 0 20px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: 320px 1fr;
+      align-items: start;
+    }
+
+    @media (max-width: 820px) {
       .grid {
-        display: grid;
-        gap: 20px;
-        grid-template-columns: 320px 1fr;
-        align-items: start;
+        grid-template-columns: 1fr;
       }
-      @media (max-width: 820px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
-      }
-      .panel {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 18px;
-      }
-      h2 {
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: #64748b;
-        margin: 0 0 12px;
-      }
-      .field {
-        margin-bottom: 12px;
-      }
-      label.row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        font-size: 13px;
-        margin-bottom: 8px;
-      }
-      input[type='text'],
-      input[type='number'],
-      select {
-        width: 100%;
-        padding: 8px 10px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 13px;
-        background: #fff;
-      }
-      input[type='color'] {
-        width: 44px;
-        height: 30px;
-        padding: 0;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        background: #fff;
-      }
-      .checks {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-      .checks label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 13px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        padding: 5px 9px;
-        cursor: pointer;
-      }
-      .toggle {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        margin-bottom: 8px;
-        cursor: pointer;
-      }
-      button {
-        appearance: none;
-        border: 0;
-        border-radius: 9px;
-        background: #4f46e5;
-        color: #fff;
-        font-size: 14px;
-        font-weight: 600;
-        padding: 11px 16px;
-        width: 100%;
-        cursor: pointer;
-      }
-      button.ghost {
-        background: #fff;
-        color: #4f46e5;
-        border: 1px solid #c7d2fe;
-      }
-      .stage {
-        min-height: 600px;
-      }
-      #inline {
-        min-height: 600px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .hint {
-        font-size: 12px;
-        color: #94a3b8;
-        margin-top: 10px;
-      }
-      pre {
-        background: #0b1120;
-        color: #93c5fd;
-        border-radius: 8px;
-        padding: 12px;
-        font-size: 12px;
-        overflow-x: auto;
-        margin-top: 12px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Widget playground</h1>
-    <p class="sub">
-      Configure the widget and launch it with a mock API — the full UI flow runs offline, with real camera detection and
-      animations. Serve over localhost for camera access: <code>npx serve packages/widget</code> →
-      <code>/playground/</code>.
-    </p>
+    }
 
-    <div class="grid">
-      <div>
-        <div class="panel" style="margin-bottom: 20px">
-          <h2>Branding</h2>
-          <label class="row">Primary color <input type="color" id="primary" value="#4f46e5" /></label>
-          <div class="field">
-            <label class="row" for="name">Project name</label>
-            <input type="text" id="name" value="Acme Inc." placeholder="Company / product name" />
-          </div>
-          <div class="field">
-            <label class="row" for="logo">Logo URL</label>
-            <input type="text" id="logo" placeholder="https://…/logo.svg" />
-          </div>
-          <label class="row"
-            >Theme
-            <select id="theme">
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </label>
-          <label class="row">Border radius <input type="number" id="radius" value="12" min="0" max="32" /></label>
-          <label class="toggle"><input type="checkbox" id="showBranding" checked /> Show branding (name/logo)</label>
-        </div>
+    .panel {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px;
+    }
 
-        <div class="panel" style="margin-bottom: 20px">
-          <h2>Flow</h2>
-          <label class="row"
-            >Capture model
-            <select id="captureModel">
-              <option value="passive">Passive</option>
-              <option value="active">Active</option>
-              <option value="both">Both</option>
-            </select>
-          </label>
-          <div class="field">
-            <label class="row">Liveness challenges (active)</label>
-            <div class="checks" id="challenges">
-              <label><input type="checkbox" value="blink" checked /> blink</label>
-              <label><input type="checkbox" value="smile" checked /> smile</label>
-              <label><input type="checkbox" value="turn_left" /> turn_left</label>
-              <label><input type="checkbox" value="turn_right" /> turn_right</label>
-              <label><input type="checkbox" value="nod" /> nod</label>
-              <label><input type="checkbox" value="move_closer" /> move_closer</label>
-            </div>
-          </div>
-          <label class="row"
-            >Outcome
-            <select id="outcome">
-              <option value="approved">approved</option>
-              <option value="requires_review">requires_review</option>
-              <option value="rejected">rejected</option>
-            </select>
-          </label>
-          <label class="toggle"><input type="checkbox" id="demo" /> Demo skip (mock signals → Skip buttons)</label>
-        </div>
+    h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin: 0 0 12px;
+    }
 
-        <div class="panel">
-          <h2>Launch</h2>
-          <label class="row"
-            >Mode
-            <select id="mode">
-              <option value="open">Modal (open)</option>
-              <option value="fullscreen">Fullscreen (open)</option>
-              <option value="mount">Inline (mount)</option>
-            </select>
-          </label>
-          <div class="field"><button id="launch">Launch widget</button></div>
-          <button class="ghost" id="close">Close</button>
-          <p class="hint">Camera/detection are real; only the API is mocked.</p>
+    .field {
+      margin-bottom: 12px;
+    }
+
+    label.row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    input[type='text'],
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    input[type='color'] {
+      width: 44px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .checks label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 5px 9px;
+      cursor: pointer;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 9px;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 16px;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    button.ghost {
+      background: #fff;
+      color: #4f46e5;
+      border: 1px solid #c7d2fe;
+    }
+
+    .stage {
+      min-height: 600px;
+    }
+
+    #inline {
+      min-height: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 10px;
+    }
+
+    pre {
+      background: #0b1120;
+      color: #93c5fd;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Widget playground</h1>
+  <p class="sub">
+    Configure the widget and launch it with a mock API — the full UI flow runs offline, with real camera detection and
+    animations. Serve over localhost for camera access: <code>npx serve packages/widget</code> →
+    <code>/playground/</code>.
+  </p>
+
+  <div class="grid">
+    <div>
+      <div class="panel" style="margin-bottom: 20px">
+        <h2>Branding</h2>
+        <label class="row">Primary color <input type="color" id="primary" value="#4f46e5" /></label>
+        <div class="field">
+          <label class="row" for="name">Project name</label>
+          <input type="text" id="name" value="Acme Inc." placeholder="Company / product name" />
         </div>
+        <div class="field">
+          <label class="row" for="logo">Logo URL</label>
+          <input type="text" id="logo" placeholder="https://…/logo.svg" />
+        </div>
+        <label class="row">Theme
+          <select id="theme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+        <label class="row">Border radius <input type="number" id="radius" value="12" min="0" max="32" /></label>
+        <label class="toggle"><input type="checkbox" id="showBranding" checked /> Show branding (name/logo)</label>
       </div>
 
-      <div class="panel stage">
-        <h2>Preview</h2>
-        <div id="inline">Inline mode renders here. Modal / fullscreen overlay the page.</div>
-        <pre id="result">// onComplete / onError results appear here</pre>
+      <div class="panel" style="margin-bottom: 20px">
+        <h2>Flow</h2>
+        <label class="row">Capture model
+          <select id="captureModel">
+            <option value="passive">Passive</option>
+            <option value="active">Active</option>
+            <option value="both">Both</option>
+          </select>
+        </label>
+        <div class="field">
+          <label class="row">Liveness challenges (active)</label>
+          <div class="checks" id="challenges">
+            <label><input type="checkbox" value="blink" checked /> blink</label>
+            <label><input type="checkbox" value="smile" checked /> smile</label>
+            <label><input type="checkbox" value="turn_left" /> turn_left</label>
+            <label><input type="checkbox" value="turn_right" /> turn_right</label>
+            <label><input type="checkbox" value="nod" /> nod</label>
+            <label><input type="checkbox" value="move_closer" /> move_closer</label>
+          </div>
+        </div>
+        <label class="row">Outcome
+          <select id="outcome">
+            <option value="approved">approved</option>
+            <option value="requires_review">requires_review</option>
+            <option value="rejected">rejected</option>
+          </select>
+        </label>
+        <label class="toggle"><input type="checkbox" id="demo" /> Demo skip (mock signals → Skip buttons)</label>
+      </div>
+
+      <div class="panel">
+        <h2>Launch</h2>
+        <label class="row">Mode
+          <select id="mode">
+            <option value="open">Modal (open)</option>
+            <option value="fullscreen">Fullscreen (open)</option>
+            <option value="mount">Inline (mount)</option>
+          </select>
+        </label>
+        <div class="field"><button id="launch">Launch widget</button></div>
+        <button class="ghost" id="close">Close</button>
+        <p class="hint">Camera/detection are real; only the API is mocked.</p>
       </div>
     </div>
 
-    <script type="module">
-      import { ArkycWidget } from '../dist/index.mjs'
+    <div class="panel stage">
+      <h2>Preview</h2>
+      <div id="inline">Inline mode renders here. Modal / fullscreen overlay the page.</div>
+      <pre id="result">// onComplete / onError results appear here</pre>
+    </div>
+  </div>
 
-      const $ = (id) => document.getElementById(id)
-      const resultEl = $('result')
+  <script type="module">
+    import { ArkycWidget } from '../../dist/index.mjs'
 
-      /**
-       * A mock Client/Widget API: drives a session through the flow without a
-       * backend. Returns the standard `{ data: session }` envelope as text.
-       */
-      function mockFetch(outcome) {
-        let started = false
-        let finalizing = false
-        const session = {
-          id: 'demo-session',
-          status: 'pending',
-          expires_at: '2099-01-01T00:00:00Z',
-          capture_model: captureModel(),
-          liveness_challenges: challenges(),
-        }
-        return async (url, init) => {
-          const path = String(url)
-          const method = (init && init.method) || 'GET'
-          if (path.endsWith('/session')) {
-            if (finalizing) session.status = outcome
-            else if (!started) {
-              started = true
-              session.status = 'started'
-            }
-          } else if (path.endsWith('/document/front') || path.endsWith('/document/back')) {
-            session.status = 'document_submitted'
-          } else if (path.endsWith('/liveness')) {
-            session.status = 'liveness_submitted'
-          } else if (path.endsWith('/complete')) {
-            session.status = 'processing'
-            finalizing = true
+    const $ = (id) => document.getElementById(id)
+    const resultEl = $('result')
+
+    /**
+     * A mock Client/Widget API: drives a session through the flow without a
+     * backend. Returns the standard `{ data: session }` envelope as text.
+     */
+    function mockFetch (outcome) {
+      let started = false
+      let finalizing = false
+      const session = {
+        id: 'demo-session',
+        status: 'pending',
+        expires_at: '2099-01-01T00:00:00Z',
+        capture_model: captureModel(),
+        liveness_challenges: challenges(),
+      }
+      return async (url, init) => {
+        const path = String(url)
+        const method = (init && init.method) || 'GET'
+        if (path.endsWith('/session')) {
+          if (finalizing) session.status = outcome
+          else if (!started) {
+            started = true
+            session.status = 'started'
           }
-          void method
-          return {
-            ok: true,
-            status: 200,
-            text: async () => JSON.stringify({ status: 'success', code: 200, message: 'OK', data: { ...session } }),
-          }
+        } else if (path.endsWith('/document/front') || path.endsWith('/document/back')) {
+          session.status = 'document_submitted'
+        } else if (path.endsWith('/liveness')) {
+          session.status = 'liveness_submitted'
+        } else if (path.endsWith('/complete')) {
+          session.status = 'processing'
+          finalizing = true
         }
-      }
-
-      const captureModel = () => $('captureModel').value
-      const challenges = () => [...document.querySelectorAll('#challenges input:checked')].map((c) => c.value)
-
-      function branding() {
+        void method
         return {
-          primary_color: $('primary').value,
-          theme: $('theme').value,
-          border_radius: Number($('radius').value),
-          logo_url: $('logo').value.trim() || null,
-          name: $('name').value.trim() || null,
-          show_branding: $('showBranding').checked,
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({ status: 'success', code: 200, message: 'OK', data: { ...session } }),
         }
       }
+    }
 
-      function options() {
-        const demo = $('demo').checked
-        return {
-          token: 'demo-token',
-          baseUrl: 'https://mock.local',
-          branding: branding(),
-          fetch: mockFetch($('outcome').value),
-          // Demo signals make the mock flow deterministic + reveal Skip buttons.
-          signals: demo ? { quality_score: 0.95, liveness_passed: true, face_match_passed: true } : undefined,
-          onComplete: (r) => (resultEl.textContent = 'onComplete: ' + JSON.stringify(r, null, 2)),
-          onError: (e) => (resultEl.textContent = 'onError: ' + e.message),
-          onClose: () => (resultEl.textContent = '// closed'),
-        }
-      }
+    const captureModel = () => $('captureModel').value
+    const challenges = () => [...document.querySelectorAll('#challenges input:checked')].map((c) => c.value)
 
-      let handle = null
-      function close() {
-        try {
-          handle?.close()
-        } catch {}
-        handle = null
-        $('inline').innerHTML = 'Inline mode renders here. Modal / fullscreen overlay the page.'
+    function branding () {
+      return {
+        primary_color: $('primary').value,
+        theme: $('theme').value,
+        border_radius: Number($('radius').value),
+        logo_url: $('logo').value.trim() || null,
+        name: $('name').value.trim() || null,
+        show_branding: $('showBranding').checked,
       }
+    }
 
-      $('launch').onclick = () => {
-        close()
-        resultEl.textContent = '// running…'
-        const mode = $('mode').value
-        const opts = options()
-        if (mode === 'mount') {
-          $('inline').innerHTML = ''
-          handle = ArkycWidget.mount({ ...opts, container: '#inline' })
-        } else {
-          handle = ArkycWidget.open({ ...opts, fullscreen: mode === 'fullscreen' })
-        }
+    function options () {
+      const demo = $('demo').checked
+      return {
+        token: 'demo-token',
+        baseUrl: 'https://mock.local',
+        branding: branding(),
+        fetch: mockFetch($('outcome').value),
+        // Demo signals make the mock flow deterministic + reveal Skip buttons.
+        signals: demo ? { quality_score: 0.95, liveness_passed: true, face_match_passed: true } : undefined,
+        onComplete: (r) => (resultEl.textContent = 'onComplete: ' + JSON.stringify(r, null, 2)),
+        onError: (e) => (resultEl.textContent = 'onError: ' + e.message),
+        onClose: () => (resultEl.textContent = '// closed'),
       }
-      $('close').onclick = close
-    </script>
-  </body>
+    }
+
+    let handle = null
+    function close () {
+      try {
+        handle?.close()
+      } catch { }
+      handle = null
+      $('inline').innerHTML = 'Inline mode renders here. Modal / fullscreen overlay the page.'
+    }
+
+    $('launch').onclick = () => {
+      close()
+      resultEl.textContent = '// running…'
+      const mode = $('mode').value
+      const opts = options()
+      if (mode === 'mount') {
+        $('inline').innerHTML = ''
+        handle = ArkycWidget.mount({ ...opts, container: '#inline' })
+      } else {
+        handle = ArkycWidget.open({ ...opts, fullscreen: mode === 'fullscreen' })
+      }
+    }
+    $('close').onclick = close
+  </script>
+</body>
+
 </html>

@@ -1,0 +1,41 @@
+.relative {
+  position: relative;
+}
+
+.speech-bubble {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  left: 0;
+  z-index: 50;
+  background: #fff;
+  padding: 5px;
+  font-size: 1.25em;
+  line-height: 1.5;
+  border-radius: 10px;
+  color: #192229;
+  border: solid 1px rgb(228, 228, 228);
+}
+
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 1.5rem;
+
+  width: 0;
+  height: 0;
+  border: 0.75rem solid transparent;
+  border-top: none;
+  border-bottom-color: #fff;
+
+  filter: drop-shadow(0 -0.0625rem 0rem rgba(0, 0, 0, 0.1));
+}
+
+.color-board {
+  width: 1.8rem;
+  height: 1.8rem;
+  background-color: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  border: solid 1px rgb(228, 228, 228);
+}
