@@ -68,6 +68,8 @@ Scripts fan out across the workspace with `pnpm -r` (recursive, topological orde
 | `pnpm typecheck` | `tsc --noEmit` across the workspace         |
 | `pnpm format`    | Prettier write                              |
 
+> This project is tested with BrowserStack
+
 ## License
 
 MIT
