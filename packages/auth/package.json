@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/auth",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Authentication, token, and API key helpers",
   "license": "MIT",
   "keywords": [
