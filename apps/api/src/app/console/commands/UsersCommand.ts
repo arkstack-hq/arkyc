@@ -113,7 +113,7 @@ export class UsersCommand extends Command {
           this.success(`2FA has been disbled for ${user.firstName}`)
           break
         case 'edit': return await this.editUser(user)
-        default: void this.error('Invalid Action')
+        default: process.exit(0)
       }
     }
   }
