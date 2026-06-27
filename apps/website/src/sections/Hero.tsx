@@ -31,7 +31,7 @@ export function Hero() {
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80"
           >
-            <span className="size-1.5 rounded-full bg-emerald-400" /> Hosted identity verification
+            <span className="size-1.5 rounded-full bg-emerald-400" /> Open-source identity verification
           </motion.span>
 
           <motion.h1

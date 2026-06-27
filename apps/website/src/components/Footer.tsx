@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
 import { Container } from '@/components/Container'
+import { Link } from 'react-router-dom'
 import { Logo } from '@/components/Logo'
 import { links } from '@/lib/site'
 
@@ -45,7 +45,7 @@ export function Footer() {
         <div>
           <Logo />
           <p className="mt-3 max-w-xs text-sm text-slate-500">
-            Hosted identity verification with an open-source core. Verify your users without building the pipeline.
+            Open-source identity verification. Verify your users without building the pipeline.
           </p>
           <div className="mt-4 flex items-center gap-3">
             <a

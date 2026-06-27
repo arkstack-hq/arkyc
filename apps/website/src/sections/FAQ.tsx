@@ -9,7 +9,7 @@ import { useState } from 'react'
 const FAQS = [
   {
     q: 'What is Arkyc?',
-    a: 'Arkyc is hosted identity verification. You create a session, embed our widget, and your user completes document capture, liveness and a selfie. We run OCR, liveness and face match, score the risk, and return an automated decision with a review queue and signed webhooks.',
+    a: 'Arkyc is the hosted version of the Arkyc open-source identity verification system. You create a session, embed our widget, and your user completes document capture, liveness and a selfie. We run OCR, liveness and face match, score the risk, and return an automated decision with a review queue and signed webhooks.',
   },
   {
     q: 'Can I use my own KYC provider?',
