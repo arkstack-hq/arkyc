@@ -4,13 +4,13 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { KeyRound, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCallback, useState } from 'react'
+import { useForm, useRequest } from 'alova/client'
 
 import { AuthShell } from '@/components/AuthShell'
 import { Button } from '@/components/ui/button'
 import type { FormEvent } from 'react'
 import type { TwoFactorChallenge } from '@/lib/api'
 import { useAuth } from '@/contexts/auth-context'
-import { useForm, useRequest } from 'alova/client'
 import { useRateLimit } from '@/hooks/useRateLimit'
 
 export default function LoginPage() {
@@ -108,6 +108,7 @@ export default function LoginPage() {
               }}
             />
           </InputGroup>
+          <FieldError errors={error?.list?.password} />
         </Field>
 
         {error && !error.errors ? <FieldError>{errorMessage(error)}</FieldError> : null}

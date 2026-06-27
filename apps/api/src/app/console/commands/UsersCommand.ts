@@ -5,6 +5,8 @@ import { Hash, Logger } from '@arkstack/common'
 import { AdminGrantCommand } from './AdminGrantCommand'
 import { Command } from '@h3ravel/musket'
 import { PersonalAccessToken } from 'src/app/models/PersonalAccessToken'
+import { SendTestNotification } from './SendTestNotification'
+import { TwoFactorService } from 'src/app/services/TwoFactorService'
 import { User } from 'src/app/models/User'
 import { UserTwoFactor } from 'src/app/models/UserTwoFactor'
 import { interopDefault } from '@arkstack/common'
@@ -92,26 +94,26 @@ export class UsersCommand extends Command {
         { name: 'Details', value: 'view' },
         { name: 'Edit', value: 'edit' },
         { name: 'Send Notification', value: 'notify' },
+        { name: 'Disable 2FA', value: '2fa_off' },
         { name: 'Make Admin', value: 'adminize' },
         { name: 'Delete User', value: 'delete' },
         { name: Logger.log('✖ Exit', 'red', false), value: 'exit' },
       ])
 
-      if (action === 'view') {
-        await this.viewUser(user)
-      } else if (action === 'delete') {
-        await this.deleteUser(user)
-      } else if (action === 'notify') {
-        // const handler = new SendTestNotification(this.app, this.kernel)
-        // handler.setInput([], [user.id], [new Argument('userId')], {}, this.program)
-        // await handler.handle()
-        this.info('Not Implemented')
-      } else if (action === 'adminize') {
-        const cmd = new AdminGrantCommand(this.app, this.kernel)
-        cmd.setArgument('email', user.email)
-        await cmd.handle()
-      } else if (action === 'edit') {
-        await this.editUser(user)
+      switch (action) {
+        case 'view': return await this.viewUser(user)
+        case 'delete': return await this.deleteUser(user)
+        case 'notify':
+          return await new SendTestNotification(this.app, this.kernel)
+            .setArgument('userId', user.id).handle()
+        case 'adminize':
+          return await new AdminGrantCommand(this.app, this.kernel)
+            .setArgument('email', user.email).handle()
+        case '2fa_off': await TwoFactorService.disable(user.id)
+          this.success(`2FA has been disbled for ${user.firstName}`)
+          break
+        case 'edit': return await this.editUser(user)
+        default: void this.error('Invalid Action')
       }
     }
   }
