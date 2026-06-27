@@ -55,13 +55,15 @@ try {
   await arkyc.sessions.create()
 } catch (err) {
   if (err instanceof ArkycApiError) {
-    console.error(err.status, err.message, err.errors)
+    if (err.error === 'invalid_api_key') return rotateKey()
+    console.error(err.status, err.error, err.message, err.errors)
   }
 }
 ```
 
-`status` is the HTTP code; `errors` carries field-level validation errors on a
-`422`.
+`status` is the HTTP code; `error` is a stable, machine-readable key for errors
+Arkyc raises (branch on it, not the message); `errors` carries field-level
+validation errors on a `422`. See [API error codes](/api/#error-codes).
 
 ## Webhook verification
 

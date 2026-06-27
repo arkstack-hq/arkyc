@@ -50,23 +50,29 @@ export function ServerSdk() {
 
       <h2>Error handling</h2>
       <p>
-        Failed requests throw a typed <code>ArkycApiError</code> carrying the HTTP <code>status</code> and, on a 422,
-        field-level <code>errors</code>.
+        Failed requests throw a typed <code>ArkycApiError</code> carrying the HTTP <code>status</code>, a stable{' '}
+        <code>error</code> key, and (on a 422) field-level <code>errors</code>.
       </p>
       <CodeCard
         code={[
           "import { ArkycApiError } from '@arkyc/sdk'",
           '',
           'try {',
-          '  await arkyc.sessions.create({ userReference })',
+          '  await arkyc.sessions.create({ userReference, workflowId })',
           '} catch (err) {',
           '  if (err instanceof ArkycApiError) {',
-          '    console.error(err.status, err.message)',
-          '    if (err.errors) console.error(err.errors) // { field: [messages] }',
+          "    if (err.error === 'invalid_api_key') return rotateKey()",
+          "    if (err.error === 'invalid_workflow') return useDefaultWorkflow()",
+          '    console.error(err.status, err.error, err.message)',
+          '    if (err.errors) console.error(err.errors) // { field: [messages] } on 422',
           '  }',
           '}',
         ]}
       />
+      <p>
+        Errors with no <code>error</code> key are unexpected/unhandled — treat them generically by <code>status</code>.
+        The full list is in the <a href="https://docs.arkyc.toneflix.net/api/#error-codes">API error codes</a>.
+      </p>
 
       <h2>Webhook verification</h2>
       <p>

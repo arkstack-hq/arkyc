@@ -66,6 +66,7 @@ export class Arkyc {
         (json.message as string) ?? `Arkyc request failed with status ${response.status}`,
         response.status,
         json.errors as Record<string, string[] | string> | undefined,
+        json.error as string | undefined,
       )
     }
 

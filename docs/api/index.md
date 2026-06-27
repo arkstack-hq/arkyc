@@ -55,6 +55,36 @@ Common status codes: `200` OK, `201` Created, `202` Accepted, `401`
 Unauthorized, `403` Permission denied, `404` Not found, `409` Conflict, `422`
 Validation error.
 
+## Error codes
+
+Errors **Arkyc deliberately raises** include a stable `error`
+field contract that tell the client exactly what went wrong.
+
+```json
+{
+  "status": "error",
+  "code": 401,
+  "error": "session_expired",
+  "message": "Session expired"
+}
+```
+
+This disambiguates cases that share an HTTP status, a `401` could be an expired
+session, a bad client token, or an invalid API key:
+
+| `error`                | HTTP  | Meaning                                             |
+| ---------------------- | ----- | --------------------------------------------------- |
+| `missing_client_token` | `401` | No client token on a Client/Widget API request.     |
+| `invalid_client_token` | `401` | The client token doesn't resolve to a session.      |
+| `session_expired`      | `401` | The session (and its client token) has expired.     |
+| `missing_api_key`      | `401` | No secret key on a Public Project API request.      |
+| `invalid_api_key`      | `401` | The secret key is unknown, revoked, or expired.     |
+| `invalid_workflow`     | `422` | `workflow_id` is unknown for this organization.     |
+| `invalid_webhook`      | `422` | The referenced webhook endpoint is unknown/invalid. |
+
+Responses **without** an `error` field are unexpected/unhandled errors (treat
+them as generic by `code`); only the errors above are part of this contract.
+
 ## Authentication at a glance
 
 | Surface         | Header                                                   |

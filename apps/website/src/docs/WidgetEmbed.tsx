@@ -305,6 +305,11 @@ export function WidgetEmbed() {
         <code>cancelled</code>). Treat it as a UX signal — use <Link to="/docs/webhooks">webhooks</Link> as your source
         of truth.
       </p>
+      <p>
+        <code>onError</code> receives a <code>WidgetApiError</code> with the HTTP <code>status</code> and a stable{' '}
+        <code>error</code> key branch on it, e.g. mint a fresh token when <code>err.error === 'session_expired'</code>.
+        See the <a href="https://docs.arkyc.toneflix.net/api/#error-codes">API error codes</a>.
+      </p>
 
       <h2>Theming</h2>
       <p>

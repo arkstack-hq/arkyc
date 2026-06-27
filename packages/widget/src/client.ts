@@ -124,13 +124,17 @@ export interface CompleteInput {
  */
 export class WidgetApiError extends Error {
   readonly status: number
-  readonly code?: string
+  /**
+   * Stable error key (e.g. `session_expired`) for errors Arkyc
+   * deliberately raises. Undefined for unexpected errors.
+   */
+  readonly error?: string
 
-  constructor(message: string, status: number, code?: string) {
+  constructor(message: string, status: number, error?: string) {
     super(message)
     this.name = 'WidgetApiError'
     this.status = status
-    this.code = code
+    this.error = error
   }
 }
 
@@ -165,8 +169,7 @@ export interface ArkycClientOptions {
  */
 declare const __ARKYC_API_BASE__: string | undefined
 export const DEFAULT_CLIENT_BASE_URL =
-  (typeof __ARKYC_API_BASE__ === 'string' ? __ARKYC_API_BASE__ : '') ||
-  'https://api.arkyc.toneflix.net/api/v1/client'
+  (typeof __ARKYC_API_BASE__ === 'string' ? __ARKYC_API_BASE__ : '') || 'https://api.arkyc.toneflix.net/api/v1/client'
 
 /**
  * Resolve the request base: an explicit `baseUrl` overrides the build-time
@@ -318,10 +321,10 @@ export class ArkycClient {
 
     const res = await this.fetchImpl(`${this.baseUrl}${path}`, { method, headers, body: payload })
     const text = await res.text()
-    const json = text ? (JSON.parse(text) as { message?: string; data?: ClientSession }) : {}
+    const json = text ? (JSON.parse(text) as { message?: string; data?: ClientSession; error?: string }) : {}
 
     if (!res.ok) {
-      throw new WidgetApiError(json.message ?? `Request failed (${res.status})`, res.status)
+      throw new WidgetApiError(json.message ?? `Request failed (${res.status})`, res.status, json.error)
     }
     return json.data as ClientSession
   }
