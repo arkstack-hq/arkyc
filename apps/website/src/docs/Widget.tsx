@@ -5,12 +5,19 @@ import { Prose } from '@/components/Prose'
 export function Widget() {
   return (
     <Prose>
-      <h1>Embed the widget</h1>
+      <h1>Hosted launcher</h1>
       <p>
-        The widget runs the guided capture flow document, selfie and liveness, plus an optional address step on custom
-        workflows, and talks only to Arkyc using the one-time client token from your server. Launch it two ways: as an{' '}
-        <strong>overlay</strong> the SDK opens over your page, or by sending the user to the <strong>hosted</strong>{' '}
-        page. Both load the same hosted widget; the token is the only thing the browser needs.
+        <code>@arkyc/sdk/browser</code> opens the <strong>hosted</strong> widget in an overlay iframe, your frontend
+        bundles almost nothing, and the only thing the browser needs is the one-time client token from your server. The
+        widget runs the guided capture flow (document, selfie, liveness, plus an optional address step on custom
+        workflows).
+      </p>
+      <p>
+        Want to bundle the flow into your own frontend and point it at your API for full control of layout? Use{' '}
+        <Link to="/docs/widget-embed">
+          <code>@arkyc/widget</code>
+        </Link>{' '}
+        instead.
       </p>
 
       <h2>Install</h2>

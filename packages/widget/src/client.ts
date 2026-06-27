@@ -138,10 +138,31 @@ export class WidgetApiError extends Error {
 export interface ArkycClientOptions {
   /** Short-lived client token minted for this session. */
   token: string
-  /** API origin (defaults to the same origin the widget is served from). */
+  /**
+   * API base. Omitted or a relative path (e.g. `/api`) resolves against the
+   * current origin — same-origin, so no CORS. An absolute URL (e.g.
+   * `https://api.example.com/api`) is used as-is and requires the API to allow
+   * this origin via CORS.
+   */
   baseUrl?: string
   /** Injectable for testing; defaults to the global `fetch`. */
   fetch?: typeof fetch
+}
+
+/**
+ * Resolve the request base per the rule: an absolute URL is used as-is
+ * (cross-origin, CORS); anything else — empty or a relative path — resolves
+ * against the current origin, keeping calls same-origin and CORS-free.
+ *
+ * @param baseUrl
+ * @returns
+ */
+export function resolveClientBaseUrl(baseUrl?: string): string {
+  const origin = (globalThis.location?.origin ?? '').replace(/\/$/, '')
+  const trimmed = (baseUrl ?? '').trim().replace(/\/$/, '')
+  if (!trimmed) return origin
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return `${origin}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`
 }
 
 type EnvelopeNumber = number | boolean
@@ -167,7 +188,7 @@ export class ArkycClient {
   constructor(options: ArkycClientOptions) {
     if (!options.token) throw new Error('ArkycClient requires a client `token`.')
     this.token = options.token
-    this.baseUrl = (options.baseUrl ?? '').replace(/\/$/, '')
+    this.baseUrl = resolveClientBaseUrl(options.baseUrl)
     const f = options.fetch ?? globalThis.fetch
     if (!f) throw new Error('No `fetch` implementation available.')
     this.fetchImpl = f.bind(globalThis)

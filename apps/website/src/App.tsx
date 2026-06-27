@@ -8,6 +8,7 @@ import { ServerSdk } from '@/docs/ServerSdk'
 import VerifyPage from './pages/VerifyPage'
 import { Webhooks } from '@/docs/Webhooks'
 import { Widget } from '@/docs/Widget'
+import { WidgetEmbed } from '@/docs/WidgetEmbed'
 import { useEffect } from 'react'
 
 /** Scroll to top on route change, unless navigating to a hash anchor. */
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/docs" element={<DocsLayout />}>
             <Route index element={<Quickstart />} />
             <Route path="widget" element={<Widget />} />
+            <Route path="widget-embed" element={<WidgetEmbed />} />
             <Route path="sdk" element={<ServerSdk />} />
             <Route path="webhooks" element={<Webhooks />} />
           </Route>

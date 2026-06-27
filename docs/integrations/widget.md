@@ -31,15 +31,15 @@ ArkycWidget.hosted()
 
 ## Options
 
-| Option       | Type                                 | Notes                                                                                                 |
-| ------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `token`      | `string` (required)                  | The client token from `arkyc.sessions.create`.                                                        |
-| `baseUrl`    | `string`                             | Client API base — must include `/api` (e.g. `/api` behind a proxy, or `https://api.example.com/api`). |
-| `branding`   | `ProjectBranding`                    | Colors, logo, radius, theme. Defaults from project config.                                            |
-| `onComplete` | `(result) => void`                   | `result` is `{ status, decision }`.                                                                   |
-| `onError`    | `(error) => void`                    |                                                                                                       |
-| `onClose`    | `() => void`                         |                                                                                                       |
-| `container`  | `string \| HTMLElement` (mount only) | Where to render inline.                                                                               |
+| Option       | Type                                 | Notes                                                                                                                                                                        |
+| ------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`      | `string` (required)                  | The client token from `arkyc.sessions.create`.                                                                                                                               |
+| `baseUrl`    | `string`                             | Client API base (include `/api`). Omitted or relative (e.g. `/api`) → current origin, no CORS; an absolute URL (`https://api.example.com/api`) is used as-is and needs CORS. |
+| `branding`   | `ProjectBranding`                    | Colors, logo, radius, theme. Defaults from project config.                                                                                                                   |
+| `onComplete` | `(result) => void`                   | `result` is `{ status, decision }`.                                                                                                                                          |
+| `onError`    | `(error) => void`                    |                                                                                                                                                                              |
+| `onClose`    | `() => void`                         |                                                                                                                                                                              |
+| `container`  | `string \| HTMLElement` (mount only) | Where to render inline.                                                                                                                                                      |
 
 ## Example
 

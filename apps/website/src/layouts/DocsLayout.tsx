@@ -6,7 +6,8 @@ import { cn } from '@/lib/utils'
 
 const DOC_NAV = [
   { label: 'Getting started', to: '/docs', end: true },
-  { label: 'Embed the widget', to: '/docs/widget', end: false },
+  { label: 'Hosted launcher', to: '/docs/widget', end: false },
+  { label: 'Embed @arkyc/widget', to: '/docs/widget-embed', end: false },
   { label: 'Server SDK', to: '/docs/sdk', end: false },
   { label: 'Webhooks', to: '/docs/webhooks', end: false },
 ]
