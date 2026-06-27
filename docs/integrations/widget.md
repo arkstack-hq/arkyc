@@ -40,17 +40,20 @@ ArkycWidget.hosted()
 
 ## Options
 
-| Option       | Type                                 | Notes                                                                                                                                                                                                                                                         |
-| ------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`      | `string` (required)                  | The client token from `arkyc.sessions.create`.                                                                                                                                                                                                                |
-| `baseUrl`    | `string`                             | The **Client API base** — the widget appends `/session`, `/document/front`, … to it (it adds **no** version prefix; `baseUrl` owns it). See [Endpoints](#endpoints). Relative/omitted → current origin (no CORS); an absolute URL is used as-is (needs CORS). |
-| `branding`   | `ProjectBranding`                    | Colors, logo, radius, theme. Defaults from project config.                                                                                                                                                                                                    |
-| `onComplete` | `(result) => void`                   | `result` is `{ status, decision }`.                                                                                                                                                                                                                           |
-| `onError`    | `(error) => void`                    |                                                                                                                                                                                                                                                               |
-| `onClose`    | `() => void`                         |                                                                                                                                                                                                                                                               |
-| `container`  | `string \| HTMLElement` (mount only) | Where to render inline.                                                                                                                                                                                                                                       |
+| Option       | Type                                 | Notes                                                                                                                                                                                                                                                                                                       |
+| ------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`      | `string` (required)                  | The client token from `arkyc.sessions.create`.                                                                                                                                                                                                                                                              |
+| `baseUrl`    | `string`                             | **Optional** — defaults to the hosted Arkyc API, so the hosted product is zero-config. Override to self-host/proxy: a relative path → current origin (no CORS), an absolute URL → as-is (needs CORS). The widget appends `/session`, `/document/front`, … (no version prefix); see [Endpoints](#endpoints). |
+| `branding`   | `ProjectBranding`                    | Colors, logo, radius, theme. Defaults from project config.                                                                                                                                                                                                                                                  |
+| `onComplete` | `(result) => void`                   | `result` is `{ status, decision }`.                                                                                                                                                                                                                                                                         |
+| `onError`    | `(error) => void`                    |                                                                                                                                                                                                                                                                                                             |
+| `onClose`    | `() => void`                         |                                                                                                                                                                                                                                                                                                             |
+| `container`  | `string \| HTMLElement` (mount only) | Where to render inline.                                                                                                                                                                                                                                                                                     |
 
 ## Example
+
+Zero config against the hosted Arkyc API — your backend mints the token, the
+widget already knows where the API is:
 
 ```ts
 const res = await fetch('/verify/start', { method: 'POST' })
@@ -58,22 +61,24 @@ const { clientToken } = await res.json()
 
 ArkycWidget.mount({
   token: clientToken,
-  // Arkyc directly: `https://api.example.com/api/v1/client`.
-  // Or a same-origin proxy base you forward to the Client API (see Endpoints).
-  baseUrl: '/api/v1/client',
   container: '#verify',
-  onComplete: ({ status, decision }) => {
-    console.log('done', status, decision)
-  },
+  onComplete: ({ status, decision }) => console.log('done', status, decision),
   onError: (e) => console.error(e),
 })
+```
+
+Self-hosting or proxying? Either pass `baseUrl` (see [Endpoints](#endpoints)), or
+build the widget with the `ARKYC_API_URL` env to bake your API as the default:
+
+```bash
+ARKYC_API_URL=https://api.example.com/api/v1/client  # widget build-time default
 ```
 
 ## Endpoints {#endpoints}
 
 `baseUrl` is a **base**: the widget appends a fixed path per call and adds no
-version prefix. With Arkyc directly, point `baseUrl` at `.../api/v1/client` and
-these resolve to the [Client API](/api/client). To route through your own backend
+version prefix. Against Arkyc directly (the default, or `…/api/v1/client`) these
+resolve to the [Client API](/api/client). To route through your own backend
 (browser → your domain only, no CORS), set `baseUrl` to a prefix you control and
 **proxy each path** to Arkyc's `/api/v1/client/*`:
 

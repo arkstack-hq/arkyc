@@ -125,7 +125,7 @@ export function Widget() {
               <code>() =&gt; void</code>
             </td>
             <td>
-              The overlay was torn down — by the user dismissing it, by <code>handle.close()</code>, or after a
+              The overlay was torn down by the user dismissing it, by <code>handle.close()</code>, or after a
               complete/error.
             </td>
           </tr>

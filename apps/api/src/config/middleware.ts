@@ -2,14 +2,11 @@ import { formdata, requestLogger, resora } from '@arkstack/driver-express/middle
 
 import { MiddlewareConfig } from '@arkstack/driver-express/types'
 import cors from 'cors'
-import corsConfig from './cors'
 import express from 'express'
 import { requestId } from '@app/http/middlewares'
 import { useExpressUploadContext } from '@kanun-hq/plugin-file'
 
 export default (): MiddlewareConfig => {
-  const cConf = corsConfig()
-
   return {
     global: [
       // Parse application/json
@@ -19,14 +16,11 @@ export default (): MiddlewareConfig => {
         },
       }),
       express.urlencoded({ extended: true }),
-      (req, res, next) => {
-        const bypass = req.headers.origin?.includes('192.168') || req.headers.origin?.includes('localhost')
-
-        return cors({
-          credentials: true,
-          origin: cConf.allowed_origins.length > 0 && !bypass ? cConf.allowed_origins : true,
-        })(req, res, next)
-      },
+      // Allow any origin: the Client API is meant to be called cross-origin from
+      // customer sites (token-gated, like a publishable key), so the embedded
+      // widget works with zero config. Auth is header-based (Bearer /
+      // X-Client-Token), not cookies, so reflecting the origin is safe.
+      cors({ credentials: true, origin: true }),
       formdata.any(),
     ],
     before: [

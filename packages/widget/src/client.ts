@@ -140,14 +140,12 @@ export interface ArkycClientOptions {
   token: string
   /**
    * The Client API **base** the widget appends each endpoint to — `{baseUrl}/session`,
-   * `{baseUrl}/document/front`, etc. The widget does NOT add a version prefix, so
-   * `baseUrl` owns it: for the Arkyc API directly that's `.../api/v1/client`; for a
-   * backend that proxies the Client API, it's your prefix (you map `{prefix}/session`
-   * → Arkyc's `/api/v1/client/session`).
+   * `{baseUrl}/document/front`, etc. (no version prefix is added; `baseUrl` owns it).
    *
-   * Omitted or a relative path resolves against the current origin — same-origin,
-   * so no CORS. An absolute URL is used as-is and requires the API to allow this
-   * origin via CORS.
+   * **Optional** — defaults to the hosted Arkyc API ({@link DEFAULT_CLIENT_BASE_URL}),
+   * so the hosted product needs no config. Override only to self-host or proxy: a
+   * relative path resolves against the current origin (same-origin, no CORS); an
+   * absolute URL is used as-is (the API must allow your origin via CORS).
    */
   baseUrl?: string
   /** Injectable for testing; defaults to the global `fetch`. */
@@ -155,19 +153,35 @@ export interface ArkycClientOptions {
 }
 
 /**
- * Resolve the request base per the rule: an absolute URL is used as-is
- * (cross-origin, CORS); anything else — empty or a relative path — resolves
- * against the current origin, keeping calls same-origin and CORS-free.
+ * The default Client API base, used when no `baseUrl` is passed — so the hosted
+ * product is zero-config: the browser calls it cross-origin with the client
+ * token (the API allows it via CORS).
+ *
+ * Baked at **build time** from the `ARKYC_API_URL` env (via the tsdown `define`),
+ * falling back to the hosted Arkyc API. Self-hosters set `ARKYC_API_URL` when
+ * building the widget; integrators on the published package override per call
+ * with `baseUrl`. Referenced through `typeof` so running the source directly
+ * (tests) without the define is safe.
+ */
+declare const __ARKYC_API_BASE__: string | undefined
+export const DEFAULT_CLIENT_BASE_URL =
+  (typeof __ARKYC_API_BASE__ === 'string' ? __ARKYC_API_BASE__ : '') || 'https://api.arkyc.toneflix.net/api/v1/client'
+
+/**
+ * Resolve the request base: an explicit `baseUrl` overrides the build-time
+ * {@link DEFAULT_CLIENT_BASE_URL}. The chosen value is used as-is when absolute
+ * (cross-origin, CORS); a relative path resolves against the current origin
+ * (same-origin proxy, no CORS).
  *
  * @param baseUrl
  * @returns
  */
 export function resolveClientBaseUrl(baseUrl?: string): string {
+  const raw = (baseUrl ?? '').trim().replace(/\/$/, '')
+  if (!raw) return DEFAULT_CLIENT_BASE_URL
+  if (/^https?:\/\//i.test(raw)) return raw
   const origin = (globalThis.location?.origin ?? '').replace(/\/$/, '')
-  const trimmed = (baseUrl ?? '').trim().replace(/\/$/, '')
-  if (!trimmed) return origin
-  if (/^https?:\/\//i.test(trimmed)) return trimmed
-  return `${origin}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`
+  return `${origin}${raw.startsWith('/') ? '' : '/'}${raw}`
 }
 
 type EnvelopeNumber = number | boolean

@@ -29,7 +29,7 @@ export function WidgetEmbed() {
         code={[
           '<!-- Standalone IIFE; exposes window.Arkyc -->',
           '<script src="https://cdn.jsdelivr.net/npm/@arkyc/widget/standalone"></script>',
-          '<script>Arkyc.mount({ token, container: "#verify", baseUrl: "/api/v1/client" })</script>',
+          '<script>Arkyc.mount({ token, container: "#verify" })</script>',
         ]}
       />
 
@@ -56,17 +56,17 @@ export function WidgetEmbed() {
         ]}
       />
 
-      <h2>2 · Point the widget at the API (baseUrl)</h2>
+      <h2>2 · Point the widget at the API (optional)</h2>
       <p>
-        <code>baseUrl</code> is the Client API <strong>base</strong>: the widget appends a fixed path per call (
-        <code>/session</code>, <code>/document/front</code>, …) and adds <strong>no</strong> version prefix —{' '}
-        <code>baseUrl</code> owns it. So point it at the full Client API base, not your token-creation route. It
-        resolves like this:
+        <code>baseUrl</code> is <strong>optional</strong> — it defaults to the hosted Arkyc API, so the hosted product
+        is zero-config (the browser calls it cross-origin with the token; the API allows it via CORS). You only set it
+        to self-host or proxy. It’s a <strong>base</strong>: the widget appends a fixed path per call (
+        <code>/session</code>, <code>/document/front</code>, …) and adds <strong>no</strong> version prefix.
       </p>
       <ul>
         <li>
-          <strong>Omitted or a relative path</strong> → resolved against your page’s <strong>current origin</strong>.
-          Same-origin, so no CORS. Use this when your backend proxies the Client API under your own domain.
+          <strong>A relative path</strong> (e.g. <code>/api/v1/client</code>) → resolved against your page’s current
+          origin. Same-origin, so no CORS — use this when your backend proxies the Client API under your own domain.
         </li>
         <li>
           <strong>An absolute URL</strong> (e.g. <code>https://api.example.com/api/v1/client</code>) → used as-is. The
@@ -74,10 +74,11 @@ export function WidgetEmbed() {
         </li>
       </ul>
       <p>
-        Against Arkyc directly, that base is <code>…/api/v1/client</code>. To route through your own backend, set{' '}
-        <code>baseUrl</code> to a prefix you control and proxy each path to Arkyc’s <code>/api/v1/client/*</code> (see{' '}
-        <a href="#endpoints">Endpoints</a>). Serve your page over <strong>HTTPS</strong> — browsers only grant camera
-        (and geolocation, for the address step) on a secure origin.
+        To route through your own backend, set <code>baseUrl</code> to a prefix you control and proxy each path to
+        Arkyc’s <code>/api/v1/client/*</code> (see <a href="#endpoints">Endpoints</a>). Self-hosting the whole stack?
+        You can instead bake your API as the widget’s default by building it with <code>ARKYC_API_URL</code>. Serve your
+        page over <strong>HTTPS</strong> — browsers only grant camera (and geolocation, for the address step) on a
+        secure origin.
       </p>
 
       <h2>3 · Render the widget (your frontend)</h2>
@@ -95,9 +96,8 @@ export function WidgetEmbed() {
           "const { clientToken } = await fetch('/verify/start', { method: 'POST' }).then((r) => r.json())",
           '',
           'const handle = ArkycWidget.open({',
-          '  token: clientToken,        // required',
-          "  baseUrl: '/api/v1/client', // Client API base (or an absolute one); widget appends /session, …",
-          '  fullscreen: true,          // optional — edge-to-edge',
+          '  token: clientToken,   // required — baseUrl defaults to the hosted API',
+          '  fullscreen: true,     // optional — edge-to-edge',
           '  onComplete: (r) => done(r.status),',
           '  onError: (e) => showError(e),',
           '  onClose: () => {},',
@@ -115,8 +115,7 @@ export function WidgetEmbed() {
         code={[
           'ArkycWidget.mount({',
           '  token: clientToken,',
-          "  container: '#verify',      // string selector or an HTMLElement",
-          "  baseUrl: '/api/v1/client',",
+          "  container: '#verify',   // string selector or an HTMLElement",
           '  onComplete: (r) => done(r.status),',
           '})',
         ]}
@@ -136,7 +135,7 @@ export function WidgetEmbed() {
       <h2 id="endpoints">Endpoints to proxy</h2>
       <p>
         If you route the Client API through your own backend, set <code>baseUrl</code> to a prefix you control and
-        forward each of these to Arkyc’s <code>/api/v1/client/*</code> — pass the <code>X-Client-Token</code> header and
+        forward each of these to Arkyc’s <code>/api/v1/client/*</code>, pass the <code>X-Client-Token</code> header and
         the request body through unchanged.
       </p>
       <table>
@@ -211,8 +210,9 @@ export function WidgetEmbed() {
               <code>string</code>
             </td>
             <td>
-              Client API <strong>base</strong> — the widget appends <code>/session</code>, <code>/document/front</code>,
-              … (no version prefix). Relative/omitted ⇒ current origin (no CORS); absolute ⇒ as-is (needs CORS).
+              <strong>Optional</strong>, defaults to the hosted Arkyc API. Client API base — the widget appends{' '}
+              <code>/session</code>, … (no version prefix). Relative ⇒ current origin (no CORS); absolute ⇒ as-is (needs
+              CORS).
             </td>
           </tr>
           <tr>
@@ -289,7 +289,7 @@ export function WidgetEmbed() {
       <CodeCard
         title="handle.ts"
         code={[
-          "const handle = ArkycWidget.open({ token: clientToken, baseUrl: '/api/v1/client' })",
+          'const handle = ArkycWidget.open({ token: clientToken })',
           '',
           "const off = handle.on('session.transition', (data) => updateProgress(data))",
           '// later…',

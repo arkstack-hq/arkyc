@@ -21,6 +21,7 @@ export default defineConfig({
   target: 'es2022',
   treeshake: true,
   unbundle: true,
+  define: { __ARKYC_API_BASE__: JSON.stringify(process.env.ARKYC_API_URL ?? '') },
   // Inline the widget's lintable `theme.css` as a string (`virtual:arkyc-theme-css`).
   plugins: [rawCssPlugin()],
 })

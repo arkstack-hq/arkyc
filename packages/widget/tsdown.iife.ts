@@ -28,6 +28,8 @@ export default defineConfig({
   minify: true,
   target: 'es2020',
   outExtensions: () => ({ js: '.global.js' }),
+  // Bake the widget's default Client API base from env at build time (see client.ts).
+  define: { __ARKYC_API_BASE__: JSON.stringify(process.env.ARKYC_API_URL ?? '') },
   // Inline the widget's lintable `theme.css` as a string (`virtual:arkyc-theme-css`).
   plugins: [rawCssPlugin()],
 })

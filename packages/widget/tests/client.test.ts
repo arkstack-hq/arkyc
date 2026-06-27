@@ -1,5 +1,5 @@
+import { ArkycClient, DEFAULT_CLIENT_BASE_URL, WidgetApiError } from '../src/client'
 import { describe, expect, it, vi } from 'vitest'
-import { ArkycClient, WidgetApiError } from '../src/client'
 
 function envelope(data: unknown, init: { ok?: boolean; status?: number; message?: string } = {}) {
   const status = init.status ?? 200
@@ -33,9 +33,18 @@ describe('ArkycClient', () => {
     expect((init as RequestInit).headers).toMatchObject({ 'X-Client-Token': 'ct_abc' })
   })
 
+  it('defaults to the hosted Client API base when no baseUrl is given', async () => {
+    const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'started', expires_at: 'x' }))
+    const client = new ArkycClient({ token: 'ct', fetch: fetchMock as never })
+
+    await client.getSession()
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${DEFAULT_CLIENT_BASE_URL}/session`)
+  })
+
   it('posts the document front as multipart form data with hints', async () => {
     const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'document_submitted', expires_at: 'x' }))
-    const client = new ArkycClient({ token: 'ct', fetch: fetchMock as never })
+    const client = new ArkycClient({ token: 'ct', baseUrl: 'https://api.test/v1/client', fetch: fetchMock as never })
 
     await client.submitDocumentFront({
       image: new Blob(['x'], { type: 'image/jpeg' }),
@@ -45,7 +54,7 @@ describe('ArkycClient', () => {
     })
 
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe('/document/front')
+    expect(url).toBe('https://api.test/v1/client/document/front')
     const body = (init as RequestInit).body as FormData
     expect(body).toBeInstanceOf(FormData)
     expect(body.get('country')).toBe('US')
