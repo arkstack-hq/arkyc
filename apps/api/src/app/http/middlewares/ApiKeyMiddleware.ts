@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import { ApiKey } from '@app/models/ApiKey'
-import { sendApiError } from 'src/support/apiErrors'
+import { ApiException } from 'src/support/apiErrors'
 
 function readSecret(req: Request): string | null {
   const auth = req.headers.authorization
@@ -19,15 +19,15 @@ function readSecret(req: Request): string | null {
  * project from the key and attaches `req.projectContext`.
  */
 export class ApiKeyMiddleware {
-  async handler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async handler(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
       const secret = readSecret(req)
-      if (!secret) return sendApiError(res, 'missing_api_key')
+      if (!secret) throw new ApiException('missing_api_key')
 
       const key = await ApiKey.where({ keyPrefix: ApiKeyAuth.prefix(secret) }).first()
       const expired = key?.expiresAt != null && new Date(key.expiresAt).getTime() <= Date.now()
       if (!key || key.revokedAt || expired || !ApiKeyAuth.verify(secret, key.keyHash)) {
-        return sendApiError(res, 'invalid_api_key')
+        throw new ApiException('invalid_api_key')
       }
 
       req.projectContext = {

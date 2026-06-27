@@ -1,5 +1,4 @@
-import EmptyResource from '@app/http/resources/EmptyResource'
-import type { Response } from 'express'
+import { RequestException } from '@arkstack/common'
 
 /**
  * The catalog of errors **we** deliberately return.
@@ -25,44 +24,29 @@ export const API_ERRORS = {
 } as const
 
 /**
- * A stable error identifier from {@link API_ERRORS} — the `error` field clients match on. */
+ * A stable error identifier from {@link API_ERRORS} */
 export type ApiErrorKey = keyof typeof API_ERRORS
 
 /**
- * The error envelope: the standard `{ status, code, message }` plus the stable
- * `error` key. `code` stays the HTTP status (matching success responses); `error`
- * is the machine-readable identifier.
+ * An error we deliberately raise. Extends `RequestException`, so it throws like
+ * any other framework error (from middleware, a controller, or a service) — but
+ * carries a `body`, which the framework's error renderer merges into the
+ * response envelope.
  *
- * @param key
- * @param message  Override the catalog's default human message.
- * @returns
- */
-export function apiErrorBody(key: ApiErrorKey, message?: string) {
-  const entry = API_ERRORS[key]
-
-  return { status: 'error' as const, error: key, code: entry.status, message: message ?? entry.message }
-}
-
-/**
- * Send one of our errors directly (for middleware, which holds `res` rather than
- * returning a resource).
+ * The client therefore receives `{ status: 'error', code, message, error }` where
+ * `error` is the stable, machine-readable key. Override `message` freely; the key
+ * is the contract.
  *
- * @param res
- * @param key
- * @param message
+ * @example throw new ApiException('session_expired')
  */
-export function sendApiError(res: Response, key: ApiErrorKey, message?: string): void {
-  res.status(API_ERRORS[key].status).json(apiErrorBody(key, message))
-}
+export class ApiException extends RequestException {
+  /** Merged into the response payload by the framework's error renderer. */
+  readonly body: { error: ApiErrorKey }
 
-/**
- * Return one of our errors from a controller, via the resource response's
- * `additional()` so it rides the same envelope as success responses.
- *
- * @param key
- * @param message
- * @returns
- */
-export function apiError(key: ApiErrorKey, message?: string) {
-  return new EmptyResource({}).additional(apiErrorBody(key, message)).response().setStatusCode(API_ERRORS[key].status)
+  constructor(key: ApiErrorKey, message?: string) {
+    const entry = API_ERRORS[key]
+    super(message ?? entry.message, entry.status)
+    this.name = 'ApiException'
+    this.body = { error: key }
+  }
 }

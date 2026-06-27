@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 import { Token } from '@arkyc/auth'
 import { VerificationSession } from '@app/models/VerificationSession'
-import { sendApiError } from 'src/support/apiErrors'
+import { ApiException } from 'src/support/apiErrors'
 
 function readToken(req: Request): string | null {
   const auth = req.headers.authorization
@@ -19,21 +19,22 @@ function readToken(req: Request): string | null {
  * attaches `req.verificationSession`.
  */
 export class ClientTokenMiddleware {
-  async handler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async handler(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
       const token = readToken(req)
-      if (!token) return sendApiError(res, 'missing_client_token')
+      if (!token) throw new ApiException('missing_client_token')
 
       const session = await VerificationSession.where({
         clientTokenHash: Token.hash(token),
       }).first()
-      if (!session) return sendApiError(res, 'invalid_client_token')
-      if (new Date(session.expiresAt).getTime() <= Date.now()) return sendApiError(res, 'session_expired')
+      if (!session) throw new ApiException('invalid_client_token')
+      if (new Date(session.expiresAt).getTime() <= Date.now()) throw new ApiException('session_expired')
 
       req.verificationSession = session
       next()
     } catch (error) {
-      // Unexpected (e.g. DB) errors are beyond our control — let the framework render them.
+      // ApiException carries a stable `error` key; unexpected (e.g. DB) errors
+      // fall through to the framework's generic renderer.
       next(error)
     }
   }

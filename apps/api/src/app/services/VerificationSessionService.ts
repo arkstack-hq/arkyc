@@ -1,4 +1,5 @@
 import { RequestException } from '@arkstack/common'
+import { ApiException } from 'src/support/apiErrors'
 import { SessionRules, StatusMachine } from '@arkyc/core'
 import { Token } from '@arkyc/auth'
 import { randomChallenges } from '@arkyc/liveness'
@@ -90,7 +91,7 @@ export class VerificationSessionService {
   private async resolveWorkflow(organizationId: string, workflowId: string | null): Promise<WorkflowConfig | null> {
     if (!workflowId) return null
     const workflow = await Workflow.where({ id: workflowId, organizationId }).first()
-    RequestException.assertFound(workflow, 'Unknown workflow_id for this organization', 422)
+    if (!workflow) throw new ApiException('invalid_workflow')
 
     return { steps: workflow.steps, options: workflow.options }
   }

@@ -105,6 +105,15 @@ describe('verification session lifecycle', () => {
     expect(res.body.client_token).toBeTruthy()
   })
 
+  it('rejects an unknown workflow_id with a stable error key (from the service layer)', async () => {
+    const res = await publicApi('post', 'sessions').send({
+      user_reference: 'abc',
+      workflow_id: '00000000-0000-0000-0000-000000000000',
+    })
+    expect(res.status).toBe(422)
+    expect(res.body.error).toBe('invalid_workflow')
+  })
+
   it('walks a clean session to approved via the workers', async () => {
     const { id, token } = await toLiveness()
     const complete = await clientApi('post', 'complete', token).send({})
