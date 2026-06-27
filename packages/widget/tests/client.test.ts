@@ -19,7 +19,7 @@ describe('ArkycClient', () => {
     const fetchMock = vi.fn(async () => envelope({ id: 's1', status: 'started', expires_at: '2099-01-01' }))
     const client = new ArkycClient({
       token: 'ct_abc',
-      baseUrl: 'https://api.test/',
+      baseUrl: 'https://api.test/v1/client/',
       fetch: fetchMock as never,
     })
 
@@ -27,6 +27,7 @@ describe('ArkycClient', () => {
 
     expect(session).toEqual({ id: 's1', status: 'started', expires_at: '2099-01-01' })
     const [url, init] = fetchMock.mock.calls[0]
+    // `baseUrl` owns the prefix; the widget appends only the endpoint path.
     expect(url).toBe('https://api.test/v1/client/session')
     expect((init as RequestInit).method).toBe('GET')
     expect((init as RequestInit).headers).toMatchObject({ 'X-Client-Token': 'ct_abc' })
@@ -44,7 +45,7 @@ describe('ArkycClient', () => {
     })
 
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe('/v1/client/document/front')
+    expect(url).toBe('/document/front')
     const body = (init as RequestInit).body as FormData
     expect(body).toBeInstanceOf(FormData)
     expect(body.get('country')).toBe('US')

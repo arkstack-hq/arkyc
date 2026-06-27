@@ -250,7 +250,7 @@ export class WidgetController {
     const apiBase = (this.config.baseUrl ?? '').replace(/\/$/, '')
     try {
       this.rtClient = await factory(cfg, {
-        authEndpoint: `${apiBase}/v1/client/realtime/auth`,
+        authEndpoint: `${apiBase}/realtime/auth`,
         token: this.config.token,
       })
     } catch {

@@ -139,10 +139,15 @@ export interface ArkycClientOptions {
   /** Short-lived client token minted for this session. */
   token: string
   /**
-   * API base. Omitted or a relative path (e.g. `/api`) resolves against the
-   * current origin — same-origin, so no CORS. An absolute URL (e.g.
-   * `https://api.example.com/api`) is used as-is and requires the API to allow
-   * this origin via CORS.
+   * The Client API **base** the widget appends each endpoint to — `{baseUrl}/session`,
+   * `{baseUrl}/document/front`, etc. The widget does NOT add a version prefix, so
+   * `baseUrl` owns it: for the Arkyc API directly that's `.../api/v1/client`; for a
+   * backend that proxies the Client API, it's your prefix (you map `{prefix}/session`
+   * → Arkyc's `/api/v1/client/session`).
+   *
+   * Omitted or a relative path resolves against the current origin — same-origin,
+   * so no CORS. An absolute URL is used as-is and requires the API to allow this
+   * origin via CORS.
    */
   baseUrl?: string
   /** Injectable for testing; defaults to the global `fetch`. */
@@ -200,7 +205,7 @@ export class ArkycClient {
    * @returns
    */
   getSession(): Promise<ClientSession> {
-    return this.request('GET', '/v1/client/session')
+    return this.request('GET', '/session')
   }
 
   /**
@@ -215,7 +220,7 @@ export class ArkycClient {
     if (input.country) form.append('country', input.country)
     if (input.documentType) form.append('document_type', input.documentType)
     appendSignals(form, input.signals)
-    return this.request('POST', '/v1/client/document/front', form)
+    return this.request('POST', '/document/front', form)
   }
 
   /**
@@ -229,7 +234,7 @@ export class ArkycClient {
     if (input.image) form.append('image', input.image, 'document-back.jpg')
     if (input.country) form.append('country', input.country)
     if (input.documentType) form.append('document_type', input.documentType)
-    return this.request('POST', '/v1/client/document/back', form)
+    return this.request('POST', '/document/back', form)
   }
 
   /**
@@ -245,7 +250,7 @@ export class ArkycClient {
     if (input.mode) form.append('mode', input.mode)
     if (input.challenges) form.append('challenges', JSON.stringify(input.challenges))
     appendSignals(form, input.signals)
-    return this.request('POST', '/v1/client/liveness', form)
+    return this.request('POST', '/liveness', form)
   }
 
   /**
@@ -272,7 +277,7 @@ export class ArkycClient {
     if (input.latitude != null) form.append('latitude', String(input.latitude))
     if (input.longitude != null) form.append('longitude', String(input.longitude))
     appendSignals(form, input.signals)
-    return this.request('POST', '/v1/client/address', form)
+    return this.request('POST', '/address', form)
   }
 
   /**
@@ -282,7 +287,7 @@ export class ArkycClient {
    * @returns
    */
   complete(input: CompleteInput = {}): Promise<ClientSession> {
-    return this.request('POST', '/v1/client/complete', input.signals ?? {})
+    return this.request('POST', '/complete', input.signals ?? {})
   }
 
   private async request(method: string, path: string, body?: FormData | object): Promise<ClientSession> {

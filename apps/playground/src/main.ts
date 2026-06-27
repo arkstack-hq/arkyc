@@ -94,7 +94,8 @@ async function startVerification(): Promise<void> {
       token: data.clientToken,
       container: widgetEl,
       // Same-origin: Vite proxies /api/<target> → the chosen Arkyc API (vite.config.ts).
-      baseUrl: `/api/${target}`,
+      // `baseUrl` is the Client API base; the widget appends `/session`, `/document/front`, …
+      baseUrl: `/api/${target}/v1/client`,
       onEvent: (event) => {
         renderEvent(event)
         console.log(event)

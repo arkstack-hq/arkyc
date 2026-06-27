@@ -40,15 +40,15 @@ ArkycWidget.hosted()
 
 ## Options
 
-| Option       | Type                                 | Notes                                                                                                                                                                        |
-| ------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`      | `string` (required)                  | The client token from `arkyc.sessions.create`.                                                                                                                               |
-| `baseUrl`    | `string`                             | Client API base (include `/api`). Omitted or relative (e.g. `/api`) → current origin, no CORS; an absolute URL (`https://api.example.com/api`) is used as-is and needs CORS. |
-| `branding`   | `ProjectBranding`                    | Colors, logo, radius, theme. Defaults from project config.                                                                                                                   |
-| `onComplete` | `(result) => void`                   | `result` is `{ status, decision }`.                                                                                                                                          |
-| `onError`    | `(error) => void`                    |                                                                                                                                                                              |
-| `onClose`    | `() => void`                         |                                                                                                                                                                              |
-| `container`  | `string \| HTMLElement` (mount only) | Where to render inline.                                                                                                                                                      |
+| Option       | Type                                 | Notes                                                                                                                                                                                                                                                         |
+| ------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`      | `string` (required)                  | The client token from `arkyc.sessions.create`.                                                                                                                                                                                                                |
+| `baseUrl`    | `string`                             | The **Client API base** — the widget appends `/session`, `/document/front`, … to it (it adds **no** version prefix; `baseUrl` owns it). See [Endpoints](#endpoints). Relative/omitted → current origin (no CORS); an absolute URL is used as-is (needs CORS). |
+| `branding`   | `ProjectBranding`                    | Colors, logo, radius, theme. Defaults from project config.                                                                                                                                                                                                    |
+| `onComplete` | `(result) => void`                   | `result` is `{ status, decision }`.                                                                                                                                                                                                                           |
+| `onError`    | `(error) => void`                    |                                                                                                                                                                                                                                                               |
+| `onClose`    | `() => void`                         |                                                                                                                                                                                                                                                               |
+| `container`  | `string \| HTMLElement` (mount only) | Where to render inline.                                                                                                                                                                                                                                       |
 
 ## Example
 
@@ -58,14 +58,38 @@ const { clientToken } = await res.json()
 
 ArkycWidget.mount({
   token: clientToken,
+  // Arkyc directly: `https://api.example.com/api/v1/client`.
+  // Or a same-origin proxy base you forward to the Client API (see Endpoints).
+  baseUrl: '/api/v1/client',
   container: '#verify',
-  baseUrl: '/api', // same-origin proxy to the Arkyc API
   onComplete: ({ status, decision }) => {
     console.log('done', status, decision)
   },
   onError: (e) => console.error(e),
 })
 ```
+
+## Endpoints {#endpoints}
+
+`baseUrl` is a **base**: the widget appends a fixed path per call and adds no
+version prefix. With Arkyc directly, point `baseUrl` at `.../api/v1/client` and
+these resolve to the [Client API](/api/client). To route through your own backend
+(browser → your domain only, no CORS), set `baseUrl` to a prefix you control and
+**proxy each path** to Arkyc's `/api/v1/client/*`:
+
+| Method | `{baseUrl}` + …   | Proxy to (Arkyc)                |
+| ------ | ----------------- | ------------------------------- |
+| `GET`  | `/session`        | `/api/v1/client/session`        |
+| `POST` | `/document/front` | `/api/v1/client/document/front` |
+| `POST` | `/document/back`  | `/api/v1/client/document/back`  |
+| `POST` | `/liveness`       | `/api/v1/client/liveness`       |
+| `POST` | `/address`        | `/api/v1/client/address`        |
+| `POST` | `/complete`       | `/api/v1/client/complete`       |
+| `POST` | `/realtime/auth`  | `/api/v1/client/realtime/auth`  |
+
+Each call carries the `X-Client-Token` header; forward it (and the request body)
+unchanged. `/realtime/auth` is only hit when realtime runs over an authed
+transport (pusher/firebase).
 
 ## The flow
 

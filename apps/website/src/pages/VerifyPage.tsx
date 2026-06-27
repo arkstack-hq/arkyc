@@ -4,8 +4,8 @@ import { ArkycWidget } from '@arkyc/widget'
 import type { WidgetResult } from '@arkyc/types'
 import { env } from '@/config/environment'
 
-/** API origin + `/api`, matching the dashboard's alova baseURL. */
-const API_BASE = env('VITE_API_URL', '') + '/api'
+/** The widget's Client API base — it appends `/session`, `/document/front`, … to this. */
+const API_BASE = env('VITE_API_URL', '') + '/api/v1/client'
 
 interface Outcome {
   title: string
