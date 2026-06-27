@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/core",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Decision engine, status transitions, and scoring logic",
   "license": "MIT",
   "keywords": [

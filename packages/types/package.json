@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/types",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Shared domain types and contracts for Arkyc",
   "license": "MIT",
   "keywords": [

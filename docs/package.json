@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/docs",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "private": true,
   "description": "Arkyc documentation site (VitePress)",
   "license": "MIT",
