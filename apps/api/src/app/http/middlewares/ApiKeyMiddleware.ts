@@ -46,5 +46,8 @@ export class ApiKeyMiddleware {
   }
 }
 
-export const apiKeyAuth = (req: Request, res: Response, next: NextFunction): Promise<void> =>
-  new ApiKeyMiddleware().handler(req, res, next)
+export const apiKeyAuth = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => new ApiKeyMiddleware().handler(req, res, next)

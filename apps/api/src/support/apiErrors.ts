@@ -28,19 +28,15 @@ export const API_ERRORS = {
 export type ApiErrorKey = keyof typeof API_ERRORS
 
 /**
- * An error we deliberately raise. Extends `RequestException`, so it throws like
- * any other framework error (from middleware, a controller, or a service) — but
- * carries a `body`, which the framework's error renderer merges into the
- * response envelope.
- *
- * The client therefore receives `{ status: 'error', code, message, error }` where
- * `error` is the stable, machine-readable key. Override `message` freely; the key
- * is the contract.
- *
+ * An error we deliberately raise. Extends `RequestException`, so it throws
+ * like any other framework error (from middleware, a controller, or
+ * a service)
  * @example throw new ApiException('session_expired')
  */
 export class ApiException extends RequestException {
-  /** Merged into the response payload by the framework's error renderer. */
+  /**
+   * Merged into the response payload by the framework's error renderer.
+   */
   readonly body: { error: ApiErrorKey }
 
   constructor(key: ApiErrorKey, message?: string) {

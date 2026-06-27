@@ -1,8 +1,9 @@
-import { auth } from '@arkstack/driver-express/middlewares'
-import { Router } from '@arkstack/driver-express'
-import type { PermissionKey } from '@arkyc/types'
 import { can, resolveOrganization } from '@app/http/middlewares'
+
+import type { PermissionKey } from '@arkyc/types'
+import { Router } from '@arkstack/driver-express'
 import WorkflowController from '@controllers/dashboard/WorkflowController'
+import { auth } from '@arkstack/driver-express/middlewares'
 
 const scoped = (perm: PermissionKey) => [auth, resolveOrganization, can(perm)]
 
@@ -14,4 +15,4 @@ Router.group('/v1/dashboard/organizations/:organizationId/workflows', () => {
   Router.delete('/:workflowId', [WorkflowController, 'destroy'], scoped('workflows.delete'))
 })
 
-export default () => {}
+export default () => { }

@@ -54,7 +54,13 @@ const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
  * the per-session attempt limit simple.
  */
 export class VerificationSessionService {
-  /** Create a `pending` session and mint its one-time client token. */
+  /**
+   * Create a `pending` session and mint its one-time client token.
+   *
+   * @param scope
+   * @param input
+   * @returns
+   */
   async create(
     scope: ProjectScope,
     input: { userReference?: string | null; metadata?: Metadata | null; workflowId?: string | null },
@@ -87,7 +93,13 @@ export class VerificationSessionService {
     return { session, clientToken: token }
   }
 
-  /** Look up and snapshot an organization's workflow config; 422 if it doesn't belong to the org. */
+  /**
+   * Look up and snapshot an organization's workflow config; 422 if it doesn't belong to the org.
+   *
+   * @param organizationId
+   * @param workflowId
+   * @returns
+   */
   private async resolveWorkflow(organizationId: string, workflowId: string | null): Promise<WorkflowConfig | null> {
     if (!workflowId) return null
     const workflow = await Workflow.where({ id: workflowId, organizationId }).first()
@@ -96,7 +108,12 @@ export class VerificationSessionService {
     return { steps: workflow.steps, options: workflow.options }
   }
 
-  /** The capture model for a project: its own override, else the global default. */
+  /**
+   * The capture model for a project: its own override, else the global default.
+   *
+   * @param projectId
+   * @returns
+   */
   private async resolveCaptureModel(projectId: string): Promise<CaptureModel> {
     const project = await Project.where({ id: projectId }).first()
     const override = project?.settings?.capture_model
@@ -105,12 +122,22 @@ export class VerificationSessionService {
     return (await settings.current()).capture.model
   }
 
-  /** Whether a capture model offers the active-liveness flow. */
+  /**
+   * Whether a capture model offers the active-liveness flow.
+   *
+   * @param model
+   * @returns
+   */
   private offersActiveLiveness(model: CaptureModel): boolean {
     return model === 'active' || model === 'both'
   }
 
-  /** Move a freshly-opened session to `started` when the widget first loads. */
+  /**
+   * Move a freshly-opened session to `started` when the widget first loads.
+   *
+   * @param session
+   * @returns
+   */
   async start(session: VerificationSession): Promise<VerificationSession> {
     await this.refresh(session)
     if (session.status === 'pending') {
@@ -124,6 +151,11 @@ export class VerificationSessionService {
    * Persist a document side. The image is stored via the storage driver; the
    * front capture enqueues async OCR + portrait extraction and advances the
    * session to `document_submitted`.
+   *
+   * @param session
+   * @param side
+   * @param input
+   * @returns
    */
   async submitDocument(
     session: VerificationSession,
@@ -178,7 +210,13 @@ export class VerificationSessionService {
     return capture
   }
 
-  /** Persist a liveness check (passive selfie or active challenge video). */
+  /**
+   * Persist a liveness check (passive selfie or active challenge video).
+   *
+   * @param session
+   * @param input
+   * @returns
+   */
   async submitLiveness(
     session: VerificationSession,
     input: {
@@ -252,7 +290,13 @@ export class VerificationSessionService {
     return check
   }
 
-  /** Whether liveness runs before the document for a session (document disabled or ordered later). */
+  /**
+   * Whether liveness runs before the document for a session
+   * (document disabled or ordered later).
+   *
+   * @param session
+   * @returns
+   */
   private livenessLeads(session: VerificationSession): boolean {
     const workflow = session.workflow
     if (!workflow) return false
@@ -270,6 +314,10 @@ export class VerificationSessionService {
    * methods inline through the address verifier and stores the result. Idempotent
    * inputs (claimed address, optional proof-of-address image, device coords) are
    * stored alongside the verdict so a reviewer can see what was checked.
+   *
+   * @param session
+   * @param input
+   * @returns
    */
   async submitAddress(
     session: VerificationSession,
@@ -332,6 +380,10 @@ export class VerificationSessionService {
   /**
    * Finalise: require a document + liveness, move to `processing`, and enqueue
    * the biometric job (face match + decision). A worker lands the final outcome.
+   *
+   * @param session
+   * @param input
+   * @returns
    */
   async complete(session: VerificationSession, input: { signals?: ProviderSignals }): Promise<VerificationSession> {
     await this.ensureMutable(session)
@@ -359,7 +411,12 @@ export class VerificationSessionService {
     return session
   }
 
-  /** Cancel a non-terminal session. */
+  /**
+   * Cancel a non-terminal session.
+   *
+   * @param session
+   * @returns
+   */
   async cancel(session: VerificationSession): Promise<VerificationSession> {
     await this.ensureMutable(session)
     await this.transition(session, 'cancelled')
@@ -370,6 +427,9 @@ export class VerificationSessionService {
   /**
    * Lazily transition a past-its-TTL session to `expired` (no throw). Lets a
    * reader (e.g. the public `show`) observe expiry without a background job.
+   *
+   * @param session
+   * @returns
    */
   async refresh(session: VerificationSession): Promise<VerificationSession> {
     if (SessionRules.shouldExpire(session.status, session.expiresAt, new Date())) {
@@ -379,7 +439,11 @@ export class VerificationSessionService {
     return session
   }
 
-  /** Lazily expire, then reject mutations on a session that has ended. */
+  /**
+   * Lazily expire, then reject mutations on a session that has ended.
+   *
+   * @param session
+   */
   private async ensureMutable(session: VerificationSession): Promise<void> {
     await this.refresh(session)
     RequestException.abortIf(
@@ -389,11 +453,18 @@ export class VerificationSessionService {
     )
   }
 
-  /** Apply and persist a status change (validated) and fan out webhooks. */
+  /**
+   * Apply and persist a status change (validated) and fan out webhooks.
+   *
+   * @param session
+   * @param to
+   */
   private async transition(session: VerificationSession, to: VerificationStatus): Promise<void> {
     await transitionTo(session, to)
   }
 }
 
-/** Shared singleton — the service holds no per-request state. */
+/**
+ * Shared singleton — the service holds no per-request state.
+ */
 export const sessionService = new VerificationSessionService()

@@ -1,7 +1,8 @@
 import type { NextFunction, Request, Response } from 'express'
+
+import { ApiException } from 'src/support/apiErrors'
 import { Token } from '@arkyc/auth'
 import { VerificationSession } from '@app/models/VerificationSession'
-import { ApiException } from 'src/support/apiErrors'
 
 function readToken(req: Request): string | null {
   const auth = req.headers.authorization
@@ -27,8 +28,10 @@ export class ClientTokenMiddleware {
       const session = await VerificationSession.where({
         clientTokenHash: Token.hash(token),
       }).first()
+
       if (!session) throw new ApiException('invalid_client_token')
-      if (new Date(session.expiresAt).getTime() <= Date.now()) throw new ApiException('session_expired')
+      if (new Date(session.expiresAt).getTime() <= Date.now())
+        throw new ApiException('session_expired')
 
       req.verificationSession = session
       next()
@@ -40,5 +43,8 @@ export class ClientTokenMiddleware {
   }
 }
 
-export const clientTokenAuth = (req: Request, res: Response, next: NextFunction): Promise<void> =>
-  new ClientTokenMiddleware().handler(req, res, next)
+export const clientTokenAuth = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => new ClientTokenMiddleware().handler(req, res, next)
