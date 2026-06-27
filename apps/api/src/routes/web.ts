@@ -7,6 +7,6 @@ Router.get('/health', [HealthController, 'web'])
 Router.get('/', () => {
   return view('welcome', {
     version: 'v1',
-    appName: env('APP_NAME', 'Roseed'),
+    appName: config('app.name', 'Arkyc'),
   })
 })

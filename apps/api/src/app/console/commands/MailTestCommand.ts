@@ -25,10 +25,10 @@ export class MailTestCommand extends Command {
       return
     }
 
-    const appName = String(config('app.name') ?? 'Arkyc')
+    const appName = config('app.name', 'Arkyc')
     const subject = String(this.option('subject') || `${appName} SMTP test`)
-    const host = env('MAIL_HOST', 'localhost')
-    const port = env('MAIL_PORT', 1025)
+    const host = config('notifications.transports.smtp.host', 'localhost')
+    const port = config('notifications.transports.smtp.port', 1025)
 
     this.info(`Sending test email to ${recipient} via ${host}:${port} …`)
 
@@ -53,7 +53,7 @@ export class MailTestCommand extends Command {
             reject(
               new Error(
                 `No response within ${TIMEOUT_MS / 1000}s — check MAIL_HOST/MAIL_PORT and MAIL_SECURE ` +
-                  `(port 587 usually needs MAIL_SECURE=false for STARTTLS; use port 465 with MAIL_SECURE=true).`,
+                `(port 587 usually needs MAIL_SECURE=false for STARTTLS; use port 465 with MAIL_SECURE=true).`,
               ),
             ),
           TIMEOUT_MS,

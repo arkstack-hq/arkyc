@@ -1,8 +1,8 @@
 import { BaseController } from '@controllers/BaseController'
-import { Router } from '@arkstack/driver-express'
-import { Storage } from '@arkstack/filesystem'
 import { DB } from 'arkormx'
 import { HttpContext } from 'clear-router/types/express'
+import { Router } from '@arkstack/driver-express'
+import { Storage } from '@arkstack/filesystem'
 import { version } from '../../../../package.json'
 
 type HealthScope = 'api' | 'web'
@@ -30,7 +30,7 @@ type HealthReport = {
 
 export default class HealthController extends BaseController {
   private static getName(scope: HealthScope) {
-    return `${env('APP_NAME', 'Arkyc')} ${scope === 'api' ? 'API' : 'Web'}`
+    return `${config('app.name', 'Arkyc')} ${scope === 'api' ? 'API' : 'Web'}`
   }
 
   private static async checkDatabase() {

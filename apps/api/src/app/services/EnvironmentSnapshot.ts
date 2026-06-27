@@ -63,7 +63,7 @@ const secret = (label: string, value: unknown): EnvItem =>
  * values never leave the server.
  */
 export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
-  const nodeEnv = str(env('APP_DEBUG', 'development'))
+  const nodeEnv = str(env('NODE_ENV', 'development'))
 
   const app = config('app')
   const db = config('database')

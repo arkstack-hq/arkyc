@@ -1,6 +1,7 @@
-import { Arkstack } from '@arkstack/contract'
-import { env } from '@arkstack/common'
 import { appendFile, mkdir } from 'node:fs/promises'
+
+import { Arkstack } from '@arkstack/contract'
+import { config } from '@arkstack/common'
 import path from 'node:path'
 
 /** Environments in which OCR extraction is logged to `storage/logs/ocr.log`. */
@@ -8,7 +9,7 @@ const DEBUG_ENVS = new Set(['local', 'development'])
 
 /** Whether OCR debug logging is enabled (local/development only). */
 function debugEnabled(): boolean {
-  return DEBUG_ENVS.has(env('APP_ENV', 'local'))
+  return DEBUG_ENVS.has(config('app.name', 'Arkyc'))
 }
 
 /** What was fed to the OCR driver, and what it returned. */

@@ -8,8 +8,8 @@ Router.get('/health', [HealthController, 'api'])
 Router.get('/', () => {
   return {
     version,
-    name: `${env('APP_NAME', 'Arkyc')} API`,
-    description: `This is the base endpoint for ${env('APP_NAME', 'Arkyc')} API v1. Please refer to the documentation for available endpoints and usage details.`,
+    name: `${config('app.name', 'Arkyc')} API`,
+    description: `This is the base endpoint for ${config('app.name', 'Arkyc')} API v1. Please refer to the documentation for available endpoints and usage details.`,
     status: 'online',
   }
 })
