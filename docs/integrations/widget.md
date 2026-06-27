@@ -1,9 +1,18 @@
 # Widget
 
-`@arkyc/widget` is the framework-agnostic verification flow that runs in the
-user's browser. It drives the [Client / Widget API](/api/client) with the
-short-lived client token your backend obtained from the
-[SDK](/integrations/sdk#sessions).
+`@arkyc/widget` is the framework-agnostic verification flow. **You bundle it into
+your own frontend** and drive it with a short-lived client token your backend
+mints with the [SDK](/integrations/sdk#sessions) — the widget talks directly to
+the [Client API](/api/client) with the `X-Client-Token` header and never sees
+your secret key.
+
+Two ways to put the widget in front of users:
+
+- **Embed `@arkyc/widget`** (this page) — bundle the flow into your frontend for
+  full control of layout (overlay, inline, fullscreen) and theming.
+- **[Hosted launcher](/integrations/sdk#browser-launcher)** (`@arkyc/sdk/browser`) —
+  load the Arkyc-hosted widget in an overlay iframe; your frontend bundles almost
+  nothing and only needs the token.
 
 ## Install
 
@@ -83,9 +92,11 @@ permission. The SDK launcher sets `allow="camera; microphone; geolocation"` on t
 iframe automatically. The user opts in with a checkbox before any prompt fires;
 Continue stays disabled until a location fix is captured.
 
-## Hosted mode + the SDK launcher
+## Not bundling the widget?
 
-If you host the widget page yourself, `@arkyc/sdk/browser`'s `ArkycWidget.open`
-opens it in an overlay iframe and relays `arkyc:complete` / `arkyc:error` /
-`arkyc:close` messages back to your page. See the
-[SDK browser launcher](/integrations/sdk#browser-launcher).
+If you'd rather not bundle the flow into your frontend, the
+[SDK browser launcher](/integrations/sdk#browser-launcher) (`@arkyc/sdk/browser`)
+loads the Arkyc-hosted widget in an overlay iframe and relays `arkyc:complete` /
+`arkyc:error` / `arkyc:close` back to your page — the browser only needs the
+token. Point it at a custom verify-page origin with `widgetUrl` if you host that
+page yourself.

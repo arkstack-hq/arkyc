@@ -12,13 +12,12 @@ export function WidgetEmbed() {
         Bundle the verification flow into <strong>your own frontend</strong> and drive it from your{' '}
         <strong>own backend</strong>. Two pieces: your backend mints a one-time session token with the{' '}
         <Link to="/docs/sdk">server SDK</Link>, and your frontend renders <code>@arkyc/widget</code>, which talks
-        directly to the Arkyc Client API with that token. You get full control of layout — overlay, inline, or
-        fullscreen — and you ship widget updates by upgrading the package.
+        directly to the Arkyc Client API with that token. You get full control of layout overlay, inline, or fullscreen
+        and you ship widget updates by upgrading the package.
       </p>
       <p>
         Don’t want to bundle anything? Use the <Link to="/docs/widget">hosted launcher</Link> (
-        <code>@arkyc/sdk/browser</code>) instead — it loads the hosted widget in an iframe. (Neither of these is
-        “self-hosting” — that means cloning the repo and running the whole Arkyc stack yourself.)
+        <code>@arkyc/sdk/browser</code>) instead, it loads the hosted widget in an iframe.
       </p>
 
       <h2>Install</h2>
@@ -75,12 +74,12 @@ export function WidgetEmbed() {
       </ul>
       <p>
         Either way <code>baseUrl</code> includes the API’s <code>/api</code> path. Serve your page over{' '}
-        <strong>HTTPS</strong> — browsers only grant camera (and geolocation, for the address step) on a secure origin.
+        <strong>HTTPS</strong>, browsers only grant camera (and geolocation, for the address step) on a secure origin.
       </p>
 
       <h2>3 · Render the widget (your frontend)</h2>
 
-      <h3>Overlay — full-screen modal</h3>
+      <h3>Overlay: full-screen modal</h3>
       <p>
         <code>ArkycWidget.open(options)</code> mounts a dimmed overlay and returns a <code>WidgetHandle</code>. Pass{' '}
         <code>fullscreen: true</code> for edge-to-edge (no card max-size).
@@ -103,7 +102,7 @@ export function WidgetEmbed() {
         ]}
       />
 
-      <h3>Inline — mounted into a container</h3>
+      <h3>Inline: mounted into a container</h3>
       <p>
         <code>ArkycWidget.mount(options)</code> renders into an element you provide, for a page-embedded flow instead of
         an overlay.
@@ -120,7 +119,7 @@ export function WidgetEmbed() {
         ]}
       />
 
-      <h3>Hosted page — redirect &amp; cross-device</h3>
+      <h3>Hosted page: redirect &amp; cross-device</h3>
       <p>
         <code>ArkycWidget.hosted()</code> reads <code>?token=</code> (and an optional <code>?baseUrl=</code>) from the
         URL and runs the overlay flow, posting results to the opener. This is what a first-party <code>/verify</code>{' '}
@@ -173,7 +172,7 @@ export function WidgetEmbed() {
               <code>string | HTMLElement</code>
             </td>
             <td>
-              <code>mount</code> only — where to render inline.
+              <code>mount</code> only where to render inline.
             </td>
           </tr>
           <tr>
@@ -184,7 +183,7 @@ export function WidgetEmbed() {
               <code>boolean</code>
             </td>
             <td>
-              <code>open</code> only — edge-to-edge, no card max-size or backdrop gap.
+              <code>open</code> only edge-to-edge, no card max-size or backdrop gap.
             </td>
           </tr>
           <tr>
@@ -265,7 +264,7 @@ export function WidgetEmbed() {
       <h2>Capture-only</h2>
       <p>
         Run a workflow with OCR/decisioning off to use Arkyc purely for high-quality document + selfie capture, then
-        forward the artifacts (signed URLs on the session) to your own KYC provider — see the{' '}
+        forward the artifacts (signed URLs on the session) to your own KYC provider, see the{' '}
         <Link to="/docs/sdk">server SDK</Link>.
       </p>
     </Prose>
