@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import { DocsLayout } from '@/layouts/DocsLayout'
+import { ErrorCodes } from '@/docs/ErrorCodes'
 import { Home } from '@/pages/Home'
 import { MainLayout } from './layouts/MainLayout'
 import { Quickstart } from '@/docs/Quickstart'
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="widget-embed" element={<WidgetEmbed />} />
             <Route path="sdk" element={<ServerSdk />} />
             <Route path="webhooks" element={<Webhooks />} />
+            <Route path="errors" element={<ErrorCodes />} />
           </Route>
         </Route>
 

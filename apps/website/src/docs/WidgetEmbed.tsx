@@ -308,7 +308,7 @@ export function WidgetEmbed() {
       <p>
         <code>onError</code> receives a <code>WidgetApiError</code> with the HTTP <code>status</code> and a stable{' '}
         <code>error</code> key branch on it, e.g. mint a fresh token when <code>err.error === 'session_expired'</code>.
-        See the <a href="https://docs.arkyc.toneflix.net/api/#error-codes">API error codes</a>.
+        See <Link to="/docs/errors">Error codes</Link>.
       </p>
 
       <h2>Theming</h2>

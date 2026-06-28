@@ -10,6 +10,7 @@ const DOC_NAV = [
   { label: 'Embed @arkyc/widget', to: '/docs/widget-embed', end: false },
   { label: 'Server SDK', to: '/docs/sdk', end: false },
   { label: 'Webhooks', to: '/docs/webhooks', end: false },
+  { label: 'Error codes', to: '/docs/errors', end: false },
 ]
 
 export function DocsLayout() {

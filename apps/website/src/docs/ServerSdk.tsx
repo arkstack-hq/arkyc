@@ -71,7 +71,7 @@ export function ServerSdk() {
       />
       <p>
         Errors with no <code>error</code> key are unexpected/unhandled — treat them generically by <code>status</code>.
-        The full list is in the <a href="https://docs.arkyc.toneflix.net/api/#error-codes">API error codes</a>.
+        The full list is in <Link to="/docs/errors">Error codes</Link>.
       </p>
 
       <h2>Webhook verification</h2>
