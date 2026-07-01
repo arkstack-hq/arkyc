@@ -6,6 +6,7 @@ import { Home } from '@/pages/Home'
 import { MainLayout } from './layouts/MainLayout'
 import { Quickstart } from '@/docs/Quickstart'
 import { ServerSdk } from '@/docs/ServerSdk'
+import { VerificationLifecycle } from '@/docs/VerificationLifecycle'
 import VerifyPage from './pages/VerifyPage'
 import { Webhooks } from '@/docs/Webhooks'
 import { Widget } from '@/docs/Widget'
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="widget-embed" element={<WidgetEmbed />} />
             <Route path="sdk" element={<ServerSdk />} />
             <Route path="webhooks" element={<Webhooks />} />
+            <Route path="lifecycle" element={<VerificationLifecycle />} />
             <Route path="errors" element={<ErrorCodes />} />
           </Route>
         </Route>

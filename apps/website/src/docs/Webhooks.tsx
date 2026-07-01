@@ -1,4 +1,5 @@
 import { CodeCard } from '@/components/CodeCard'
+import { Link } from 'react-router-dom'
 import { Prose } from '@/components/Prose'
 
 export function Webhooks() {
@@ -95,6 +96,13 @@ export function Webhooks() {
         Non-2xx responses are retried with backoff. Every attempt is recorded in the project’s deliveries log in the
         dashboard, where you can inspect payloads and replay a delivery. Respond <code>2xx</code> quickly and process
         asynchronously.
+      </p>
+      <p>
+        Delivery is <strong>at-least-once</strong>, so make your handler <strong>idempotent</strong>: the same event can
+        arrive more than once (a retry after a slow response that actually succeeded). Key your side effects on{' '}
+        <code>session_id</code> + <code>event</code> and make repeats a no-op; never grant access or bill twice. Don’t
+        rely on arrival order either; trust the session’s current state (or re-fetch it) rather than the sequence of
+        events. See <Link to="/docs/lifecycle">Verification lifecycle</Link> for the status/decision model.
       </p>
     </Prose>
   )

@@ -6,7 +6,7 @@ retries and a delivery log.
 ## Configure an endpoint
 
 In the dashboard: **Project → Webhooks → add endpoint**. Provide a URL and the
-events to subscribe to. The **signing secret** is shown once — store it. You can
+events to subscribe to. The **signing secret** is shown once; store it. You can
 also send a test delivery, or use the
 [Dashboard API](/api/dashboard#webhooks).
 
@@ -25,7 +25,12 @@ verification.cancelled
 ```
 
 Events fire from a single transition choke point, covering the session service,
-the biometric worker, and review actions.
+the biometric worker, and review actions. The terminal decision events
+(`verification.approved`, `verification.rejected`, and the `verification.completed`
+summary) carry the full `checks` block and `decision_reason`; progress events
+(`started`, `document_submitted`, `processing`) carry the status transition only.
+See [Verification lifecycle](/guide/verification-lifecycle) for what each status
+means.
 
 ## Payload
 
@@ -72,7 +77,7 @@ const ok = WebhookSigner.verify({
 if (!ok) return res.status(400).end()
 ```
 
-Read the **raw** request body — verifying a re-serialized JSON object will fail.
+Read the **raw** request body; verifying a re-serialized JSON object will fail.
 
 ## Express receiver example
 
@@ -97,6 +102,25 @@ app.post('/webhooks/arkyc', express.raw({ type: 'application/json' }), (req, res
   res.json({ ok: true })
 })
 ```
+
+## Handling deliveries safely
+
+Delivery is **at-least-once**, so build your receiver to tolerate duplicates and
+out-of-order arrivals:
+
+- **Be idempotent.** The same event can arrive more than once (a retry after your
+  endpoint was slow, even if it actually succeeded). Key your handling on
+  `session_id` + `event` (or `status`) and make repeats a no-op; don't grant
+  access or charge twice.
+- **Respond fast.** Return a `2xx` quickly (within a few seconds) and do heavy
+  work asynchronously. A slow endpoint is treated as failed and retried.
+- **Don't assume ordering.** A retried `processing` can land after `approved`.
+  Trust the session's current state, not the arrival order: ignore a transition
+  that would move a terminal session backwards, or re-`retrieve` the session to
+  reconcile.
+- **Verify before trusting.** Check the signature (above) before acting on any
+  payload, and treat the webhook (or a server-side `retrieve`) as the source of
+  truth over the widget's `onComplete`.
 
 ## Delivery & retries
 
