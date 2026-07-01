@@ -104,6 +104,24 @@ The widget's `onComplete` is a **UX signal only**; use it to advance your UI.
 Treat the **webhook** (or a server-side `retrieve`) as your source of truth,
 since the browser can close before the decision settles.
 
+## Session expiry
+
+A session is valid for **15 minutes** from creation, and its client token
+expires with it. If the user doesn't finish in time, the session lazily
+transitions to `expired` the next time it's touched (a widget call or a
+`retrieve`), and any further submissions are rejected. The window is fixed; to
+retry an expired or abandoned user, create a **new** session and hand the fresh
+token to the widget.
+
+## Idempotent creation
+
+`sessions.create` is **not** idempotent: each call opens a new session with its
+own token. To avoid stacking duplicate sessions for one user (a double form
+submit, a retried request, a re-render), dedupe on your side. Store the returned
+`session.id` keyed by your `user_reference`, and reuse a session that's still
+`pending`/in progress instead of creating another; only start a fresh one once
+the previous is terminal or expired.
+
 ## Capture-only
 
 If your workflow runs with OCR/decisioning off (capture-only), a session still

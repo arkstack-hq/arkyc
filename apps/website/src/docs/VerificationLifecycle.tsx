@@ -164,6 +164,31 @@ export function VerificationLifecycle() {
         The widget’s <code>onComplete</code> is a <strong>UX signal only</strong>. Treat the webhook (or a server-side{' '}
         <code>retrieve</code>) as your source of truth; the browser can close before the decision settles.
       </p>
+
+      <h2>Session expiry</h2>
+      <p>
+        A session is valid for <strong>15 minutes</strong> from creation, and its client token expires with it. If the
+        user doesn’t finish in time, the session moves to <code>expired</code> and further submissions are rejected. The
+        window is fixed; to retry an expired or abandoned user, create a <strong>new</strong> session and hand the fresh
+        token to the widget.
+      </p>
+
+      <h2>Idempotent creation</h2>
+      <p>
+        <code>sessions.create</code> is <strong>not</strong> idempotent: each call opens a new session with its own
+        token. To avoid stacking duplicates for one user (a double submit, a retried request, a re-render), dedupe on
+        your side. Store the returned <code>session.id</code> keyed by your <code>userReference</code> and reuse a
+        session that’s still in progress; only start a fresh one once the previous is terminal or expired.
+      </p>
+
+      <h2>Supported documents</h2>
+      <p>
+        The widget captures four document types (<code>passport</code>, <code>id_card</code>,{' '}
+        <code>drivers_license</code>, <code>residence_permit</code>) and OCR reads a common set of identity fields when
+        present: name, date of birth, document number, expiry date, and nationality. These land on the session (and{' '}
+        <code>name</code> on the result); the raw images are available as signed URLs for{' '}
+        <Link to="/docs/widget-embed">capture-only</Link> flows.
+      </p>
     </Prose>
   )
 }

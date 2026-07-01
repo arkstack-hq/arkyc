@@ -81,6 +81,7 @@ export default defineConfig({
         {
           text: 'Operate',
           items: [
+            { text: 'Testing', link: '/guide/testing' },
             { text: 'Configuration', link: '/guide/configuration' },
             { text: 'Self-hosting', link: '/guide/self-hosting' },
           ],

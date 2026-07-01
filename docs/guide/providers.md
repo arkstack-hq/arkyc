@@ -151,9 +151,22 @@ This is what the [playground](/guide/getting-started#_7-run-a-verification-with-
 and the widget's mock signal hints use to demonstrate the full flow without any
 real provider.
 
+## Document types & extracted fields
+
+The widget captures four document types: `passport`, `id_card`,
+`drivers_license`, and `residence_permit`. OCR reads a common set of identity
+fields when present: `firstName`, `lastName`, `fullName`, `dateOfBirth`,
+`documentNumber`, `expiryDate`, and `nationality`.
+
+Which documents (and which countries or languages) actually parse, and how
+accurately, is a property of the **configured OCR driver**, not Arkyc itself.
+The `mock` driver returns scripted fields; `tesseract` does on-box OCR; `ai`
+uses a vision model; `external` calls your own OCR service. Match the driver to
+the coverage you need.
+
 ## File storage
 
 Captured documents and selfies are written **private** via Arkstack's `Storage`.
 The default disk is `local`; the `s3` disk is S3-compatible (AWS S3, MinIO,
 Cloudflare R2), and `gcs`/`ftp` are available. Configure with `FILESYSTEM_DISK`
-and the matching credentials — see [Configuration](./configuration).
+and the matching credentials; see [Configuration](./configuration).
