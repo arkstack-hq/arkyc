@@ -1,5 +1,5 @@
 import type { BaseWidgetOptions, MountWidgetOptions, WidgetHandle } from './types'
-import { buildController, resolveContainer } from './controller'
+import { adoptContainer, buildController, resolveContainer } from './controller'
 
 import { WidgetHandler } from './WidgetHandler'
 
@@ -65,6 +65,13 @@ export class ArkycWidget {
     const doc = options.doc ?? globalThis.document
     const container = resolveContainer(options.container, doc)
     const controller = buildController(options, () => controller.element.remove())
+
+    // Take ownership of the mount point so the widget renders reliably without
+    // the integrator adding positioning/stacking plumbing — mirroring how
+    // `open()` fully owns its overlay. Only gaps are filled, so a host that
+    // deliberately sets its own position/z-index still wins.
+    adoptContainer(container, doc)
+    controller.element.classList.add('arkyc-inline')
 
     container.appendChild(controller.element)
     controller.start()

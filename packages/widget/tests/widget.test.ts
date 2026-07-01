@@ -688,6 +688,48 @@ describe('ArkycWidget launchers', () => {
     ).toThrow(/container/)
   })
 
+  it('mount() takes ownership of the container so it renders reliably', () => {
+    const { doc } = makeDoc()
+    const container = doc.createElement('div') as unknown as FakeEl
+    const handle = ArkycWidget.mount({
+      token: 'ct',
+      container: container as unknown as HTMLElement,
+      doc,
+      win: { location: { search: '' } } as unknown as Window,
+      nav: {} as Navigator,
+      fetch: (async () => ({ ok: true, status: 200, text: async () => '{}' })) as never,
+    })
+
+    // Widget appended, and the host was given its own stacking context above
+    // sibling app content (the fix for a container hidden under an app root).
+    expect(container.children.length).toBe(1)
+    expect(container.style.position).toBe('relative')
+    expect(container.style.zIndex).toBe('1')
+    expect(container.style.isolation).toBe('isolate')
+    expect(container.children[0].className).toContain('arkyc-inline')
+
+    handle.close()
+    expect(container.children.length).toBe(0)
+  })
+
+  it('mount() does not override a container that already sets position/z-index', () => {
+    const { doc } = makeDoc()
+    const container = doc.createElement('div') as unknown as FakeEl
+    container.style.position = 'absolute'
+    container.style.zIndex = '5'
+    ArkycWidget.mount({
+      token: 'ct',
+      container: container as unknown as HTMLElement,
+      doc,
+      win: { location: { search: '' } } as unknown as Window,
+      nav: {} as Navigator,
+      fetch: (async () => ({ ok: true, status: 200, text: async () => '{}' })) as never,
+    })
+
+    expect(container.style.position).toBe('absolute')
+    expect(container.style.zIndex).toBe('5')
+  })
+
   it('hosted() reads the token from the query string', () => {
     const { doc, body } = makeDoc()
     const win = {

@@ -31,6 +31,19 @@
   overflow: hidden;
 }
 
+/* Inline mount(): the widget owns its container. Fill the host (up to the card
+   max-width) and centre, instead of the overlay's viewport-relative sizing —
+   so it fits a narrow embed rather than overflowing to `100vw`. */
+.arkyc-root.arkyc-inline {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.arkyc-root.arkyc-inline .arkyc-card {
+  width: 100%;
+}
+
 .arkyc-root.arkyc-fullscreen .arkyc-card {
   max-width: none;
   max-height: none;

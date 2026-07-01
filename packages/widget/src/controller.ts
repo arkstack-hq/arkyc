@@ -751,6 +751,30 @@ export const resolveContainer = (container: string | HTMLElement, doc: Document)
   return el
 }
 
+/**
+ * Make an inline mount point a reliable host for the widget, so `mount()` renders
+ * predictably regardless of the page layout — a static or zero-height container,
+ * or one sharing the viewport with an app root that would otherwise paint over it.
+ *
+ * The widget gives the host its own stacking context and lifts it above sibling
+ * app content, the way `open()` owns its overlay. Each property is only set when
+ * the host hasn't already committed to one (checked against computed style where
+ * available, else inline style), so an embed that wants normal flow or a specific
+ * layer can still override it with its own CSS.
+ */
+export const adoptContainer = (container: HTMLElement, doc: Document): void => {
+  const computed = doc.defaultView?.getComputedStyle?.(container)
+  const position = computed?.position ?? container.style.position
+  if (!position || position === 'static') container.style.position = 'relative'
+
+  const zIndex = computed?.zIndex ?? container.style.zIndex
+  if (!zIndex || zIndex === 'auto') container.style.zIndex = '1'
+
+  // A self-contained stacking context keeps the widget's layers from bleeding
+  // into (or being clipped by) the surrounding page.
+  if (!container.style.isolation) container.style.isolation = 'isolate'
+}
+
 export const buildController = (options: BaseWidgetOptions, onSettle: () => void): WidgetController => {
   if (!options.token) throw new Error('ArkycWidget requires a client `token`.')
   return new WidgetController({

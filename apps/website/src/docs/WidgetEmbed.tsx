@@ -120,6 +120,14 @@ export function WidgetEmbed() {
           '})',
         ]}
       />
+      <p>
+        The widget <strong>takes ownership of the container</strong>: it sizes the card to the host (not the viewport)
+        and gives the element its own stacking context above sibling content, so it renders reliably even if the
+        container is otherwise unstyled or shares the page with a full-screen app root. It only fills gaps — a container
+        that sets its own <code>position</code> or <code>z-index</code> keeps them — so you stay in control of
+        placement. Put the container where you want the flow to appear and size it as you like; the widget does the
+        rest.
+      </p>
 
       <h3>Hosted page: redirect &amp; cross-device</h3>
       <p>
