@@ -575,6 +575,10 @@ describe('WidgetController realtime events', () => {
     await flush()
 
     expect(realtimeFactory).toHaveBeenCalledTimes(1)
+    // Zero-config (no baseUrl): the auth endpoint is built from the resolved
+    // hosted base, not the page origin (regression guard).
+    const authOpts = realtimeFactory.mock.calls[0]![1] as { authEndpoint: string }
+    expect(authOpts.authEndpoint).toBe('https://api.arkyc.toneflix.net/api/v1/client/realtime/auth')
     expect(pushHandler).toBeTruthy()
     expect(named.length).toBeGreaterThan(0) // got the bootstrap 'started' transition
 
@@ -590,6 +594,43 @@ describe('WidgetController realtime events', () => {
       events.some((e) => e.name === 'session.transition' && (e.data as { status: string }).status === 'approved'),
     ).toBe(true)
     expect(named.length).toBe(namedAfterOff)
+  })
+
+  it('builds the realtime auth endpoint from an explicit baseUrl', async () => {
+    const realtimeFactory = vi.fn(async () => ({ subscribe: () => () => {}, disconnect: () => {} }))
+    const fetchMock = vi.fn(async (url: string) => {
+      const path = String(url)
+        .replace(/^https?:\/\/[^/]+/, '')
+        .replace(/^\/api\/v1\/client/, '')
+      const data: Record<string, unknown> = { id: 's1', status: 'started', expires_at: '2099-01-01' }
+      if (path.endsWith('/session')) {
+        data.handoff = { enabled: true, allow_desktop: true, url: 'https://verify.test/verify' }
+        data.realtime = { transport: 'pusher', channel: 'private-session-s1' }
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ status: 'success', message: 'OK', code: 200, data }),
+      } as Response
+    })
+
+    const { controller } = makeController({
+      fetch: fetchMock as never,
+      nav: desktopNav,
+      win: handoffWin(),
+      realtimeFactory,
+      baseUrl: 'https://api.example.com/api/v1/client',
+      scheduler: () => {},
+      maxHandoffPolls: 5,
+    })
+
+    controller.start()
+    await flush()
+    await flush()
+
+    expect(realtimeFactory).toHaveBeenCalledTimes(1)
+    const opts = realtimeFactory.mock.calls[0]![1] as { authEndpoint: string }
+    expect(opts.authEndpoint).toBe('https://api.example.com/api/v1/client/realtime/auth')
   })
 })
 

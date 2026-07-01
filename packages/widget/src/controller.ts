@@ -247,7 +247,10 @@ export class WidgetController {
     if (!cfg || cfg.transport === 'polling' || cfg.transport === 'off' || cfg.transport === 'memory') return null
 
     const factory = this.config.realtimeFactory ?? createWidgetRealtimeClient
-    const apiBase = (this.config.baseUrl ?? '').replace(/\/$/, '')
+    // Build from the client's *resolved* base (absolute/proxy value, or the
+    // hosted default when `baseUrl` was omitted) — never the raw option, which
+    // is empty in the zero-config case and would resolve against the page origin.
+    const apiBase = this.client.base
     try {
       this.rtClient = await factory(cfg, {
         authEndpoint: `${apiBase}/realtime/auth`,

@@ -219,6 +219,17 @@ export class ArkycClient {
   }
 
   /**
+   * The resolved Client API base (always origin-qualified: the absolute/proxy
+   * value, or the hosted default when `baseUrl` was omitted). Callers that need
+   * a sibling endpoint — e.g. the realtime auth URL — must build it from this,
+   * not the raw option, so a zero-config widget doesn't fall back to the page
+   * origin.
+   */
+  get base(): string {
+    return this.baseUrl
+  }
+
+  /**
    * Load the current session (marks it `started` on first call).
    *
    * @returns
