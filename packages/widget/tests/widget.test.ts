@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { ArkycWidget } from '../src/index'
-import { WidgetController } from '../src/controller'
+import { WidgetController, composeHandoffUrl } from '../src/controller'
 import type { WidgetEvent } from '../src/types'
 
 // --- Minimal fake DOM (the widget core is DOM-injectable, so no jsdom needed) ---
@@ -489,6 +489,31 @@ describe('WidgetController cross-device handoff', () => {
     await flush() // connect → welcome (no QR detour on a phone)
     expect(find(el, 'Get started')).toBeTruthy()
     expect(findByClass(el, 'arkyc-qr')).toBeFalsy()
+  })
+})
+
+describe('composeHandoffUrl', () => {
+  const target = 'https://verify.test/verify'
+
+  it('always carries the token', () => {
+    expect(composeHandoffUrl(target, 'ct', 'https://api.arkyc.net/api/v1/client', 'https://app.test')).toContain(
+      'token=ct',
+    )
+  })
+
+  it('forwards a cross-origin API base the phone can reach', () => {
+    const url = composeHandoffUrl(target, 'ct', 'https://api.example.com/api/v1/client', 'https://app.test')
+    expect(url).toContain(`baseUrl=${encodeURIComponent('https://api.example.com/api/v1/client')}`)
+  })
+
+  it('skips a same-origin (proxy) base the phone cannot use', () => {
+    const url = composeHandoffUrl(target, 'ct', 'https://app.test/api/v1/client', 'https://app.test')
+    expect(url).not.toContain('baseUrl=')
+  })
+
+  it('appends with & when the target already has a query', () => {
+    const url = composeHandoffUrl(`${target}?ref=1`, 'ct', 'https://api.example.com', 'https://app.test')
+    expect(url).toContain('?ref=1&token=ct')
   })
 })
 

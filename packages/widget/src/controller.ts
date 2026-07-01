@@ -350,13 +350,8 @@ export class WidgetController {
    * @returns
    */
   private buildHandoffUrl(target: string): string {
-    const sep = target.includes('?') ? '&' : '?'
-    let url = `${target}${sep}token=${encodeURIComponent(this.config.token)}`
-    // The hosted page supplies its own API base; only pass one when ours is
-    // absolute, so a custom cross-origin host can still reach the right API.
-    const apiBase = (this.config.baseUrl ?? '').trim()
-    if (/^https?:\/\//i.test(apiBase)) url += `&baseUrl=${encodeURIComponent(apiBase)}`
-    return url
+    const pageOrigin = this.win.location?.origin ?? globalThis.location?.origin ?? ''
+    return composeHandoffUrl(target, this.config.token, this.client.base, pageOrigin)
   }
 
   /**
@@ -746,6 +741,31 @@ export class WidgetController {
 
 function serializeError(error: Error): { message: string; name: string } {
   return { message: error.message, name: error.name }
+}
+
+/** The origin of an absolute URL, or '' when it can't be parsed. */
+function originOf(url: string): string {
+  try {
+    return new URL(url).origin
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * Build the hosted-page URL the handoff QR encodes: always the `target` page
+ * plus the session `token`, and the API base **only when the phone can actually
+ * reach it** — i.e. a genuine cross-origin base. `apiBase` is the widget's
+ * resolved Client API base (always origin-qualified), so a relative proxy
+ * resolves to the desktop's own `pageOrigin` and is skipped (the hosted page
+ * then falls back to its own default base instead of a URL the phone can't use).
+ */
+export const composeHandoffUrl = (target: string, token: string, apiBase: string, pageOrigin: string): string => {
+  const sep = target.includes('?') ? '&' : '?'
+  let url = `${target}${sep}token=${encodeURIComponent(token)}`
+  const baseOrigin = originOf(apiBase)
+  if (baseOrigin && baseOrigin !== pageOrigin) url += `&baseUrl=${encodeURIComponent(apiBase)}`
+  return url
 }
 
 export const resolveContainer = (container: string | HTMLElement, doc: Document): HTMLElement => {

@@ -43,20 +43,11 @@ export default class ClientSessionResource extends Resource {
       id: this.id,
       status: this.status,
       expires_at: this.expiresAt,
-      // Tell the widget which capture flow to run, and (for active
-      // liveness) the exact challenge sequence to prompt the user through.
       capture_model: this.captureModel ?? 'passive',
       liveness_challenges: this.livenessChallenges ?? [],
-      // The applied workflow (ordered, toggleable stages + skip_ocr), or null for
-      // the default pipeline. Drives which steps the widget runs and in what order.
       workflow: this.workflow ?? null,
-      // Cross-device handoff config (project setting). The widget leads with the
-      // QR on desktop when enabled, and the phone resumes at `url`.
       handoff: this.handoff,
-      // How the widget should watch this session live (push transport or polling).
       realtime: this.realtime,
-      // Project branding (colours/logo/name) so the widget themes itself to the
-      // integrator's project without them passing anything client-side.
       branding: this.branding,
     }
   }
