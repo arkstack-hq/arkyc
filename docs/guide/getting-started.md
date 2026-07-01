@@ -1,6 +1,6 @@
 # Getting started
 
-This guide takes you from a fresh clone to a completed verification — local infra,
+This guide takes you from a fresh clone to a completed verification: local infra,
 the API, the dashboard, and the playground.
 
 ## Requirements
@@ -28,7 +28,7 @@ docker compose up -d
 | ---------- | ------------- | -------------------------------------------- |
 | PostgreSQL | `5432`        | user `arkyc` · password `arkyc` · db `arkyc` |
 | MinIO      | `9000`/`9001` | user `arkyc` · password `arkyc-secret`       |
-| Redis      | `6379`        | —                                            |
+| Redis      | `6379`        | none                                         |
 
 ## 3. Configure the API
 
@@ -59,17 +59,17 @@ pnpm --filter @arkyc/api exec ark seed
 `ark migrate` runs all migrations; `ark seed` syncs the permission catalogue and
 default roles, then creates a demo tenant with projects, members, and fixture
 sessions. The seeded owner user has the password `password` (its email is
-random — check the `users` table, or just register your own account in step 6).
+random; check the `users` table, or just register your own account in step 6).
 
 ## 5. Run the API
 
 ```bash
-pnpm --filter @arkyc/api dev      # ark dev — http://localhost:3100
+pnpm --filter @arkyc/api dev      # ark dev, http://localhost:3100
 ```
 
 Because providers default to `mock` and the queue defaults to `sync`, no worker
 process is required for local development. (For the durable queue, set
-`QUEUE_CONNECTION=database` and run `ark queue:work` — see
+`QUEUE_CONNECTION=database` and run `ark queue:work`; see
 [Self-hosting](./self-hosting).)
 
 ## 6. Run the dashboard
@@ -80,7 +80,7 @@ pnpm --filter @arkyc/dashboard dev                    # http://localhost:5173
 ```
 
 Register an account, create an **organization** (tenant), then a **project**.
-In the project, mint an **API key** (`sk_…`) — you'll see the secret once.
+In the project, mint an **API key** (`sk_…`); you'll see the secret once.
 
 ## 7. Run a verification with the playground
 
@@ -102,6 +102,6 @@ at `http://localhost:5174/pg/webhooks/arkyc`, copy its signing secret into
 
 ## What next?
 
-- [Architecture](./architecture) — how the pieces fit together.
-- [API reference](/api/) — the public, client, and dashboard surfaces.
+- [Architecture](./architecture): how the pieces fit together.
+- [API reference](/api/): the public, client, and dashboard surfaces.
 - [Server SDK](/integrations/sdk) · [Widget](/integrations/widget) · [Webhooks](/integrations/webhooks).

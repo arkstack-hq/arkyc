@@ -2,15 +2,15 @@
 
 `@arkyc/widget` is the framework-agnostic verification flow. **You bundle it into
 your own frontend** and drive it with a short-lived client token your backend
-mints with the [SDK](/integrations/sdk#sessions) — the widget talks directly to
+mints with the [SDK](/integrations/sdk#sessions); the widget talks directly to
 the [Client API](/api/client) with the `X-Client-Token` header and never sees
 your secret key.
 
 Two ways to put the widget in front of users:
 
-- **Embed `@arkyc/widget`** (this page) — bundle the flow into your frontend for
+- **Embed `@arkyc/widget`** (this page): bundle the flow into your frontend for
   full control of layout (overlay, inline, fullscreen) and theming.
-- **[Hosted launcher](/integrations/sdk#browser-launcher)** (`@arkyc/sdk/browser`) —
+- **[Hosted launcher](/integrations/sdk#browser-launcher)** (`@arkyc/sdk/browser`):
   load the Arkyc-hosted widget in an overlay iframe; your frontend bundles almost
   nothing and only needs the token.
 
@@ -40,19 +40,19 @@ ArkycWidget.hosted()
 
 ## Options
 
-| Option       | Type                                 | Notes                                                                                                                                                                                                                                                                                                       |
-| ------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`      | `string` (required)                  | The client token from `arkyc.sessions.create`.                                                                                                                                                                                                                                                              |
-| `baseUrl`    | `string`                             | **Optional** — defaults to the hosted Arkyc API, so the hosted product is zero-config. Override to self-host/proxy: a relative path → current origin (no CORS), an absolute URL → as-is (needs CORS). The widget appends `/session`, `/document/front`, … (no version prefix); see [Endpoints](#endpoints). |
-| `branding`   | `ProjectBranding`                    | Colors, logo, radius, theme. Defaults from project config.                                                                                                                                                                                                                                                  |
-| `onComplete` | `(result) => void`                   | `result` is `{ status, decision }`.                                                                                                                                                                                                                                                                         |
-| `onError`    | `(error: WidgetApiError) => void`    | `error.status` is the HTTP code; `error.error` is the stable [error key](/api/#error-codes) (typed `ApiErrorKey`, re-exported from `@arkyc/widget`) — branch on it, e.g. re-mint a token on `session_expired`.                                                                                              |
-| `onClose`    | `() => void`                         |                                                                                                                                                                                                                                                                                                             |
-| `container`  | `string \| HTMLElement` (mount only) | Where to render inline.                                                                                                                                                                                                                                                                                     |
+| Option       | Type                                 | Notes                                                                                                                                                                                                                                                                                                      |
+| ------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`      | `string` (required)                  | The client token from `arkyc.sessions.create`.                                                                                                                                                                                                                                                             |
+| `baseUrl`    | `string`                             | **Optional**: defaults to the hosted Arkyc API, so the hosted product is zero-config. Override to self-host/proxy: a relative path → current origin (no CORS), an absolute URL → as-is (needs CORS). The widget appends `/session`, `/document/front`, … (no version prefix); see [Endpoints](#endpoints). |
+| `branding`   | `ProjectBranding`                    | Colors, logo, radius, theme. Defaults from project config.                                                                                                                                                                                                                                                 |
+| `onComplete` | `(result) => void`                   | `result` is `{ status, decision }`.                                                                                                                                                                                                                                                                        |
+| `onError`    | `(error: WidgetApiError) => void`    | `error.status` is the HTTP code; `error.error` is the stable [error key](/api/#error-codes) (typed `ApiErrorKey`, re-exported from `@arkyc/widget`); branch on it, e.g. re-mint a token on `session_expired`.                                                                                              |
+| `onClose`    | `() => void`                         |                                                                                                                                                                                                                                                                                                            |
+| `container`  | `string \| HTMLElement` (mount only) | Where to render inline.                                                                                                                                                                                                                                                                                    |
 
 ## Example
 
-Zero config against the hosted Arkyc API — your backend mints the token, the
+Zero config against the hosted Arkyc API; your backend mints the token, the
 widget already knows where the API is:
 
 ```ts
@@ -104,13 +104,13 @@ single-sided documents (e.g. passports); the final `processing` screen polls the
 session to a terminal status.
 
 The exact stages (and their order) follow the session's
-[workflow](/guide/workflows) — a custom workflow can also insert an **address**
+[workflow](/guide/workflows); a custom workflow can also insert an **address**
 step, where the user enters their residential address and, depending on the
 configured methods, uploads a proof-of-address image or shares their device
 location.
 
 Capture uses `getUserMedia` + a canvas frame grab, with a file-input fallback.
-The widget talks **only** to the Client API with the `X-Client-Token` header — it
+The widget talks **only** to the Client API with the `X-Client-Token` header; it
 never sees your secret key.
 
 ### Device location (address stage)
@@ -126,6 +126,6 @@ Continue stays disabled until a location fix is captured.
 If you'd rather not bundle the flow into your frontend, the
 [SDK browser launcher](/integrations/sdk#browser-launcher) (`@arkyc/sdk/browser`)
 loads the Arkyc-hosted widget in an overlay iframe and relays `arkyc:complete` /
-`arkyc:error` / `arkyc:close` back to your page — the browser only needs the
+`arkyc:error` / `arkyc:close` back to your page; the browser only needs the
 token. Point it at a custom verify-page origin with `widgetUrl` if you host that
 page yourself.

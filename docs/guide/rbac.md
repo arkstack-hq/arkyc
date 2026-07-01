@@ -1,6 +1,6 @@
 # RBAC & permissions
 
-Access control lives in `packages/permissions` — pure resolution logic behind
+Access control lives in `packages/permissions`: pure resolution logic behind
 store ports, with an Arkormˣ-backed implementation in the API. Permissions are
 flat strings grouped by domain; roles bundle permissions; users get the union of
 their role permissions plus any direct grants.
@@ -47,14 +47,14 @@ can also create custom roles with any permission subset.
 
 1. **Tenant role** permissions (the user's `TenantMember.role`).
 2. **Project role** permissions (the user's `ProjectMember.role`, when `projectId` is given).
-3. **Direct tenant grants** — `user_permissions` rows with `project_id IS NULL`.
-4. **Direct project grants** — `user_permissions` rows with `project_id = projectId`.
+3. **Direct tenant grants**: `user_permissions` rows with `project_id IS NULL`.
+4. **Direct project grants**: `user_permissions` rows with `project_id = projectId`.
 
 ```
 effective = dedupe(tenantRole ∪ projectRole ∪ directTenant ∪ directProject)
 ```
 
-There is **no precedence ordering and no negative permissions** — direct grants
+There is **no precedence ordering and no negative permissions**; direct grants
 only _add_ to role permissions; they can't revoke. Resolution is pure; the API
 provides an `ArkormPermissionStore` that eager-loads the joins (no N+1).
 

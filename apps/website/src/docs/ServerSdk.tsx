@@ -70,7 +70,7 @@ export function ServerSdk() {
         ]}
       />
       <p>
-        Errors with no <code>error</code> key are unexpected/unhandled — treat them generically by <code>status</code>.
+        Errors with no <code>error</code> key are unexpected/unhandled; treat them generically by <code>status</code>.
         The full list is in <Link to="/docs/errors">Error codes</Link>.
       </p>
 

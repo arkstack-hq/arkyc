@@ -49,7 +49,7 @@ export function WidgetEmbed() {
           "app.post('/verify/start', async (req, res) => {",
           '  const { clientToken } = await arkyc.sessions.create({',
           '    userReference: req.user.id,        // your id for the user',
-          "    workflowId: 'wf_...',              // optional — a custom workflow",
+          "    workflowId: 'wf_...',              // optional: a custom workflow",
           '  })',
           '  res.json({ clientToken })            // hand this to the frontend',
           '})',
@@ -58,15 +58,15 @@ export function WidgetEmbed() {
 
       <h2>2 · Point the widget at the API (optional)</h2>
       <p>
-        <code>baseUrl</code> is <strong>optional</strong> — it defaults to the hosted Arkyc API, so the hosted product
-        is zero-config (the browser calls it cross-origin with the token; the API allows it via CORS). You only set it
-        to self-host or proxy. It’s a <strong>base</strong>: the widget appends a fixed path per call (
+        <code>baseUrl</code> is <strong>optional</strong>; it defaults to the hosted Arkyc API, so the hosted product is
+        zero-config (the browser calls it cross-origin with the token; the API allows it via CORS). You only set it to
+        self-host or proxy. It’s a <strong>base</strong>: the widget appends a fixed path per call (
         <code>/session</code>, <code>/document/front</code>, …) and adds <strong>no</strong> version prefix.
       </p>
       <ul>
         <li>
           <strong>A relative path</strong> (e.g. <code>/api/v1/client</code>) → resolved against your page’s current
-          origin. Same-origin, so no CORS — use this when your backend proxies the Client API under your own domain.
+          origin. Same-origin, so no CORS; use this when your backend proxies the Client API under your own domain.
         </li>
         <li>
           <strong>An absolute URL</strong> (e.g. <code>https://api.example.com/api/v1/client</code>) → used as-is. The
@@ -77,8 +77,8 @@ export function WidgetEmbed() {
         To route through your own backend, set <code>baseUrl</code> to a prefix you control and proxy each path to
         Arkyc’s <code>/api/v1/client/*</code> (see <a href="#endpoints">Endpoints</a>). Self-hosting the whole stack?
         You can instead bake your API as the widget’s default by building it with <code>ARKYC_API_URL</code>. Serve your
-        page over <strong>HTTPS</strong> — browsers only grant camera (and geolocation, for the address step) on a
-        secure origin.
+        page over <strong>HTTPS</strong>; browsers only grant camera (and geolocation, for the address step) on a secure
+        origin.
       </p>
 
       <h2>3 · Render the widget (your frontend)</h2>
@@ -96,8 +96,8 @@ export function WidgetEmbed() {
           "const { clientToken } = await fetch('/verify/start', { method: 'POST' }).then((r) => r.json())",
           '',
           'const handle = ArkycWidget.open({',
-          '  token: clientToken,   // required — baseUrl defaults to the hosted API',
-          '  fullscreen: true,     // optional — edge-to-edge',
+          '  token: clientToken,   // required; baseUrl defaults to the hosted API',
+          '  fullscreen: true,     // optional: edge-to-edge',
           '  onComplete: (r) => done(r.status),',
           '  onError: (e) => showError(e),',
           '  onClose: () => {},',
@@ -123,8 +123,8 @@ export function WidgetEmbed() {
       <p>
         The widget <strong>takes ownership of the container</strong>: it sizes the card to the host (not the viewport)
         and gives the element its own stacking context above sibling content, so it renders reliably even if the
-        container is otherwise unstyled or shares the page with a full-screen app root. It only fills gaps — a container
-        that sets its own <code>position</code> or <code>z-index</code> keeps them — so you stay in control of
+        container is otherwise unstyled or shares the page with a full-screen app root. It only fills gaps (a container
+        that sets its own <code>position</code> or <code>z-index</code> keeps them), so you stay in control of
         placement. Put the container where you want the flow to appear and size it as you like; the widget does the
         rest.
       </p>
@@ -218,7 +218,7 @@ export function WidgetEmbed() {
               <code>string</code>
             </td>
             <td>
-              <strong>Optional</strong>, defaults to the hosted Arkyc API. Client API base — the widget appends{' '}
+              <strong>Optional</strong>, defaults to the hosted Arkyc API. Client API base; the widget appends{' '}
               <code>/session</code>, … (no version prefix). Relative ⇒ current origin (no CORS); absolute ⇒ as-is (needs
               CORS).
             </td>
@@ -291,7 +291,7 @@ export function WidgetEmbed() {
 
       <h2>The handle</h2>
       <p>
-        <code>open</code> and <code>mount</code> return a <code>WidgetHandle</code> — <code>close()</code> to tear it
+        <code>open</code> and <code>mount</code> return a <code>WidgetHandle</code>: <code>close()</code> to tear it
         down, and <code>on(name, listener)</code> to subscribe to a single event (returns an unsubscribe function).
       </p>
       <CodeCard
@@ -310,13 +310,14 @@ export function WidgetEmbed() {
       <p>
         <code>onComplete</code> receives a <code>WidgetResult</code> whose <code>status</code> is <code>approved</code>{' '}
         · <code>requires_review</code> · <code>rejected</code> (or <code>processing</code> / <code>expired</code> /{' '}
-        <code>cancelled</code>). Treat it as a UX signal — use <Link to="/docs/webhooks">webhooks</Link> as your source
+        <code>cancelled</code>). Treat it as a UX signal; use <Link to="/docs/webhooks">webhooks</Link> as your source
         of truth.
       </p>
       <p>
         <code>onError</code> receives a <code>WidgetApiError</code> with the HTTP <code>status</code> and a stable{' '}
-        <code>error</code> key branch on it, e.g. mint a fresh token when <code>err.error === 'session_expired'</code>.
-        See <Link to="/docs/errors">Error codes</Link>.
+        <code>error</code> key; branch on it, e.g. mint a fresh token when <code>err.error === 'session_expired'</code>.
+        It fires <strong>the moment the flow fails</strong> (including an expired session or token), so you can react
+        without waiting for the user to dismiss the screen. See <Link to="/docs/errors">Error codes</Link>.
       </p>
 
       <h2>Theming</h2>

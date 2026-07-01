@@ -47,8 +47,8 @@ export function Widget() {
           "import { ArkycWidget } from '@arkyc/sdk/browser'",
           '',
           'const handle = ArkycWidget.open({',
-          '  token: clientToken,                 // required — from arkyc.sessions.create()',
-          "  widgetUrl: 'https://arkyc.toneflix.net/verify', // optional — override the hosted origin",
+          '  token: clientToken,                 // required; from arkyc.sessions.create()',
+          "  widgetUrl: 'https://arkyc.toneflix.net/verify', // optional: override the hosted origin",
           '',
           '  onComplete: (result) => {           // flow reached a terminal state',
           "    console.log(result.status)        // 'approved' | 'requires_review' | 'rejected' | …",
@@ -200,7 +200,7 @@ export function Widget() {
           '  updateProgress(data)',
           '})',
           '',
-          '// Later — stop listening, or close the widget yourself.',
+          '// Later, stop listening, or close the widget yourself.',
           'off()',
           'handle.close()',
         ]}
@@ -208,9 +208,8 @@ export function Widget() {
 
       <h2 id="events">Events</h2>
       <p>
-        <code>onEvent</code> and <code>handle.on(name, …)</code> both receive a <code>WidgetEvent</code> —{' '}
-        <code>{'{ name: string; data?: unknown }'}</code> — relayed from the hosted widget over <code>postMessage</code>
-        .
+        <code>onEvent</code> and <code>handle.on(name, …)</code> both receive a <code>WidgetEvent</code>,{' '}
+        <code>{'{ name: string; data?: unknown }'}</code>, relayed from the hosted widget over <code>postMessage</code>.
       </p>
       <table>
         <thead>
@@ -228,7 +227,7 @@ export function Widget() {
             <td>
               The session advances a stage (e.g. <code>document_submitted</code> → <code>processing</code>).
             </td>
-            <td>—</td>
+            <td>None</td>
           </tr>
           <tr>
             <td>
@@ -262,7 +261,7 @@ export function Widget() {
 
       <h2>Result</h2>
       <p>
-        <code>onComplete</code> receives a <code>WidgetResult</code> — <code>{'{ status, …extra }'}</code> — where{' '}
+        <code>onComplete</code> receives a <code>WidgetResult</code>, <code>{'{ status, …extra }'}</code>, where{' '}
         <code>status</code> mirrors the verification status. Treat it as a UX signal; use{' '}
         <Link to="/docs/webhooks">webhooks</Link> as your source of truth.
       </p>

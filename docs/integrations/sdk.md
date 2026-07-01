@@ -107,13 +107,13 @@ ArkycWidget.open({
 ```
 
 By default the launcher opens the Arkyc-hosted widget page. If you host that
-page yourself, point the launcher at your origin — in priority order:
+page yourself, point the launcher at your origin, in priority order:
 
 ```ts
 // 1. Per call.
 ArkycWidget.open({ token, widgetUrl: 'https://verify.example.com' })
 
-// 2. Once, at app startup — every open() picks it up.
+// 2. Once, at app startup; every open() picks it up.
 ArkycWidget.configure({ widgetUrl: 'https://verify.example.com' })
 ```
 

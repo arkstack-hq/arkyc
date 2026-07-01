@@ -2,10 +2,10 @@
 
 Arkyc exposes four surfaces, all under a global `/api` prefix:
 
-- [**Public Project API**](./public) — your backend, authenticated with a project secret key (`sk_…`). Create and manage verification sessions.
-- [**Client / Widget API**](./client) — the browser widget, authenticated with a short-lived client token. Submit captures and complete a session.
-- [**Dashboard API**](./dashboard) — the management UI, authenticated with a bearer JWT and gated by [permissions](/guide/rbac).
-- **Auth** — dashboard sign-in (`/v1/auth/...`), summarized on the [Dashboard API](./dashboard#auth) page.
+- [**Public Project API**](./public): your backend, authenticated with a project secret key (`sk_…`). Create and manage verification sessions.
+- [**Client / Widget API**](./client): the browser widget, authenticated with a short-lived client token. Submit captures and complete a session.
+- [**Dashboard API**](./dashboard): the management UI, authenticated with a bearer JWT and gated by [permissions](/guide/rbac).
+- **Auth**: dashboard sign-in (`/v1/auth/...`), summarized on the [Dashboard API](./dashboard#auth) page.
 
 ## Base URL
 

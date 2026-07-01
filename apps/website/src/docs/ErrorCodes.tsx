@@ -33,8 +33,8 @@ export function ErrorCodes() {
         ]}
       />
       <p>
-        This disambiguates cases that share an HTTP status — a <code>401</code> could be an expired session, a bad
-        client token, or an invalid API key.
+        This disambiguates cases that share an HTTP status: a <code>401</code> could be an expired session, a bad client
+        token, or an invalid API key.
       </p>
 
       <h2 id="catalog">Catalog</h2>
@@ -63,8 +63,8 @@ export function ErrorCodes() {
         </tbody>
       </table>
       <p>
-        Responses <strong>without</strong> an <code>error</code> key are unexpected/unhandled — treat them generically
-        by <code>status</code>. Only the keys above are part of this contract.
+        Responses <strong>without</strong> an <code>error</code> key are unexpected/unhandled; treat them generically by{' '}
+        <code>status</code>. Only the keys above are part of this contract.
       </p>
 
       <h2>Reading the key from a client</h2>

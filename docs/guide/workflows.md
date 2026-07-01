@@ -15,10 +15,10 @@ Sessions created without a `workflow_id` use the **default pipeline**.
 | Document   | `document`   | ✅                  | Capture + OCR + portrait extraction.                      |
 | Liveness   | `liveness`   | ✅                  | Selfie / passive (or active) liveness.                    |
 | Face match | `face_match` | ✅                  | Document portrait vs. selfie.                             |
-| Address    | `address`    | ⛔ (opt-in)         | Residential-address verification — custom workflows only. |
+| Address    | `address`    | ⛔ (opt-in)         | Residential-address verification (custom workflows only). |
 
 Each stage is **toggleable** and **ordered**. A workflow must keep at least one
-stage enabled. The `address` stage never appears in the default pipeline — it's
+stage enabled. The `address` stage never appears in the default pipeline; it's
 available only on a custom workflow you build in the dashboard.
 
 > Disabling `document` (or enabling `skip_ocr`) removes the document portrait, so
@@ -39,17 +39,17 @@ one or more **methods**. It's configured per-workflow.
 | ------------------------ | ------------------------------------------------------------- | -------------------- | ------------------------------------------------------------ |
 | `methods`                | `('geocode_lookup' \| 'device_location' \| 'poa_document')[]` | `['geocode_lookup']` | Which checks run (at least one required).                    |
 | `on_fail`                | `'review' \| 'reject'`                                        | `'review'`           | What a **failed** result does.                               |
-| `auto_approve_threshold` | `number` (0–1)                                                | project default      | Minimum confidence to auto-verify; below it ⇒ manual review. |
+| `auto_approve_threshold` | `number` (0 to 1)                                             | project default      | Minimum confidence to auto-verify; below it ⇒ manual review. |
 
 ### Methods
 
-- **`geocode_lookup`** — forward-geocodes the typed address (openrouteservice)
+- **`geocode_lookup`**: forward-geocodes the typed address (openrouteservice)
   and confirms the resolved country matches what the user entered.
-- **`device_location`** — reverse-geocodes the user's captured GPS coordinates
+- **`device_location`**: reverse-geocodes the user's captured GPS coordinates
   (Nominatim / OpenStreetMap) and confirms the country. The widget asks for
   browser location permission; the resolved place (Nominatim `display_name`) is
   surfaced to reviewers.
-- **`poa_document`** — collects a proof-of-address image (utility bill, bank
+- **`poa_document`**: collects a proof-of-address image (utility bill, bank
   statement). Automated extraction isn't wired, so a captured proof routes to
   **manual review** for a human to read.
 
@@ -77,4 +77,4 @@ to auto-verify more aggressively. Leave it blank to inherit the project default.
 
 Because the workflow config is copied onto each session at creation, you can edit
 methods, reorder stages, or change thresholds at any time without affecting
-verifications that are already running — only **new** sessions pick up the change.
+verifications that are already running; only **new** sessions pick up the change.

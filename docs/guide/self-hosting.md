@@ -14,7 +14,7 @@ docker compose up -d
 | ---------- | -------------------- | ------------- | ----------------------------- |
 | PostgreSQL | `postgres:16-alpine` | `5432`        | `arkyc` / `arkyc`, db `arkyc` |
 | MinIO      | `minio/minio`        | `9000`/`9001` | `arkyc` / `arkyc-secret`      |
-| Redis      | `redis:7-alpine`     | `6379`        | —                             |
+| Redis      | `redis:7-alpine`     | `6379`        | none                          |
 
 MinIO's console is on `9001`; create the bucket referenced by `AWS_BUCKET` and
 point the `s3` disk at `http://localhost:9000`.
@@ -61,7 +61,7 @@ Run the roles as separate processes (use `redis` in place of `database` for the
 redis connection). `--once` processes a single job and exits; `--stop-when-empty`
 drains and exits (handy for cron/CI). Retries use each job's `tries`/`backoff`;
 exhausted jobs run their `failed` hook. The `database` driver needs the `jobs`
-table — `ark migrate` creates it.
+table; `ark migrate` creates it.
 
 ## Production checklist
 

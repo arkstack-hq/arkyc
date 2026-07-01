@@ -13,21 +13,21 @@ Tenant ──< Project ──< VerificationSession ──< captures / checks / r
    └──< TenantMember, Role, TenantInvitation
 ```
 
-- **Tenant** — an organization. Has a unique `slug` (used for addressing in the
+- **Tenant**: an organization. Has a unique `slug` (used for addressing in the
   dashboard), `name`, `logo_url`, and a free-form `settings` JSON.
-- **Project** — an application/environment within a tenant. Carries
+- **Project**: an application/environment within a tenant. Carries
   `environment`, `settings`, `branding`, verification `thresholds`, and `status`.
   Slug is unique **within** the tenant.
-- **VerificationSession** — scoped to both `tenant_id` and `project_id`.
+- **VerificationSession**: scoped to both `tenant_id` and `project_id`.
 
 ## Members
 
 Membership is two-layered:
 
-- **TenantMember** — the primary membership. One per `(tenant, user)`, with a
+- **TenantMember**: the primary membership. One per `(tenant, user)`, with a
   `role_id` and a `status` of `active` / `invited` / `suspended`. Only **active**
   members can access a tenant.
-- **ProjectMember** — optional, narrower scoping. One per `(project, user)`, with
+- **ProjectMember**: optional, narrower scoping. One per `(project, user)`, with
   its own `role_id`. A user can belong to a tenant without any project membership.
 
 New members are added via **invitations**: an email + role + hashed token with an

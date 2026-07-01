@@ -8,17 +8,17 @@ is listed per route below.
 
 ## Auth {#auth}
 
-**Base:** `/api/v1/auth` — no auth unless noted.
+**Base:** `/api/v1/auth` (no auth unless noted).
 
 | Method   | Path                          | Auth | Description                                |
 | -------- | ----------------------------- | ---- | ------------------------------------------ |
-| `POST`   | `/v1/auth/register`           | —    | Register a user; returns a bearer token.   |
-| `POST`   | `/v1/auth/login`              | —    | Verify credentials; issue a session token. |
+| `POST`   | `/v1/auth/register`           | none | Register a user; returns a bearer token.   |
+| `POST`   | `/v1/auth/login`              | none | Verify credentials; issue a session token. |
 | `GET`    | `/v1/auth/me`                 | JWT  | The authenticated user.                    |
 | `DELETE` | `/v1/auth/logout`             | JWT  | Revoke the current token.                  |
 | `POST`   | `/v1/auth/invitations/accept` | JWT  | Accept a tenant invitation by token.       |
-| `POST`   | `/v1/auth/forgot`             | —    | Email a password-reset code.               |
-| `PUT`    | `/v1/auth/forgot/:token`      | —    | Consume a reset token; set a new password. |
+| `POST`   | `/v1/auth/forgot`             | none | Email a password-reset code.               |
+| `PUT`    | `/v1/auth/forgot/:token`      | none | Consume a reset token; set a new password. |
 
 ## Tenants
 
@@ -26,8 +26,8 @@ is listed per route below.
 
 | Method  | Path                 | Permission       | Description                                   |
 | ------- | -------------------- | ---------------- | --------------------------------------------- |
-| `GET`   | `/tenants`           | —                | List the caller's tenants (paginated).        |
-| `POST`  | `/tenants`           | —                | Create a tenant; seeds roles; caller = owner. |
+| `GET`   | `/tenants`           | none             | List the caller's tenants (paginated).        |
+| `POST`  | `/tenants`           | none             | Create a tenant; seeds roles; caller = owner. |
 | `GET`   | `/tenants/:tenantId` | `tenants.view`   | Show the tenant.                              |
 | `PATCH` | `/tenants/:tenantId` | `tenants.update` | Update name / logo / settings.                |
 
@@ -37,7 +37,7 @@ is listed per route below.
 
 | Method   | Path                                         | Permission       | Description                               |
 | -------- | -------------------------------------------- | ---------------- | ----------------------------------------- |
-| `GET`    | `/me`                                        | —                | Caller's role / direct / effective perms. |
+| `GET`    | `/me`                                        | none             | Caller's role / direct / effective perms. |
 | `GET`    | `/members`                                   | `members.view`   | List members (paginated).                 |
 | `GET`    | `/members/:memberId`                         | `members.view`   | Member detail.                            |
 | `PATCH`  | `/members/:memberId`                         | `members.update` | Change a member's role.                   |
@@ -67,11 +67,11 @@ is listed per route below.
 
 **Base:** `/api/v1/dashboard/tenants/:tenantId/projects/:projectId/api-keys`
 
-| Method   | Path               | Permission        | Description                                  |
-| -------- | ------------------ | ----------------- | -------------------------------------------- |
-| `GET`    | `/api-keys`        | `api_keys.view`   | List keys (secret never returned).           |
-| `POST`   | `/api-keys`        | `api_keys.create` | Mint a key — plaintext secret returned once. |
-| `DELETE` | `/api-keys/:keyId` | `api_keys.revoke` | Revoke a key.                                |
+| Method   | Path               | Permission        | Description                                 |
+| -------- | ------------------ | ----------------- | ------------------------------------------- |
+| `GET`    | `/api-keys`        | `api_keys.view`   | List keys (secret never returned).          |
+| `POST`   | `/api-keys`        | `api_keys.create` | Mint a key; plaintext secret returned once. |
+| `DELETE` | `/api-keys/:keyId` | `api_keys.revoke` | Revoke a key.                               |
 
 ## Webhooks
 
@@ -122,13 +122,13 @@ See [Webhooks](/integrations/webhooks) for the payload and signature.
 
 ## Admin (platform) {#admin}
 
-**Base:** `/api/v1/admin` — `Authorization: Bearer <jwt>` plus a platform
+**Base:** `/api/v1/admin`, `Authorization: Bearer <jwt>` plus a platform
 `canAdmin('…')` permission. This surface sits **above** organizations; an
 organization role never grants admin access (no `resolveTenant`).
 
 | Method   | Path                                      | Permission                 | Description                                              |
 | -------- | ----------------------------------------- | -------------------------- | -------------------------------------------------------- |
-| `GET`    | `/me`                                     | —                          | Caller's admin standing (empty for non-admins).          |
+| `GET`    | `/me`                                     | none                       | Caller's admin standing (empty for non-admins).          |
 | `GET`    | `/settings`                               | `admin.settings.view`      | Platform settings.                                       |
 | `PATCH`  | `/settings`                               | `admin.settings.update`    | Update platform settings.                                |
 | `GET`    | `/organizations`                          | `admin.organizations.view` | List organizations (paginated).                          |

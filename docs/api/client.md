@@ -9,7 +9,7 @@ with the **short-lived client token** from
 The token resolves the one session it was minted for; expired tokens are rejected.
 
 ::: warning
-You normally don't call these endpoints directly — the [widget](/integrations/widget)
+You normally don't call these endpoints directly; the [widget](/integrations/widget)
 does. They're documented for custom flows.
 :::
 
@@ -22,13 +22,13 @@ does. They're documented for custom flows.
 | `POST` | `/v1/client/document/back`  | Submit the document back (skipped for single-sided docs).                      |
 | `POST` | `/v1/client/liveness`       | Submit the selfie / passive liveness frame.                                    |
 | `POST` | `/v1/client/address`        | Submit the claimed address (only when the workflow enables the address stage). |
-| `POST` | `/v1/client/complete`       | Finalize — run the decision engine and land the verdict.                       |
+| `POST` | `/v1/client/complete`       | Finalize: run the decision engine and land the verdict.                        |
 
 ## Uploads
 
 Document and liveness endpoints accept `multipart/form-data` with the image
 file. With `mock` providers you may include hint fields to script the outcome
-(e.g. `confidence`, `expired`, `score`, `passed`, `similarityScore`) — see
+(e.g. `confidence`, `expired`, `score`, `passed`, `similarityScore`); see
 [Provider drivers](/guide/providers#mock-hint-signals).
 
 ```http
