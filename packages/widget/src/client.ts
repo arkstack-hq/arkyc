@@ -1,4 +1,5 @@
 import type {
+  ApiErrorKey,
   CaptureModel,
   DocumentType,
   LivenessChallenge,
@@ -128,9 +129,9 @@ export class WidgetApiError extends Error {
    * Stable error key (e.g. `session_expired`) for errors Arkyc
    * deliberately raises. Undefined for unexpected errors.
    */
-  readonly error?: string
+  readonly error?: ApiErrorKey
 
-  constructor(message: string, status: number, error?: string) {
+  constructor(message: string, status: number, error?: ApiErrorKey) {
     super(message)
     this.name = 'WidgetApiError'
     this.status = status
@@ -321,7 +322,7 @@ export class ArkycClient {
 
     const res = await this.fetchImpl(`${this.baseUrl}${path}`, { method, headers, body: payload })
     const text = await res.text()
-    const json = text ? (JSON.parse(text) as { message?: string; data?: ClientSession; error?: string }) : {}
+    const json = text ? (JSON.parse(text) as { message?: string; data?: ClientSession; error?: ApiErrorKey }) : {}
 
     if (!res.ok) {
       throw new WidgetApiError(json.message ?? `Request failed (${res.status})`, res.status, json.error)

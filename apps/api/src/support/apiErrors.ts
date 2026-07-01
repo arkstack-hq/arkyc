@@ -1,11 +1,17 @@
+import type { ApiErrorKey } from '@arkyc/types'
 import { RequestException } from '@arkstack/common'
 
 /**
- * The catalog of errors **we** deliberately return.
- * each keyed by a stable, machine-readable identifier (the `error` field)
- * unless it's a breaking change.
+ * The catalog of errors **we** deliberately return, each keyed by a stable,
+ * machine-readable identifier (the `error` field) that never changes unless
+ * it's a breaking change.
+ *
+ * The key set is the client-facing contract {@link ApiErrorKey} in
+ * `@arkyc/types`; typing the catalog as `Record<ApiErrorKey, …>` keeps the
+ * server and the typed clients in lockstep — a new contract key won't compile
+ * until it has an entry here, and vice versa.
  */
-export const API_ERRORS = {
+export const API_ERRORS: Record<ApiErrorKey, { status: number; message: string }> = {
   // Client token (widget → Client API)
   missing_client_token: { status: 401, message: 'Missing client token' },
   invalid_client_token: { status: 401, message: 'Invalid client token' },
@@ -21,11 +27,9 @@ export const API_ERRORS = {
     status: 422,
     message: 'Unknown or invalid webhook endpoint',
   },
-} as const
+}
 
-/**
- * A stable error identifier from {@link API_ERRORS} */
-export type ApiErrorKey = keyof typeof API_ERRORS
+export type { ApiErrorKey }
 
 /**
  * An error we deliberately raise. Extends `RequestException`, so it throws

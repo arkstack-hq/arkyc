@@ -1,3 +1,4 @@
+import type { ApiErrorKey } from '@arkyc/types'
 import { ArkycApiError } from './errors'
 import type { ArkycOptions } from './types'
 import { Sessions } from './Sessions'
@@ -66,7 +67,7 @@ export class Arkyc {
         (json.message as string) ?? `Arkyc request failed with status ${response.status}`,
         response.status,
         json.errors as Record<string, string[] | string> | undefined,
-        json.error as string | undefined,
+        json.error as ApiErrorKey | undefined,
       )
     }
 

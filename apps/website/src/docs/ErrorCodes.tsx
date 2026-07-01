@@ -18,8 +18,7 @@ export function ErrorCodes() {
       <h1>Error codes</h1>
       <p>
         Errors <strong>Arkyc deliberately raises</strong> carry a stable, machine-readable <code>error</code> key
-        alongside the HTTP <code>status</code>. Branch on the <code>error</code> key, not the human-readable{' '}
-        <code>message</code> — the message can change, the key won’t.
+        alongside the HTTP <code>status</code>.
       </p>
       <CodeCard
         title="error envelope"
@@ -70,9 +69,11 @@ export function ErrorCodes() {
 
       <h2>Reading the key from a client</h2>
       <p>
-        Both typed clients surface the key. The <Link to="/docs/sdk">server SDK</Link> throws an{' '}
-        <code>ArkycApiError</code> with <code>err.error</code>; the <Link to="/docs/widget-embed">widget</Link> passes a{' '}
-        <code>WidgetApiError</code> with <code>err.error</code> to <code>onError</code>.
+        Both typed clients surface the key, typed as the <code>ApiErrorKey</code> union so your editor autocompletes
+        every case and flags a typo. The <Link to="/docs/sdk">server SDK</Link> throws an <code>ArkycApiError</code>{' '}
+        with <code>err.error</code>; the <Link to="/docs/widget-embed">widget</Link> passes a{' '}
+        <code>WidgetApiError</code> with <code>err.error</code> to <code>onError</code>. Both re-export the{' '}
+        <code>ApiErrorKey</code> type.
       </p>
       <CodeCard
         title="branch on the key"

@@ -21,7 +21,7 @@ export {
   isDocumentReady,
 } from './document'
 export type { DocumentAnalyzer, DocumentSample, DocumentTuning, DocRect } from './document'
-export type { WidgetResult } from '@arkyc/types'
+export type { WidgetResult, ApiErrorKey } from '@arkyc/types'
 export { ArkycWidget } from './ArkycWidget'
 export { WidgetHandler } from './WidgetHandler'
 export * from './types'
