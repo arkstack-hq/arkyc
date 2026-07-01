@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/realtime",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "Server-side realtime event broadcasting (soketi/firebase) for Arkyc",
   "license": "MIT",
   "keywords": [
