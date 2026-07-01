@@ -678,8 +678,11 @@ export class WidgetController {
   }
 
   private fail(error: unknown): void {
-    if (this.settled) return
+    // Notify once, on the first failure. `pendingError` is the guard so a repeat
+    // (or a later close) doesn't re-fire.
+    if (this.settled || this.pendingError) return
     const err = error instanceof Error ? error : new Error(String(error))
+    this.pendingError = err
     this.step = 'result'
 
     this.view.render({
@@ -688,7 +691,20 @@ export class WidgetController {
       errorMessage: err.message,
     })
 
-    this.pendingError = err
+    // Surface the failure to the integrator immediately, not when the user
+    // eventually dismisses the screen (they may never), so an expired session or
+    // token is knowable programmatically. `dispatch` also forwards a non-closing
+    // `error` event to an embedding parent; the terminal `arkyc:error` (which
+    // tears the overlay down) is posted from `finishResult` on dismissal.
+    this.dispatch('error', this.errorData(err))
+    this.config.onError?.(err)
+  }
+
+  /** Event payload for a failure: the message plus the stable key/status when it's a typed API error. */
+  private errorData(err: Error): { message: string; status?: number; error?: string } {
+    if (err instanceof WidgetApiError) return { message: err.message, status: err.status, error: err.error }
+
+    return { message: err.message }
   }
 
   private finishResult(): void {
@@ -697,9 +713,9 @@ export class WidgetController {
     this.teardownRealtime()
 
     if (this.pendingError) {
+      // `onError` + the `error` event already fired at failure time; only relay
+      // the terminal error to an embedding parent (closing its overlay) here.
       this.post('arkyc:error', { error: serializeError(this.pendingError) })
-      this.dispatch('error', { message: this.pendingError.message })
-      this.config.onError?.(this.pendingError)
     } else if (this.result) {
       this.post('arkyc:complete', { payload: this.result })
       this.dispatch('complete', this.result)

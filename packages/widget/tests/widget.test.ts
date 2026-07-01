@@ -153,6 +153,7 @@ function makeFetch(script: { onCall?: (key: string, n: number) => string | undef
           status: ok ? 'success' : 'error',
           message: ok ? 'OK' : 'Session expired',
           code: ok ? 200 : 401,
+          error: ok ? undefined : 'session_expired',
           data: ok ? { id: 's1', status, expires_at: '2099-01-01' } : null,
         }),
     } as Response
@@ -338,10 +339,41 @@ describe('WidgetController flow', () => {
     clickText(controller.element as unknown as FakeEl, 'Skip (demo)') // selfie → liveness → complete (fails)
     await flush()
 
-    expect(find(controller.element as unknown as FakeEl, 'Something went wrong')).toBeTruthy()
-    clickText(controller.element as unknown as FakeEl, 'Done')
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Session expired' }))
+    const el = controller.element as unknown as FakeEl
+    expect(find(el, 'Something went wrong')).toBeTruthy()
+    // onError fires at the moment of failure, carrying the stable key — the
+    // integrator learns of it without waiting for the user to dismiss the screen.
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Session expired', status: 401, error: 'session_expired' }),
+    )
+    // The terminal arkyc:error (which closes an embedding overlay) waits for dismissal.
+    expect(messages.some((m) => m.type === 'arkyc:error')).toBe(false)
+
+    clickText(el, 'Done')
+    expect(onError).toHaveBeenCalledTimes(1) // not re-fired on dismiss
     expect(messages.some((m) => m.type === 'arkyc:error')).toBe(true)
+  })
+
+  it('notifies onError immediately when the session is already expired at load', async () => {
+    const onError = vi.fn()
+    const fetchMock = vi.fn(async () => ({
+      ok: false,
+      status: 401,
+      text: async () =>
+        JSON.stringify({ status: 'error', message: 'Session expired', code: 401, error: 'session_expired' }),
+    }))
+    const { controller } = makeController({ fetch: fetchMock as never, onError })
+
+    controller.start()
+    await flush()
+    await flush()
+
+    // No user interaction: the expired session surfaces on load and onError fires.
+    expect(find(controller.element as unknown as FakeEl, 'Something went wrong')).toBeTruthy()
+    expect(onError).toHaveBeenCalledTimes(1)
+    const err = onError.mock.calls[0]![0] as { status?: number; error?: string }
+    expect(err.status).toBe(401)
+    expect(err.error).toBe('session_expired')
   })
 
   it('shows a next-step instruction before a capture step', async () => {
