@@ -62,7 +62,7 @@ try {
 ```
 
 `status` is the HTTP code; `error` is a stable, machine-readable key for errors
-Arkyc raises (branch on it, not the message) — typed as the `ApiErrorKey` union
+Arkyc raises typed as the `ApiErrorKey` union
 (re-exported from `@arkyc/sdk`) so it autocompletes; `errors` carries
 field-level validation errors on a `422`. See [API error codes](/api/#error-codes).
 
