@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/webhooks",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Webhook signing, verification, and payload building",
   "license": "MIT",
   "keywords": [
