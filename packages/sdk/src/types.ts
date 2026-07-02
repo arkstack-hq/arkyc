@@ -1,4 +1,11 @@
-import type { DecisionReason, Metadata, VerificationDecision, VerificationStatus, WorkflowConfig } from '@arkyc/types'
+import type {
+  DecisionReason,
+  ExtractedData,
+  Metadata,
+  VerificationDecision,
+  VerificationStatus,
+  WorkflowConfig,
+} from '@arkyc/types'
 
 /** A verification session as returned by the public API (snake_case JSON). */
 export interface VerificationSession {
@@ -16,6 +23,11 @@ export interface VerificationSession {
   workflow: WorkflowConfig | null
   /** Signed, time-limited URLs for captured assets, served inline as images (present on retrieve). */
   assets?: Record<string, string> | null
+  /**
+   * Extracted PII (identity/address). Present on `retrieve()` only when the
+   * project holds a granted `pii` entitlement, and `null` otherwise.
+   */
+  extracted?: ExtractedData | null
   expires_at: string
   completed_at: string | null
   created_at: string
