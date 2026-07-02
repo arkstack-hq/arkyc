@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { AccessGrant } from '../src/app/models/AccessGrant'
 import { ApiKey } from '../src/app/models/ApiKey'
 import { Project } from '../src/app/models/Project'
 import { Storage } from '@arkstack/filesystem'
@@ -127,6 +128,31 @@ describe('verification session lifecycle', () => {
     expect(show.body.data.decision_reason).toBe('AUTO_APPROVED')
     expect(show.body.data.completed_at).toBeTruthy()
     expect(show.body.data.risk_score).not.toBeNull()
+  })
+
+  it('exposes extracted PII on the API-key retrieve only after a granted pii entitlement', async () => {
+    const { id, token } = await toLiveness()
+    await clientApi('post', 'complete', token).send({})
+
+    // Without a PII entitlement the extracted data is withheld (fail-closed).
+    const before = await publicApi('get', `sessions/${id}`)
+    expect(before.body.data.status).toBe('approved')
+    expect(before.body.data.extracted).toBeNull()
+
+    const grant = await AccessGrant.create({
+      organizationId: fx.organizationId,
+      projectId: fx.projectId,
+      capability: 'pii',
+      status: 'granted',
+      details: { categories: ['identity'], timing: 'after' },
+    })
+    try {
+      const after = await publicApi('get', `sessions/${id}`)
+      expect(after.body.data.extracted?.identity?.first_name).toBe('Ada')
+      expect(after.body.data.extracted.identity.last_name).toBe('Lovelace')
+    } finally {
+      await AccessGrant.destroy(grant.id)
+    }
   })
 
   it('advances status through each step', async () => {

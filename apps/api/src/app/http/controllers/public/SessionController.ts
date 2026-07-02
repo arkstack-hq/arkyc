@@ -4,6 +4,7 @@ import { VerificationSession } from '@app/models/VerificationSession'
 import VerificationSessionResource from '@app/http/resources/VerificationSessionResource'
 import { sessionService } from '@app/services/VerificationSessionService'
 import { buildSessionAssets } from '@app/services/SessionAssetService'
+import { buildExtractedData } from '@app/services/ExtractedDataService'
 import { audit } from '@app/services/AuditLogger'
 
 /**
@@ -65,8 +66,9 @@ export default class SessionController extends BaseController {
     }).firstOrFail()
     await sessionService.refresh(session)
     const assets = await buildSessionAssets(session)
+    const extracted = await buildExtractedData(session)
 
-    return new VerificationSessionResource(session).withAssets(assets).additional({
+    return new VerificationSessionResource(session).withAssets(assets).withExtracted(extracted).additional({
       status: 'success',
       message: 'OK',
       code: 200,

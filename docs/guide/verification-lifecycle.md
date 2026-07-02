@@ -91,6 +91,12 @@ Fields most integrations use:
 Per-check detail is delivered on the [webhook payload](/integrations/webhooks#payload)
 under `checks`: document quality/OCR, liveness score, and face-match similarity.
 
+The extracted **identity and address data** itself (name, date of birth, document
+number, address) is separate and more restricted: it is read **only** through the
+server SDK's `retrieve()` (secret key), never sent to the widget or webhooks, and
+only when the project holds a granted PII entitlement. See
+[Extracted PII](/integrations/sdk#extracted-pii).
+
 ## Handling each outcome
 
 | Outcome                         | What to do                                                                                     |

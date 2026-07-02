@@ -4,10 +4,19 @@ import { Resource } from 'resora'
 export default class VerificationSessionResource extends Resource {
   /** Signed inline-image URLs for captured assets (attached on single-session retrieve). */
   private assets: Record<string, string> | null = null
+  /** Extracted PII, attached only when the project holds a granted `pii` entitlement. */
+  private extracted: object | null = null
 
   /** Attach signed asset URLs to this resource (chainable). */
   withAssets(assets: Record<string, string> | null): this {
     this.assets = assets
+
+    return this
+  }
+
+  /** Attach extracted PII (gated by the `pii` entitlement) to this resource (chainable). */
+  withExtracted(extracted: object | null): this {
+    this.extracted = extracted
 
     return this
   }
@@ -49,6 +58,7 @@ export default class VerificationSessionResource extends Resource {
       workflow_id: this.workflowId ?? null,
       workflow: this.workflow ?? null,
       assets: this.assets,
+      extracted: this.extracted,
       expires_at: this.expiresAt,
       completed_at: this.completedAt ?? null,
       created_at: this.createdAt,

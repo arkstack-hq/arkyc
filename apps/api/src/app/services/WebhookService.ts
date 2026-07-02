@@ -14,7 +14,12 @@ import { WebhookJob } from '@app/jobs'
 import { buildSessionAssets } from '@app/services/SessionAssetService'
 import { toArray } from 'src/support/collection'
 
-/** Read the OCR parse stage from a stored driver `rawResponse`, if present. */
+/**
+ * Read the OCR parse stage from a stored driver `rawResponse`, if present.
+ *
+ * @param raw
+ * @returns
+ */
 function ocrParseStage(raw: unknown): 'mrz' | 'custom' | 'generic' | undefined {
   if (raw && typeof raw === 'object' && 'stage' in raw) {
     const stage = (raw as { stage?: unknown }).stage
@@ -56,7 +61,13 @@ export class WebhookService {
     }
   }
 
-  /** Create + enqueue a delivery for each active endpoint subscribed to `event`. */
+  /**
+   * Create + enqueue a delivery for each active endpoint subscribed to `event`.
+   *
+   * @param session
+   * @param event
+   * @returns
+   */
   async dispatch(session: VerificationSession, event: WebhookEventName): Promise<void> {
     const endpoints = toArray(
       await WebhookEndpoint.where({ projectId: session.projectId, status: 'active' }).get(),
@@ -87,6 +98,9 @@ export class WebhookService {
    * Sign + POST a delivery's stored payload to its endpoint and record the
    * outcome. Throws on non-2xx / transport error so the queue retries (the
    * delivery row mirrors the latest attempt).
+   *
+   * @param deliveryId
+   * @returns
    */
   async deliver(deliveryId: string): Promise<void> {
     const delivery = await WebhookDelivery.where({ id: deliveryId }).first()
@@ -133,7 +147,12 @@ export class WebhookService {
     }
   }
 
-  /** Build + persist a one-off test delivery for an endpoint, then enqueue it. */
+  /**
+   * Build + persist a one-off test delivery for an endpoint, then enqueue it.
+   *
+   * @param endpoint
+   * @returns
+   */
   async sendTest(endpoint: WebhookEndpoint): Promise<WebhookDelivery> {
     const payload = WebhookPayload.build({
       event: 'verification.completed',
@@ -161,7 +180,13 @@ export class WebhookService {
     return delivery
   }
 
-  /** Build the event payload, gathering the latest per-check summaries. */
+  /**
+   * Build the event payload, gathering the latest per-check summaries.
+   *
+   * @param session
+   * @param event
+   * @returns
+   */
   async buildPayload(session: VerificationSession, event: WebhookEventName): Promise<WebhookEvent> {
     return WebhookPayload.build({
       event,
@@ -210,5 +235,7 @@ export class WebhookService {
   }
 }
 
-/** Shared singleton webhook service. */
+/**
+ * Shared singleton webhook service.
+ */
 export const webhookService = new WebhookService()

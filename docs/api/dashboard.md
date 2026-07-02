@@ -160,5 +160,7 @@ list, review, grant, and revoke here.
 | `POST` | `/extended-access/revoke`              | `admin.extended_access.manage` | Revoke a capability (`project_id`, `capability`). |
 
 A PII request carries `pii: { categories: ["identity","address"], timing:
-"before" | "after", justification }`. PII access is enforced today; surfacing the
-extracted data on the session API and webhook is a follow-up.
+"before" | "after", justification }`. Once granted, the extracted data is read
+**only** through the server SDK's `sessions.retrieve()` (secret key); it is never
+sent to the browser widget or included in webhooks. See
+[Extracted PII](/integrations/sdk#extracted-pii).

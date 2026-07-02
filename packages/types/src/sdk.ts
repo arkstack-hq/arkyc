@@ -1,3 +1,4 @@
+import type { ExtractedData } from './access'
 import type { Metadata } from './common'
 import type { VerificationDecision, VerificationStatus } from './verification'
 
@@ -27,6 +28,8 @@ export interface SessionResource {
   decision: VerificationDecision | null
   /** Short-lived client token for launching the widget (create response only). */
   client_token?: string
+  /** Extracted PII, present only when the project holds a granted `pii` entitlement. */
+  extracted?: ExtractedData | null
   expires_at: string
   created_at: string
 }

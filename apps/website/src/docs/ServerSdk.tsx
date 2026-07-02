@@ -48,6 +48,34 @@ export function ServerSdk() {
         code={['const current = await arkyc.sessions.retrieve(session.id)', 'await arkyc.sessions.cancel(session.id)']}
       />
 
+      <h2>Extracted PII</h2>
+      <p>
+        The verified identity and address data a session extracts (name, date of birth, document number, address) is
+        available <strong>only through this server SDK</strong>, on <code>sessions.retrieve()</code>, authenticated with
+        your secret key. It is <strong>never</strong> sent to the browser widget or included in webhooks. It appears on{' '}
+        <code>session.extracted</code> only when your project holds a granted <strong>PII entitlement</strong> (request
+        it under a project’s <strong>Extended access</strong> in the dashboard: choose the data categories, the timing,
+        and a justification; a platform admin approves it).
+      </p>
+      <CodeCard
+        code={[
+          'const session = await arkyc.sessions.retrieve(sessionId)',
+          '',
+          '// Present only with a granted PII entitlement; null otherwise.',
+          'if (session.extracted?.identity) {',
+          '  const { full_name, date_of_birth, document_number } = session.extracted.identity',
+          '}',
+          'if (session.extracted?.address) {',
+          '  const { line1, city, postal_code, country } = session.extracted.address',
+          '}',
+        ]}
+      />
+      <p>
+        Only the <strong>granted categories</strong> appear (<code>identity</code> and/or <code>address</code>), and
+        with <strong>after</strong> timing the data is withheld until the session is decided. Treat it as sensitive:
+        request the minimum you need and store it per your own data policy.
+      </p>
+
       <h2>Error handling</h2>
       <p>
         Failed requests throw a typed <code>ArkycApiError</code> carrying the HTTP <code>status</code>, a stable{' '}

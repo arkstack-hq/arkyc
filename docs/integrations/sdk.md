@@ -44,6 +44,27 @@ the session. The session shape (snake_case) includes `id`, `project_id`,
 `status`, `auto_decision`, `final_decision`, `decision_reason`, `risk_score`,
 `expires_at`, and `created_at`.
 
+## Extracted PII
+
+The verified identity and address data a session extracts is available **only
+through this server SDK** (`sessions.retrieve()`, authenticated with the secret
+key). It is **never** sent to the browser widget or included in webhooks, so PII
+cannot reach the client. It appears on `session.extracted` only when the project
+holds a granted **PII entitlement**, requested under a project's Extended access
+(categories + timing + justification) and approved by a platform admin. See
+[Extended access](/api/dashboard#admin-ai-access).
+
+```ts
+const session = await arkyc.sessions.retrieve(sessionId)
+
+// Present only with a granted PII entitlement; null otherwise.
+session.extracted?.identity // { full_name, date_of_birth, document_number, nationality, … }
+session.extracted?.address // { line1, city, postal_code, country, latitude, longitude }
+```
+
+Only the granted categories (`identity`, `address`) are present, and with
+`after` timing the data is withheld until the session is decided.
+
 ## Typed errors
 
 Failed requests throw `ArkycApiError`:

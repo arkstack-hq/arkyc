@@ -124,6 +124,12 @@ export function VerificationLifecycle() {
         <code>completed_at</code>. Per-check detail (document quality/OCR, liveness score, face-match similarity) rides
         on the <Link to="/docs/webhooks">webhook</Link> under <code>checks</code>.
       </p>
+      <p>
+        The extracted <strong>identity and address data</strong> itself (name, date of birth, document number, address)
+        is separate and more restricted: it is read <strong>only</strong> through the{' '}
+        <Link to="/docs/sdk">server SDK</Link>’s <code>retrieve()</code> (secret key), never sent to the widget or
+        webhooks, and only when the project holds a granted PII entitlement.
+      </p>
 
       <h2>Handling each outcome</h2>
       <table>

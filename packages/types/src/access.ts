@@ -65,3 +65,41 @@ export const ACCESS_CAPABILITIES: Record<AccessCapability, AccessCapabilityMeta>
 
 /** All capability keys, in display order. */
 export const ACCESS_CAPABILITY_KEYS: AccessCapability[] = ['ai', 'pii']
+
+/**
+ * Identity fields extracted from the document (the `identity` PII category).
+ */
+export interface ExtractedIdentity {
+  first_name: string | null
+  last_name: string | null
+  full_name: string | null
+  date_of_birth: string | null
+  document_number: string | null
+  expiry_date: string | null
+  nationality: string | null
+}
+
+/**
+ * Residential address fields (the `address` PII category).
+ */
+export interface ExtractedAddress {
+  line1: string | null
+  line2: string | null
+  city: string | null
+  region: string | null
+  postal_code: string | null
+  country: string | null
+  latitude: number | null
+  longitude: number | null
+}
+
+/**
+ * The extracted personal data a project may read once granted the `pii`
+ * capability. Only the granted {@link PiiCategory | categories} are present, and
+ * (for `after` timing) only once the session is decided. Absent entirely when
+ * the project has no granted PII entitlement.
+ */
+export interface ExtractedData {
+  identity?: ExtractedIdentity
+  address?: ExtractedAddress
+}
