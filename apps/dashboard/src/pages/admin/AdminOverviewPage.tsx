@@ -46,7 +46,7 @@ export default function AdminOverviewPage() {
   if (error) return <ErrorState error={error} />
   if (!stats) return null
 
-  const { totals, users, sessions, ai_access } = stats
+  const { totals, users, sessions, extended_access } = stats
   const approvalPct = `${(sessions.approval_rate * 100).toFixed(1)}%`
 
   return (
@@ -198,15 +198,15 @@ export default function AdminOverviewPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="size-4 text-muted-foreground" /> AI processing access
+              <Sparkles className="size-4 text-muted-foreground" /> Extended access
             </CardTitle>
           </CardHeader>
           <CardContent>
             <BreakdownList
               rows={[
-                { label: 'Pending requests', value: ai_access.pending },
-                { label: 'Granted', value: ai_access.granted },
-                { label: 'Revoked', value: ai_access.revoked },
+                { label: 'Pending requests', value: extended_access.pending },
+                { label: 'Granted', value: extended_access.granted },
+                { label: 'Revoked', value: extended_access.revoked },
               ]}
             />
           </CardContent>

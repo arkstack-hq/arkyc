@@ -53,7 +53,7 @@ export class MailTestCommand extends Command {
             reject(
               new Error(
                 `No response within ${TIMEOUT_MS / 1000}s — check MAIL_HOST/MAIL_PORT and MAIL_SECURE ` +
-                `(port 587 usually needs MAIL_SECURE=false for STARTTLS; use port 465 with MAIL_SECURE=true).`,
+                  `(port 587 usually needs MAIL_SECURE=false for STARTTLS; use port 465 with MAIL_SECURE=true).`,
               ),
             ),
           TIMEOUT_MS,

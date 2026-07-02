@@ -11,6 +11,7 @@ const TABS = [
   { to: '', label: 'Settings', end: true },
   { to: 'api-keys', label: 'API Keys', end: false },
   { to: 'webhooks', label: 'Webhooks', end: false },
+  { to: 'extended-access', label: 'Extended access', end: false },
 ]
 
 export default function ProjectDetailLayout() {

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { usePagination, useRequest } from 'alova/client'
 import { ArrowLeft } from 'lucide-react'
-import { AiAccess, type AdminProject, type AiAccessStatus } from '@/lib/api'
+import { ExtendedAccess, type AdminProject, type AccessGrantStatus } from '@/lib/api'
 import { useAdmin } from '@/contexts/admin-context'
 import { useConfirm } from '@/components/Confirm'
 import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States'
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 
-const VARIANT: Record<AiAccessStatus, 'success' | 'warning' | 'destructive' | 'muted'> = {
+const VARIANT: Record<AccessGrantStatus, 'success' | 'warning' | 'destructive' | 'muted'> = {
   none: 'muted',
   pending: 'warning',
   granted: 'success',
@@ -32,14 +32,14 @@ export default function AdminOrganizationDetailPage() {
   const { organizationId } = useParams()
   const { can } = useAdmin()
   const confirm = useConfirm()
-  const canManage = can('admin.ai_processing.manage')
+  const canManage = can('admin.extended_access.manage')
   const [busyId, setBusyId] = useState<string | null>(null)
 
   const {
     data: org,
     loading: orgLoading,
     error: orgError,
-  } = useRequest(AiAccess.organization(organizationId!), {
+  } = useRequest(ExtendedAccess.organization(organizationId!), {
     immediate: !!organizationId,
   })
 
@@ -51,12 +51,15 @@ export default function AdminOrganizationDetailPage() {
     error,
     update,
   } = usePagination(
-    (currentPage, pageSize) => AiAccess.organizationProjects(organizationId!, { page: currentPage, limit: pageSize }),
+    (currentPage, pageSize) =>
+      ExtendedAccess.organizationProjects(organizationId!, { page: currentPage, limit: pageSize }),
     { append: false, initialPage: 1, initialPageSize: 15, data: (res) => res.data, total: (res) => res.meta.total },
   )
 
-  const { send: grant } = useRequest((projectId: string) => AiAccess.grant(projectId), { immediate: false })
-  const { send: revoke } = useRequest((projectId: string) => AiAccess.revoke(projectId), { immediate: false })
+  const { send: grant } = useRequest((projectId: string) => ExtendedAccess.grant(projectId, 'ai'), { immediate: false })
+  const { send: revoke } = useRequest((projectId: string) => ExtendedAccess.revoke(projectId, 'ai'), {
+    immediate: false,
+  })
 
   if (orgLoading && !org) return <Loading />
   if (orgError) return <ErrorState error={orgError} />
@@ -78,8 +81,14 @@ export default function AdminOrganizationDetailPage() {
     try {
       if (next === 'grant') await grant(project.id)
       else await revoke(project.id)
-      const status: AiAccessStatus = next === 'grant' ? 'granted' : 'revoked'
-      update({ data: projects.map((p) => (p.id === project.id ? { ...p, ai_access: { ...p.ai_access, status } } : p)) })
+      const status: AccessGrantStatus = next === 'grant' ? 'granted' : 'revoked'
+      update({
+        data: projects.map((p) =>
+          p.id === project.id
+            ? { ...p, extended_access: { ...p.extended_access, ai: { ...p.extended_access.ai, status } } }
+            : p,
+        ),
+      })
     } finally {
       setBusyId(null)
     }
@@ -123,7 +132,7 @@ export default function AdminOrganizationDetailPage() {
                 </THead>
                 <TBody>
                   {projects.map((project) => {
-                    const status = project.ai_access.status
+                    const status = project.extended_access.ai.status
                     const busy = busyId === project.id
                     return (
                       <TR key={project.id}>

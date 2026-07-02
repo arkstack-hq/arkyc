@@ -19,16 +19,13 @@ export async function buildSessionAssets(session: VerificationSession): Promise<
 
   const capture = await DocumentCapture.where({ sessionId: session.id }).first()
 
-  if (capture?.frontImagePath)
-    assets.document_front = signedAssetUrl(session.id, 'document_front', ttl)
+  if (capture?.frontImagePath) assets.document_front = signedAssetUrl(session.id, 'document_front', ttl)
 
-  if (capture?.backImagePath)
-    assets.document_back = signedAssetUrl(session.id, 'document_back', ttl)
+  if (capture?.backImagePath) assets.document_back = signedAssetUrl(session.id, 'document_back', ttl)
 
   const liveness = await LivenessCheck.where({ sessionId: session.id }).first()
 
-  if (liveness?.selfieImagePath)
-    assets.selfie = signedAssetUrl(session.id, 'selfie', ttl)
+  if (liveness?.selfieImagePath) assets.selfie = signedAssetUrl(session.id, 'selfie', ttl)
 
   return assets
 }

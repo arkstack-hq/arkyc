@@ -6,7 +6,7 @@ import SettingsController from '@controllers/admin/SettingsController'
 import AdminOrganizationController from '@controllers/admin/OrganizationController'
 import AdminUserController from '@controllers/admin/UserController'
 import AdminAuditLogController from '@controllers/admin/AuditLogController'
-import AdminAiAccessController from '@controllers/admin/AiAccessController'
+import AdminExtendedAccessController from '@controllers/admin/ExtendedAccessController'
 import AdminStatsController from '@controllers/admin/StatsController'
 
 // Platform-admin surface, above organizations. Guarded by `canAdmin(...)` after `auth`
@@ -43,11 +43,32 @@ Router.group('/v1/admin', () => {
   Router.post('/users/:userId/status', [AdminUserController, 'setStatus'], [auth, canAdmin('admin.users.manage')])
   Router.post('/users/:userId/password', [AdminUserController, 'resetPassword'], [auth, canAdmin('admin.users.manage')])
 
-  // AI document-processing access (gated capability — see `support/ai-access`).
-  Router.get('/ai-access', [AdminAiAccessController, 'index'], [auth, canAdmin('admin.ai_processing.view')])
-  Router.get('/ai-access/count', [AdminAiAccessController, 'count'], [auth, canAdmin('admin.ai_processing.view')])
-  Router.post('/ai-access/grant', [AdminAiAccessController, 'grant'], [auth, canAdmin('admin.ai_processing.manage')])
-  Router.post('/ai-access/revoke', [AdminAiAccessController, 'revoke'], [auth, canAdmin('admin.ai_processing.manage')])
+  // Extended access (gated capabilities: see `support/access`).
+  Router.get(
+    '/extended-access',
+    [AdminExtendedAccessController, 'index'],
+    [auth, canAdmin('admin.extended_access.view')],
+  )
+  Router.get(
+    '/extended-access/count',
+    [AdminExtendedAccessController, 'count'],
+    [auth, canAdmin('admin.extended_access.view')],
+  )
+  Router.get(
+    '/extended-access/projects/:projectId',
+    [AdminExtendedAccessController, 'project'],
+    [auth, canAdmin('admin.extended_access.view')],
+  )
+  Router.post(
+    '/extended-access/grant',
+    [AdminExtendedAccessController, 'grant'],
+    [auth, canAdmin('admin.extended_access.manage')],
+  )
+  Router.post(
+    '/extended-access/revoke',
+    [AdminExtendedAccessController, 'revoke'],
+    [auth, canAdmin('admin.extended_access.manage')],
+  )
 
   Router.get('/audit-logs', [AdminAuditLogController, 'index'], [auth, canAdmin('admin.audit.view')])
 })

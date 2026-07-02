@@ -82,7 +82,7 @@ export default class StatsController extends BaseController {
       User.where({ status: 'restricted' }).count(),
       User.where({ status: 'suspended' }).count(),
       DB.raw<KeyCountRow>(`SELECT status AS key, COUNT(*)::int AS count FROM verification_sessions GROUP BY status`),
-      DB.raw<KeyCountRow>(`SELECT status AS key, COUNT(*)::int AS count FROM ai_processing_grants GROUP BY status`),
+      DB.raw<KeyCountRow>(`SELECT status AS key, COUNT(*)::int AS count FROM access_grants GROUP BY status`),
       DB.raw<DayCountRow>(
         `SELECT TO_CHAR(created_at::date, 'YYYY-MM-DD') AS day, COUNT(*)::int AS count
          FROM verification_sessions
@@ -96,7 +96,7 @@ export default class StatsController extends BaseController {
     ])
 
     const byStatus = tally(sessionStatusRows, SESSION_STATUSES)
-    const aiAccess = tally(grantStatusRows, GRANT_STATUSES)
+    const extendedAccess = tally(grantStatusRows, GRANT_STATUSES)
     // A user may hold several admin-permission grants; count distinct users.
     const admins = new Set(toArray(adminGrants).map((grant) => grant.userId)).size
     const decided = byStatus.approved + byStatus.rejected
@@ -128,7 +128,7 @@ export default class StatsController extends BaseController {
         last_7_days: last7Days,
         last_30_days: last30Days,
       },
-      aiAccess,
+      extendedAccess,
       trend: buildTrend(toArray(trendRows)),
     }
 

@@ -6,7 +6,9 @@ import AdminOverviewPage from '@/pages/admin/AdminOverviewPage'
 import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
 import AdminOrganizationsPage from '@/pages/admin/AdminOrganizationsPage'
 import AdminOrganizationDetailPage from '@/pages/admin/AdminOrganizationDetailPage'
-import AdminAiAccessPage from '@/pages/admin/AdminAiAccessPage'
+import AdminExtendedAccessPage from '@/pages/admin/AdminExtendedAccessPage'
+import AdminExtendedAccessReviewPage from '@/pages/admin/AdminExtendedAccessReviewPage'
+import ProjectExtendedAccessPage from '@/pages/projects/ProjectExtendedAccessPage'
 import AdminUsersPage from '@/pages/admin/AdminUsersPage'
 import AdminUserDetailPage from '@/pages/admin/AdminUserDetailPage'
 import AuditLogsPage from '@/pages/AuditLogsPage'
@@ -117,6 +119,7 @@ export default function App() {
           <Route index element={<ProjectSettingsPage />} />
           <Route path="api-keys" element={<ProjectApiKeysPage />} />
           <Route path="webhooks" element={<ProjectWebhooksPage />} />
+          <Route path="extended-access" element={<ProjectExtendedAccessPage />} />
         </Route>
 
         <Route path="members" element={<MembersPage />} />
@@ -142,7 +145,8 @@ export default function App() {
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="organizations" element={<AdminOrganizationsPage />} />
         <Route path="organizations/:organizationId" element={<AdminOrganizationDetailPage />} />
-        <Route path="ai-access" element={<AdminAiAccessPage />} />
+        <Route path="extended-access" element={<AdminExtendedAccessPage />} />
+        <Route path="extended-access/:projectId" element={<AdminExtendedAccessReviewPage />} />
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="users/:userId" element={<AdminUserDetailPage />} />
         <Route path="audit-logs" element={<AdminAuditLogsPage />} />

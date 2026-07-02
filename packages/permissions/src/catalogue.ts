@@ -153,16 +153,16 @@ export class Catalogue {
     },
 
     {
-      name: 'admin.ai_processing.view',
-      group: 'admin.ai_processing',
+      name: 'admin.extended_access.view',
+      group: 'admin.extended_access',
       admin: true,
-      description: 'View AI processing access requests and grants',
+      description: 'View extended access requests and grants',
     },
     {
-      name: 'admin.ai_processing.manage',
-      group: 'admin.ai_processing',
+      name: 'admin.extended_access.manage',
+      group: 'admin.extended_access',
       admin: true,
-      description: 'Grant or revoke AI processing access for projects',
+      description: 'Grant or revoke extended access for projects',
     },
   ]
 

@@ -79,14 +79,13 @@ export class Theme {
   }
 
   static rgb(p: { primaryColor: string }): RgbData {
-    const obj: RgbData['obj'] = Object.fromEntries(p
-      .primaryColor.match(/\d+/g)
-      ?.map((v, i) => [['r', 'g', 'b'][i], Number(v)]) ?? [],
+    const obj: RgbData['obj'] = Object.fromEntries(
+      p.primaryColor.match(/\d+/g)?.map((v, i) => [['r', 'g', 'b'][i], Number(v)]) ?? [],
     ) ?? { r: 50, g: 100, b: 150 }
 
     return {
       obj,
-      str: `rgb(${[obj.r, obj.g, obj.b].join(',')})`
+      str: `rgb(${[obj.r, obj.g, obj.b].join(',')})`,
     }
   }
 

@@ -49,10 +49,7 @@ export class GlobalSettingsService {
    * @param patch
    * @returns
    */
-  private merge(
-    base: GlobalSettings,
-    patch: DeepPartial<GlobalSettings>
-  ): GlobalSettings {
+  private merge(base: GlobalSettings, patch: DeepPartial<GlobalSettings>): GlobalSettings {
     return {
       platform: { ...base.platform, ...(patch.platform ?? {}) },
       realtime: { ...base.realtime, ...(patch.realtime ?? {}) },

@@ -15,4 +15,4 @@ Router.group('/v1/dashboard/organizations/:organizationId/workflows', () => {
   Router.delete('/:workflowId', [WorkflowController, 'destroy'], scoped('workflows.delete'))
 })
 
-export default () => { }
+export default () => {}

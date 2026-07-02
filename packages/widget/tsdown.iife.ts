@@ -25,7 +25,7 @@ export default defineConfig({
   target: 'es2020',
   outExtensions: () => ({ js: '.global.js' }),
   define: {
-    __ARKYC_API_BASE__: JSON.stringify(process.env.ARKYC_API_URL ?? '')
+    __ARKYC_API_BASE__: JSON.stringify(process.env.ARKYC_API_URL ?? ''),
   },
   plugins: [rawCssPlugin()],
 })

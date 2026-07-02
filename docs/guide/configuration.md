@@ -35,20 +35,20 @@ the dashboard and playground read their own `.env` files (Vite). Copy each
 
 ### Providers
 
-| Variable                                                     | Default                     | Notes                                                            |
-| ------------------------------------------------------------ | --------------------------- | ---------------------------------------------------------------- |
-| `OCR_DRIVER`                                                 | `mock`                      | `mock`, `tesseract`, `ai`, or `external`.                        |
-| `LIVENESS_DRIVER` / `FACE_MATCH_DRIVER`                      | `mock`                      | `mock` or `external`.                                            |
-| `OCR_FALLBACK_DRIVER`                                        | `mock`                      | Used when `OCR_DRIVER=ai` but a project isn't granted AI access. |
-| `OCR_API_KEY`                                                | none                        | Anthropic API key for `OCR_DRIVER=ai`.                           |
-| `OCR_AI_MODEL`                                               | `claude-haiku-4-5-20251001` | Vision model for the `ai` driver.                                |
-| `OCR_AI_MAX_EDGE`                                            | `1568`                      | Longest uploaded image edge (px) for the `ai` driver.            |
-| `OCR_ENDPOINT` / `LIVENESS_ENDPOINT` / `FACE_MATCH_ENDPOINT` | none                        | `external` HTTP endpoint (or API base override for `ai`).        |
-| `LIVENESS_API_KEY` / `FACE_MATCH_API_KEY`                    | none                        | Optional bearer for the endpoint.                                |
-| `ADDRESS_DRIVER`                                             | `mock`                      | `mock` or `live` (address stage; opt-in workflows).              |
-| `ADDRESS_ORS_API_KEY`                                        | none                        | openrouteservice key for the `live` driver's `geocode_lookup`.   |
-| `ADDRESS_ORS_URL` / `ADDRESS_NOMINATIM_URL`                  | public endpoints            | Geocoder base overrides (forward / reverse).                     |
-| `ADDRESS_USER_AGENT`                                         | `Arkyc/1.0 (…)`             | User-Agent sent to Nominatim (per its usage policy).             |
+| Variable                                                     | Default                     | Notes                                                                      |
+| ------------------------------------------------------------ | --------------------------- | -------------------------------------------------------------------------- |
+| `OCR_DRIVER`                                                 | `mock`                      | `mock`, `tesseract`, `ai`, or `external`.                                  |
+| `LIVENESS_DRIVER` / `FACE_MATCH_DRIVER`                      | `mock`                      | `mock` or `external`.                                                      |
+| `OCR_FALLBACK_DRIVER`                                        | `mock`                      | Used when `OCR_DRIVER=ai` but a project isn't granted the `ai` capability. |
+| `OCR_API_KEY`                                                | none                        | Anthropic API key for `OCR_DRIVER=ai`.                                     |
+| `OCR_AI_MODEL`                                               | `claude-haiku-4-5-20251001` | Vision model for the `ai` driver.                                          |
+| `OCR_AI_MAX_EDGE`                                            | `1568`                      | Longest uploaded image edge (px) for the `ai` driver.                      |
+| `OCR_ENDPOINT` / `LIVENESS_ENDPOINT` / `FACE_MATCH_ENDPOINT` | none                        | `external` HTTP endpoint (or API base override for `ai`).                  |
+| `LIVENESS_API_KEY` / `FACE_MATCH_API_KEY`                    | none                        | Optional bearer for the endpoint.                                          |
+| `ADDRESS_DRIVER`                                             | `mock`                      | `mock` or `live` (address stage; opt-in workflows).                        |
+| `ADDRESS_ORS_API_KEY`                                        | none                        | openrouteservice key for the `live` driver's `geocode_lookup`.             |
+| `ADDRESS_ORS_URL` / `ADDRESS_NOMINATIM_URL`                  | public endpoints            | Geocoder base overrides (forward / reverse).                               |
+| `ADDRESS_USER_AGENT`                                         | `Arkyc/1.0 (…)`             | User-Agent sent to Nominatim (per its usage policy).                       |
 
 See [Provider drivers](./providers) and [Workflows](./workflows).
 

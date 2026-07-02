@@ -11,15 +11,7 @@ export class SendTestNotification extends Command {
   protected description = 'Send a test notification to a user'
 
   async handle() {
-    const notificationTypes = [
-      'transaction',
-      'pocket',
-      'family',
-      'security',
-      'promo',
-      'bill',
-      'goal',
-    ] as const
+    const notificationTypes = ['transaction', 'pocket', 'family', 'security', 'promo', 'bill', 'goal'] as const
 
     let userId = this.argument('userId')
 
@@ -68,8 +60,7 @@ export class SendTestNotification extends Command {
 
     const title = this.option('title') || (await this.ask('Enter the notification title:'))
 
-    const description =
-      this.option('description') || (await this.ask('Enter the notification description:'))
+    const description = this.option('description') || (await this.ask('Enter the notification description:'))
 
     const actionLink = (await this.ask('Enter an action link (optional):')) || undefined
     const actionText = actionLink

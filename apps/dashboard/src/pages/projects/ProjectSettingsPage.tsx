@@ -4,7 +4,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
 import { Theme } from '@arkyc/widget'
-import { AiAccess, type AiAccessGrant, type AiAccessStatus, Projects, errorMessage } from '@/lib/api'
+import { Projects, errorMessage } from '@/lib/api'
 import { useForm, useRequest } from 'alova/client'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 
@@ -17,81 +17,6 @@ import { useParams } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PopoverPicker } from '@/components/SpeechBubble'
-
-const AI_STATUS: Record<
-  AiAccessStatus,
-  { label: string; variant: 'success' | 'warning' | 'destructive' | 'muted'; copy: string }
-> = {
-  none: {
-    label: 'Not enabled',
-    variant: 'muted',
-    copy: 'AI document processing improves document reads, alowing for better pass rates, you can request for access here.',
-  },
-  pending: {
-    label: 'Requested',
-    variant: 'warning',
-    copy: 'Your request is awaiting platform review. We’ll enable processing once it’s approved.',
-  },
-  granted: {
-    label: 'Enabled',
-    variant: 'success',
-    copy: 'AI document processing is enabled for this project.',
-  },
-  revoked: {
-    label: 'Revoked',
-    variant: 'destructive',
-    copy: 'AI processing access was revoked for this project. You can request it again.',
-  },
-}
-
-/** Owner view of AI document-processing access: status + request. */
-function AiProcessingCard({
-  organizationId,
-  projectId,
-  canRequest,
-}: {
-  organizationId: string
-  projectId: string
-  canRequest: boolean
-}) {
-  const { data: access, update } = useRequest(AiAccess.status(organizationId, projectId), {
-    initialData: { status: 'none' } as AiAccessGrant,
-  })
-  const {
-    send: request,
-    loading: requesting,
-    error,
-  } = useRequest(() => AiAccess.request(organizationId, projectId), { immediate: false }).onComplete(
-    ({ error, data }) => {
-      if (data) update({ data })
-      toast.success(!error ? 'Request Sent' : 'Unable to sent request at this time, try later.')
-    },
-  )
-
-  const meta = AI_STATUS[access.status] ?? AI_STATUS.none
-  const canAct = canRequest && (access.status === 'none' || access.status === 'revoked')
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle>AI document processing</CardTitle>
-          <Badge variant={meta.variant}>{meta.label}</Badge>
-        </div>
-        <CardDescription>{meta.copy}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex items-center gap-3">
-        {canAct ? (
-          <Button type="button" disabled={requesting} onClick={() => void request()}>
-            {requesting ? <Spinner /> : null}
-            {access.status === 'revoked' ? 'Request again' : 'Request access'}
-          </Button>
-        ) : null}
-        {error ? <FieldError>{errorMessage(error, 'Failed to send request.')}</FieldError> : null}
-      </CardContent>
-    </Card>
-  )
-}
 
 interface FormState {
   name: string
@@ -442,8 +367,6 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           {error && !error.errors ? <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError> : null}
         </div>
       </form>
-
-      <AiProcessingCard organizationId={organizationId} projectId={projectId!} canRequest={canEdit} />
     </div>
   )
 }

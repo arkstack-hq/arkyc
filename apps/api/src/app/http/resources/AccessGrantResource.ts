@@ -11,12 +11,13 @@ const ref = (model: Related, fields: string[]): Record<string, unknown> | null =
 }
 
 /**
- * A project's AI-processing access record. Nested `project`/`organization`/
- * `requester`/`reviewer` are included only when eager-loaded (admin surface);
- * the owner surface returns the bare status fields. Tolerates a plain-object
- * resource (the synthetic `none` status when a project has never requested).
+ * A project's extended-access grant for one capability. Nested `project`/
+ * `organization`/`requester`/`reviewer` are included only when eager-loaded
+ * (admin surface); the owner surface returns the bare status fields. Tolerates a
+ * plain-object resource (the synthetic `none` status when a project has never
+ * requested a capability). `details` carries PII request specifics.
  */
-export default class AiAccessGrantResource extends Resource {
+export default class AccessGrantResource extends Resource {
   /** Eager-loaded relation, or null when the backing resource is a plain object. */
   private relation(key: string): Related {
     const r = this.resource as { getAttribute?: (k: string) => unknown }
@@ -29,7 +30,9 @@ export default class AiAccessGrantResource extends Resource {
       id: this.id ?? null,
       organization_id: this.organizationId,
       project_id: this.projectId,
+      capability: this.capability,
       status: this.status,
+      details: this.details ?? null,
       note: this.note ?? null,
       requested_by: this.requestedBy ?? null,
       requested_at: this.requestedAt ?? null,

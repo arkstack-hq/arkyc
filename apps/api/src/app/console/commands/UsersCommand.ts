@@ -101,19 +101,22 @@ export class UsersCommand extends Command {
       ])
 
       switch (action) {
-        case 'view': return await this.viewUser(user)
-        case 'delete': return await this.deleteUser(user)
+        case 'view':
+          return await this.viewUser(user)
+        case 'delete':
+          return await this.deleteUser(user)
         case 'notify':
-          return await new SendTestNotification(this.app, this.kernel)
-            .setArgument('userId', user.id).handle()
+          return await new SendTestNotification(this.app, this.kernel).setArgument('userId', user.id).handle()
         case 'adminize':
-          return await new AdminGrantCommand(this.app, this.kernel)
-            .setArgument('email', user.email).handle()
-        case '2fa_off': await TwoFactorService.disable(user.id)
+          return await new AdminGrantCommand(this.app, this.kernel).setArgument('email', user.email).handle()
+        case '2fa_off':
+          await TwoFactorService.disable(user.id)
           this.success(`2FA has been disbled for ${user.firstName}`)
           break
-        case 'edit': return await this.editUser(user)
-        default: process.exit(0)
+        case 'edit':
+          return await this.editUser(user)
+        default:
+          process.exit(0)
       }
     }
   }

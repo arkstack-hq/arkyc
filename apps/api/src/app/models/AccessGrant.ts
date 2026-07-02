@@ -1,23 +1,30 @@
+import type { AccessCapability, AccessGrantDetails, AccessGrantStatus } from '@arkyc/types'
+
+import type { CastMap } from 'arkormx'
 import { Model } from 'arkormx'
 import { Organization } from './Organization'
 import { Project } from './Project'
 import { User } from './User'
 
-/** Lifecycle of a project's AI-processing access. No row ⇒ never requested. */
-export type AiProcessingStatus = 'pending' | 'granted' | 'revoked'
+/** A stored access-grant status (the synthetic `none` is never persisted). */
+export type StoredAccessGrantStatus = Exclude<AccessGrantStatus, 'none'>
 
 /**
- * Per-project AI document-processing access. AI OCR is gated: project owners
- * request it, platform admins grant or revoke it. `aiOcrEnabledForProject`
- * (see `src/support/ai-access`) treats only `granted` as enabled.
+ * Per-`(project, capability)` extended-access entitlement. Gated capabilities
+ * (`ai`, `pii`, …) are requested by project owners and granted or revoked by
+ * platform admins. `entitlementGranted` (see `src/support/access`) treats only
+ * `granted` as enabled. `details` carries capability-specific request data (PII:
+ * categories, timing, justification).
  */
-export class AiProcessingGrant extends Model {
-  protected static override table = 'ai_processing_grants'
+export class AccessGrant extends Model {
+  protected static override table = 'access_grants'
 
   declare id: string
   declare organizationId: string
   declare projectId: string
-  declare status: AiProcessingStatus
+  declare capability: AccessCapability
+  declare status: StoredAccessGrantStatus
+  declare details: AccessGrantDetails | null
   declare note: string | null
   declare requestedBy: string | null
   declare requestedAt: Date | null
@@ -35,6 +42,10 @@ export class AiProcessingGrant extends Model {
     reviewedAt: 'reviewed_at',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
+  }
+
+  protected override casts: CastMap = {
+    details: 'json',
   }
 
   organization() {

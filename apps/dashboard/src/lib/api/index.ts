@@ -19,8 +19,15 @@ export type {
   EnvSection,
   UserStatus,
 } from './admin'
-export { AiAccess } from './ai-access'
-export type { AiAccessGrant, AiAccessStatus, AdminOrganizationDetail, AdminProject } from './ai-access'
+export { ExtendedAccess } from './extended-access'
+export type {
+  AccessGrant,
+  AccessCapability,
+  AccessGrantStatus,
+  PiiRequest,
+  AdminOrganizationDetail,
+  AdminProject,
+} from './extended-access'
 export { Auth } from './auth'
 export type { TwoFactorChallenge, TwoFactorMethod, TwoFactorStatus } from './auth'
 export { AuditLogs } from './audit-logs'

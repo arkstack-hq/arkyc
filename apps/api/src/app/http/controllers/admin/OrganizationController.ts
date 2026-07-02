@@ -44,13 +44,13 @@ export default class OrganizationController extends BaseController {
     }).additional({ status: 'success', message: 'OK', code: 200 })
   }
 
-  /** Paginated projects for an organization, each with its AI-processing status. */
+  /** Paginated projects for an organization, each with its extended-access status. */
   async projects({ req }: HttpContext) {
     const organizationId = param(req.params.organizationId)
     RequestException.assertFound(organizationId, 'Organization not found', 404)
 
     const projects = await Project.where({ organizationId })
-      .with('aiProcessingGrant')
+      .with('accessGrants')
       .latest('createdAt')
       .paginate(perPage(req.query))
 

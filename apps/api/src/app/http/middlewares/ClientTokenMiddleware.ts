@@ -30,8 +30,7 @@ export class ClientTokenMiddleware {
       }).first()
 
       if (!session) throw new ApiException('invalid_client_token')
-      if (new Date(session.expiresAt).getTime() <= Date.now())
-        throw new ApiException('session_expired')
+      if (new Date(session.expiresAt).getTime() <= Date.now()) throw new ApiException('session_expired')
 
       req.verificationSession = session
       next()
@@ -43,8 +42,5 @@ export class ClientTokenMiddleware {
   }
 }
 
-export const clientTokenAuth = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => new ClientTokenMiddleware().handler(req, res, next)
+export const clientTokenAuth = (req: Request, res: Response, next: NextFunction): Promise<void> =>
+  new ClientTokenMiddleware().handler(req, res, next)

@@ -50,18 +50,18 @@ is listed per route below.
 
 **Base:** `/api/v1/dashboard/tenants/:tenantId/projects`
 
-| Method   | Path                                     | Permission        | Description                                      |
-| -------- | ---------------------------------------- | ----------------- | ------------------------------------------------ |
-| `GET`    | `/projects`                              | `projects.view`   | List projects (paginated).                       |
-| `POST`   | `/projects`                              | `projects.create` | Create a project.                                |
-| `GET`    | `/projects/:projectId`                   | `projects.view`   | Show a project.                                  |
-| `PATCH`  | `/projects/:projectId`                   | `projects.update` | Update name/status/settings/branding/thresholds. |
-| `GET`    | `/projects/:projectId/ai-access`         | `projects.view`   | AI-processing access status for the project.     |
-| `POST`   | `/projects/:projectId/ai-access/request` | `projects.update` | Request AI document processing.                  |
-| `GET`    | `/projects/:projectId/members`           | `members.view`    | List project members.                            |
-| `POST`   | `/projects/:projectId/members`           | `members.update`  | Add a tenant member to the project.              |
-| `PATCH`  | `/projects/:projectId/members/:memberId` | `members.update`  | Change a project member's role.                  |
-| `DELETE` | `/projects/:projectId/members/:memberId` | `members.remove`  | Remove a project member.                         |
+| Method   | Path                                           | Permission        | Description                                      |
+| -------- | ---------------------------------------------- | ----------------- | ------------------------------------------------ |
+| `GET`    | `/projects`                                    | `projects.view`   | List projects (paginated).                       |
+| `POST`   | `/projects`                                    | `projects.create` | Create a project.                                |
+| `GET`    | `/projects/:projectId`                         | `projects.view`   | Show a project.                                  |
+| `PATCH`  | `/projects/:projectId`                         | `projects.update` | Update name/status/settings/branding/thresholds. |
+| `GET`    | `/projects/:projectId/extended-access`         | `projects.view`   | Per-capability extended-access status.           |
+| `POST`   | `/projects/:projectId/extended-access/request` | `projects.update` | Request capabilities (`capabilities[]`, `pii`).  |
+| `GET`    | `/projects/:projectId/members`                 | `members.view`    | List project members.                            |
+| `POST`   | `/projects/:projectId/members`                 | `members.update`  | Add a tenant member to the project.              |
+| `PATCH`  | `/projects/:projectId/members/:memberId`       | `members.update`  | Change a project member's role.                  |
+| `DELETE` | `/projects/:projectId/members/:memberId`       | `members.remove`  | Remove a project member.                         |
 
 ## API keys
 
@@ -142,15 +142,23 @@ organization role never grants admin access (no `resolveTenant`).
 | `POST`   | `/users/:userId/password`                 | `admin.users.manage`       | Reset a user's password.                                 |
 | `GET`    | `/audit-logs`                             | `admin.audit.view`         | Platform audit log.                                      |
 
-### AI document-processing access {#admin-ai-access}
+### Extended access {#admin-ai-access}
 
-Gate the [AI OCR driver](/guide/providers#ai-ocr-driver) per project. Project
-owners request access (under [Projects](#projects-project-members)); admins
-list, grant, and revoke it here.
+Gate project **capabilities** per project. The registry currently defines `ai`
+(the [AI OCR driver](/guide/providers#ai-ocr-driver)) and `pii` (reading the
+extracted identity/address data back). Each capability is a separate
+request/grant, so an admin can approve one and leave another pending. Project
+owners request capabilities (under [Projects](#projects-project-members)); admins
+list, review, grant, and revoke here.
 
-| Method | Path                | Permission                   | Description                                    |
-| ------ | ------------------- | ---------------------------- | ---------------------------------------------- |
-| `GET`  | `/ai-access`        | `admin.ai_processing.view`   | List grants/requests; filter by `status`.      |
-| `GET`  | `/ai-access/count`  | `admin.ai_processing.view`   | Count of pending requests (for the nav badge). |
-| `POST` | `/ai-access/grant`  | `admin.ai_processing.manage` | Grant a project (`project_id`).                |
-| `POST` | `/ai-access/revoke` | `admin.ai_processing.manage` | Revoke a project (`project_id`).               |
+| Method | Path                                   | Permission                     | Description                                       |
+| ------ | -------------------------------------- | ------------------------------ | ------------------------------------------------- |
+| `GET`  | `/extended-access`                     | `admin.extended_access.view`   | List grants; filter by `status`/`capability`.     |
+| `GET`  | `/extended-access/count`               | `admin.extended_access.view`   | Count of pending requests (for the nav badge).    |
+| `GET`  | `/extended-access/projects/:projectId` | `admin.extended_access.view`   | A project's grants across every capability.       |
+| `POST` | `/extended-access/grant`               | `admin.extended_access.manage` | Grant a capability (`project_id`, `capability`).  |
+| `POST` | `/extended-access/revoke`              | `admin.extended_access.manage` | Revoke a capability (`project_id`, `capability`). |
+
+A PII request carries `pii: { categories: ["identity","address"], timing:
+"before" | "after", justification }`. PII access is enforced today; surfacing the
+extracted data on the session API and webhook is a follow-up.

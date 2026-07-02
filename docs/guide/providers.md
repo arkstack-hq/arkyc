@@ -80,9 +80,11 @@ persisted in the OCR `raw_response`.
 
 ### Fallback driver
 
-AI processing is a **gated capability**. When `OCR_DRIVER=ai` but a project isn't
-granted, OCR falls back to `OCR_FALLBACK_DRIVER` (default `mock`). Set it to a
-real driver in production so ungranted projects still get genuine extraction:
+AI processing is a **gated capability** (the `ai` capability under
+[extended access](/api/dashboard#admin-ai-access)). When `OCR_DRIVER=ai` but a
+project isn't granted, OCR falls back to `OCR_FALLBACK_DRIVER` (default `mock`).
+Set it to a real driver in production so ungranted projects still get genuine
+extraction:
 
 ```bash
 OCR_DRIVER=ai
@@ -91,11 +93,11 @@ OCR_FALLBACK_DRIVER=tesseract
 
 ### Per-project access
 
-AI document processing isn't available to every project. Project owners
-**request** access from the dashboard; platform admins **grant** or **revoke** it
-(or grant any project directly from the admin organization page). Until granted, a
-project's sessions use the fallback driver. See the
-[admin AI-access endpoints](/api/dashboard#admin-ai-access).
+AI document processing isn't on by default. It's the `ai` capability of
+[extended access](/api/dashboard#admin-ai-access): project owners **request** it
+from the dashboard; platform admins **grant** or **revoke** it (or grant any
+project directly from the admin organization page). Until granted, a project's
+sessions use the fallback driver.
 
 ## Address {#address}
 

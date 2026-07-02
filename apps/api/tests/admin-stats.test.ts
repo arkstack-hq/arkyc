@@ -66,8 +66,8 @@ describe('admin platform stats', () => {
     expect(data.sessions.approval_rate).toBeGreaterThanOrEqual(0)
     expect(data.sessions.approval_rate).toBeLessThanOrEqual(1)
 
-    // AI-access buckets + a continuous 30-day daily trend.
-    expect(data.ai_access).toEqual(
+    // Extended-access buckets + a continuous 30-day daily trend.
+    expect(data.extended_access).toEqual(
       expect.objectContaining({
         pending: expect.any(Number),
         granted: expect.any(Number),

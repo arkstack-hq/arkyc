@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import type { AdminPermissionKey } from '@arkyc/types'
 import { useRequest } from 'alova/client'
-import { AiAccess } from '@/lib/api'
+import { ExtendedAccess } from '@/lib/api'
 import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
 import { isDark, toggleTheme } from '@/lib/theme'
@@ -66,7 +66,7 @@ const NAV: AdminNavItem[] = [
   { to: 'overview', label: 'Overview', icon: LayoutDashboard, perm: 'admin.organizations.view', end: true },
   { to: 'settings', label: 'Settings', icon: Settings, perm: 'admin.settings.view' },
   { to: 'organizations', label: 'Organizations', icon: Building2, perm: 'admin.organizations.view' },
-  { to: 'ai-access', label: 'AI access', icon: Sparkles, perm: 'admin.ai_processing.view' },
+  { to: 'extended-access', label: 'Extended access', icon: Sparkles, perm: 'admin.extended_access.view' },
   { to: 'users', label: 'Users', icon: Users, perm: 'admin.users.view' },
   { to: 'audit-logs', label: 'Audit log', icon: ScrollText, perm: 'admin.audit.view' },
 ]
@@ -89,9 +89,9 @@ export function AdminLayout() {
   const { isAdmin, can, loading } = useAdmin()
   const [scrolled, setScrolled] = useState(false)
 
-  // Badge the AI-access nav with the count of pending requests.
-  const { data: pendingAi } = useRequest(AiAccess.pendingCount(), {
-    immediate: can('admin.ai_processing.view'),
+  // Badge the extended-access nav with the count of pending requests.
+  const { data: pendingAccess } = useRequest(ExtendedAccess.pendingCount(), {
+    immediate: can('admin.extended_access.view'),
     initialData: 0,
   })
 
@@ -99,7 +99,7 @@ export function AdminLayout() {
   if (!isAdmin) return <Navigate to="/" replace />
 
   const items = NAV.filter((item) => can(item.perm))
-  const badges: Partial<Record<string, number>> = { 'ai-access': pendingAi }
+  const badges: Partial<Record<string, number>> = { 'extended-access': pendingAccess }
 
   return (
     <SidebarProvider>

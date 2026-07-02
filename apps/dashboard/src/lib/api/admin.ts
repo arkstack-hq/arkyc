@@ -30,7 +30,7 @@ export interface AdminStats {
     last_7_days: number
     last_30_days: number
   }
-  ai_access: { pending: number; granted: number; revoked: number }
+  extended_access: { pending: number; granted: number; revoked: number }
   trend: { date: string; count: number }[]
 }
 
