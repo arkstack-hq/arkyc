@@ -13,14 +13,21 @@ export type DeepPartial<T> = {
  * these at runtime (e.g. Phase 16 realtime transport).
  */
 export class GlobalSettingsService {
-  /** The current settings, stored values merged over defaults. */
+  /**
+   * The current settings, stored values merged over defaults.
+   */
   async current(): Promise<GlobalSettings> {
     const row = await GlobalSetting.query().first()
 
     return this.merge(DEFAULT_GLOBAL_SETTINGS, (row?.settings ?? {}) as DeepPartial<GlobalSettings>)
   }
 
-  /** Deep-merge `patch` into the current settings and persist. Idempotent row. */
+  /**
+   * Deep-merge `patch` into the current settings and persist. Idempotent row.
+   *
+   * @param patch
+   * @returns
+   */
   async update(patch: DeepPartial<GlobalSettings>): Promise<GlobalSettings> {
     const next = this.merge(await this.current(), patch)
 
@@ -35,15 +42,27 @@ export class GlobalSettingsService {
     return next
   }
 
-  /** Merge a partial over a base, one level into each known section. */
-  private merge(base: GlobalSettings, patch: DeepPartial<GlobalSettings>): GlobalSettings {
+  /**
+   * Merge a partial over a base, one level into each known section.
+   *
+   * @param base
+   * @param patch
+   * @returns
+   */
+  private merge(
+    base: GlobalSettings,
+    patch: DeepPartial<GlobalSettings>
+  ): GlobalSettings {
     return {
       platform: { ...base.platform, ...(patch.platform ?? {}) },
       realtime: { ...base.realtime, ...(patch.realtime ?? {}) },
       capture: { ...base.capture, ...(patch.capture ?? {}) },
+      assets: { ...base.assets, ...(patch.assets ?? {}) },
     }
   }
 }
 
-/** Shared singleton settings service. */
+/**
+ * Shared singleton settings service.
+ */
 export const settings = new GlobalSettingsService()

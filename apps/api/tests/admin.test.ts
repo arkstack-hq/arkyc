@@ -86,6 +86,18 @@ describe('global settings', () => {
     expect(res.body.data.platform.name).toBe('Arkyc')
     expect(res.body.data.platform.signups_enabled).toBe(true)
     expect(res.body.data.realtime.transport).toBe('off')
+    expect(res.body.data.assets.url_ttl_seconds).toBe(1800)
+  })
+
+  it('updates the asset URL TTL, and rejects out-of-range values (422)', async () => {
+    const ok = await admin('patch', '/settings', ctx.ownerToken).send({ assets: { url_ttl_seconds: 3600 } })
+    expect(ok.status).toBe(200)
+    expect(ok.body.data.assets.url_ttl_seconds).toBe(3600)
+
+    const tooLow = await admin('patch', '/settings', ctx.ownerToken).send({ assets: { url_ttl_seconds: 30 } })
+    expect(tooLow.status).toBe(422)
+    const tooHigh = await admin('patch', '/settings', ctx.ownerToken).send({ assets: { url_ttl_seconds: 100000 } })
+    expect(tooHigh.status).toBe(422)
   })
 
   it('deep-merges and persists a partial update', async () => {

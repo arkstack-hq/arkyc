@@ -1,7 +1,20 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
-/** How long a signed asset link stays valid. */
-const ASSET_TTL_SECONDS = 60 * 30
+/** Default validity of a signed asset link (30 minutes), used when the platform
+ * setting `assets.url_ttl_seconds` is unset. */
+export const DEFAULT_ASSET_TTL_SECONDS = 60 * 30
+
+/** Bounds the admin-configurable asset TTL is clamped to: 1 minute to 24 hours. */
+export const MIN_ASSET_TTL_SECONDS = 60
+export const MAX_ASSET_TTL_SECONDS = 60 * 60 * 24
+
+/** Clamp a configured TTL into the allowed range, falling back to the default. */
+export function clampAssetTtl(seconds: unknown): number {
+  const n = Number(seconds)
+  if (!Number.isFinite(n)) return DEFAULT_ASSET_TTL_SECONDS
+
+  return Math.min(MAX_ASSET_TTL_SECONDS, Math.max(MIN_ASSET_TTL_SECONDS, Math.trunc(n)))
+}
 
 /** The downloadable session assets. */
 export type AssetKind = 'document_front' | 'document_back' | 'selfie'
@@ -36,7 +49,7 @@ function sign(sessionId: string, kind: AssetKind, expires: number): string {
  * @param ttlSeconds
  * @returns
  */
-export function signedAssetUrl(sessionId: string, kind: AssetKind, ttlSeconds = ASSET_TTL_SECONDS): string {
+export function signedAssetUrl(sessionId: string, kind: AssetKind, ttlSeconds = DEFAULT_ASSET_TTL_SECONDS): string {
   const expires = Math.floor(Date.now() / 1000) + ttlSeconds
   const signature = sign(sessionId, kind, expires)
   const base = String(config('app.url')).replace(/\/$/, '')

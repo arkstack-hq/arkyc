@@ -165,6 +165,20 @@ export function VerificationLifecycle() {
         <code>retrieve</code>) as your source of truth; the browser can close before the decision settles.
       </p>
 
+      <h2>Asset URLs</h2>
+      <p>
+        The captured images are exposed as signed, time-limited links under <code>assets</code> on the session and on
+        webhook deliveries, one key per image that exists: <code>assets.document_front</code>,{' '}
+        <code>assets.document_back</code>, and <code>assets.selfie</code>. Each is a public, HMAC-signed URL (no API
+        key), so it’s safe to hand to a third party such as your own KYC provider in a capture-only flow.
+      </p>
+      <p>
+        The default lifetime is <strong>30 minutes</strong> (a platform admin can change it, bounded to 60 seconds to 24
+        hours). After it lapses the link returns HTTP <code>403</code>; the image itself is retained. URLs are minted
+        fresh on every read, so <strong>fetch a new link by retrieving the session again</strong> (or from the next
+        webhook). Treat them as short-lived: download the bytes promptly or re-fetch, and don’t persist the URLs.
+      </p>
+
       <h2>Session expiry</h2>
       <p>
         A session is valid for <strong>15 minutes</strong> from creation, and its client token expires with it. If the

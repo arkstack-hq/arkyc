@@ -61,6 +61,7 @@ export interface AdminSettingsPatch {
   platform?: Partial<GlobalSettings['platform']>
   realtime?: Partial<GlobalSettings['realtime']>
   capture?: Partial<GlobalSettings['capture']>
+  assets?: Partial<GlobalSettings['assets']>
 }
 
 /** Account standing. */

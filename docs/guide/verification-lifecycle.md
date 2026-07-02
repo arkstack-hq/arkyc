@@ -104,6 +104,35 @@ The widget's `onComplete` is a **UX signal only**; use it to advance your UI.
 Treat the **webhook** (or a server-side `retrieve`) as your source of truth,
 since the browser can close before the decision settles.
 
+## Asset URLs
+
+The captured images are exposed as signed, time-limited links under `assets` on
+the session and on webhook deliveries, one key per image that exists:
+
+| Key                     | Image                  |
+| ----------------------- | ---------------------- |
+| `assets.document_front` | Front of the document. |
+| `assets.document_back`  | Back of the document.  |
+| `assets.selfie`         | The liveness selfie.   |
+
+Each link is a public, HMAC-signed URL (no API key), so it's safe to hand to a
+third party, for example a capture-only flow forwarding the image to your own
+KYC provider. It carries its own expiry:
+
+- **Default lifetime is 30 minutes.** A platform admin can change it under
+  **Platform settings → Assets** (bounded to 60 seconds to 24 hours). The value
+  applies to newly issued links; a link already in hand keeps its original
+  window.
+- **After it expires the link returns HTTP `403`** (`Invalid or expired asset
+link`). The image itself is retained in storage; only the link lapses.
+- **Fetch a fresh link by reading the session again.** URLs are minted on every
+  read, never stored, so a new `retrieve` (or the next webhook) always carries
+  links with a fresh window.
+
+Treat the `assets` URLs as short-lived and fetch-on-demand: don't persist them.
+If you need an image after the window closes, download the bytes promptly while
+the link is valid, or re-`retrieve` the session for a new one.
+
 ## Session expiry
 
 A session is valid for **15 minutes** from creation, and its client token

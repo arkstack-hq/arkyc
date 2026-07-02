@@ -49,6 +49,7 @@ export default class SettingsController extends BaseController {
       'platform.signups_enabled': ['nullable', 'boolean'],
       'realtime.transport': ['nullable', 'in:pusher,firebase,polling,off'],
       'capture.model': ['nullable', 'in:passive,active,both'],
+      'assets.url_ttl_seconds': ['nullable', 'integer', 'min:60', 'max:86400'],
     })
 
     const body = (this.body ?? {}) as DeepPartial<GlobalSettings>
@@ -62,6 +63,8 @@ export default class SettingsController extends BaseController {
 
     if (body.realtime?.transport) patch.realtime = { transport: body.realtime.transport }
     if (body.capture?.model) patch.capture = { model: body.capture.model }
+    if (body.assets?.url_ttl_seconds !== undefined)
+      patch.assets = { url_ttl_seconds: Math.trunc(Number(body.assets.url_ttl_seconds)) }
 
     const next = await settings.update(patch)
 

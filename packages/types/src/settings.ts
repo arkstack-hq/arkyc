@@ -37,6 +37,15 @@ export interface GlobalSettings {
   capture: {
     model: CaptureModel
   }
+  /** Signed session-asset links (captured document/selfie images). */
+  assets: {
+    /**
+     * How long a signed asset URL stays valid, in seconds. The link embeds its
+     * own expiry, so a change only affects newly minted URLs; existing links
+     * keep their original window. Bounded to [60, 86400] (1 minute to 24 hours).
+     */
+    url_ttl_seconds: number
+  }
 }
 
 /** The persisted singleton row backing {@link GlobalSettings}. */
@@ -56,5 +65,8 @@ export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
   },
   capture: {
     model: 'passive',
+  },
+  assets: {
+    url_ttl_seconds: 1800,
   },
 }

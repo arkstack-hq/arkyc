@@ -42,6 +42,7 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
         },
         realtime: { transport: formData.transport },
         capture: { model: formData.captureModel },
+        assets: { url_ttl_seconds: formData.assetTtl },
       }),
     {
       initialForm: {
@@ -50,6 +51,7 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
         signupsEnabled: settings.platform.signups_enabled,
         transport: settings.realtime.transport,
         captureModel: settings.capture.model,
+        assetTtl: settings.assets.url_ttl_seconds,
       },
     },
   )
@@ -155,6 +157,36 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
                 ))}
               </Select>
               <FieldError errors={error?.list?.['capture.model']} />
+            </Field>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Assets</CardTitle>
+            <CardDescription>Signed links to captured document and selfie images.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <Field>
+              <FieldLabel htmlFor="asset-ttl">Asset link lifetime (seconds)</FieldLabel>
+              <Input
+                id="asset-ttl"
+                type="number"
+                min={60}
+                max={86400}
+                step={60}
+                value={form.assetTtl}
+                onChange={(e) => {
+                  updateForm({ assetTtl: Number(e.target.value) })
+                  dirtyReset()
+                  if (error?.errors) error.delete('assets.url_ttl_seconds', update)
+                }}
+              />
+              <FieldError errors={error?.list?.['assets.url_ttl_seconds']} />
+              <p className="text-xs text-muted-foreground">
+                How long a signed image URL stays valid, from 60 seconds to 24 hours (86400). Applies to newly issued
+                links; existing links keep their original window.
+              </p>
             </Field>
           </CardContent>
         </Card>
