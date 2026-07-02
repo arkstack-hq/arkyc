@@ -18,7 +18,7 @@ export default class ProjectController extends BaseController {
    */
   async index({ req }: HttpContext) {
     const projects = await Project.where({ organizationId: req.organization!.id })
-      .withExists({ 'aiGrants as hasAiGrant': (e) => e.where({ status: 'granted' }) })
+      .withExists({ 'accessGrants as hasAiGrant': (e) => e.where({ status: 'granted', capability: 'ai' }) })
       .paginate(perPage(req.query))
 
     return new ProjectCollection(projects).additional({
