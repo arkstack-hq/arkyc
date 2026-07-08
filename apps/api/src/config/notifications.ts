@@ -19,7 +19,10 @@ export default (): NotificationConfig => {
     drivers: {
       mail: {
         transport: env('MAIL_TRANSPORT', 'smtp') as 'smtp' | 'file',
-        from: env('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
+        from: {
+          name: env('MAIL_FROM_NAME', 'Arcstack'),
+          address: env('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
+        },
         test_address: env('MAIL_TEST_ADDRESS'),
       },
       sms: {
