@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 import AdminAuditLogsPage from '@/pages/admin/AdminAuditLogsPage'
 import AdminExtendedAccessPage from '@/pages/admin/AdminExtendedAccessPage'
@@ -54,12 +54,12 @@ function RootRedirect() {
 
 export default function App() {
   const { user, loading } = useAuth()
-  let location = useLocation()
+  const baseUrl = 'https://app.arkyc.toneflix.net'
 
   return (
     <>
-      <meta property="og:image" content={`${window.location.href}/arkyc-banner.png`} />
-      <meta property="twitter:image" content={`${window.location.href}/arkyc-banner.png`} />
+      <meta property="og:image" content={`${baseUrl}/arkyc-banner.png`} />
+      <meta property="twitter:image" content={`${baseUrl}/arkyc-banner.png`} />
       <Routes>
         <Route path="/login" element={user && !loading ? <Navigate to="/" replace /> : <LoginPage />} />
         <Route path="/register" element={user && !loading ? <Navigate to="/" replace /> : <RegisterPage />} />

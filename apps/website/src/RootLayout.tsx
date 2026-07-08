@@ -13,11 +13,13 @@ function ScrollToTop() {
 
 /** The app shell rendered for every route (prerendered per route by vite-react-ssg). */
 export function RootLayout() {
+  const baseUrl = 'https://arkyc.toneflix.net'
+
   return (
     <StrictMode>
       <ScrollToTop />
-      <meta property="og:image" content={`${window.location.href}/arkyc-banner.png`} />
-      <meta property="twitter:image" content={`${window.location.href}/arkyc-banner.png`} />
+      <meta property="og:image" content={`${baseUrl}/arkyc-banner.png`} />
+      <meta property="twitter:image" content={`${baseUrl}/arkyc-banner.png`} />
       <Outlet />
     </StrictMode>
   )
