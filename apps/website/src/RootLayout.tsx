@@ -16,6 +16,8 @@ export function RootLayout() {
   return (
     <StrictMode>
       <ScrollToTop />
+      <meta property="og:image" content={`${window.location.href}/arkyc-banner.png`} />
+      <meta property="twitter:image" content={`${window.location.href}/arkyc-banner.png`} />
       <Outlet />
     </StrictMode>
   )
