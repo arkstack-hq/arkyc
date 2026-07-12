@@ -184,11 +184,14 @@ export function Widget() {
               <code>on</code>
             </td>
             <td>
-              <code>&lt;K extends WidgetEventName&gt;(event: K, listener: (data: WidgetEventMap[K]) =&gt; void) =&gt; () =&gt; void</code>
+              <code>
+                &lt;K extends WidgetEventName&gt;(event: K, listener: (data: WidgetEventMap[K]) =&gt; void) =&gt; ()
+                =&gt; void
+              </code>
             </td>
             <td>
-              Subscribe to one named event. <code>event</code> is a known event name and <code>data</code> is typed from it.
-              Returns an unsubscribe function.
+              Subscribe to one named event. <code>event</code> is a known event name and <code>data</code> is typed from
+              it. Returns an unsubscribe function.
             </td>
           </tr>
         </tbody>
@@ -211,9 +214,9 @@ export function Widget() {
 
       <h2 id="events">Events</h2>
       <p>
-        <code>onEvent</code> receives a <code>WidgetEvent</code>, a discriminated union{' '}
-        <code>{'{ name; data }'}</code> — <code>switch (event.name)</code> narrows <code>event.data</code> to the payload
-        below. <code>handle.on(name, cb)</code> subscribes to one event and hands its <code>cb</code> just that event&rsquo;s{' '}
+        <code>onEvent</code> receives a <code>WidgetEvent</code>, a discriminated union <code>{'{ name; data }'}</code>{' '}
+        — <code>switch (event.name)</code> narrows <code>event.data</code> to the payload below.{' '}
+        <code>handle.on(name, cb)</code> subscribes to one event and hands its <code>cb</code> just that event&rsquo;s{' '}
         <code>data</code>. Both are relayed from the hosted widget over <code>postMessage</code>.
       </p>
       <table>

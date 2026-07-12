@@ -22,10 +22,7 @@ export interface RgbData {
  * from the configured transport (pusher/firebase/polling). A widget-scoped
  * subset of the server's {@link SessionTransitionEvent} (no org/project ids).
  */
-export type WidgetSessionTransitionData = Pick<
-  SessionTransitionEvent,
-  'session_id' | 'status' | 'previous_status'
->
+export type WidgetSessionTransitionData = Pick<SessionTransitionEvent, 'session_id' | 'status' | 'previous_status'>
 
 /**
  * Payload for `error` — a non-terminal failure surfaced as it happens (an
@@ -81,9 +78,7 @@ export type WidgetEvent = {
  * payload (typed from the name via {@link WidgetEventMap}). Defaults to the
  * union of all payloads when the name isn't fixed.
  */
-export type WidgetEventListener<K extends WidgetEventName = WidgetEventName> = (
-  data: WidgetEventMap[K],
-) => void
+export type WidgetEventListener<K extends WidgetEventName = WidgetEventName> = (data: WidgetEventMap[K]) => void
 
 /** Configuration for a {@link WidgetController}. */
 export interface WidgetControllerConfig {

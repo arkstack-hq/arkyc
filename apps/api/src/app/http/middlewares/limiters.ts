@@ -19,8 +19,8 @@ import { limiter } from '@arkstack/driver-express/middlewares'
  *  trip and mask real assertions, so limiting is a no-op there (still live in dev/prod). */
 const testEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST
 const passthrough: RequestHandler = (_req, _res, next) => next()
-const make = (req: number, winSec: number, msg: string):
-  RequestHandler => testEnv ? passthrough : limiter(req, winSec, msg)
+const make = (req: number, winSec: number, msg: string): RequestHandler =>
+  testEnv ? passthrough : limiter(req, winSec, msg)
 
 /**
  * Credential-entry endpoints (login, 2FA verify): tight, to blunt brute force.

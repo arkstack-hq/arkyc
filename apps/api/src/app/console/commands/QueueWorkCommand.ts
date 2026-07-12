@@ -9,4 +9,4 @@ import { QueueWorkCommand as BaseQueueWorkCommand } from '@arkstack/queue/comman
  * connections. (In dev/tests the default `sync` connection runs jobs inline, so
  * no worker is needed.)
  */
-export class QueueWorkCommand extends BaseQueueWorkCommand { }
+export class QueueWorkCommand extends BaseQueueWorkCommand {}

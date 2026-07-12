@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { handleUnauthorized } from './auth-session'
 
 import ReactHook from 'alova/react'

@@ -2,11 +2,7 @@ import { Cache } from '@arkstack/cache'
 import { Job } from '@arkstack/jobs'
 import { retentionService } from '@app/services/RetentionService'
 import { sessionService } from '@app/services/VerificationSessionService'
-import {
-  queueRunsInline,
-  sessionSweepDriver,
-  sessionSweepIntervalSeconds,
-} from 'src/support/session-sweep'
+import { queueRunsInline, sessionSweepDriver, sessionSweepIntervalSeconds } from 'src/support/session-sweep'
 
 /** Overlap lease so duplicate chains (e.g. a double `--loop`) converge to one. */
 const LEASE_KEY = 'session-sweep:lease'
