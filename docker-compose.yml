@@ -11,6 +11,11 @@ x-worker: &worker
       condition: service_healthy
     redis:
       condition: service_started
+    # Wait for the API: it owns migrations (which create the jobs table the worker
+    # polls) and mints the shared APP_KEY. Starting first just crash-loops until
+    # both exist.
+    api:
+      condition: service_healthy
   environment:
     RUN_MIGRATIONS: 'false'
     APP_KEY: ${APP_KEY:-}
