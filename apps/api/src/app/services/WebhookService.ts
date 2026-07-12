@@ -30,6 +30,16 @@ function ocrParseStage(raw: unknown): 'mrz' | 'custom' | 'generic' | undefined {
   return undefined
 }
 
+/**
+ * Hard ceiling on a single outbound delivery attempt. Without it a slow or dead
+ * endpoint blocks the caller indefinitely — and on a `sync` queue the delivery
+ * runs inline in the triggering HTTP request (e.g. the webhook "test" button), so
+ * an unbounded fetch hangs that request until the reverse proxy 504s (which the
+ * browser then surfaces as a bogus CORS error). 10s stays well under a typical
+ * 60s proxy read timeout, so the request always returns a real response instead.
+ */
+const DELIVERY_TIMEOUT_MS = 10_000
+
 /** Map a session status to the webhook event it emits (omitted = no event). */
 const STATUS_EVENT: Partial<Record<VerificationStatus, WebhookEventName>> = {
   started: 'verification.started',
@@ -126,6 +136,7 @@ export class WebhookService {
           [WebhookSigner.TIMESTAMP_HEADER]: String(timestamp),
         },
         body,
+        signal: AbortSignal.timeout(DELIVERY_TIMEOUT_MS),
       })
       const text = await res.text().catch(() => '')
       delivery.responseStatus = res.status
@@ -178,7 +189,15 @@ export class WebhookService {
       attempts: 0,
       nextRetryAt: null,
     })
-    await WebhookJob.dispatch(delivery.id)
+    // On an async queue this just enqueues; on a `sync` queue it runs the delivery
+    // inline and rethrows if the endpoint is unreachable. Swallow that here (as
+    // `dispatch` does) so a dead/slow test target doesn't 500 the request — the
+    // attempt's outcome is recorded on the delivery row either way.
+    try {
+      await WebhookJob.dispatch(delivery.id)
+    } catch {
+      /* recorded on the delivery row; async queues retry, sync does not */
+    }
 
     return delivery
   }

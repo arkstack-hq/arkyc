@@ -158,4 +158,32 @@ describe('webhook endpoints', () => {
     expect(deliveries.every((d) => d.status === 'failed')).toBe(true)
     expect(deliveries[0].attempts).toBeGreaterThanOrEqual(1)
   })
+
+  it('queues a test delivery to a reachable endpoint (202)', async () => {
+    const create = await authed('post', webhooks()).send({ url: receiverUrl, events: ['verification.completed'] })
+    const endpointId = create.body.data.id
+    const before = received.length
+
+    const res = await authed('post', webhooks(`/${endpointId}/test`)).send({})
+    expect(res.status).toBe(200)
+    expect(res.body.code).toBe(202)
+    expect(received.length).toBeGreaterThan(before)
+  })
+
+  it('does not 500 the test endpoint when the target is unreachable (sync delivery rethrows)', async () => {
+    // On the sync queue the delivery runs inline and rethrows; the endpoint must
+    // still return 202 (result recorded on the delivery row), not surface a 500 —
+    // a proxy-level 5xx here is what the browser mis-reports as a CORS error.
+    const create = await authed('post', webhooks()).send({
+      url: 'http://127.0.0.1:1/down',
+      events: ['verification.completed'],
+    })
+    const endpointId = create.body.data.id
+
+    const res = await authed('post', webhooks(`/${endpointId}/test`)).send({})
+    expect(res.status).toBe(200)
+
+    const deliveries = Array.from(await WebhookDelivery.where({ webhookEndpointId: endpointId }).get())
+    expect(deliveries.some((d) => d.status === 'failed')).toBe(true)
+  })
 })
