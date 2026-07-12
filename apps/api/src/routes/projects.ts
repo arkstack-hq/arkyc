@@ -1,7 +1,7 @@
 import { auth } from '@arkstack/driver-express/middlewares'
 import { Router } from '@arkstack/driver-express'
 import type { PermissionKey } from '@arkyc/types'
-import { can, resolveOrganization } from '@app/http/middlewares'
+import { can, resolveOrganization, webhookTestLimiter } from '@app/http/middlewares'
 import ProjectController from '@controllers/dashboard/ProjectController'
 import ProjectMemberController from '@controllers/dashboard/ProjectMemberController'
 import ApiKeyController from '@controllers/dashboard/ApiKeyController'
@@ -37,7 +37,11 @@ Router.group('/v1/dashboard/organizations/:organizationId/projects', () => {
   Router.post('/:projectId/webhooks', [WebhookEndpointController, 'create'], scoped('webhooks.create'))
   Router.patch('/:projectId/webhooks/:webhookId', [WebhookEndpointController, 'update'], scoped('webhooks.update'))
   Router.delete('/:projectId/webhooks/:webhookId', [WebhookEndpointController, 'destroy'], scoped('webhooks.delete'))
-  Router.post('/:projectId/webhooks/:webhookId/test', [WebhookEndpointController, 'test'], scoped('webhooks.test'))
+  Router.post(
+    '/:projectId/webhooks/:webhookId/test',
+    [WebhookEndpointController, 'test'],
+    [webhookTestLimiter, ...scoped('webhooks.test')],
+  )
 })
 
 export default () => {}

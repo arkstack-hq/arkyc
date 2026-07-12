@@ -6,6 +6,7 @@ import { Project } from '../src/app/models/Project'
 import { Storage } from '@arkstack/filesystem'
 import { Organization } from '../src/app/models/Organization'
 import { VerificationSession } from '../src/app/models/VerificationSession'
+import { sessionService } from '../src/app/services/VerificationSessionService'
 import { app } from '../src/core/bootstrap'
 import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import request from 'parasito'
@@ -207,6 +208,20 @@ describe('verification session lifecycle', () => {
 
     const show = await publicApi('get', `sessions/${id}`)
     expect(show.body.data.status).toBe('expired')
+  })
+
+  it('sweeps past-TTL sessions to expired without a reader touching them', async () => {
+    const { id } = await openSession()
+    const row = await VerificationSession.where({ id }).firstOrFail()
+    row.expiresAt = new Date(Date.now() - 1000)
+    await row.save()
+
+    const expired = await sessionService.sweepExpired()
+    expect(expired).toBeGreaterThanOrEqual(1)
+
+    // Reflected in the DB directly (no lazy read triggered the transition).
+    const swept = await VerificationSession.where({ id }).firstOrFail()
+    expect(swept.status).toBe('expired')
   })
 
   it('stores a multipart-uploaded document via Arkstack Storage', async () => {

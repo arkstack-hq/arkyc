@@ -5,6 +5,7 @@
  * migrations, then `pm2 startOrReload ecosystem.config.cjs --update-env`.
  * The API loads `apps/api/.env` at startup, so only NODE_ENV is set here.
  */
+// eslint-disable-next-line no-undef
 module.exports = {
   apps: [
     {

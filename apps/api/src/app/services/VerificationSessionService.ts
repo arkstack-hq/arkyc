@@ -22,6 +22,7 @@ import { LivenessCheck } from '@app/models/LivenessCheck'
 import { AddressVerification } from '@app/models/AddressVerification'
 import { sessionObjectKey } from 'src/support/storage'
 import { transitionTo } from 'src/support/session-transition'
+import { toArray } from 'src/support/collection'
 import { type ProviderSignals, addressVerifier, livenessDriver } from './providers'
 import { settings } from './GlobalSettingsService'
 import { BiometricJob, OcrJob } from '@app/jobs'
@@ -437,6 +438,40 @@ export class VerificationSessionService {
     }
 
     return session
+  }
+
+  /**
+   * Expire every past-its-TTL, non-terminal session that no reader has touched
+   * (the lazy `refresh` only fires on access, so untouched sessions linger). Each
+   * runs through the shared `transition` choke point, so integrators still get the
+   * `verification.expired` webhook + realtime broadcast. Batched to bound the work
+   * per run; the scheduler (`routes/console.ts`) calls this on a fixed cadence.
+   *
+   * @param limit  Maximum sessions to expire in one invocation.
+   * @returns The number of sessions expired.
+   */
+  async sweepExpired(limit = 500): Promise<number> {
+    const due = toArray(
+      await VerificationSession.query()
+        .whereNotIn('status', [...StatusMachine.TERMINAL])
+        .wherePast('expiresAt')
+        .limit(limit)
+        .get(),
+    )
+
+    let expired = 0
+    for (const session of due) {
+      // Re-check against the machine: a concurrent read may have already expired it.
+      if (!SessionRules.shouldExpire(session.status, session.expiresAt, new Date())) continue
+      try {
+        await this.transition(session, 'expired')
+        expired += 1
+      } catch {
+        // One session failing (e.g. a concurrent write) shouldn't abort the batch.
+      }
+    }
+
+    return expired
   }
 
   /**

@@ -1,7 +1,7 @@
 import { HttpContext } from 'clear-router/types/express'
 import { Resource } from 'resora'
 import { Router } from '@arkstack/driver-express'
-import { apiKeyAuth } from '@app/http/middlewares'
+import { apiKeyAuth, apiLimiter } from '@app/http/middlewares'
 import SessionController from '@controllers/public/SessionController'
 import SessionAssetController from '@controllers/public/SessionAssetController'
 
@@ -16,14 +16,14 @@ Router.get(
       message: 'Authenticated project',
       code: 200,
     }),
-  [apiKeyAuth],
+  [apiLimiter, apiKeyAuth],
 )
 
 // Verification sessions.
 Router.group('/v1/sessions', () => {
-  Router.post('/', [SessionController, 'create'], [apiKeyAuth])
-  Router.get('/:id', [SessionController, 'show'], [apiKeyAuth])
-  Router.post('/:id/cancel', [SessionController, 'cancel'], [apiKeyAuth])
+  Router.post('/', [SessionController, 'create'], [apiLimiter, apiKeyAuth])
+  Router.get('/:id', [SessionController, 'show'], [apiLimiter, apiKeyAuth])
+  Router.post('/:id/cancel', [SessionController, 'cancel'], [apiLimiter, apiKeyAuth])
 })
 
 // Signed, time-limited session assets served inline as images (no API key — the

@@ -6,6 +6,8 @@ import { WebhookSigner } from '@arkyc/webhooks'
 import { app } from '../src/core/bootstrap'
 import { Organization } from '../src/app/models/Organization'
 import { WebhookDelivery } from '../src/app/models/WebhookDelivery'
+import { WebhookEndpoint } from '../src/app/models/WebhookEndpoint'
+import { decryptSecret, isEncryptedSecret } from '../src/support/secret-cipher'
 
 interface Captured {
   body: string
@@ -96,6 +98,12 @@ describe('webhook endpoints', () => {
 
     const list = await authed('get', webhooks())
     expect(list.body.data[0].secret_hash).toBeUndefined()
+
+    // At rest the secret is encrypted, not the plaintext — but decrypts back to it.
+    const stored = await WebhookEndpoint.where({ id: res.body.data.id }).firstOrFail()
+    expect(stored.secretHash).not.toBe(res.body.secret)
+    expect(isEncryptedSecret(stored.secretHash)).toBe(true)
+    expect(decryptSecret(stored.secretHash)).toBe(res.body.secret)
   })
 
   it('rejects an invalid event name', async () => {

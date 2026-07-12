@@ -9,6 +9,7 @@ import WebhookEndpointResource from '@app/http/resources/WebhookEndpointResource
 import WebhookEndpointCollection from '@app/http/resources/WebhookEndpointCollection'
 import { audit } from '@app/services/AuditLogger'
 import { webhookService } from '@app/services/WebhookService'
+import { encryptSecret } from 'src/support/secret-cipher'
 
 /** The webhook event names a subscription may include. */
 const EVENT_NAMES: WebhookEventName[] = [
@@ -51,12 +52,14 @@ export default class WebhookEndpointController extends BaseController {
       'events.*': ['string', EVENTS_RULE],
     })
 
+    // Returned once in plaintext; persisted encrypted-at-rest (decrypted only at
+    // sign time). The column keeps its `secret_hash` name for compatibility.
     const secret = `whsec_${randomBytes(24).toString('hex')}`
     const endpoint = await WebhookEndpoint.create({
       organizationId: project.organizationId,
       projectId: project.id,
       url: data.url,
-      secretHash: secret,
+      secretHash: encryptSecret(secret),
       events: data.events as WebhookEventName[],
       status: 'active',
     })

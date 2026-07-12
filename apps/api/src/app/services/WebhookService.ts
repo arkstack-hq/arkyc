@@ -13,6 +13,7 @@ import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
 import { WebhookJob } from '@app/jobs'
 import { buildSessionAssets } from '@app/services/SessionAssetService'
 import { toArray } from 'src/support/collection'
+import { decryptSecret } from 'src/support/secret-cipher'
 
 /**
  * Read the OCR parse stage from a stored driver `rawResponse`, if present.
@@ -111,7 +112,9 @@ export class WebhookService {
 
     const body = JSON.stringify(delivery.payload)
     const timestamp = Math.floor(Date.now() / 1000)
-    const signature = WebhookSigner.sign(body, endpoint.secretHash, timestamp)
+    // Secrets are stored encrypted-at-rest; decrypt only here, at sign time.
+    // Legacy plaintext rows pass through unchanged (see `decryptSecret`).
+    const signature = WebhookSigner.sign(body, decryptSecret(endpoint.secretHash), timestamp)
 
     delivery.attempts += 1
     try {
