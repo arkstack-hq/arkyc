@@ -458,6 +458,10 @@ liveness, offered per the admin's global capture-model setting.
 **Scope**
 
 - [ ] Security: rate limiting, allowed-origins enforcement per project, secret/key hashing audit, signed-URL TTLs, webhook signature hardening, client-token scoping, retry limits, session expiry sweeps.
+  - [x] Rate limiting on sensitive surfaces (auth, API-key session routes, webhook test) via the express driver's IP-keyed limiter (no-op under test); `apps/api/src/app/http/middlewares/limiters.ts`.
+  - [x] Session-expiry sweep (`sessionService.sweepExpired`), driven by the scheduler or a self-rescheduling `SessionSweepJob` (no-cron option) via `SESSION_SWEEP_DRIVER`.
+  - [x] Webhook signing secrets encrypted-at-rest (framework `Encryption`, `APP_KEY`), decrypted only at sign time, + re-encrypt migration.
+  - [ ] Per-project allowed-origins enforcement; client-token scoping (single-use/origin binding); retry-limit + signed-URL TTL audit.
 - [ ] Data retention settings (per tenant) + media lifecycle/cleanup jobs.
 - [ ] Observability: metrics, structured logs, error tracking hooks.
 - [ ] Test coverage pass (unit + integration + a happy-path e2e), CI pipeline, release versioning, `CHANGELOG.md`, `LICENSE`, contribution guide.
