@@ -40,7 +40,8 @@ Router.group('/v1/dashboard/organizations/:organizationId/projects', () => {
   Router.post(
     '/:projectId/webhooks/:webhookId/test',
     [WebhookEndpointController, 'test'],
-    [webhookTestLimiter, ...scoped('webhooks.test')],
+    // Limiter runs after auth so only authenticated requests count against it.
+    [...scoped('webhooks.test'), webhookTestLimiter],
   )
 })
 

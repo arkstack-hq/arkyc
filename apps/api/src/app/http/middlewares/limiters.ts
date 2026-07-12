@@ -38,6 +38,9 @@ export const authLimiter = make(30, 900, 'Too many requests. Please try again sh
 export const apiLimiter = make(120, 60, 'Rate limit exceeded. Please slow down.')
 
 /**
- * Outbound webhook test deliveries: tight, to curb using them to hammer a target URL.
+ * Outbound webhook test deliveries: a ceiling well above normal "click Test a few
+ * times while wiring up an endpoint" use, only there to curb using the button to
+ * hammer a target URL. Wired AFTER auth on the route so unauthenticated calls
+ * don't consume a legitimate user's budget.
  */
-export const webhookTestLimiter = make(10, 900, 'Too many test deliveries. Please wait a moment.')
+export const webhookTestLimiter = make(30, 60, 'Too many test deliveries. Please wait a moment.')
