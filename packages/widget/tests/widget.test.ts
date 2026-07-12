@@ -406,7 +406,8 @@ describe('WidgetController flow', () => {
         }) as Response,
     )
     const onClose = vi.fn()
-    const { controller } = makeController({ fetch: fetchMock as never, onClose })
+    const onComplete = vi.fn()
+    const { controller } = makeController({ fetch: fetchMock as never, onClose, onComplete })
     const el = controller.element as unknown as FakeEl
 
     controller.start()
@@ -414,8 +415,55 @@ describe('WidgetController flow', () => {
     expect(find(el, 'Link expired')).toBeTruthy()
     expect(find(el, 'Get started')).toBeFalsy()
     expect(find(el, 'Done')).toBeFalsy() // close-only — no continue/acknowledge
+    // A non-decision terminal (expired) isn't a completion — nothing is surfaced.
+    expect(onComplete).not.toHaveBeenCalled()
     clickText(el, 'Close')
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('surfaces onComplete + the complete event when the session is already decided on load', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        ({
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              status: 'success',
+              message: 'OK',
+              code: 200,
+              data: { id: 's1', status: 'approved', expires_at: '2099-01-01' },
+            }),
+        }) as Response,
+    )
+    const onComplete = vi.fn()
+    const onClose = vi.fn()
+    const events: WidgetEvent[] = []
+    const { controller, messages } = makeController({
+      fetch: fetchMock as never,
+      onComplete,
+      onClose,
+      onEvent: (e) => events.push(e),
+    })
+    const el = controller.element as unknown as FakeEl
+
+    controller.start()
+    await flush()
+
+    // The already-decided outcome is delivered immediately — no dismissal needed.
+    expect(find(el, 'Already complete')).toBeTruthy()
+    expect(find(el, 'Done')).toBeFalsy() // still close-only UI
+    expect(onComplete).toHaveBeenCalledWith({ status: 'approved', decision: 'approved' })
+    expect(events.some((e) => e.name === 'complete')).toBe(true)
+    // The non-closing `complete` event forwards to a parent; the terminal
+    // `arkyc:complete` (which tears an embedding overlay down) still waits for Close.
+    expect(messages).not.toContainEqual(expect.objectContaining({ type: 'arkyc:complete' }))
+
+    // Closing the notice tears down as before, without re-firing completion.
+    clickText(el, 'Close')
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onComplete).toHaveBeenCalledTimes(1)
+    expect(messages).toContainEqual({ type: 'arkyc:close' })
   })
 
   it('closes via the header button, firing onClose + arkyc:close', () => {

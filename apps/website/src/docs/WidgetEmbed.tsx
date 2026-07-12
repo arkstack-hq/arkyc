@@ -292,7 +292,9 @@ export function WidgetEmbed() {
       <h2>The handle</h2>
       <p>
         <code>open</code> and <code>mount</code> return a <code>WidgetHandle</code>: <code>close()</code> to tear it
-        down, and <code>on(name, listener)</code> to subscribe to a single event (returns an unsubscribe function).
+        down, and <code>on(name, listener)</code> to subscribe to a single event (returns an unsubscribe function).{' '}
+        <code>name</code> is a known event name (<code>session.transition</code> · <code>complete</code> ·{' '}
+        <code>error</code> · <code>close</code>) and the <code>listener</code>&rsquo;s <code>data</code> is typed from it.
       </p>
       <CodeCard
         title="handle.ts"

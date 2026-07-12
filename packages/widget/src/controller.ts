@@ -16,7 +16,16 @@ import { WidgetView, type AddressFormData } from './ui'
 import { isDesktopDevice } from './device'
 import { renderQrSvg } from './qr'
 import { createWidgetRealtimeClient, type WidgetRealtimeClient } from './realtime'
-import type { BaseWidgetOptions, ViewHandlers, WidgetControllerConfig, WidgetEventListener } from './types'
+import type {
+  BaseWidgetOptions,
+  ViewHandlers,
+  WidgetControllerConfig,
+  WidgetEvent,
+  WidgetEventListener,
+  WidgetEventMap,
+  WidgetEventName,
+  WidgetSessionTransitionData,
+} from './types'
 
 /** Per-step lead-in copy shown before each capture/liveness step. */
 const STEP_INSTRUCTIONS: Partial<Record<WidgetStep, { title: string; body: string; cta?: string }>> = {
@@ -90,8 +99,8 @@ export class WidgetController {
   private rtResolved = false
   /** The last status observed, so a transition only emits once per change. */
   private lastStatus: VerificationStatus | null = null
-  /** Per-name event listeners registered via {@link on}. */
-  private listeners = new Map<string, Set<WidgetEventListener>>()
+  /** Per-name event listeners registered via {@link on} (payload-erased for storage). */
+  private listeners = new Map<WidgetEventName, Set<(data: never) => void>>()
   /** Cancels the active session watch (e.g. continue-on-this-device). */
   private stopWatch: (() => void) | undefined
 
@@ -175,8 +184,8 @@ export class WidgetController {
    * Subscribe to a named widget event; returns an unsubscribe function. Having a
    * listener (here or via `onEvent`) is what activates the event stream.
    */
-  on(event: string, listener: WidgetEventListener): () => void {
-    const set = this.listeners.get(event) ?? new Set<WidgetEventListener>()
+  on<K extends WidgetEventName>(event: K, listener: WidgetEventListener<K>): () => void {
+    const set = this.listeners.get(event) ?? new Set<(data: never) => void>()
     set.add(listener)
     this.listeners.set(event, set)
 
@@ -184,7 +193,7 @@ export class WidgetController {
   }
 
   /** Whether anyone is listening for `name` (the firehose or a named listener). */
-  private hasListener(name: string): boolean {
+  private hasListener(name: WidgetEventName): boolean {
     if (this.config.onEvent) return true
     const set = this.listeners.get(name)
 
@@ -196,7 +205,7 @@ export class WidgetController {
    * iframe mode — to the embedding parent as `arkyc:event` so the SDK's
    * `handle.on(...)` works across the frame.
    */
-  private dispatch(name: string, data?: unknown): void {
+  private dispatch<K extends WidgetEventName>(name: K, data: WidgetEventMap[K]): void {
     this.emit(name, data)
     // The parent window is the consumer in iframe mode, so forwarding there isn't
     // gated on a local listener (post() already no-ops when not embedding).
@@ -204,10 +213,10 @@ export class WidgetController {
   }
 
   /** Emit an event to the firehose + named listeners — but only if one is active. */
-  private emit(name: string, data?: unknown): void {
+  private emit<K extends WidgetEventName>(name: K, data: WidgetEventMap[K]): void {
     if (!this.hasListener(name)) return
     try {
-      this.config.onEvent?.({ name, data })
+      this.config.onEvent?.({ name, data } as WidgetEvent)
     } catch {
       // A consumer callback threw — never let it break the flow.
     }
@@ -215,7 +224,7 @@ export class WidgetController {
     if (set) {
       for (const listener of [...set]) {
         try {
-          listener(data)
+          listener(data as never)
         } catch {
           // ditto
         }
@@ -232,7 +241,7 @@ export class WidgetController {
       session_id: this.sessionId,
       status,
       previous_status: previous,
-    } satisfies Partial<SessionTransitionEvent>)
+    } satisfies WidgetSessionTransitionData)
   }
 
   /**
@@ -569,6 +578,19 @@ export class WidgetController {
     this.step = 'result'
     this.terminalOnLoad = true
     this.render()
+
+    // A session already *decided* when this device opened it (approved / rejected /
+    // requires_review) still owes the integrator its result. The notice only offers
+    // Close, so the flow never reaches `finishResult` — surface the outcome now,
+    // mirroring `fail`, so `onComplete` and the `complete` event/listeners fire
+    // immediately rather than waiting on a dismissal that may never come. Non-decision
+    // terminals (expired / cancelled) aren't completions and stay close-only. The
+    // terminal `arkyc:complete` (parent teardown) still waits for Close, which posts
+    // `arkyc:close`; `dispatch` forwards the non-closing `complete` event to a parent.
+    if (this.result.decision != null) {
+      this.dispatch('complete', this.result)
+      this.config.onComplete?.(this.result)
+    }
   }
 
   private render(): void {
@@ -732,7 +754,7 @@ export class WidgetController {
     this.settled = true
     this.teardownRealtime()
     this.post('arkyc:close', {})
-    this.dispatch('close')
+    this.dispatch('close', undefined)
     this.config.onClose?.()
     this.destroy()
     this.config.onSettle?.()

@@ -184,9 +184,12 @@ export function Widget() {
               <code>on</code>
             </td>
             <td>
-              <code>(event: string, listener: (data) =&gt; void) =&gt; () =&gt; void</code>
+              <code>&lt;K extends WidgetEventName&gt;(event: K, listener: (data: WidgetEventMap[K]) =&gt; void) =&gt; () =&gt; void</code>
             </td>
-            <td>Subscribe to one named event. Returns an unsubscribe function.</td>
+            <td>
+              Subscribe to one named event. <code>event</code> is a known event name and <code>data</code> is typed from it.
+              Returns an unsubscribe function.
+            </td>
           </tr>
         </tbody>
       </table>
@@ -208,14 +211,19 @@ export function Widget() {
 
       <h2 id="events">Events</h2>
       <p>
-        <code>onEvent</code> and <code>handle.on(name, …)</code> both receive a <code>WidgetEvent</code>,{' '}
-        <code>{'{ name: string; data?: unknown }'}</code>, relayed from the hosted widget over <code>postMessage</code>.
+        <code>onEvent</code> receives a <code>WidgetEvent</code>, a discriminated union{' '}
+        <code>{'{ name; data }'}</code> — <code>switch (event.name)</code> narrows <code>event.data</code> to the payload
+        below. <code>handle.on(name, cb)</code> subscribes to one event and hands its <code>cb</code> just that event&rsquo;s{' '}
+        <code>data</code>. Both are relayed from the hosted widget over <code>postMessage</code>.
       </p>
       <table>
         <thead>
           <tr>
             <th>Event</th>
             <th>Fires when</th>
+            <th>
+              <code>data</code> payload
+            </th>
             <th>Also surfaced as</th>
           </tr>
         </thead>
@@ -227,6 +235,9 @@ export function Widget() {
             <td>
               The session advances a stage (e.g. <code>document_submitted</code> → <code>processing</code>).
             </td>
+            <td>
+              <code>{'{ session_id, status, previous_status }'}</code>
+            </td>
             <td>None</td>
           </tr>
           <tr>
@@ -234,6 +245,9 @@ export function Widget() {
               <code>complete</code>
             </td>
             <td>The flow reached a terminal state.</td>
+            <td>
+              <code>WidgetResult</code>
+            </td>
             <td>
               <code>onComplete(result)</code>
             </td>
@@ -244,6 +258,9 @@ export function Widget() {
             </td>
             <td>The session errored or expired.</td>
             <td>
+              <code>{'{ message, status?, error? }'}</code>
+            </td>
+            <td>
               <code>onError(error)</code>
             </td>
           </tr>
@@ -252,6 +269,9 @@ export function Widget() {
               <code>close</code>
             </td>
             <td>The overlay was dismissed.</td>
+            <td>
+              <code>undefined</code>
+            </td>
             <td>
               <code>onClose()</code>
             </td>

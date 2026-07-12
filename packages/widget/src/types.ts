@@ -1,5 +1,11 @@
 import type { DocumentAnalyzer, DocumentTuning } from './document'
-import type { DocumentType, LivenessChallenge, ProjectBranding, WidgetResult } from '@arkyc/types'
+import type {
+  DocumentType,
+  LivenessChallenge,
+  ProjectBranding,
+  SessionTransitionEvent,
+  WidgetResult,
+} from '@arkyc/types'
 import type { FaceAnalyzer, FaceTuning } from './face'
 
 import type { AddressFormData } from './ui'
@@ -12,19 +18,72 @@ export interface RgbData {
 }
 
 /**
- * An event surfaced to consumers through `onEvent` / `handle.on(name, cb)`. The
- * stream is a firehose: `session.transition` (live status changes, from the
- * configured transport) plus the lifecycle events `complete` / `error` / `close`.
+ * Payload for `session.transition` — a live verification status change relayed
+ * from the configured transport (pusher/firebase/polling). A widget-scoped
+ * subset of the server's {@link SessionTransitionEvent} (no org/project ids).
  */
-export interface WidgetEvent {
-  /** Event name, e.g. `session.transition`, `complete`, `error`, `close`. */
-  name: string
-  /** Event payload (shape depends on `name`). */
-  data?: unknown
+export type WidgetSessionTransitionData = Pick<
+  SessionTransitionEvent,
+  'session_id' | 'status' | 'previous_status'
+>
+
+/**
+ * Payload for `error` — a non-terminal failure surfaced as it happens (an
+ * expired session/token becomes knowable without waiting for the user to
+ * dismiss the screen). `status`/`error` are present only for typed API errors.
+ */
+export interface WidgetErrorData {
+  /** Human-readable failure message. */
+  message: string
+  /** HTTP status code, when the failure came from a typed API error. */
+  status?: number
+  /** Stable machine-readable error key, when the failure came from a typed API error. */
+  error?: string
 }
 
-/** Subscribe to a named widget event; returns an unsubscribe function. */
-export type WidgetEventListener = (data: unknown) => void
+/**
+ * The set of widget events and the payload each delivers. This is the single
+ * source of truth for event names and their `data` shapes: `onEvent`,
+ * {@link WidgetEvent}, {@link WidgetEventListener}, and {@link WidgetHandle.on}
+ * are all derived from it, so a listener's `data` is typed from the name.
+ */
+export interface WidgetEventMap {
+  /** Live status change (fires on every real transition, once per change). */
+  'session.transition': WidgetSessionTransitionData
+  /** The flow settled successfully; carries the final verification result. */
+  complete: WidgetResult
+  /** A failure occurred (may be recoverable; the flow has not necessarily ended). */
+  error: WidgetErrorData
+  /** The widget was closed (camera released). No payload. */
+  close: undefined
+}
+
+/** A widget event name — one of the keys of {@link WidgetEventMap}. */
+export type WidgetEventName = keyof WidgetEventMap
+
+/**
+ * An event surfaced to consumers through `onEvent`. Discriminated on `name`, so
+ * a `switch (event.name)` narrows `event.data` to the matching payload. The
+ * stream is a firehose: `session.transition` (live status changes) plus the
+ * lifecycle events `complete` / `error` / `close`.
+ */
+export type WidgetEvent = {
+  [K in WidgetEventName]: {
+    /** Event name (discriminant). */
+    name: K
+    /** Event payload for this `name` (see {@link WidgetEventMap}). */
+    data: WidgetEventMap[K]
+  }
+}[WidgetEventName]
+
+/**
+ * Subscribe callback for a single named widget event; receives that event's
+ * payload (typed from the name via {@link WidgetEventMap}). Defaults to the
+ * union of all payloads when the name isn't fixed.
+ */
+export type WidgetEventListener<K extends WidgetEventName = WidgetEventName> = (
+  data: WidgetEventMap[K],
+) => void
 
 /** Configuration for a {@link WidgetController}. */
 export interface WidgetControllerConfig {
@@ -157,11 +216,13 @@ export interface WidgetHandle {
   /** Close the widget and release the camera (fires `onClose`). */
   close: () => void
   /**
-   * Subscribe to a named widget event (e.g. `session.transition`, `complete`).
-   * Returns an unsubscribe function. Registering a listener activates the event
-   * stream (events are only delivered while at least one listener is active).
+   * Subscribe to a named widget event (`session.transition`, `complete`,
+   * `error`, `close`). The `listener`'s `data` is typed from the `event` name
+   * via {@link WidgetEventMap}. Returns an unsubscribe function. Registering a
+   * listener activates the event stream (events are only delivered while at
+   * least one listener is active).
    */
-  on: (event: string, listener: WidgetEventListener) => () => void
+  on: <K extends WidgetEventName>(event: K, listener: WidgetEventListener<K>) => () => void
 }
 
 /** High-level events the view raises back to the controller. */
