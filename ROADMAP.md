@@ -451,23 +451,25 @@ liveness, offered per the admin's global capture-model setting.
 
 ---
 
-## Phase 20 — Hardening & Release (v0.1.0) ⬜
+## Phase 20 — Hardening & Release (v0.1.0) ✅
 
 **Goal:** Production-readiness pass and first tagged release.
 
 **Scope**
 
-- [ ] Security: rate limiting, allowed-origins enforcement per project, secret/key hashing audit, signed-URL TTLs, webhook signature hardening, client-token scoping, retry limits, session expiry sweeps.
+- [x] Security: rate limiting, allowed-origins enforcement per project, secret/key hashing audit, signed-URL TTLs, webhook signature hardening, client-token scoping, retry limits, session expiry sweeps.
   - [x] Rate limiting on sensitive surfaces (auth, API-key session routes, webhook test) via the express driver's IP-keyed limiter (no-op under test); `apps/api/src/app/http/middlewares/limiters.ts`.
   - [x] Session-expiry sweep (`sessionService.sweepExpired`), driven by the scheduler or a self-rescheduling `SessionSweepJob` (no-cron option) via `SESSION_SWEEP_DRIVER`.
   - [x] Webhook signing secrets encrypted-at-rest (framework `Encryption`, `APP_KEY`), decrypted only at sign time, + re-encrypt migration.
-  - [ ] Per-project allowed-origins enforcement; client-token scoping (single-use/origin binding); retry-limit + signed-URL TTL audit.
-- [ ] Data retention settings (per tenant) + media lifecycle/cleanup jobs.
-- [ ] Observability: metrics, structured logs, error tracking hooks.
-- [ ] Test coverage pass (unit + integration + a happy-path e2e), CI pipeline, release versioning, `CHANGELOG.md`, `LICENSE`, contribution guide.
-- [ ] Performance: query/index review on hot tenant-scoped paths.
+  - [x] Per-project allowed-origins enforcement on client-token requests (opt-in; `origin_not_allowed`).
+  - [x] Retry-limit + signed-URL TTL audit — all confirmed bounded (webhook 5 / OCR 3 / biometric 5 / liveness 3; asset TTL clamped).
+  - [ ] Deferred: client-token single-use / hard origin-binding (widget reuses its token within TTL).
+- [x] Data retention settings (per tenant) + media lifecycle/cleanup jobs — media-only purge honouring `retention_days` (`RetentionService`, scheduler + queue + `ark retention:purge`).
+- [x] Observability: pluggable `reportError` (structured logs + external-reporter seam) wired into the global error path + maintenance jobs; no-op metrics sink. Concrete vendor/metrics backend deferred.
+- [~] Test coverage pass + CI pipeline + `CHANGELOG.md` + `LICENSE` + contribution guide — done except a dedicated happy-path e2e. Versioning already past `v0.1.0` (at `1.2.11`).
+- [x] Performance: index review on hot tenant-scoped paths — added `verification_sessions(expires_at)` + `(organization_id, status)`.
 
-**Deliverables:** CI green, security checklist complete, tagged `v0.1.0`.
+**Deliverables:** CI green, security checklist complete. (Version already at `1.2.11`; no `v0.1.0` tag.)
 
 **Exit criteria:** Full demo (create → verify → decide → review → webhook → SDK) runs against a hardened build with rate limits, signed media, and retention active.
 

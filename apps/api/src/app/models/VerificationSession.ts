@@ -51,6 +51,8 @@ export class VerificationSession extends Model {
   declare workflowId: string | null
   /** Snapshot of the applied workflow config, frozen at session creation. */
   declare workflow: WorkflowConfig | null
+  /** When the retention sweep deleted this session's captured media (null = not purged). */
+  declare mediaPurgedAt: Date | null
   declare createdAt: Date
   declare updatedAt: Date
 
@@ -71,6 +73,7 @@ export class VerificationSession extends Model {
     captureModel: 'capture_model',
     livenessChallenges: 'liveness_challenges',
     workflowId: 'workflow_id',
+    mediaPurgedAt: 'media_purged_at',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }

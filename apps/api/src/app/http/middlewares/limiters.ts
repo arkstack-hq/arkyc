@@ -19,17 +19,25 @@ import { limiter } from '@arkstack/driver-express/middlewares'
  *  trip and mask real assertions, so limiting is a no-op there (still live in dev/prod). */
 const testEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST
 const passthrough: RequestHandler = (_req, _res, next) => next()
-const make = (requests: number, windowSec: number, message: string):
-  RequestHandler => testEnv ? passthrough : limiter(requests, windowSec, message)
+const make = (req: number, winSec: number, msg: string):
+  RequestHandler => testEnv ? passthrough : limiter(req, winSec, msg)
 
-/** Credential-entry endpoints (login, 2FA verify): tight, to blunt brute force. */
+/**
+ * Credential-entry endpoints (login, 2FA verify): tight, to blunt brute force.
+ */
 export const loginLimiter = make(10, 900, 'Too many attempts. Please try again later.')
 
-/** Other auth endpoints (register, forgot-password, email verify): moderate. */
+/**
+ * Other auth endpoints (register, forgot-password, email verify): moderate.
+ */
 export const authLimiter = make(30, 900, 'Too many requests. Please try again shortly.')
 
-/** Public API-key session endpoints: per-IP ceiling above normal integration use. */
+/**
+ * Public API-key session endpoints: per-IP ceiling above normal integration use.
+ */
 export const apiLimiter = make(120, 60, 'Rate limit exceeded. Please slow down.')
 
-/** Outbound webhook test deliveries: tight, to curb using them to hammer a target URL. */
+/**
+ * Outbound webhook test deliveries: tight, to curb using them to hammer a target URL.
+ */
 export const webhookTestLimiter = make(10, 900, 'Too many test deliveries. Please wait a moment.')

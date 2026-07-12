@@ -1,5 +1,6 @@
 import { Schedule } from '@arkstack/scheduler'
 import { sessionService } from '@app/services/VerificationSessionService'
+import { retentionService } from '@app/services/RetentionService'
 import { sessionSweepDriver } from 'src/support/session-sweep'
 
 /*
@@ -26,4 +27,13 @@ if (sessionSweepDriver() === 'schedule') {
     .everyFiveMinutes()
     .withoutOverlapping()
     .description('Expire timed-out verification sessions')
+
+  // Per-tenant data retention: delete captured media once a session is older than
+  // its org's `retention_days`. Daily is plenty; the sweep only touches media once.
+  Schedule.call(async () => {
+    await retentionService.purgeExpiredMedia()
+  })
+    .daily()
+    .withoutOverlapping()
+    .description('Purge verification media past its retention window')
 }

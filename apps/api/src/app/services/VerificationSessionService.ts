@@ -23,6 +23,7 @@ import { AddressVerification } from '@app/models/AddressVerification'
 import { sessionObjectKey } from 'src/support/storage'
 import { transitionTo } from 'src/support/session-transition'
 import { toArray } from 'src/support/collection'
+import { reportError } from 'src/support/observability'
 import { type ProviderSignals, addressVerifier, livenessDriver } from './providers'
 import { settings } from './GlobalSettingsService'
 import { BiometricJob, OcrJob } from '@app/jobs'
@@ -466,8 +467,9 @@ export class VerificationSessionService {
       try {
         await this.transition(session, 'expired')
         expired += 1
-      } catch {
+      } catch (error) {
         // One session failing (e.g. a concurrent write) shouldn't abort the batch.
+        reportError(error, { scope: 'sweepExpired', sessionId: session.id })
       }
     }
 

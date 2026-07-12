@@ -6,7 +6,9 @@ import { Project } from '../src/app/models/Project'
 import { Storage } from '@arkstack/filesystem'
 import { Organization } from '../src/app/models/Organization'
 import { VerificationSession } from '../src/app/models/VerificationSession'
+import { DocumentCapture } from '../src/app/models/DocumentCapture'
 import { sessionService } from '../src/app/services/VerificationSessionService'
+import { retentionService } from '../src/app/services/RetentionService'
 import { app } from '../src/core/bootstrap'
 import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import request from 'parasito'
@@ -222,6 +224,76 @@ describe('verification session lifecycle', () => {
     // Reflected in the DB directly (no lazy read triggered the transition).
     const swept = await VerificationSession.where({ id }).firstOrFail()
     expect(swept.status).toBe('expired')
+  })
+
+  it('enforces per-project allowed origins on client requests (opt-in)', async () => {
+    const project = await Project.where({ id: fx.projectId }).firstOrFail()
+    const prevSettings = project.settings
+    project.settings = { ...(project.settings ?? {}), allowed_origins: ['https://allowed.example'] }
+    await project.save()
+
+    try {
+      const { token } = await openSession()
+
+      // No Origin header → nothing to enforce → not blocked.
+      const noOrigin = await clientApi('get', 'session', token)
+      expect(noOrigin.status).not.toBe(403)
+      // Matching Origin → not blocked.
+      const matched = await clientApi('get', 'session', token).set('Origin', 'https://allowed.example')
+      expect(matched.status).not.toBe(403)
+      // Disallowed Origin → 403 with the stable error key.
+      const blocked = await clientApi('get', 'session', token).set('Origin', 'https://evil.example')
+      expect(blocked.status).toBe(403)
+      expect(blocked.body.error).toBe('origin_not_allowed')
+    } finally {
+      project.settings = prevSettings
+      await project.save()
+    }
+  })
+
+  it('purges captured media once a session passes the org retention window (media only)', async () => {
+    const { id, token } = await openSession()
+    await clientApi('get', 'session', token)
+
+    // Upload a real document so a DocumentCapture row + stored object exist.
+    const bytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46])
+    const form = new FormData()
+    form.append('image', new Blob([bytes], { type: 'image/jpeg' }), 'front.jpg')
+    await clientApi('post', 'document/front', token).send(form)
+    const key = `organizations/${fx.organizationId}/projects/${fx.projectId}/sessions/${id}/documents/front.jpg`
+    expect(await Storage.disk().exists(key)).toBe(true)
+
+    // Set a retention window and age the session past it.
+    const org = await Organization.where({ id: fx.organizationId }).firstOrFail()
+    const prevSettings = org.settings
+    org.settings = { ...(org.settings ?? {}), retention_days: 1 }
+    await org.save()
+    const aged = await VerificationSession.where({ id }).firstOrFail()
+    aged.createdAt = new Date(Date.now() - 3 * 86_400_000)
+    await aged.save()
+
+    try {
+      const purged = await retentionService.purgeExpiredMedia()
+      expect(purged).toBeGreaterThanOrEqual(1)
+
+      // Media gone from storage + the path nulled; the session row survives.
+      expect(await Storage.disk().exists(key)).toBe(false)
+      const capture = await DocumentCapture.where({ sessionId: id }).firstOrFail()
+      expect(capture.frontImagePath).toBeNull()
+      const swept = await VerificationSession.where({ id }).firstOrFail()
+      expect(swept.mediaPurgedAt).not.toBeNull()
+
+      // Idempotent: a second run skips the already-purged session.
+      const secondRun = await VerificationSession.query()
+        .where({ organizationId: fx.organizationId })
+        .whereNull('mediaPurgedAt')
+        .where('id', id)
+        .first()
+      expect(secondRun).toBeNull()
+    } finally {
+      org.settings = prevSettings
+      await org.save()
+    }
   })
 
   it('stores a multipart-uploaded document via Arkstack Storage', async () => {

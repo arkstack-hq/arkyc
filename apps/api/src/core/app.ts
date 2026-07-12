@@ -2,7 +2,21 @@ import { Router } from '@arkstack/driver-express'
 import path from 'path'
 import { ExpressDriver } from '@arkstack/driver-express'
 import { Arkstack, ArkstackRouterContract, ArkstackRouteListOptions } from '@arkstack/contract'
-import { type Express, type Handler } from 'express'
+import { type ErrorRequestHandler, type Express, type Handler } from 'express'
+import { reportError } from 'src/support/observability'
+
+/**
+ * Report unexpected failures (5xx / unclassified) to the observability seam, then
+ * hand the error to the driver's renderer. Deliberate 4xx (validation, auth,
+ * ApiException) are expected control flow and are not reported.
+ */
+const reportUnexpectedErrors: ErrorRequestHandler = (err, req, _res, next) => {
+  const status = Number((err as { statusCode?: number; status?: number })?.statusCode ?? 500)
+  if (!Number.isFinite(status) || status >= 500) {
+    reportError(err, { method: req.method, path: req.originalUrl })
+  }
+  next(err)
+}
 
 export default class Application extends Arkstack<Express, unknown, Handler> {
   /**
@@ -54,6 +68,9 @@ export default class Application extends Arkstack<Express, unknown, Handler> {
 
     // Bind the router
     await this.driver.bindRouter(this.app)
+
+    // Observability: report unexpected errors before the driver renders them.
+    ;(this.app as Express).use(reportUnexpectedErrors)
 
     // Error Handler
     await this.driver.registerErrorHandler?.(this.app)

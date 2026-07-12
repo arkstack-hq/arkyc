@@ -13,6 +13,7 @@ export type ApiErrorKey =
   | 'missing_client_token'
   | 'invalid_client_token'
   | 'session_expired'
+  | 'origin_not_allowed'
   | 'missing_api_key'
   | 'invalid_api_key'
   | 'invalid_workflow'
