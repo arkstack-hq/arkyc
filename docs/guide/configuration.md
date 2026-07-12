@@ -60,8 +60,7 @@ See [Provider drivers](./providers) and [Workflows](./workflows).
 | S3 (`s3` disk)    | none    | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_ENDPOINT`, `AWS_URL`. |
 | GCS (`gcs` disk)  | none    | `GOOGLE_CLOUD_PROJECT`, `GOOGLE_APPLICATION_CREDENTIALS`, `GOOGLE_CLOUD_STORAGE_BUCKET`.                     |
 
-> MinIO and Cloudflare R2 speak the S3 API; use the `s3` disk and point
-> `AWS_ENDPOINT` at them.
+> Any S3-compatible service works via the `s3` disk — point `AWS_ENDPOINT` at it.
 
 ### Queue
 

@@ -1,3 +1,27 @@
+# Shared definition for the queue workers below (one per named queue).
+x-worker: &worker
+  profiles: ['worker']
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: arkyc-api
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_started
+  environment:
+    RUN_MIGRATIONS: 'false'
+    APP_KEY: ${APP_KEY:-}
+    DATABASE_URL: ${DATABASE_URL:-postgres://arkyc:arkyc@postgres:5432/arkyc?schema=public}
+    QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
+    CACHE_STORE: ${CACHE_STORE:-memory}
+    REDIS_HOST: redis
+    REDIS_PORT: '6379'
+  volumes:
+    - arkyc_storage:/app/storage
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -7,29 +31,11 @@ services:
       POSTGRES_PASSWORD: arkyc
       POSTGRES_DB: arkyc
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - arkyc_pg:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U arkyc"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  minio:
-    image: minio/minio:latest
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: arkyc
-      MINIO_ROOT_PASSWORD: arkyc-secret
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - arkyc_minio:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ['CMD-SHELL', 'pg_isready -U arkyc']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -38,7 +44,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - arkyc_redis:/data
 
@@ -48,16 +54,98 @@ services:
     image: quay.io/soketi/soketi:latest-16-alpine
     restart: unless-stopped
     ports:
-      - "6001:6001"
+      - '6001:6001'
     environment:
-      SOKETI_DEBUG: "1"
+      SOKETI_DEBUG: '1'
       SOKETI_DEFAULT_APP_ID: arkyc
       SOKETI_DEFAULT_APP_KEY: arkyc-key
       SOKETI_DEFAULT_APP_SECRET: arkyc-secret
       # Private channels are authorized by the API at /api/v1/realtime/auth.
-      SOKETI_DEFAULT_APP_ENABLE_CLIENT_MESSAGES: "false"
+      SOKETI_DEFAULT_APP_ENABLE_CLIENT_MESSAGES: 'false'
+
+  # ---------------------------------------------------------------------------
+  # Containerized API + worker (opt-in). The services above are infra only, so a
+  # plain `docker compose up -d` still just boots Postgres/Redis/Soketi for
+  # host-side development. To run the whole stack in Docker instead:
+  #
+  #   docker compose --profile app up -d --build                      # API
+  #   QUEUE_CONNECTION=redis \
+  #     docker compose --profile app --profile worker up -d --build   # + worker
+  #
+  # APP_KEY (derives the at-rest encryption key) is minted on first boot via
+  # `ark key:generate` and persisted on the storage volume, so it stays stable
+  # across restarts with zero setup. To pin it yourself, export APP_KEY before
+  # `up` (e.g. `APP_KEY=$(cd apps/api && pnpm -s ark key:generate --show)`). The
+  # env block points the API at the compose service hostnames; add more from
+  # apps/api/.env.example as needed.
+  # ---------------------------------------------------------------------------
+  api:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: arkyc-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - '3100:3100'
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: '3100'
+      APP_URL: ${APP_URL:-http://localhost:3100}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      WEBSITE_URL: ${WEBSITE_URL:-http://localhost:3000}
+      # Soft default so a plain infra-only `docker compose up` still interpolates;
+      # the entrypoint hard-fails with a clear message if it is empty at run time.
+      APP_KEY: ${APP_KEY:-}
+      DATABASE_URL: ${DATABASE_URL:-postgres://arkyc:arkyc@postgres:5432/arkyc?schema=public}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION:-sync}
+      CACHE_STORE: ${CACHE_STORE:-memory}
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      REALTIME_TRANSPORT: ${REALTIME_TRANSPORT:-off}
+      # Point Pusher at the bundled soketi (only used when REALTIME_TRANSPORT=pusher).
+      PUSHER_APP_ID: arkyc
+      PUSHER_APP_KEY: arkyc-key
+      PUSHER_APP_SECRET: arkyc-secret
+      PUSHER_HOST: soketi
+      PUSHER_PORT: '6001'
+      PUSHER_USE_TLS: 'false'
+    volumes:
+      - arkyc_storage:/app/storage
+
+  # Durable queue workers — only needed when QUEUE_CONNECTION is `database`/`redis`
+  # (the default `sync` runs jobs inline in the request). They reuse the API image;
+  # RUN_MIGRATIONS=false so only the API container migrates.
+  #
+  # `queue:work --queue` takes a SINGLE queue (the driver matches it exactly), and
+  # the app's jobs are spread across four named queues — none of them `default` —
+  # so each queue needs its own worker. `--profile worker` starts all four.
+  #
+  # The `database` connection rides the existing Postgres; the `redis` connection
+  # additionally needs the `ioredis` package, which the API does not depend on
+  # (`pnpm add ioredis -F @arkyc/api` if you want it).
+  worker-ocr:
+    <<: *worker
+    command: ['ark', 'queue:work', '--queue', 'ocr']
+
+  worker-biometric:
+    <<: *worker
+    command: ['ark', 'queue:work', '--queue', 'biometric']
+
+  worker-webhook:
+    <<: *worker
+    command: ['ark', 'queue:work', '--queue', 'webhook']
+
+  worker-maintenance:
+    <<: *worker
+    command: ['ark', 'queue:work', '--queue', 'maintenance']
 
 volumes:
   arkyc_pg:
-  arkyc_minio:
   arkyc_redis:
+  arkyc_storage:

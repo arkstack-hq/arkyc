@@ -36,29 +36,29 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 ## Phase Overview
 
-| #   | Phase                                      | Status | Outcome                                                                                                                                    |
-| --- | ------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0   | Monorepo & Tooling Foundation              | ✅     | Workspace builds, lints, and tests green                                                                                                   |
-| 1   | Shared Contracts (`types`, `core`, `auth`) | ✅     | Domain types + decision engine unit-tested                                                                                                 |
-| 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                                                                                                 |
-| 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles                                                                                   |
-| 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes                                                                              |
-| 5   | Tenants, Projects & API Keys               | ✅     | Tenant/project/role/member/key + project-member management; audit emission wired (Phase 9)                                                 |
-| 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced                                          |
-| 7   | Provider Packages (drivers)                | ✅     | ocr/liveness/face-match packages with `mock` + `external` drivers (config-selected); file storage via Arkstack `Storage` (S3/MinIO/R2/GCS) |
-| 8   | Workers & Async Pipeline                   | ✅     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter)             |
-| 9   | Reviews & Audit Logging                    | ✅     | Review queue + approve/reject/retry/assign/suspicious/note; audit trail (review + session + dashboard CRUD) + read API                     |
-| 10  | Webhooks                                   | ✅     | Signed (HMAC) webhook delivery per project; endpoint CRUD + test, queue-backed delivery worker with retries/`webhook_deliveries`           |
-| 11  | TypeScript SDK                             | ✅     | `@arkyc/sdk` server client (sessions create/retrieve/cancel, typed errors, webhook verify) + `@arkyc/sdk/browser` widget launcher          |
-| 12  | Widget                                     | ✅     | `@arkyc/widget` full verification flow (overlay/inline/hosted) driving the Client API                                                      |
-| 13  | Dashboard                                  | ✅     | Multi-tenant React Router dashboard (Vite + Tailwind + alova); permission-aware UI                                                         |
-| 14  | Playground & Docs                          | ✅     | Runnable example integration + VitePress documentation site                                                                                |
-| 15  | Platform Admin & Global Settings           | ✅     | Super-admin tier above tenants (admin RBAC + `/admin`) + a typed global settings store/UI; platform actions audited separately             |
-| 16  | Realtime Event Delivery                    | ✅     | Transport abstraction with **pusher** (hosted or self-hosted soketi) + **firebase** drivers (admin-selectable); live dashboard updates     |
-| 17  | Improved Capture & Liveness Flow           | ✅     | Server-issued active-liveness challenges + improved document capture (glare hints/auto-capture); capture model resolves project > global   |
-| 18  | Dashboard Revamp                           | ⬜     | Re-skin to the shadcn UI kit design system (default + project-management layouts)                                                          |
-| 19  | Hosted Website & Custom Docs Theme         | ⬜     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                            |
-| 20  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                   |
+| #   | Phase                                      | Status | Outcome                                                                                                                                  |
+| --- | ------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | Monorepo & Tooling Foundation              | ✅     | Workspace builds, lints, and tests green                                                                                                 |
+| 1   | Shared Contracts (`types`, `core`, `auth`) | ✅     | Domain types + decision engine unit-tested                                                                                               |
+| 2   | Data Model & Migrations                    | ✅     | All tables migrated, tenant-scoped, seeded                                                                                               |
+| 3   | Permissions & RBAC                         | ✅     | `resolvePermissions`/`authorize` working + default roles                                                                                 |
+| 4   | API Foundation & Auth                      | ✅     | Arkstack API boots; tenant-aware auth + dashboard auth routes                                                                            |
+| 5   | Tenants, Projects & API Keys               | ✅     | Tenant/project/role/member/key + project-member management; audit emission wired (Phase 9)                                               |
+| 6   | Verification Session Engine (mock e2e)     | ✅     | Public + client APIs walk a session to a decision via inline mocks; expiry + retry-limit enforced                                        |
+| 7   | Provider Packages (drivers)                | ✅     | ocr/liveness/face-match packages with `mock` + `external` drivers (config-selected); file storage via Arkstack `Storage` (S3/GCS)        |
+| 8   | Workers & Async Pipeline                   | ✅     | Postgres-backed queue + `ark queue:work`; document→ocr, complete→biometric run async to a decision (retry/backoff/dead-letter)           |
+| 9   | Reviews & Audit Logging                    | ✅     | Review queue + approve/reject/retry/assign/suspicious/note; audit trail (review + session + dashboard CRUD) + read API                   |
+| 10  | Webhooks                                   | ✅     | Signed (HMAC) webhook delivery per project; endpoint CRUD + test, queue-backed delivery worker with retries/`webhook_deliveries`         |
+| 11  | TypeScript SDK                             | ✅     | `@arkyc/sdk` server client (sessions create/retrieve/cancel, typed errors, webhook verify) + `@arkyc/sdk/browser` widget launcher        |
+| 12  | Widget                                     | ✅     | `@arkyc/widget` full verification flow (overlay/inline/hosted) driving the Client API                                                    |
+| 13  | Dashboard                                  | ✅     | Multi-tenant React Router dashboard (Vite + Tailwind + alova); permission-aware UI                                                       |
+| 14  | Playground & Docs                          | ✅     | Runnable example integration + VitePress documentation site                                                                              |
+| 15  | Platform Admin & Global Settings           | ✅     | Super-admin tier above tenants (admin RBAC + `/admin`) + a typed global settings store/UI; platform actions audited separately           |
+| 16  | Realtime Event Delivery                    | ✅     | Transport abstraction with **pusher** (hosted or self-hosted soketi) + **firebase** drivers (admin-selectable); live dashboard updates   |
+| 17  | Improved Capture & Liveness Flow           | ✅     | Server-issued active-liveness challenges + improved document capture (glare hints/auto-capture); capture model resolves project > global |
+| 18  | Dashboard Revamp                           | ⬜     | Re-skin to the shadcn UI kit design system (default + project-management layouts)                                                        |
+| 19  | Hosted Website & Custom Docs Theme         | ⬜     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                          |
+| 20  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                 |
 
 ---
 
@@ -79,7 +79,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 - [x] Shared config: ESLint, Prettier, Vitest, `tsdown`/`tsc` build for packages.
 - [x] Each package has a minimal `index.ts`, `package.json`, and `tsconfig.json` that compiles.
 - [x] Root `README.md` and this `ROADMAP.md`. `.env.example`, `.gitignore`, `.editorconfig`.
-- [x] Docker Compose for local Postgres + S3 (MinIO).
+- [x] Docker Compose for local Postgres + Redis.
 - [x] Scaffold `apps/api` with the real Arkstack (Express, full) template via `create-arkstack`.
 - [x] Align the workspace toolchain to the Arkstack app (tsdown, vitest 4, typescript 6, eslint 10, `@types/node` 25); single root `tsdown.config.ts` (workspace mode) builds all libs/workers.
 - [x] `pnpm install` at the workspace root resolves cleanly.
@@ -217,7 +217,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 
 **Scope**
 
-- [x] **File storage** — use Arkstack's `Storage` (`@arkstack/filesystem`, flydrive-based: `put`/`getBytes`/`getUrl`/`getSignedUrl`/`exists`/`delete`) instead of a bespoke package. Captures are written private under tenant/project-scoped keys. The framework's `s3` disk is **S3-compatible** and already covers AWS S3, **MinIO** (in docker-compose) and **Cloudflare R2** (R2 speaks the S3 API — just point `endpoint`/`bucket`/keys at it); a `gcs` disk and `local`/`ftp` round it out. Switching backends is `config/filesystem` + env, no code changes. _(No custom `packages/storage` — redundant with the framework.)_
+- [x] **File storage** — use Arkstack's `Storage` (`@arkstack/filesystem`, flydrive-based: `put`/`getBytes`/`getUrl`/`getSignedUrl`/`exists`/`delete`) instead of a bespoke package. Captures are written private under tenant/project-scoped keys. The framework's `s3` disk covers AWS S3; a `gcs` disk and `local`/`ftp` round it out. Switching backends is `config/filesystem` + env, no code changes. _(No custom `packages/storage` — redundant with the framework.)_
 - [x] **`packages/ocr`** — drivers `mock` (dev/test) + `external` (HTTP). Returns `{ fields, confidence, raw }`.
 - [x] **`packages/liveness`** — drivers `mock` + `external` (HTTP). Returns `{ passed, score, spoofSignals, raw }`.
 - [x] **`packages/face-match`** — drivers `mock` + `external` (HTTP). Returns `{ passed, similarityScore, confidence, raw }`.

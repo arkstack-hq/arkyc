@@ -7,7 +7,7 @@ the API, the dashboard, and the playground.
 
 - **Node.js** ≥ 20
 - **pnpm** ≥ 10
-- **Docker** + Docker Compose (for Postgres, MinIO, Redis)
+- **Docker** + Docker Compose (for Postgres, Redis)
 
 ## 1. Install
 
@@ -18,17 +18,16 @@ pnpm install
 
 ## 2. Start local infrastructure
 
-The repo ships a Compose file with Postgres, MinIO (S3-compatible), and Redis:
+The repo ships a Compose file with Postgres and Redis:
 
 ```bash
 docker compose up -d
 ```
 
-| Service    | Port(s)       | Credentials                                  |
-| ---------- | ------------- | -------------------------------------------- |
-| PostgreSQL | `5432`        | user `arkyc` · password `arkyc` · db `arkyc` |
-| MinIO      | `9000`/`9001` | user `arkyc` · password `arkyc-secret`       |
-| Redis      | `6379`        | none                                         |
+| Service    | Port(s) | Credentials                                  |
+| ---------- | ------- | -------------------------------------------- |
+| PostgreSQL | `5432`  | user `arkyc` · password `arkyc` · db `arkyc` |
+| Redis      | `6379`  | none                                         |
 
 ## 3. Configure the API
 

@@ -26,13 +26,13 @@ module.exports = {
     // Durable queue worker — only needed when QUEUE_CONNECTION is `database` or
     // `redis` (the default `sync` runs jobs inline). Uncomment to run it; the
     // deploy's `pm2 startOrReload ecosystem.config.cjs` picks it up automatically.
-    // {
-    //   name: 'arkyc-worker',
-    //   cwd: './current',
-    //   script: 'node_modules/.bin/ark',
-    //   args: 'queue:work',
-    //   autorestart: true,
-    //   env: { NODE_ENV: 'production' },
-    // },
+    {
+      name: 'arkyc-worker',
+      cwd: './current',
+      script: 'node_modules/.bin/ark',
+      args: 'queue:work',
+      autorestart: true,
+      env: { NODE_ENV: 'production' },
+    },
   ],
 }

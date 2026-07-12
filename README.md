@@ -36,14 +36,14 @@ docs/           Documentation
 
 - Node.js >= 20
 - pnpm >= 10
-- (optional, for local infra) Docker + Docker Compose — Postgres, MinIO (S3), Redis
+- (optional, for local infra) Docker + Docker Compose — Postgres, Redis
 
 ## Getting started
 
 ```bash
 pnpm install
 
-# Start local infra (Postgres + MinIO + Redis)
+# Start local infra (Postgres + Redis)
 docker compose up -d
 
 # Copy environment template
@@ -54,6 +54,37 @@ pnpm build
 pnpm test
 pnpm lint
 ```
+
+## Running in Docker
+
+`docker compose up -d` (above) starts **infra only** — Postgres, Redis and
+Soketi — for host-side development. To run the **API itself** in a container, use
+the opt-in `app` profile. The image (`Dockerfile`) mirrors the production build:
+it compiles the workspace and ships a slim, standalone artifact that runs the
+compiled server, applying migrations on startup.
+
+```bash
+# Build + start infra and the API (http://localhost:3100/health)
+docker compose --profile app up -d --build
+
+# Durable queue workers (only for QUEUE_CONNECTION=database|redis; the default
+# `sync` runs jobs inline). Jobs span four named queues and `queue:work` takes one
+# queue each, so the profile starts one worker per queue:
+QUEUE_CONNECTION=database docker compose --profile app --profile worker up -d --build
+```
+
+`APP_KEY` (the at-rest encryption key) is minted on first boot with
+`ark key:generate` and persisted on the storage volume, so it stays stable across
+restarts with no setup. To pin it yourself, export it before `up`:
+
+```bash
+export APP_KEY=$(cd apps/api && pnpm -s ark key:generate --show)
+```
+
+The `api`/`worker` services read the compose service hostnames by default
+(`postgres`, `redis`, `soketi`); override `DATABASE_URL`, `QUEUE_CONNECTION`,
+`REALTIME_TRANSPORT`, etc. via your shell env or a root `.env`. See
+`apps/api/.env.example` for the full set of variables.
 
 ## Workspace scripts
 

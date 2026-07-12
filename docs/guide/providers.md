@@ -169,6 +169,6 @@ the coverage you need.
 ## File storage
 
 Captured documents and selfies are written **private** via Arkstack's `Storage`.
-The default disk is `local`; the `s3` disk is S3-compatible (AWS S3, MinIO,
-Cloudflare R2), and `gcs`/`ftp` are available. Configure with `FILESYSTEM_DISK`
+The default disk is `local`; the `s3` disk targets AWS S3, and `gcs`/`ftp` are
+available. Configure with `FILESYSTEM_DISK`
 and the matching credentials; see [Configuration](./configuration).
