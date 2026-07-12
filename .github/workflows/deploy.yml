@@ -91,8 +91,22 @@ jobs:
             ln -sfn "$SHARED/.env" apps/api/.env
 
             # --- Build everything this server serves ---
-            pnpm install --frozen-lockfile
+            # Reused checkout: clear generated framework artifacts so the API's
+            # `prepare` step regenerates them from a clean state (the tsconfig
+            # extends ./.arkstack/tsconfig.json; a stale/partial one can wedge it).
+            rm -rf apps/api/.arkstack apps/api/dist
+            # Show the real tsdown error if a build fails — `prepare` silences it
+            # by default, which masked a past deploy failure.
+            export VERBOSITY=1
+            # Skip lifecycle scripts on install so the API's `postinstall` (which
+            # builds the app via tsdown) does NOT run mid-install, before the
+            # workspace libs are built. Native deps ship prebuilt (sharp) and pnpm
+            # already gates dependency build scripts, so this is safe here.
+            pnpm install --frozen-lockfile --ignore-scripts
             pnpm run build:libs
+            # Now build the API in a clean, ordered, verbose step: `prepare`
+            # regenerates .arkstack and compiles dist against the built libs.
+            pnpm --filter @arkyc/api run postinstall
             pnpm --filter @arkyc/api build
             # The dashboard bakes the API origin into its static bundle at build
             # time (apps/dashboard/.env is gitignored, so set it here explicitly).
@@ -287,8 +301,22 @@ jobs:
             ln -sfn "$SHARED/.env" apps/api/.env
 
             # --- Build everything this server serves ---
-            pnpm install --frozen-lockfile
+            # Reused checkout: clear generated framework artifacts so the API's
+            # `prepare` step regenerates them from a clean state (the tsconfig
+            # extends ./.arkstack/tsconfig.json; a stale/partial one can wedge it).
+            rm -rf apps/api/.arkstack apps/api/dist
+            # Show the real tsdown error if a build fails — `prepare` silences it
+            # by default, which masked a past deploy failure.
+            export VERBOSITY=1
+            # Skip lifecycle scripts on install so the API's `postinstall` (which
+            # builds the app via tsdown) does NOT run mid-install, before the
+            # workspace libs are built. Native deps ship prebuilt (sharp) and pnpm
+            # already gates dependency build scripts, so this is safe here.
+            pnpm install --frozen-lockfile --ignore-scripts
             pnpm run build:libs
+            # Now build the API in a clean, ordered, verbose step: `prepare`
+            # regenerates .arkstack and compiles dist against the built libs.
+            pnpm --filter @arkyc/api run postinstall
             pnpm --filter @arkyc/api build
             # The dashboard bakes the API origin into its static bundle at build
             # time (apps/dashboard/.env is gitignored, so set it here explicitly).
