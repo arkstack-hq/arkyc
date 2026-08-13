@@ -1,3 +1,4 @@
+import type { NotificationConfig } from '@arkstack/notifications'
 import { settings } from './GlobalSettingsService'
 import { version } from '../../../package.json'
 
@@ -29,6 +30,8 @@ export interface EnvironmentSnapshot {
   version: string
   sections: EnvSection[]
 }
+
+type ConfiguredSmtp = Extract<NotificationConfig['transports']['smtp'], { host: string }>
 
 /**
  * Values that mean "a real secret was never set" — framework placeholders and
@@ -74,7 +77,7 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
   const session = config('session')
   const realtime = config('realtime')
   const notifications = config('notifications')
-  const smtp = notifications.transports.smtp
+  const smtp = notifications.transports.smtp as ConfiguredSmtp
   const mailDriver = notifications.drivers.mail
 
   const current = await settings.current()
@@ -161,11 +164,14 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
       title: 'Mail',
       items: [
         ok('Driver', notifications.default_driver),
-        ok('Transport', mailDriver.transport),
+        ok('Transport', typeof mailDriver.transport === 'string'
+          ? mailDriver.transport
+          : mailDriver.transport.name
+        ),
         ok('Host', smtp.host),
         ok('Port', smtp.port),
         { label: 'Secure (TLS)', value: smtp.secure ? 'true' : 'false', status: 'ok' },
-        ok('From', mailDriver.from),
+        ok('From', typeof mailDriver.from === 'string' ? mailDriver.from : mailDriver.from.address),
         secret('Username', smtp.auth?.user),
         secret('Password', smtp.auth?.pass),
         ok('Test address', mailDriver.test_address ?? '—'),

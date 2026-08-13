@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useForm, usePagination, useRequest } from 'alova/client'
-import type { WebhookEventName } from '@arkyc/types'
+import type { WebhookEndpoint, WebhookEndpointStatus, WebhookEventName } from '@arkyc/types'
 import { Webhooks, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 import { formatDateTime, humanize } from '@/lib/utils'
@@ -15,6 +15,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
+import { Select } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -56,6 +57,7 @@ export default function ProjectWebhooksPage() {
   )
 
   const [open, setOpen] = useState(false)
+  const [selectedWebhook, setSelectedWebhook] = useState<WebhookEndpoint | null>(null)
   const [secret, setSecret] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -68,9 +70,16 @@ export default function ProjectWebhooksPage() {
     update: clearCreateError,
     reset,
     onSuccess: onCreateSuccess,
-  } = useForm((f) => Webhooks.create(organizationId, projectId!, { url: f.url.trim(), events: f.events }), {
-    initialForm: { url: '', events: [] as WebhookEventName[] },
-  })
+  } = useForm(
+    (f) =>
+      Webhooks.create(organizationId, projectId!, {
+        url: f.url.trim(),
+        events: f.events,
+      }),
+    {
+      initialForm: { url: '', events: [] as WebhookEventName[] },
+    },
+  )
 
   onCreateSuccess(({ data }) => {
     setSecret(data.secret)
@@ -83,6 +92,29 @@ export default function ProjectWebhooksPage() {
     { immediate: false },
   )
 
+  const {
+    form: editForm,
+    updateForm: updateEditForm,
+    send: updateWebhook,
+    loading: saving,
+    error: updateError,
+    update: clearUpdateError,
+    onSuccess: onUpdateSuccess,
+  } = useForm(
+    (f) =>
+      Webhooks.update(organizationId, projectId!, selectedWebhook!.id, {
+        url: f.url.trim(),
+        events: f.events,
+        status: f.status,
+      }),
+    { initialForm: { url: '', events: [] as WebhookEventName[], status: 'active' as WebhookEndpointStatus } },
+  )
+
+  onUpdateSuccess(() => {
+    setSelectedWebhook(null)
+    void refreshWebhooks()
+  })
+
   const confirm = useConfirm()
   const {
     send: deleteWebhook,
@@ -93,6 +125,7 @@ export default function ProjectWebhooksPage() {
   })
 
   onDeleteSuccess(() => {
+    setSelectedWebhook(null)
     void refreshWebhooks()
   })
 
@@ -112,12 +145,31 @@ export default function ProjectWebhooksPage() {
     setCopied(false)
   }
 
+  const openManagementDialog = (webhook: WebhookEndpoint) => {
+    setSelectedWebhook(webhook)
+    updateEditForm({ url: webhook.url, events: webhook.events, status: webhook.status })
+    clearUpdateError({ error: undefined })
+  }
+
+  const closeManagementDialog = () => {
+    if (saving || deleting) return
+    setSelectedWebhook(null)
+  }
+
   const toggleEvent = (event: WebhookEventName) => {
     // alova's `updateForm` only merges a partial object — its function-updater
     // overload is typed but not implemented (it spreads the function, a no-op).
     // Compute from the current reactive `form.events` and pass a partial.
     updateForm({
       events: form.events.includes(event) ? form.events.filter((e) => e !== event) : [...form.events, event],
+    })
+  }
+
+  const toggleEditEvent = (event: WebhookEventName) => {
+    updateEditForm({
+      events: editForm.events.includes(event)
+        ? editForm.events.filter((item) => item !== event)
+        : [...editForm.events, event],
     })
   }
 
@@ -151,47 +203,29 @@ export default function ProjectWebhooksPage() {
                 <THead>
                   <TR>
                     <TH>URL</TH>
-                    <TH>Events</TH>
                     <TH>Status</TH>
                     <TH>Created</TH>
-                    <TH />
                   </TR>
                 </THead>
                 <TBody>
                   {webhooks.map((webhook) => (
                     <TR key={webhook.id}>
-                      <TD className="font-mono text-xs">{webhook.url}</TD>
-                      <TD className="text-xs text-muted-foreground">{webhook.events.join(', ')}</TD>
+                      <TD>
+                        <button
+                          type="button"
+                          className="break-all text-left font-mono text-xs text-primary hover:underline"
+                          onClick={() => openManagementDialog(webhook)}
+                          aria-label={`Manage webhook ${webhook.url}`}
+                        >
+                          {webhook.url}
+                        </button>
+                      </TD>
                       <TD>
                         <Badge variant={webhook.status === 'active' ? 'success' : 'muted'}>
                           {humanize(webhook.status)}
                         </Badge>
                       </TD>
                       <TD>{formatDateTime(webhook.created_at)}</TD>
-                      <TD className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {can('webhooks.test') ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={testing}
-                              onClick={() => void testWebhook(webhook.id)}
-                            >
-                              Test
-                            </Button>
-                          ) : null}
-                          {can('webhooks.delete') ? (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              disabled={deleting}
-                              onClick={() => void confirmDeleteWebhook(webhook.id)}
-                            >
-                              Delete
-                            </Button>
-                          ) : null}
-                        </div>
-                      </TD>
                     </TR>
                   ))}
                 </TBody>
@@ -202,6 +236,113 @@ export default function ProjectWebhooksPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!selectedWebhook} onClose={closeManagementDialog}>
+        {selectedWebhook ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void updateWebhook()
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>Manage endpoint</DialogTitle>
+              <DialogDescription>Edit where and when webhook events are delivered.</DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-4">
+              <Field>
+                <FieldLabel htmlFor="edit-webhook-url">Endpoint URL</FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <Globe />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="edit-webhook-url"
+                    type="url"
+                    value={editForm.url}
+                    aria-invalid={!!updateError?.flat?.url}
+                    disabled={!can('webhooks.update')}
+                    onChange={(e) => {
+                      updateEditForm({ url: e.target.value })
+                      if (updateError?.errors) updateError.delete('url', clearUpdateError)
+                    }}
+                    required
+                  />
+                </InputGroup>
+                <FieldError errors={updateError?.list?.url} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="edit-webhook-status">Status</FieldLabel>
+                <Select
+                  id="edit-webhook-status"
+                  value={editForm.status}
+                  onChange={(e) => updateEditForm({ status: e.target.value as WebhookEndpointStatus })}
+                  disabled={!can('webhooks.update')}
+                >
+                  <option value="active">Active</option>
+                  <option value="disabled">Disabled</option>
+                </Select>
+              </Field>
+              <div className="flex flex-col gap-2">
+                <Label>Events</Label>
+                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                  {EVENT_NAMES.map((event) => (
+                    <label key={event} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={editForm.events.includes(event)}
+                        onChange={() => toggleEditEvent(event)}
+                        className="h-4 w-4 rounded border-input"
+                        disabled={!can('webhooks.update')}
+                      />
+                      <span className="font-mono text-xs">{event}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {updateError && !updateError.errors ? (
+                <FieldError>{errorMessage(updateError, 'Failed to update endpoint.')}</FieldError>
+              ) : null}
+            </div>
+            <DialogFooter className="flex-wrap justify-between sm:flex-nowrap">
+              <div className="flex gap-2">
+                {can('webhooks.delete') ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={deleting || saving}
+                    onClick={() => void confirmDeleteWebhook(selectedWebhook.id)}
+                  >
+                    Delete
+                  </Button>
+                ) : null}
+                {can('webhooks.test') ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={testing || saving}
+                    onClick={() => void testWebhook(selectedWebhook.id)}
+                  >
+                    {testing ? <Spinner /> : null}
+                    Test
+                  </Button>
+                ) : null}
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={closeManagementDialog}>
+                  Close
+                </Button>
+                {can('webhooks.update') ? (
+                  <Button type="submit" disabled={saving || !editForm.url.trim() || editForm.events.length === 0}>
+                    {saving ? <Spinner /> : null}
+                    Save changes
+                  </Button>
+                ) : null}
+              </div>
+            </DialogFooter>
+          </form>
+        ) : null}
+      </Dialog>
 
       <Dialog open={open} onClose={closeDialog}>
         {secret ? (
