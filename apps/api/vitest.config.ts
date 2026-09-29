@@ -8,8 +8,8 @@ export default defineConfig({
   oxc: {
     decorator: {
       legacy: true,
-      emitDecoratorMetadata: true
-    }
+      emitDecoratorMetadata: true,
+    },
   },
   resolve: {
     alias: {

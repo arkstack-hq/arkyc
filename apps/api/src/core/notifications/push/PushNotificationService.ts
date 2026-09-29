@@ -38,8 +38,8 @@ export class PushNotificationService {
           const resp = (await Notification.realtime()
             .channel(tokens)
             .send(message.body, message.title, undefined, message.data)) as unknown as {
-              invalidTokens: string[]
-            }
+            invalidTokens: string[]
+          }
 
           return resp
         },

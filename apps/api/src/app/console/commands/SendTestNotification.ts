@@ -72,13 +72,9 @@ export class SendTestNotification extends Command {
             data: { type: 'test' },
           })
 
-        this.info(
-          `SENT: Test notification sent to ${service} channel for user ${user?.name ?? userId}`,
-        )
+        this.info(`SENT: Test notification sent to ${service} channel for user ${user?.name ?? userId}`)
       } catch (error) {
-        this.error(
-          `ERROR: Failed to send test notification for channel ${service} [${(error as Error).message}]`,
-        )
+        this.error(`ERROR: Failed to send test notification for channel ${service} [${(error as Error).message}]`)
       }
 
       return
@@ -92,8 +88,7 @@ export class SendTestNotification extends Command {
 
     const title = this.option('title') || (await this.ask('Enter the notification title:'))
 
-    const description =
-      this.option('description') || (await this.ask('Enter the notification description:'))
+    const description = this.option('description') || (await this.ask('Enter the notification description:'))
 
     const actionLink = (await this.ask('Enter an action link (optional):')) || undefined
     const actionText = actionLink

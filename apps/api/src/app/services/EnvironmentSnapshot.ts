@@ -164,10 +164,7 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
       title: 'Mail',
       items: [
         ok('Driver', notifications.default_driver),
-        ok('Transport', typeof mailDriver.transport === 'string'
-          ? mailDriver.transport
-          : mailDriver.transport.name
-        ),
+        ok('Transport', typeof mailDriver.transport === 'string' ? mailDriver.transport : mailDriver.transport.name),
         ok('Host', smtp.host),
         ok('Port', smtp.port),
         { label: 'Secure (TLS)', value: smtp.secure ? 'true' : 'false', status: 'ok' },
