@@ -55,20 +55,20 @@ export class SendTestNotification extends Command {
         if (service === 'sms')
           await Notification.sms()
             .recipient(user?.phone ?? userId)
-            .send('Test notification message from Roseed')
+            .send('Test notification message from Arkyc')
         if (service === 'mail')
           await Notification.mail()
             .recipient(user?.email ?? userId)
             .view('email/template')
-            .send('Test notification message from Roseed', 'Test Mail')
+            .send('Test notification message from Arkyc', 'Test Mail')
         if (service === 'db')
           await Notification.db()
             .recipient(user ?? userId)
-            .send('Test notification message from Roseed', 'Test DB Notification')
+            .send('Test notification message from Arkyc', 'Test DB Notification')
         if (service === 'realtime')
           await PushNotificationService.sendToUser(user?.id ?? userId, {
             title: 'Test DB Notification',
-            body: 'Test notification message from Roseed',
+            body: 'Test notification message from Arkyc',
             data: { type: 'test' },
           })
 
