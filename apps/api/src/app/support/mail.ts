@@ -20,6 +20,7 @@ export async function sendMail(
 ): Promise<void> {
   await Notification.email()
     .recipient(recipient)
+    .view('email/template')
     .send(message, subject, undefined, data)
     .catch((error: unknown) => {
       Logger.error('Mail delivery failed: ' + (error as Error).message, false)

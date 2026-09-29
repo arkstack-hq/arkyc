@@ -1,18 +1,19 @@
+import { Notification, UserNotificationCenter } from '@arkstack/notifications'
+
 import { Command } from '@h3ravel/musket'
+import { PushNotificationService } from 'src/core/notifications/push/PushNotificationService'
 import { User } from 'src/app/models/User'
-import { UserNotificationCenter } from '@arkstack/notifications'
 
 export class SendTestNotification extends Command {
   protected signature = `send:test-notification
         {userId? : The ID of the user to send the notification to (optional, will prompt if not provided)}
         {--t|title? : The title of the notification (optional, will prompt if not provided)}
+        {--c|channel? : Test notification for a specific service (other options will be ignored): [sms, mail, db, realtime]}
         {--d|description? : The description of the notification (optional, will prompt if not provided)}
     `
   protected description = 'Send a test notification to a user'
 
   async handle() {
-    const notificationTypes = ['transaction', 'pocket', 'family', 'security', 'promo', 'bill', 'goal'] as const
-
     let userId = this.argument('userId')
 
     if (!userId) {
@@ -41,7 +42,47 @@ export class SendTestNotification extends Command {
       )
     }
 
-    const user = await User.query().find(userId)
+    const user = await User.query()
+      .where(userId.includes('@') ? { email: userId } : { id: userId })
+      .first()
+
+    if (this.option('channel')) {
+      const service = this.option('channel')
+
+      this.info(`SENDING: Test notification to ${service} channel for user ${user?.name ?? userId}`)
+
+      try {
+        if (service === 'sms')
+          await Notification.sms()
+            .recipient(user?.phone ?? userId)
+            .send('Test notification message from Roseed')
+        if (service === 'mail')
+          await Notification.mail()
+            .recipient(user?.email ?? userId)
+            .view('email/template')
+            .send('Test notification message from Roseed', 'Test Mail')
+        if (service === 'db')
+          await Notification.db()
+            .recipient(user ?? userId)
+            .send('Test notification message from Roseed', 'Test DB Notification')
+        if (service === 'realtime')
+          await PushNotificationService.sendToUser(user?.id ?? userId, {
+            title: 'Test DB Notification',
+            body: 'Test notification message from Roseed',
+            data: { type: 'test' },
+          })
+
+        this.info(
+          `SENT: Test notification sent to ${service} channel for user ${user?.name ?? userId}`,
+        )
+      } catch (error) {
+        this.error(
+          `ERROR: Failed to send test notification for channel ${service} [${(error as Error).message}]`,
+        )
+      }
+
+      return
+    }
 
     if (!user) {
       this.error(`User with id ${userId} was not found.`)
@@ -49,26 +90,18 @@ export class SendTestNotification extends Command {
       return
     }
 
-    const type = (await this.choice(
-      'Choose a notification type:',
-      notificationTypes.map((notificationType) => ({
-        name: notificationType,
-        value: notificationType,
-      })),
-      3,
-    )) as (typeof notificationTypes)[number]
-
     const title = this.option('title') || (await this.ask('Enter the notification title:'))
 
-    const description = this.option('description') || (await this.ask('Enter the notification description:'))
+    const description =
+      this.option('description') || (await this.ask('Enter the notification description:'))
 
     const actionLink = (await this.ask('Enter an action link (optional):')) || undefined
     const actionText = actionLink
       ? (await this.ask('Enter an action button label (optional):')) || undefined
       : undefined
     try {
-      const notification = await UserNotificationCenter.create(user, {
-        type,
+      await UserNotificationCenter.create(user, {
+        type: 'generic',
         title,
         description,
         actionLink,
@@ -79,7 +112,7 @@ export class SendTestNotification extends Command {
         },
       })
 
-      this.info(`Notification ${notification.id} sent to ${user.name}`)
+      this.info(`Notification sent to ${user.name}`)
     } catch (error) {
       this.error(`Failed to send notification: ${(error as Error).message}`)
     }
