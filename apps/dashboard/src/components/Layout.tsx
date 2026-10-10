@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
+  Bell,
   Boxes,
   ChevronsUpDown,
   ClipboardCheck,
@@ -23,6 +24,7 @@ import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
 import { isDark, toggleTheme } from '@/lib/theme'
 import { Loading } from '@/components/States'
+import { NotificationBell } from '@/components/NotificationBell'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Breadcrumb,
@@ -248,6 +250,10 @@ function UserMenu() {
           <KeyRound className="size-4" />
           Security
         </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate('/account/notifications')}>
+          <Bell className="size-4" />
+          Notifications
+        </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(e) => {
             e.preventDefault()
@@ -314,6 +320,7 @@ function OrganizationHeader({ can, scrolled }: { can: (perm: PermissionKey) => b
 
       <div className="ml-auto flex items-center gap-2">
         <CommandMenuTrigger onClick={() => setCmdOpen(true)} />
+        <NotificationBell />
         <button
           type="button"
           aria-label="Toggle theme"

@@ -222,6 +222,9 @@ importers:
       '@alova/adapter-axios':
         specifier: ^2.0.18
         version: 2.0.18(alova@3.5.1)(axios@1.18.0)
+      '@arkstack/realtime':
+        specifier: ^0.19.1
+        version: 0.19.1(firebase@11.10.0)(pusher-js@8.5.0)(react@19.2.7)(vue@3.5.38(typescript@6.0.3))
       '@arkyc/types':
         specifier: workspace:^
         version: link:../../packages/types
@@ -624,6 +627,23 @@ packages:
       '@arkstack/database':
         optional: true
       ioredis:
+        optional: true
+
+  '@arkstack/realtime@0.19.1':
+    resolution: {integrity: sha512-g3r2i32aQmjtTD4+S7mLfexfA+ohRtmFIfiC9NNqmWHrTWmTI34YHY0PsFE6sU/sRhpzyCGcA6fupuNDFxSZKg==}
+    peerDependencies:
+      firebase: ^11.0.0
+      pusher-js: ^8.4.0
+      react: '>=18'
+      vue: ^3.4.0
+    peerDependenciesMeta:
+      firebase:
+        optional: true
+      pusher-js:
+        optional: true
+      react:
+        optional: true
+      vue:
         optional: true
 
   '@arkstack/scheduler@0.19.1':
@@ -7681,6 +7701,13 @@ snapshots:
       - '@arkstack/foundry'
       - '@h3ravel/support'
       - arkormx
+
+  '@arkstack/realtime@0.19.1(firebase@11.10.0)(pusher-js@8.5.0)(react@19.2.7)(vue@3.5.38(typescript@6.0.3))':
+    optionalDependencies:
+      firebase: 11.10.0
+      pusher-js: 8.5.0
+      react: 19.2.7
+      vue: 3.5.38(typescript@6.0.3)
 
   '@arkstack/scheduler@0.19.1(f1abc64073ead074e79e9e729ee98000)':
     dependencies:

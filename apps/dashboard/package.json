@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@alova/adapter-axios": "^2.0.18",
+    "@arkstack/realtime": "^0.19.1",
     "@arkyc/types": "workspace:^",
     "@arkyc/widget": "workspace:^",
     "@uidotdev/usehooks": "^2.4.1",

@@ -35,6 +35,7 @@ import ReviewsPage from '@/pages/ReviewsPage'
 import RoleDetailPage from '@/pages/settings/RoleDetailPage'
 import RolesPage from '@/pages/settings/RolesPage'
 import SecurityPage from '@/pages/SecurityPage'
+import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
 import SessionDetailPage from '@/pages/sessions/SessionDetailPage'
 import SessionsPage from '@/pages/sessions/SessionsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
@@ -100,6 +101,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SecurityPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/account/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationSettingsPage />
             </ProtectedRoute>
           }
         />
