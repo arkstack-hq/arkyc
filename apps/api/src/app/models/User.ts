@@ -8,6 +8,10 @@ import { UserPermission } from './UserPermission'
 import { AdminPermission } from './AdminPermission'
 import { Review } from './Review'
 import { Organization } from './Organization'
+import { OrganizationMember } from './OrganizationMember'
+import { UserPushToken } from './UserPushToken'
+import type { NotificationPreferences } from '@arkyc/types'
+import type { CastMap } from 'arkormx'
 
 /** Account standing. `null` is treated as `active`. */
 export type UserStatus = 'active' | 'restricted' | 'suspended'
@@ -23,6 +27,8 @@ export class User extends BaseUser {
   declare emailVerifiedAt: Date | null
   /** `active` (default/null), `restricted` (read-only), or `suspended` (no login). */
   declare status: UserStatus | null
+  /** Overrides of the default notification preferences; null means defaults. */
+  declare notificationPreferences: Partial<NotificationPreferences> | null
   declare createdAt: Date
   declare updatedAt: Date
 
@@ -34,11 +40,16 @@ export class User extends BaseUser {
     avatarUrl: 'avatar_url',
     lastLoginAt: 'last_login_at',
     emailVerifiedAt: 'email_verified_at',
+    notificationPreferences: 'notification_preferences',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }
 
   protected override hidden = ['password']
+
+  protected override casts: CastMap = {
+    notificationPreferences: 'json',
+  }
 
   personalAccessTokens() {
     return this.hasMany(PersonalAccessToken, 'userId')
@@ -50,6 +61,14 @@ export class User extends BaseUser {
 
   notifications() {
     return this.hasMany(UserNotification, 'userId')
+  }
+
+  organizationMembers() {
+    return this.hasMany(OrganizationMember, 'userId')
+  }
+
+  pushTokens() {
+    return this.hasMany(UserPushToken, 'userId')
   }
 
   organizationMemberships() {

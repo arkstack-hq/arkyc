@@ -2,13 +2,14 @@ import { StatusMachine } from '@arkyc/core'
 import { REALTIME_EVENT, type SessionTransitionEvent, type VerificationStatus } from '@arkyc/types'
 import type { VerificationSession } from '@app/models/VerificationSession'
 import { webhookService } from '@app/services/WebhookService'
+import { sessionNotifications } from '@app/notifications/SessionNotifications'
 import { broadcastSafely, sessionChannels } from './realtime-channels'
 
 /**
  * Apply + persist a session status change (validated against the core state
- * machine), then fan out the matching webhook event and a realtime broadcast.
- * The single choke point for every status transition, so webhooks + realtime
- * fire consistently.
+ * machine), then fan out the matching webhook event, a realtime broadcast, and
+ * reviewer notifications when the session starts waiting for review. The single
+ * choke point for every status transition, so these fire consistently.
  */
 export async function transitionTo(
   session: VerificationSession,
@@ -31,4 +32,6 @@ export async function transitionTo(
     previous_status: previous,
   }
   await broadcastSafely(sessionChannels(session), REALTIME_EVENT.sessionTransition, payload)
+
+  if (to === 'requires_review' && previous !== to) await sessionNotifications.needsReview(session)
 }

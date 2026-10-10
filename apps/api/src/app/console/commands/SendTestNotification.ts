@@ -1,7 +1,8 @@
 import { Notification, UserNotificationCenter } from '@arkstack/notifications'
 
 import { Command } from '@h3ravel/musket'
-import { PushNotificationService } from 'src/core/notifications/push/PushNotificationService'
+import { NOTIFICATION_TYPE } from '@arkyc/types'
+import { userNotifier } from 'src/app/notifications/UserNotifier'
 import { User } from 'src/app/models/User'
 
 export class SendTestNotification extends Command {
@@ -65,12 +66,16 @@ export class SendTestNotification extends Command {
           await Notification.db()
             .recipient(user ?? userId)
             .send('Test notification message from Arkyc', 'Test DB Notification')
-        if (service === 'realtime')
-          await PushNotificationService.sendToUser(user?.id ?? userId, {
-            title: 'Test DB Notification',
-            body: 'Test notification message from Arkyc',
-            data: { type: 'test' },
+        if (service === 'realtime') {
+          if (!user) throw new Error(`User ${userId} was not found`)
+
+          await userNotifier.deliver(user, {
+            type: NOTIFICATION_TYPE.reviewAssigned,
+            title: 'Test notification',
+            description: 'Test notification message from Arkyc',
+            meta: { source: 'console' },
           })
+        }
 
         this.info(`SENT: Test notification sent to ${service} channel for user ${user?.name ?? userId}`)
       } catch (error) {

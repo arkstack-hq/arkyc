@@ -33,8 +33,9 @@ export default class RealtimeController extends BaseController {
   async config() {
     return {
       status: 'success',
-      message: 'OK', code: 200,
-      data: Broadcast.clientConfig()
+      message: 'OK',
+      code: 200,
+      data: Broadcast.clientConfig(),
     }
   }
 }

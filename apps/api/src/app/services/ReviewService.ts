@@ -12,6 +12,7 @@ import { Review } from '@app/models/Review'
 import { ReviewNote } from '@app/models/ReviewNote'
 import { transitionTo } from 'src/support/session-transition'
 import { broadcastSafely, sessionChannels } from 'src/support/realtime-channels'
+import { sessionNotifications } from '@app/notifications/SessionNotifications'
 import { type AuditActor, audit } from './AuditLogger'
 
 /** What a reviewer is asking the user to redo. */
@@ -59,6 +60,7 @@ export class ReviewService {
     session.assignedTo = assigneeId
     await session.save()
     await this.emit(session, actor, 'review.assigned', { assigneeId })
+    await sessionNotifications.assigned(session, assigneeId, actor.actorId)
 
     return session
   }

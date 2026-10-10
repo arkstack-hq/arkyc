@@ -62,6 +62,9 @@ Comments should be simple guides to what a utility (variable, function, class, b
 - Do not rely on model-query joins inside `whereExists` where ArkORM cannot compile them. Use a documented raw `exists` only when supported relation APIs cannot express the query.
 - `belongsToMany` pivot keys must use physical database column names such as `role_id`, not camelCase model attributes.
 - Do not use `orWhere('col', null)` as a null predicate. It compiles to `= NULL` and cannot match null rows.
+- `query.update(data)` updates a single row and returns one model. Use `query.updateFrom(data)` to update every matching row.
+- `where(callback)` / `orWhere(callback)` groups use the callback's return value; return the chained builder or the group is dropped.
+- Relation filters only compile one level deep: a `whereHas` nested inside another `whereHas` callback is silently dropped from the SQL. Resolve inner ids first, then filter with `whereIn` inside a single `whereHas`. Check unfamiliar relation filters with `query.toSql()`.
 
 ## Controllers, routes, validation, and resources (apps/api)
 

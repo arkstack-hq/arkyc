@@ -3,6 +3,7 @@ import { OcrJob } from './OcrJob'
 import { BiometricJob } from './BiometricJob'
 import { WebhookJob } from './WebhookJob'
 import { SessionSweepJob } from './SessionSweepJob'
+import { UserNotificationJob } from './UserNotificationJob'
 
 // Register the job classes so dedicated worker processes (which reconstruct
 // jobs from a stored payload, bypassing the constructor) can resolve them by
@@ -12,7 +13,8 @@ JobRegistry.register(OcrJob)
 JobRegistry.register(BiometricJob)
 JobRegistry.register(WebhookJob)
 JobRegistry.register(SessionSweepJob)
+JobRegistry.register(UserNotificationJob)
 
-export { OcrJob, BiometricJob, WebhookJob, SessionSweepJob }
+export { OcrJob, BiometricJob, WebhookJob, SessionSweepJob, UserNotificationJob }
 export type { OcrJobHints } from './OcrJob'
 export type { BiometricJobHints } from './BiometricJob'
