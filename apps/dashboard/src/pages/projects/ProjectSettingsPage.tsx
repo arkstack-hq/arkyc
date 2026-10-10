@@ -41,6 +41,23 @@ const THRESHOLD_FIELDS: { key: keyof VerificationThresholds; label: string }[] =
   { key: 'faceMatchThreshold', label: 'Face match' },
 ]
 
+/**
+ * Force a freshly uploaded logo to reload. A local-disk logo keeps the same URL
+ * across re-uploads, so it gets a version param. A presigned S3/R2 URL is already
+ * unique per response, and any added query param would invalidate its signature,
+ * so it is returned untouched.
+ */
+function withCacheBust(url: string | null): string | null {
+  if (!url || /[?&]x-(amz|goog)-signature=/i.test(url)) return url
+  try {
+    const parsed = new URL(url, window.location.href)
+    parsed.searchParams.set('v', String(Date.now()))
+    return parsed.toString()
+  } catch {
+    return url
+  }
+}
+
 function formFromProject(project: Project): FormState {
   const thresholds = project.settings?.thresholds ?? {}
   return {
@@ -136,7 +153,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
     error: logoError,
     onSuccess: onLogoUploaded,
   } = useRequest((file: File) => Projects.uploadLogo(organizationId, projectId!, file), { immediate: false })
-  onLogoUploaded(({ data }) => setLogoUrl(data.branding?.logo_url ?? null))
+  onLogoUploaded(({ data }) => setLogoUrl(withCacheBust(data.branding?.logo_url ?? null)))
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -248,11 +265,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
               <div className="flex items-center gap-4">
                 <div className="flex size-16 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
                   {logoUrl ? (
-                    <img
-                      src={logoUrl + '?logo=' + Date.now()}
-                      alt="Project logo"
-                      className="size-full object-contain"
-                    />
+                    <img src={logoUrl} alt="Project logo" className="size-full object-contain" />
                   ) : (
                     <span className="text-xs text-muted-foreground">None</span>
                   )}
