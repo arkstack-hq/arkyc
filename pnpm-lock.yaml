@@ -42,50 +42,50 @@ importers:
   apps/api:
     dependencies:
       '@arkstack/auth':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
       '@arkstack/cache':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
       '@arkstack/common':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
       '@arkstack/console':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@types/node@26.0.0)(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@types/node@26.0.0)(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       '@arkstack/contract':
-        specifier: ^0.19.0
-        version: 0.19.0
+        specifier: ^0.19.1
+        version: 0.19.1
       '@arkstack/database':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       '@arkstack/driver-express':
-        specifier: ^0.19.0
-        version: 0.19.0(769b2af7cb191fc6dfa04dd3a58a676c)
+        specifier: ^0.19.1
+        version: 0.19.1(d265e88a5701246ef36ad0e5883623b9)
       '@arkstack/filesystem':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
       '@arkstack/foundry':
-        specifier: ^0.19.0
-        version: 0.19.0
+        specifier: ^0.19.1
+        version: 0.19.1
       '@arkstack/http':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
       '@arkstack/jobs':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
       '@arkstack/notifications':
-        specifier: ^0.19.0
-        version: 0.19.0(d2477836bf41d3581ebde17f28949d9b)
+        specifier: ^0.19.1
+        version: 0.19.1(b9034d3f653279c2ed8c82fdf59eb31a)
       '@arkstack/queue':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
       '@arkstack/scheduler':
-        specifier: ^0.19.0
-        version: 0.19.0(4f40131efc3bf43651f0a6d7561ff757)
+        specifier: ^0.19.1
+        version: 0.19.1(f1abc64073ead074e79e9e729ee98000)
       '@arkstack/view':
-        specifier: ^0.19.0
-        version: 0.19.0(@arkstack/common@0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))
+        specifier: ^0.19.1
+        version: 0.19.1(@arkstack/common@0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))
       '@arkyc/auth':
         specifier: workspace:^
         version: link:../../packages/auth
@@ -123,8 +123,8 @@ importers:
         specifier: ^0.1.13
         version: 0.1.13(kanun@1.2.1)
       arkormx:
-        specifier: ^2.12.11
-        version: 2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+        specifier: ^2.12.12
+        version: 2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       clear-router:
         specifier: ^2.9.3
         version: 2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2)
@@ -498,17 +498,17 @@ packages:
     peerDependencies:
       clear-router: ^2.9.2
 
-  '@arkstack/auth@0.19.0':
-    resolution: {integrity: sha512-bvBJsm8AKg785ct9xbuYaEiD7jzkCZNQvoi98RQjtUFNMnhnYx18No1iZjygaurl6nBU8KT5K5BpfviXsZTFNw==}
+  '@arkstack/auth@0.19.1':
+    resolution: {integrity: sha512-bJkRHIweHmihtRN7H07D1XyDttGu9aL3tW+b6Prq8RIXNc6ADaVoE6ys5PB1hwAtw7Kup2qSEC+f89j6dpJ9bw==}
     peerDependencies:
-      '@arkstack/database': ^0.19.0
+      '@arkstack/database': ^0.19.1
       '@h3ravel/support': ^2.2.7
 
-  '@arkstack/cache@0.19.0':
-    resolution: {integrity: sha512-hTYk12VcQkd7VD8gJZnM7GVBUgAHqTkduh2biag/GC0SMbHCArzjOD1Rb8bnGcmbXmVY8YNWwd5f1DdFdm9Bvg==}
+  '@arkstack/cache@0.19.1':
+    resolution: {integrity: sha512-VYTRrZlBZISkAjH8DO15DkHLlBvBzKOqTJULCVYfFWVayZwjhIyLrt2buou995u2jNjLQ8Sxohyr+8HMJhDE+w==}
     peerDependencies:
-      '@arkstack/contract': ^0.19.0
-      '@arkstack/database': ^0.19.0
+      '@arkstack/contract': ^0.19.1
+      '@arkstack/database': ^0.19.1
       '@h3ravel/musket': ^2.2.13
       ioredis: ^5.4.1
     peerDependenciesMeta:
@@ -517,22 +517,22 @@ packages:
       ioredis:
         optional: true
 
-  '@arkstack/common@0.19.0':
-    resolution: {integrity: sha512-clSMd0MQ20LqL8z5LANUywSA2PJY43MsVycj7HC+cjp6usi5bjWTJTFBBQDMsoS72ZeVTuEIyDErt+9cW1Bi7w==}
+  '@arkstack/common@0.19.1':
+    resolution: {integrity: sha512-GwRCBWrTwZYywl9V876KEmf2sLmWD2P4cUEQ/FHltZoeg+5cjE8AgB3DL0pwAe/yNEX3xlDdmVkLbItKtl+GPQ==}
     peerDependencies:
-      '@arkstack/contract': ^0.19.0
-      '@arkstack/foundry': ^0.19.0
+      '@arkstack/contract': ^0.19.1
+      '@arkstack/foundry': ^0.19.1
       '@h3ravel/support': ^2.2.7
       arkormx: ^2.12.8
     peerDependenciesMeta:
       arkormx:
         optional: true
 
-  '@arkstack/console@0.19.0':
-    resolution: {integrity: sha512-0jUA9OpSvrQgUimHX9k5cXWVYI1Dp7d4hevPVHaD+lCueVunU/vmbWzGav+rH9eFBfqoR9Lc16Ldd1OcIHyGhg==}
+  '@arkstack/console@0.19.1':
+    resolution: {integrity: sha512-erpJlVmBAI81w25LzP+YMl4G9lzMxnug6uAfmoTnoseKwlCHiuekeiM1jgWZw/hl0qgbuB3/00npxsBpgXkqmQ==}
     hasBin: true
     peerDependencies:
-      '@arkstack/database': ^0.19.0
+      '@arkstack/database': ^0.19.1
       arkormx: ^2.12.8
       clear-router: ^2.9.3
     peerDependenciesMeta:
@@ -541,22 +541,22 @@ packages:
       arkormx:
         optional: true
 
-  '@arkstack/contract@0.19.0':
-    resolution: {integrity: sha512-TCrIr3/2YKExRFBjwUbBmSEnOgGkaZZr+m+/aIpE4RV9kiU9fqetQFf3D6B1XZdhsLv/XNf8wQIIwGQZXJd0+Q==}
+  '@arkstack/contract@0.19.1':
+    resolution: {integrity: sha512-TTqfy9vs8SeKu7L6yJc/tNZHXB73599rtfU9+8sIWu4UjAlQ5gKecQ33gAjTMom4UHYI9MIdaUD5BydjwLSuAg==}
 
-  '@arkstack/database@0.19.0':
-    resolution: {integrity: sha512-s4JJcTwR4yeN1n76nKxKpNOBuv+G9KbF1V7HFkmG7YmaOCBbLg0tNh0dwXxT4BU7fFn+vbeZiFgWStfecJNniA==}
+  '@arkstack/database@0.19.1':
+    resolution: {integrity: sha512-s8bPQ0lIT2KnmeNFWz4pmcFSRozdcBQ2yJcagf3DODf9AVqIFGxNQFMm+FhNj8yUTzXh+GVagIewN9S7dtP6jw==}
     peerDependencies:
       clear-router: ^2.9.3
       kanun: ^1.2.0
 
-  '@arkstack/driver-express@0.19.0':
-    resolution: {integrity: sha512-cx70POKGtwKcKOj7fCEU+Z9OWf/0gjkHK5YJlX/wNBvD1g+Tbs1iarS1nZJ+GjMCVwbM06qyxH7snjgbxpJq+g==}
+  '@arkstack/driver-express@0.19.1':
+    resolution: {integrity: sha512-m6YSfqQxK6nxMazKqpl0VeOMSKlGGtCkCsP4ajcijFdtUqS3inU0bYDdNoFnnM78N51OpEdFNGKXeM9z6vQHwQ==}
     peerDependencies:
-      '@arkstack/auth': ^0.19.0
-      '@arkstack/common': ^0.19.0
-      '@arkstack/foundry': ^0.19.0
-      '@arkstack/inertia': ^0.19.0
+      '@arkstack/auth': ^0.19.1
+      '@arkstack/common': ^0.19.1
+      '@arkstack/foundry': ^0.19.1
+      '@arkstack/inertia': ^0.19.1
       express: ^5.2.1
     peerDependenciesMeta:
       '@arkstack/auth':
@@ -564,19 +564,19 @@ packages:
       '@arkstack/inertia':
         optional: true
 
-  '@arkstack/encryption@0.19.0':
-    resolution: {integrity: sha512-4f9CHgyJ4gNMIVskd038YyTsFeAu6clTkOD8R059RZ8CJL1WPKSLDOX5mmKTzhhdhpkbFFTWg5NhZQT4HDjqhA==}
+  '@arkstack/encryption@0.19.1':
+    resolution: {integrity: sha512-myFBzXyTeX5UUASBozaAbrk6Hh8ex8Zf7Q6VuucJXYYPc/dLH4QyhCvwqUis2j4Euiz+bJ48nIoCXDlCfg8S/g==}
 
-  '@arkstack/filesystem@0.19.0':
-    resolution: {integrity: sha512-9fPDtPNT3W5o6llYuahEgD6KuKPbjWRgRZkoKpwoE8rn20jYNIqBjfve7znOaDkUdyad7A+ksgBzcv5G2s5Zig==}
+  '@arkstack/filesystem@0.19.1':
+    resolution: {integrity: sha512-2V9TYz1NUg+HgdhMXq+g1qxH8b8jhTRHoT/vWxF2RcsnecKlKRCurE3cMPFCeRExJOARIr7dS6x1h6u+iUugzg==}
     peerDependencies:
       '@h3ravel/musket': ^2.2.13
 
-  '@arkstack/foundry@0.19.0':
-    resolution: {integrity: sha512-0VIbaUfzeVmonMcqKnq5Ev0YxrSHXguOBpNQpoiNEWTfoPhIDMqSs+MN7BmI4NHVpi35Rj4x9vsQlISXwSnsmg==}
+  '@arkstack/foundry@0.19.1':
+    resolution: {integrity: sha512-2jNnFsfkNXPENWA7YWOY8SeeK8AfHhsXth2C9XFIq/gBLbqfqNhHkLptB+/Z09UWUf6o93Ud8UZPSOjDQS2BRA==}
 
-  '@arkstack/http@0.19.0':
-    resolution: {integrity: sha512-6c5o8LTIxXJBfajmOqtvhKCw0R5TKF5VMLHra9rvWdIEDzS2/W6wqF5YcKejsx8m1p9s3uU7eIznxmVJyyWhug==}
+  '@arkstack/http@0.19.1':
+    resolution: {integrity: sha512-4XxucbPy01ko6R5CH59Pz/x3pvPWiz/ByI0Cf6eP7eOMOCrnV2v1PRPaS5m7Dgn36BF3hHK3yq0N1g1GjwjT7w==}
     peerDependencies:
       arkormx: ^2.12.8
       kanun: ^1.2.0
@@ -584,20 +584,20 @@ packages:
       arkormx:
         optional: true
 
-  '@arkstack/jobs@0.19.0':
-    resolution: {integrity: sha512-qqAFm0Xui/LI5cfyqC/xoOkhkQAd96bpo126tmUPqbr0WMg6hrdbZxMbKNJ5B0PMGx8TgSADlExL8UeVzV1Y1A==}
+  '@arkstack/jobs@0.19.1':
+    resolution: {integrity: sha512-npTXVhsVYT5izkqOjYr7VHMoZHc92KMosF8kZSUjxJr8fPJQeNGXVk3MB+lCwepc52yurypG3v7dXn1f0q2IpQ==}
     peerDependencies:
-      '@arkstack/contract': ^0.19.0
+      '@arkstack/contract': ^0.19.1
       '@h3ravel/musket': ^2.2.13
 
-  '@arkstack/notifications@0.19.0':
-    resolution: {integrity: sha512-X5smUD1NC9w31xrV1cMg+SsBJM46z21RopytPihUpz1Dd+W8t3ylvEr8kvbhs6v2o6iV2Sg4TgtRNtlE/jhYnQ==}
+  '@arkstack/notifications@0.19.1':
+    resolution: {integrity: sha512-tVml4R3Rpoi3CUf4hgkEZQhNV0kJjpKdqZsKZPUlmJCcHJiyeVpQi53HuTsbn1wCQsIDP70HDpeLsYRr7OQZUg==}
     peerDependencies:
-      '@arkstack/contract': ^0.19.0
-      '@arkstack/database': ^0.19.0
-      '@arkstack/driver-express': ^0.19.0
-      '@arkstack/driver-h3': ^0.19.0
-      '@arkstack/jobs': ^0.19.0
+      '@arkstack/contract': ^0.19.1
+      '@arkstack/database': ^0.19.1
+      '@arkstack/driver-express': ^0.19.1
+      '@arkstack/driver-h3': ^0.19.1
+      '@arkstack/jobs': ^0.19.1
       '@kanun-hq/plugin-phone': ^0.1.8
       firebase-admin: ^13.0.0
       pusher: ^5.2.0
@@ -613,11 +613,11 @@ packages:
       pusher:
         optional: true
 
-  '@arkstack/queue@0.19.0':
-    resolution: {integrity: sha512-rvw8+sB3T3K07s5gTBBr3v//dkYyDMx+4tydOBk1V93m3W5siyHwEyTEammLp+Nv0D/aoJvGtSQPkXjX+hLvcA==}
+  '@arkstack/queue@0.19.1':
+    resolution: {integrity: sha512-QKzvkxtBfYvzEB8nFqNeSTvq75f6C7VHdU6d0uGJ1kqlaCF8OwGbtcGPL3Lw9vVJ5OZ6BMEYC5D1cOglQXp9dA==}
     peerDependencies:
-      '@arkstack/contract': ^0.19.0
-      '@arkstack/database': ^0.19.0
+      '@arkstack/contract': ^0.19.1
+      '@arkstack/database': ^0.19.1
       '@h3ravel/musket': ^2.2.13
       ioredis: ^5.4.1
     peerDependenciesMeta:
@@ -626,12 +626,12 @@ packages:
       ioredis:
         optional: true
 
-  '@arkstack/scheduler@0.19.0':
-    resolution: {integrity: sha512-8ZmnWzz0vr9qlIPu2Jh3a4wecd2mOpaY2LhMVh0gf/bOSHf3CL9HGmPk805V/l0D6nDCRH6nqYCAd8eATAHzqQ==}
+  '@arkstack/scheduler@0.19.1':
+    resolution: {integrity: sha512-BCCA63HF9yTP53hoJfOrs2Nek5sFjlxLJ15t6YHinyl970wt/1p1gOvO6Mvq/QVa+YZpx6EMfWLTLjeIbsPQRA==}
     peerDependencies:
-      '@arkstack/cache': ^0.19.0
-      '@arkstack/contract': ^0.19.0
-      '@arkstack/jobs': ^0.19.0
+      '@arkstack/cache': ^0.19.1
+      '@arkstack/contract': ^0.19.1
+      '@arkstack/jobs': ^0.19.1
       '@h3ravel/musket': ^2.2.13
     peerDependenciesMeta:
       '@arkstack/cache':
@@ -639,11 +639,11 @@ packages:
       '@arkstack/jobs':
         optional: true
 
-  '@arkstack/view@0.19.0':
-    resolution: {integrity: sha512-GOJ+H94wlasSrf/FyxYyBH1h/RNCEGV6wivZ6maojvUkpwvfUQ2Nt4LHUUlvR9YafK2EkvNGQwk6uW3zdgYeIQ==}
+  '@arkstack/view@0.19.1':
+    resolution: {integrity: sha512-BN9FhoAhpaoBTQKuK8qQKpFs20Q7Jf8dgUFhpTKET3nMOVU2Z4VVsXE+ZvzyJmCOy18tp0Y7URqZ9a7OH/1vqg==}
     peerDependencies:
-      '@arkstack/common': ^0.19.0
-      '@arkstack/foundry': ^0.19.0
+      '@arkstack/common': ^0.19.1
+      '@arkstack/foundry': ^0.19.1
       '@h3ravel/musket': ^2.2.13
       clear-router: ^2.9.3
     peerDependenciesMeta:
@@ -4226,8 +4226,8 @@ packages:
     resolution: {integrity: sha512-COROpnaoap1E2F000S62r6A60uHZnmlvomhfyT2DlTcrY1OrBKn2UhH7qn5wTC9zMvD0AY7csdPSNwKP+7WiQw==}
     engines: {node: '>= 0.4'}
 
-  arkormx@2.12.11:
-    resolution: {integrity: sha512-M3Wog0YNU3W2UTBsAlY0p/eqVmqybaaq2M0NcML4cSMKqSUB+X7C58Nz2reuabrN/aDIPwcgxzpgHeP93lM2yQ==}
+  arkormx@2.12.12:
+    resolution: {integrity: sha512-a1PzbN6uGqce7prs7YmD9Nvqj4R98+yoNClTyL8c1HbIdyxS8y8F5E1/H93X40OnpPDZ1X9/ZlNx6tHIMR5niw==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -7453,7 +7453,7 @@ snapshots:
 
   '@arkormx/plugin-clear-router@0.1.57(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))':
     dependencies:
-      arkormx: 2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      arkormx: 2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       clear-router: 2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2)
       reflect-metadata: 0.2.2
     transitivePeerDependencies:
@@ -7463,11 +7463,11 @@ snapshots:
       - pg-native
       - tsdown
 
-  '@arkstack/auth@0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)':
+  '@arkstack/auth@0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/database': 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
-      '@arkstack/http': 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/database': 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      '@arkstack/http': 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
       '@h3ravel/support': 2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22)
       jose: 6.2.3
       otpauth: 9.5.1
@@ -7485,24 +7485,24 @@ snapshots:
       - koa
       - reflect-metadata
 
-  '@arkstack/cache@0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)':
+  '@arkstack/cache@0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
       '@h3ravel/musket': 2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
     optionalDependencies:
-      '@arkstack/database': 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      '@arkstack/database': 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       ioredis: 5.11.1
     transitivePeerDependencies:
       - '@arkstack/foundry'
       - '@h3ravel/support'
       - arkormx
 
-  '@arkstack/common@0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))':
+  '@arkstack/common@0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))':
     dependencies:
-      '@arkstack/contract': 0.19.0
-      '@arkstack/encryption': 0.19.0
-      '@arkstack/foundry': 0.19.0
+      '@arkstack/contract': 0.19.1
+      '@arkstack/encryption': 0.19.1
+      '@arkstack/foundry': 0.19.1
       '@h3ravel/support': 2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22)
       '@pictwo/faker': 1.1.0
       bcryptjs: 3.0.3
@@ -7515,12 +7515,12 @@ snapshots:
       selfsigned: 2.4.1
     optionalDependencies:
       '@faker-js/faker': 10.5.0
-      arkormx: 2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      arkormx: 2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
 
-  '@arkstack/console@0.19.0(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@types/node@26.0.0)(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))':
+  '@arkstack/console@0.19.1(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@types/node@26.0.0)(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
       '@h3ravel/musket': 2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       '@h3ravel/support': 2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22)
       '@ngrok/ngrok': 1.7.0
@@ -7529,8 +7529,8 @@ snapshots:
       resora: 1.3.34(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       ts-morph: 28.0.0
     optionalDependencies:
-      '@arkstack/database': 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
-      arkormx: 2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      '@arkstack/database': 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      arkormx: 2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
     transitivePeerDependencies:
       - '@arkstack/foundry'
       - '@types/node'
@@ -7538,16 +7538,16 @@ snapshots:
       - h3
       - tsdown
 
-  '@arkstack/contract@0.19.0':
+  '@arkstack/contract@0.19.1':
     dependencies:
-      '@arkstack/foundry': 0.19.0
+      '@arkstack/foundry': 0.19.1
 
-  '@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))':
+  '@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))':
     dependencies:
       '@arkormx/plugin-clear-router': 0.1.57(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
-      arkormx: 2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
+      arkormx: 2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       clear-router: 2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2)
       dotenv: 17.4.2
       kanun: 1.2.1
@@ -7563,12 +7563,12 @@ snapshots:
       - pg-native
       - tsdown
 
-  '@arkstack/driver-express@0.19.0(769b2af7cb191fc6dfa04dd3a58a676c)':
+  '@arkstack/driver-express@0.19.1(d265e88a5701246ef36ad0e5883623b9)':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
-      '@arkstack/foundry': 0.19.0
-      '@arkstack/http': 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
+      '@arkstack/foundry': 0.19.1
+      '@arkstack/http': 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
       '@ngrok/ngrok': 1.7.0
       '@resora/plugin-clear-router': 1.0.72(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       clear-router: 2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2)
@@ -7577,7 +7577,7 @@ snapshots:
       multer: 2.2.0
       resora: 1.3.34(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
     optionalDependencies:
-      '@arkstack/auth': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
+      '@arkstack/auth': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)
     transitivePeerDependencies:
       - '@h3ravel/support'
       - '@koa/router'
@@ -7592,12 +7592,12 @@ snapshots:
       - reflect-metadata
       - tsdown
 
-  '@arkstack/encryption@0.19.0': {}
+  '@arkstack/encryption@0.19.1': {}
 
-  '@arkstack/filesystem@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))':
+  '@arkstack/filesystem@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
       '@aws-sdk/client-s3': 3.1073.0
       '@aws-sdk/s3-request-presigner': 3.1073.0
       '@google-cloud/storage': 7.21.0
@@ -7614,17 +7614,17 @@ snapshots:
       - encoding
       - supports-color
 
-  '@arkstack/foundry@0.19.0': {}
+  '@arkstack/foundry@0.19.1': {}
 
-  '@arkstack/http@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)':
+  '@arkstack/http@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(express@5.2.1)(h3@2.0.1-rc.22)(kanun@1.2.1)(reflect-metadata@0.2.2)':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
       clear-router: 2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2)
       dotenv: 17.4.2
       kanun: 1.2.1
     optionalDependencies:
-      arkormx: 2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      arkormx: 2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
     transitivePeerDependencies:
       - '@arkstack/foundry'
       - '@h3ravel/support'
@@ -7636,11 +7636,11 @@ snapshots:
       - koa
       - reflect-metadata
 
-  '@arkstack/jobs@0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)':
+  '@arkstack/jobs@0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
-      '@arkstack/queue': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
+      '@arkstack/queue': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
       '@h3ravel/musket': 2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
     transitivePeerDependencies:
       - '@arkstack/database'
@@ -7649,17 +7649,17 @@ snapshots:
       - arkormx
       - ioredis
 
-  '@arkstack/notifications@0.19.0(d2477836bf41d3581ebde17f28949d9b)':
+  '@arkstack/notifications@0.19.1(b9034d3f653279c2ed8c82fdf59eb31a)':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
-      '@arkstack/database': 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
-      '@arkstack/jobs': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
+      '@arkstack/database': 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      '@arkstack/jobs': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
       africastalking: 0.8.0
       nodemailer: 9.0.5
       twilio: 6.0.2
     optionalDependencies:
-      '@arkstack/driver-express': 0.19.0(769b2af7cb191fc6dfa04dd3a58a676c)
+      '@arkstack/driver-express': 0.19.1(d265e88a5701246ef36ad0e5883623b9)
       firebase-admin: 13.10.0
       pusher: 5.3.4
     transitivePeerDependencies:
@@ -7669,38 +7669,38 @@ snapshots:
       - debug
       - supports-color
 
-  '@arkstack/queue@0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)':
+  '@arkstack/queue@0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
       '@h3ravel/musket': 2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
     optionalDependencies:
-      '@arkstack/database': 0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
+      '@arkstack/database': 0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       ioredis: 5.11.1
     transitivePeerDependencies:
       - '@arkstack/foundry'
       - '@h3ravel/support'
       - arkormx
 
-  '@arkstack/scheduler@0.19.0(4f40131efc3bf43651f0a6d7561ff757)':
+  '@arkstack/scheduler@0.19.1(f1abc64073ead074e79e9e729ee98000)':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
       '@h3ravel/musket': 2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
       croner: 9.1.0
     optionalDependencies:
-      '@arkstack/cache': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
-      '@arkstack/jobs': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/database@0.19.0(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
+      '@arkstack/cache': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
+      '@arkstack/jobs': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/database@0.19.1(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(@types/node@26.0.0)(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))(h3@2.0.1-rc.22)(kanun@1.2.1)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(ioredis@5.11.1)
     transitivePeerDependencies:
       - '@arkstack/foundry'
       - '@h3ravel/support'
       - arkormx
 
-  '@arkstack/view@0.19.0(@arkstack/common@0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))))(@arkstack/foundry@0.19.0)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))':
+  '@arkstack/view@0.19.1(@arkstack/common@0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))))(@arkstack/foundry@0.19.1)(@h3ravel/musket@2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))(clear-router@2.9.3(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(express@5.2.1)(h3@2.0.1-rc.22)(reflect-metadata@0.2.2))':
     dependencies:
-      '@arkstack/common': 0.19.0(@arkstack/contract@0.19.0)(@arkstack/foundry@0.19.0)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
-      '@arkstack/contract': 0.19.0
-      '@arkstack/foundry': 0.19.0
+      '@arkstack/common': 0.19.1(@arkstack/contract@0.19.1)(@arkstack/foundry@0.19.1)(@h3ravel/support@2.2.7(@types/node@26.0.0)(h3@2.0.1-rc.22))(arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)))
+      '@arkstack/contract': 0.19.1
+      '@arkstack/foundry': 0.19.1
       edge.js: 6.5.1
     optionalDependencies:
       '@h3ravel/musket': 2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))
@@ -11158,7 +11158,7 @@ snapshots:
 
   aria-query@5.3.2: {}
 
-  arkormx@2.12.11(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)):
+  arkormx@2.12.12(@types/node@26.0.0)(h3@2.0.1-rc.22)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)):
     dependencies:
       '@h3ravel/collect.js': 5.4.0
       '@h3ravel/musket': 2.2.14(@types/node@26.0.0)(tsdown@0.22.3(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1))

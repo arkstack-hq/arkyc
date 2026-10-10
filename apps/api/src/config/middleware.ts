@@ -18,10 +18,7 @@ export default (): MiddlewareConfig => {
       express.urlencoded({ extended: true }),
       formdata.any(),
     ],
-    // requestLogger waits for the response itself; as an `after` middleware it
-    // would call next() once the response finished and re-enter the router.
     before: [
-      requestLogger(),
       resora(),
       requestId,
       (req, _, next) => {
@@ -29,6 +26,6 @@ export default (): MiddlewareConfig => {
         next()
       },
     ],
-    after: [],
+    after: [requestLogger()],
   }
 }
