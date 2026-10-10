@@ -6,7 +6,7 @@ import { Project } from '@app/models/Project'
 import type { ProjectBranding } from '@arkyc/types'
 import ProjectCollection from '@app/http/resources/ProjectCollection'
 import ProjectResource from '@app/http/resources/ProjectResource'
-import { Storage } from '@arkstack/filesystem'
+import { type FileLike, Storage } from '@arkstack/filesystem'
 import { Str } from '@h3ravel/support'
 import { audit } from '@app/services/AuditLogger'
 
@@ -164,12 +164,21 @@ export default class ProjectController extends BaseController {
       organizationId: req.organization!.id,
     }).firstOrFail()
 
-    const key = `organizations/${project.organizationId}/projects/${project.id}/branding/logo`
-    await Storage.disk().put(key, data.logo, { visibility: 'public' })
+    const logo = data.logo as FileLike
+    const ext = logo.mimetype === 'image/png' ? 'png' : 'jpg'
+    const key = `organizations/${project.organizationId}/projects/${project.id}/branding/logo.${ext}`
+    await Storage.disk().put(key, logo, { visibility: 'public', contentType: logo.mimetype })
 
-    const { logo_url: _logoUrl, ...branding } = project.branding ?? {}
+    const { logo_url: _logoUrl, logo_key: previousKey, ...branding } = project.branding ?? {}
     project.branding = { ...branding, logo_key: key }
     await project.save()
+
+    // A logo of the other image type was stored under a different extension.
+    if (previousKey && previousKey !== key) {
+      await Storage.disk()
+        .delete(previousKey)
+        .catch(() => undefined)
+    }
 
     await audit.recordForRequest(req, {
       projectId: project.id,
