@@ -9,8 +9,7 @@ export type DeepPartial<T> = {
 /**
  * Typed singleton over the {@link GlobalSetting} row. Reads always merge the
  * stored value over {@link DEFAULT_GLOBAL_SETTINGS} so every key is present even
- * before anything is saved; writes deep-merge a partial patch. Later phases read
- * these at runtime (e.g. Phase 16 realtime transport).
+ * before anything is saved; writes deep-merge a partial patch.
  */
 export class GlobalSettingsService {
   /**
@@ -52,7 +51,6 @@ export class GlobalSettingsService {
   private merge(base: GlobalSettings, patch: DeepPartial<GlobalSettings>): GlobalSettings {
     return {
       platform: { ...base.platform, ...(patch.platform ?? {}) },
-      realtime: { ...base.realtime, ...(patch.realtime ?? {}) },
       capture: { ...base.capture, ...(patch.capture ?? {}) },
       assets: { ...base.assets, ...(patch.assets ?? {}) },
     }

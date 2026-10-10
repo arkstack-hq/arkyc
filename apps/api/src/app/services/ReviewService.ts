@@ -11,8 +11,7 @@ import { VerificationSession } from '@app/models/VerificationSession'
 import { Review } from '@app/models/Review'
 import { ReviewNote } from '@app/models/ReviewNote'
 import { transitionTo } from 'src/support/session-transition'
-import { sessionChannels } from 'src/support/realtime-channels'
-import { realtime } from './RealtimeService'
+import { broadcastSafely, sessionChannels } from 'src/support/realtime-channels'
 import { type AuditActor, audit } from './AuditLogger'
 
 /** What a reviewer is asking the user to redo. */
@@ -167,7 +166,7 @@ export class ReviewService {
       action,
       actor_id: actor.actorId,
     }
-    await realtime.broadcast(sessionChannels(session), REALTIME_EVENT.reviewAction, payload)
+    await broadcastSafely(sessionChannels(session), REALTIME_EVENT.reviewAction, payload)
   }
 }
 

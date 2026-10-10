@@ -11,6 +11,7 @@ import { sessionService } from '../src/app/services/VerificationSessionService'
 import { retentionService } from '../src/app/services/RetentionService'
 import { app } from '../src/core/bootstrap'
 import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
+import { realtimeChannels } from '@arkyc/types'
 import request from 'parasito'
 
 /** Phase 8 — verification session engine driven async via the queue + workers. */
@@ -346,7 +347,7 @@ describe('verification session lifecycle', () => {
     const { id, token } = await openSession()
     const boot = await clientApi('get', 'session', token)
     // Transport is `memory` in tests; the widget learns its own session channel.
-    expect(boot.body.data.realtime).toMatchObject({ transport: 'memory', channel: `private-session-${id}` })
+    expect(boot.body.data.realtime).toMatchObject({ transport: 'memory', channel: realtimeChannels.session(id) })
   })
 
   it('exposes the project branding so the widget themes itself', async () => {
@@ -363,21 +364,21 @@ describe('verification session lifecycle', () => {
     // A foreign session channel is forbidden for this token.
     const foreign = await clientApi('post', 'realtime/auth', token).send({
       socket_id: '123.456',
-      channel_name: 'private-session-someone-else',
+      channel_name: realtimeChannels.session('someone-else'),
     })
     expect(foreign.status).toBe(403)
 
     // A organization channel is never client-signable, even one's own organization.
     const organization = await clientApi('post', 'realtime/auth', token).send({
       socket_id: '123.456',
-      channel_name: 'private-organization-x',
+      channel_name: realtimeChannels.organization('x'),
     })
     expect(organization.status).toBe(403)
 
     // The session's own channel passes scope and is signed.
     const own = await clientApi('post', 'realtime/auth', token).send({
       socket_id: '123.456',
-      channel_name: `private-session-${id}`,
+      channel_name: realtimeChannels.session(id),
     })
     expect(own.status).toBe(200)
     expect(own.body.auth).toBeTruthy()

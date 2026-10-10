@@ -1,6 +1,6 @@
 import { Admin, errorMessage } from '@/lib/api'
 import type { EnvItem } from '@/lib/api'
-import type { CaptureModel, GlobalSettings, RealtimeTransport } from '@arkyc/types'
+import type { CaptureModel, GlobalSettings } from '@arkyc/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState, Loading, PageHeader } from '@/components/States'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { useState } from 'react'
 
-const TRANSPORTS: RealtimeTransport[] = ['off', 'polling', 'pusher', 'firebase']
 const CAPTURE_MODELS: CaptureModel[] = ['passive', 'active', 'both']
 
 export default function AdminSettingsPage() {
@@ -40,7 +39,6 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
           support_email: formData.supportEmail.trim() || null,
           signups_enabled: formData.signupsEnabled,
         },
-        realtime: { transport: formData.transport },
         capture: { model: formData.captureModel },
         assets: { url_ttl_seconds: formData.assetTtl },
       }),
@@ -49,7 +47,6 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
         name: settings.platform.name,
         supportEmail: settings.platform.support_email ?? '',
         signupsEnabled: settings.platform.signups_enabled,
-        transport: settings.realtime.transport,
         captureModel: settings.capture.model,
         assetTtl: settings.assets.url_ttl_seconds,
       },
@@ -117,29 +114,10 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Realtime</CardTitle>
-            <CardDescription>Transport for verification events.</CardDescription>
+            <CardTitle>Verification</CardTitle>
+            <CardDescription>Defaults offered to verification widgets.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Field>
-              <FieldLabel htmlFor="realtime-transport">Transport</FieldLabel>
-              <Select
-                id="realtime-transport"
-                value={form.transport}
-                onChange={(e) => {
-                  updateForm({ transport: e.target.value as RealtimeTransport })
-                  dirtyReset()
-                }}
-              >
-                {TRANSPORTS.map((transport) => (
-                  <option key={transport} value={transport}>
-                    {transport}
-                  </option>
-                ))}
-              </Select>
-              <FieldError errors={error?.list?.['realtime.transport']} />
-            </Field>
-
             <Field>
               <FieldLabel htmlFor="capture-model">Capture model</FieldLabel>
               <Select

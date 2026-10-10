@@ -1,8 +1,6 @@
-import type { RealtimeTransport } from '@arkyc/types'
-
 /** The connection params `/v1/realtime/config` returns for the active transport. */
 export interface RealtimeConnectionConfig {
-  transport: RealtimeTransport | 'memory'
+  transport: string
   // soketi (Pusher-compatible)
   key?: string
   wsHost?: string

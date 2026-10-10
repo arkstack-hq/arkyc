@@ -12,18 +12,14 @@ export interface ClientHandoff {
 }
 
 /**
- * Realtime connection info the widget needs to watch this session live (Phase 16).
- * `transport` selects how: `pusher`/`firebase` subscribe to `channel`; `polling`
- * (and `off`/`memory`) tell the widget to poll the session endpoint instead. The
- * extra fields carry the active transport's public connection params (never
- * secrets); `token` is a per-session Firebase custom token when applicable.
+ * Realtime settings the widget connects with: the API's public realtime client
+ * config (see `Broadcast.clientConfig()`) plus this session's private channel.
+ * Under `polling` the widget polls the session endpoint instead.
  */
 export interface ClientRealtime {
   transport: string
   /** The private channel this session's events publish to. */
   channel: string
-  /** Per-session Firebase custom token (firebase transport only). */
-  token?: string | null
   [param: string]: unknown
 }
 

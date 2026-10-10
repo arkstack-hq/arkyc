@@ -6,9 +6,8 @@ import type { FileLike } from '@arkstack/filesystem'
 import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
 import type { ProviderSignals } from '@app/services/providers'
-import { RequestException } from '@arkstack/common'
-import { parseRealtimeChannel, realtimeChannels } from '@arkyc/types'
-import { realtime } from '@app/services/RealtimeService'
+import { Broadcast } from '@arkstack/notifications'
+import { realtimeChannels } from '@arkyc/types'
 import { resolveBranding } from 'src/support/storage'
 import { sessionService } from '@app/services/VerificationSessionService'
 
@@ -53,43 +52,31 @@ export default class ClientSessionController extends BaseController {
   }
 
   /**
-   * Realtime connection info scoped to this one session: the active transport's
-   * public params plus the session's own private channel. For firebase, mints a
-   * per-session custom token so the widget can read only this session's events.
+   * The active transport's public settings plus this session's own channel.
+   *
+   * @param sessionId
+   * @returns
    */
   private async realtimeConfig(sessionId: string): Promise<ClientRealtime> {
-    const config = await realtime.clientConfig()
-    const channel = realtimeChannels.session(sessionId)
-    let token: string | null = null
-    if (config.transport === 'firebase') {
-      token = await realtime.mintClientToken(sessionId, { session: sessionId })
-    }
-
-    return { ...config, channel, token }
+    return { ...Broadcast.clientConfig(), channel: realtimeChannels.session(sessionId) }
   }
 
   /**
-   * Pusher channel-auth for the widget's client token. Unlike the dashboard
-   * authorizer, a client token may sign ONLY its own session's private channel —
-   * never an organization/project channel. Returns the raw Pusher `{ auth }` object.
+   * Channel auth for the widget's client token. The session is the subject, so
+   * the channel rules only let it join its own session channel.
+   *
+   * @param ctx
    */
   async realtimeAuth({ req, res }: HttpContext) {
     const session = req.verificationSession!
-    const socketId = String((this.body?.socket_id as string) ?? '')
-    const channel = String((this.body?.channel_name as string) ?? '')
-    RequestException.abortIf(!socketId || !channel, 'Missing socket_id/channel_name', 422)
+    const request = {
+      socket_id: this.body?.socket_id as string | undefined,
+      channel_name: this.body?.channel_name as string | undefined,
+    }
 
-    const scope = parseRealtimeChannel(channel)
-    RequestException.abortIf(
-      !scope || scope.kind !== 'session' || scope.sessionId !== session.id,
-      'Forbidden channel',
-      403,
-    )
+    const result = await Broadcast.handleAuth(session, request, { uid: `session-${session.id}` })
 
-    const signed = await realtime.authorizeChannel(socketId, channel)
-    RequestException.assertFound(signed, 'Channel auth unavailable for this transport', 409)
-
-    res.status(200).json(signed)
+    res.status(200).json(result ?? {})
   }
 
   /** Submit the document front image (runs OCR + portrait extraction). */

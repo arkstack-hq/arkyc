@@ -59,7 +59,6 @@ export interface EnvironmentConfig {
 /** A partial patch over the global settings sections. */
 export interface AdminSettingsPatch {
   platform?: Partial<GlobalSettings['platform']>
-  realtime?: Partial<GlobalSettings['realtime']>
   capture?: Partial<GlobalSettings['capture']>
   assets?: Partial<GlobalSettings['assets']>
 }

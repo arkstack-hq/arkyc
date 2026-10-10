@@ -85,7 +85,7 @@ describe('global settings', () => {
     const res = await admin('get', '/settings', ctx.ownerToken)
     expect(res.body.data.platform.name).toBe('Arkyc')
     expect(res.body.data.platform.signups_enabled).toBe(true)
-    expect(res.body.data.realtime.transport).toBe('off')
+    expect(res.body.data).not.toHaveProperty('realtime')
     expect(res.body.data.assets.url_ttl_seconds).toBe(1800)
   })
 
@@ -103,21 +103,21 @@ describe('global settings', () => {
   it('deep-merges and persists a partial update', async () => {
     const upd = await admin('patch', '/settings', ctx.ownerToken).send({
       platform: { name: 'My Platform', signups_enabled: false },
-      realtime: { transport: 'pusher' },
+      capture: { model: 'both' },
     })
     expect(upd.status).toBe(200)
     expect(upd.body.data.platform.name).toBe('My Platform')
     expect(upd.body.data.platform.signups_enabled).toBe(false)
-    expect(upd.body.data.realtime.transport).toBe('pusher')
+    expect(upd.body.data.capture.model).toBe('both')
 
     const again = await admin('get', '/settings', ctx.ownerToken)
     expect(again.body.data.platform.name).toBe('My Platform')
-    expect(again.body.data.realtime.transport).toBe('pusher')
+    expect(again.body.data.capture.model).toBe('both')
   })
 
-  it('rejects an invalid realtime transport (422)', async () => {
+  it('rejects an invalid capture model (422)', async () => {
     const res = await admin('patch', '/settings', ctx.ownerToken).send({
-      realtime: { transport: 'invalid' },
+      capture: { model: 'invalid' },
     })
     expect(res.status).toBe(422)
   })

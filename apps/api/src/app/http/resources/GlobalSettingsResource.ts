@@ -5,7 +5,6 @@ export default class GlobalSettingsResource extends Resource {
   data() {
     return {
       platform: this.platform,
-      realtime: this.realtime,
       capture: this.capture,
       assets: this.assets,
     }

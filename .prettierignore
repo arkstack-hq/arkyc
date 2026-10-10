@@ -5,3 +5,4 @@ coverage
 .turbo
 pnpm-lock.yaml
 **/src/database/migrations
+**/.arkormx

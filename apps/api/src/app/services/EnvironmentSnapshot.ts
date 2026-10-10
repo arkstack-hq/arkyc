@@ -1,6 +1,5 @@
 import type { NotificationConfig } from '@arkstack/notifications'
 import { DEFAULT_WORKERS_AI_MODEL } from '@arkyc/ocr'
-import { settings } from './GlobalSettingsService'
 import { version } from '../../../package.json'
 
 /**
@@ -76,12 +75,9 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
   const queue = config('queue')
   const filesystem = config('filesystem')
   const session = config('session')
-  const realtime = config('realtime')
   const notifications = config('notifications')
   const smtp = notifications.transports.smtp as ConfiguredSmtp
   const mailDriver = notifications.drivers.mail
-
-  const current = await settings.current()
 
   // The app key being the framework placeholder is the single clearest "this
   // environment was never finished" signal — surface it as a warning.
@@ -164,11 +160,12 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
     {
       title: 'Realtime',
       items: [
-        ok('Active transport', current.realtime.transport),
-        ok('Env transport', env('REALTIME_TRANSPORT', 'off')),
-        ok('Pusher host', realtime.pusher?.host ?? 'hosted'),
-        ok('Pusher cluster', realtime.pusher?.cluster),
-        secret('Firebase project', realtime.firebase?.projectId),
+        ok('Transport', notifications.drivers.realtime?.transport ?? 'pusher'),
+        ok('Device push', notifications.drivers.realtime?.push || 'off'),
+        ok('Pusher host', notifications.transports.pusher?.host ?? 'hosted'),
+        ok('Pusher cluster', notifications.transports.pusher?.cluster),
+        secret('Firebase project', env('FIREBASE_PROJECT_ID', '')),
+        ok('Poll interval (ms)', notifications.transports.polling?.interval ?? 5000),
       ],
     },
     {

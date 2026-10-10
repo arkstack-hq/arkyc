@@ -2,8 +2,7 @@ import { StatusMachine } from '@arkyc/core'
 import { REALTIME_EVENT, type SessionTransitionEvent, type VerificationStatus } from '@arkyc/types'
 import type { VerificationSession } from '@app/models/VerificationSession'
 import { webhookService } from '@app/services/WebhookService'
-import { realtime } from '@app/services/RealtimeService'
-import { sessionChannels } from './realtime-channels'
+import { broadcastSafely, sessionChannels } from './realtime-channels'
 
 /**
  * Apply + persist a session status change (validated against the core state
@@ -31,5 +30,5 @@ export async function transitionTo(
     status: to,
     previous_status: previous,
   }
-  await realtime.broadcast(sessionChannels(session), REALTIME_EVENT.sessionTransition, payload)
+  await broadcastSafely(sessionChannels(session), REALTIME_EVENT.sessionTransition, payload)
 }

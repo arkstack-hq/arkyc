@@ -6,7 +6,6 @@ import { settings } from '@app/services/GlobalSettingsService'
 import type { DeepPartial } from '@app/services/GlobalSettingsService'
 import { buildEnvironmentSnapshot } from '@app/services/EnvironmentSnapshot'
 import { platformAudit } from '@app/services/PlatformAuditLogger'
-import { realtime } from '@app/services/RealtimeService'
 import type { GlobalSettings } from '@arkyc/types'
 
 /**
@@ -47,7 +46,6 @@ export default class SettingsController extends BaseController {
       'platform.name': ['nullable', 'string', 'min:1'],
       'platform.support_email': ['nullable', 'email'],
       'platform.signups_enabled': ['nullable', 'boolean'],
-      'realtime.transport': ['nullable', 'in:pusher,firebase,polling,off'],
       'capture.model': ['nullable', 'in:passive,active,both'],
       'assets.url_ttl_seconds': ['nullable', 'integer', 'min:60', 'max:86400'],
     })
@@ -61,15 +59,11 @@ export default class SettingsController extends BaseController {
     if (typeof body.platform?.signups_enabled === 'boolean') platform.signups_enabled = body.platform.signups_enabled
     if (Object.keys(platform).length) patch.platform = platform
 
-    if (body.realtime?.transport) patch.realtime = { transport: body.realtime.transport }
     if (body.capture?.model) patch.capture = { model: body.capture.model }
     if (body.assets?.url_ttl_seconds !== undefined)
       patch.assets = { url_ttl_seconds: Math.trunc(Number(body.assets.url_ttl_seconds)) }
 
     const next = await settings.update(patch)
-
-    // A transport change should take effect on the next broadcast, not after TTL.
-    if (patch.realtime) realtime.invalidate()
 
     await platformAudit.recordForRequest(req, {
       action: 'platform.settings_updated',
