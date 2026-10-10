@@ -60,7 +60,9 @@ const STEP_INSTRUCTIONS: Partial<Record<WidgetStep, { title: string; body: strin
  * handed-off phone cannot reach — it reaches the API through the absolute
  * `baseUrl` passed in the handoff link. Rewriting the origin (keeping the path)
  * makes the logo load on whatever device runs the widget. Only applied when
- * `baseUrl` is absolute; the integrator's own branding is never re-based.
+ * `baseUrl` is absolute; the integrator's own branding is never re-based, and
+ * neither is a presigned object-storage URL (S3/R2/GCS), whose signature is only
+ * valid on its own host.
  */
 function rebaseBrandingLogo<T extends { logo_url?: string | null }>(branding: T, baseUrl: string | undefined): T {
   const logo = branding.logo_url
@@ -69,6 +71,7 @@ function rebaseBrandingLogo<T extends { logo_url?: string | null }>(branding: T,
     const base = new URL(baseUrl)
     const resolved = new URL(logo, base)
     if (resolved.origin === base.origin) return branding
+    if (/[?&]x-(amz|goog)-signature=/i.test(resolved.search)) return branding
     return { ...branding, logo_url: `${base.origin}${resolved.pathname}${resolved.search}${resolved.hash}` }
   } catch {
     return branding

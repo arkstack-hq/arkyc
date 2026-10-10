@@ -59,7 +59,7 @@ beforeAll(async () => {
     // global-settings singleton (other suites mutate it to `active`). Opt into
     // cross-device handoff (and forbid desktop continue) so the bootstrap surfaces it.
     settings: { capture_model: 'passive', handoff: { enabled: true, allow_desktop: false } },
-    branding: { primary_color: '#112233', name: 'Sess Co' },
+    branding: { primary_color: '#112233', name: 'Sess Co', logo_key: 'organizations/o/projects/p/branding/logo' },
     status: 'active',
   })
   fx.projectId = project.id
@@ -353,6 +353,9 @@ describe('verification session lifecycle', () => {
     const { token } = await openSession()
     const boot = await clientApi('get', 'session', token)
     expect(boot.body.data.branding).toMatchObject({ primary_color: '#112233', name: 'Sess Co' })
+    // An uploaded logo's storage key resolves to a loadable URL and stays internal.
+    expect(boot.body.data.branding.logo_url).toMatch(/organizations\/o\/projects\/p\/branding\/logo/)
+    expect(boot.body.data.branding).not.toHaveProperty('logo_key')
   })
 
   it('lets a client token sign only its own session channel', async () => {

@@ -25,6 +25,11 @@ export interface VerificationThresholds {
 /** Visual branding applied to the widget for a project. */
 export interface ProjectBranding {
   logo_url?: string | null
+  /**
+   * Storage object key of an uploaded logo. Server-side only: the API resolves
+   * it to a (signed, when the disk is private) `logo_url` in every response.
+   */
+  logo_key?: string | null
   primary_color?: string
   border_radius?: number
   theme?: 'light' | 'dark'

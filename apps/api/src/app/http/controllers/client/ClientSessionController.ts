@@ -9,6 +9,7 @@ import type { ProviderSignals } from '@app/services/providers'
 import { RequestException } from '@arkstack/common'
 import { parseRealtimeChannel, realtimeChannels } from '@arkyc/types'
 import { realtime } from '@app/services/RealtimeService'
+import { resolveBranding } from 'src/support/storage'
 import { sessionService } from '@app/services/VerificationSessionService'
 
 const DOCUMENT_TYPES = 'passport,id_card,drivers_license,residence_permit'
@@ -30,7 +31,6 @@ export default class ClientSessionController extends BaseController {
     const session = await sessionService.start(req.verificationSession!)
     const project = await Project.where({ id: session.projectId }).first()
     const handoff = project?.settings?.handoff
-    // const frontendUrl = String(req.headers.origin ?? config('app.website_url', config('app.frontend_url', ''))).replace(/\/$/, '')
     const frontendUrl = String(config('app.website_url', config('app.frontend_url', ''))).replace(/\/$/, '')
 
     return new ClientSessionResource(
@@ -41,7 +41,7 @@ export default class ClientSessionController extends BaseController {
         url: `${frontendUrl}/verify`,
       },
       await this.realtimeConfig(session.id),
-      project?.branding ?? null,
+      project ? await resolveBranding(project.branding) : null,
     )
       .additional({
         status: 'success',

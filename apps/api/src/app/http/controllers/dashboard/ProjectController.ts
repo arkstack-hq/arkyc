@@ -3,6 +3,7 @@ import { RequestException, perPage } from '@arkstack/common'
 import { BaseController } from '@controllers/BaseController'
 import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
+import type { ProjectBranding } from '@arkyc/types'
 import ProjectCollection from '@app/http/resources/ProjectCollection'
 import ProjectResource from '@app/http/resources/ProjectResource'
 import { Storage } from '@arkstack/filesystem'
@@ -121,7 +122,10 @@ export default class ProjectController extends BaseController {
       project.settings = { ...(project.settings ?? {}), ...data.settings }
     }
     if (data.branding && typeof data.branding === 'object') {
-      project.branding = { ...(project.branding ?? {}), ...data.branding }
+      const { logo_key: _logoKey, ...branding } = data.branding as ProjectBranding
+      project.branding = { ...(project.branding ?? {}), ...branding }
+      // An explicit logo_url (including null) replaces the uploaded logo.
+      if ('logo_url' in branding) delete project.branding.logo_key
     }
     if (data.thresholds && typeof data.thresholds === 'object') {
       project.settings = {
@@ -146,8 +150,9 @@ export default class ProjectController extends BaseController {
   }
 
   /**
-   * Upload a project logo (multipart `logo`). Stored publicly and its URL written
-   * to `branding.logo_url` so the widget can render it.
+   * Upload a project logo (multipart `logo`). Its object key is written to
+   * `branding.logo_key`; responses resolve it to `branding.logo_url` (signed on a
+   * private disk) so the widget can render it.
    */
   async uploadLogo({ req }: HttpContext) {
     const data = await this.validate({
@@ -161,9 +166,9 @@ export default class ProjectController extends BaseController {
 
     const key = `organizations/${project.organizationId}/projects/${project.id}/branding/logo`
     await Storage.disk().put(key, data.logo, { visibility: 'public' })
-    const url = await Storage.disk().getUrl(key)
 
-    project.branding = { ...(project.branding ?? {}), logo_url: url }
+    const { logo_url: _logoUrl, ...branding } = project.branding ?? {}
+    project.branding = { ...branding, logo_key: key }
     await project.save()
 
     await audit.recordForRequest(req, {

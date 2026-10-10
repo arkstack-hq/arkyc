@@ -1,7 +1,8 @@
 import { Resource } from 'resora'
+import { resolveBranding } from 'src/support/storage'
 
 export default class ProjectResource extends Resource {
-  data() {
+  async data() {
     return {
       id: this.id,
       organization_id: this.organizationId,
@@ -9,7 +10,7 @@ export default class ProjectResource extends Resource {
       slug: this.slug,
       environment: this.environment,
       settings: this.settings ?? {},
-      branding: this.branding ?? {},
+      branding: await resolveBranding(this.branding),
       status: this.status,
       has_ai_grant: this.hasAiGrant,
       created_at: this.createdAt,
