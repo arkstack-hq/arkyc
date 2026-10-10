@@ -1,0 +1,94 @@
+name: Deploy Dashboard & Website (Cloudflare)
+on:
+  push:
+    branches:
+      - staging
+      - production
+    # Only the static apps and what they bundle; API-only changes ship via deploy-api.yml.
+    paths:
+      - 'apps/dashboard/**'
+      - 'apps/website/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/deploy-cloudflare.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# --- Topology ------------------------------------------------------------------
+# Each app is an assets-only Cloudflare Worker (apps/<app>/wrangler.jsonc):
+#   production branch -> arkyc-dashboard / arkyc-website (custom domains once the
+#                        routes in wrangler.jsonc are enabled)
+#   staging branch    -> arkyc-dashboard-staging / arkyc-website-staging (workers.dev)
+# A manual run deploys the branch it is started from, by the same rule.
+#
+# Secrets: CLOUDFLARE_API_TOKEN (Workers Scripts: Edit; plus Zone DNS: Edit once
+# custom domains are on) and CLOUDFLARE_ACCOUNT_ID. Build-time URLs can be
+# overridden with repository/environment variables (API_ORIGIN, DASHBOARD_URL,
+# DOCS_URL); the defaults are the production hosts.
+
+jobs:
+  deploy:
+    name: Deploy ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'production' && 'production' || 'staging' }}
+    concurrency:
+      group: deploy-cloudflare-${{ matrix.app }}-${{ github.ref_name }}
+      cancel-in-progress: true
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [dashboard, website]
+    env:
+      API_ORIGIN: ${{ vars.API_ORIGIN || 'https://api.arkyc.toneflix.net' }}
+      DASHBOARD_URL: ${{ vars.DASHBOARD_URL || 'https://app.arkyc.toneflix.net' }}
+      DOCS_URL: ${{ vars.DOCS_URL || 'https://docs.arkyc.toneflix.net' }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.28.2
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Both apps bundle workspace packages (@arkyc/widget, @arkyc/types).
+      - name: Build libraries
+        run: pnpm run build:libs
+
+      # VITE_* values are baked into the static bundle (the apps' .env files are
+      # gitignored), so set them explicitly for the build.
+      - name: Build ${{ matrix.app }}
+        env:
+          VITE_API_ENV: production
+          VITE_APP_ENV: production
+          VITE_API_URL: ${{ env.API_ORIGIN }}
+          VITE_PROD_API_URL: ${{ env.API_ORIGIN }}
+          VITE_DASHBOARD_URL: ${{ env.DASHBOARD_URL }}
+          VITE_DOCS_URL: ${{ env.DOCS_URL }}
+        run: pnpm --filter @arkyc/${{ matrix.app }} build
+
+      - name: Deploy to Cloudflare Workers
+        working-directory: apps/${{ matrix.app }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ "${{ github.ref_name }}" = "production" ]; then
+            pnpm exec wrangler deploy | tee deploy.log
+          else
+            pnpm exec wrangler deploy --env staging | tee deploy.log
+          fi
+
+      - name: Publish summary
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          URL="$(grep -oE 'https://[^ ]+' deploy.log | head -n 1)"
+          echo "✅ Deployed ${{ matrix.app }} (${{ github.ref_name }}) to Cloudflare Workers." >> $GITHUB_STEP_SUMMARY
+          echo "URL: ${URL:-see the deploy log}" >> $GITHUB_STEP_SUMMARY

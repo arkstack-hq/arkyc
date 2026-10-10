@@ -37,3 +37,6 @@ pnpm-debug.log*
 storage/
 !apps/**/lib/Storage/
 tmp/
+
+# Wrangler (Cloudflare Workers) local state
+.wrangler/

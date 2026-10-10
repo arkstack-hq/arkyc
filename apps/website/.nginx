@@ -1,7 +1,7 @@
 # Static single-page app (React Router) served by nginx from this site's docroot.
-# TinyCP includes this file into the site's server block via:
+# Includes this file into the site's server block via:
 #   include /var/www/<domain>/.ngin*;
-# TinyCP already points `root` at the docroot, so we only add locations here.
+# point `root` at the docroot using the vhost config, so we only add locations here.
 
 # Long-cache the content-hashed Vite build assets.
 location /assets/ {
