@@ -2,6 +2,7 @@ import { env } from '@arkstack/common'
 import {
   type OcrDriver,
   type OcrDriverName,
+  type AiOcrProvider,
   OcrDriverFactory,
   TesseractOcrDriver,
   createDocumentParserRegistry,
@@ -40,6 +41,16 @@ const ocrFallbackDriverName = env('OCR_FALLBACK_DRIVER', 'mock') as OcrDriverNam
 const ocrLanguage = env('OCR_LANGUAGE', 'eng')
 
 /**
+ * Vision backend for the `ai` OCR driver. Setting `WORKERS_AI_MODEL` (or
+ * `OCR_AI_PROVIDER=workers-ai`, which uses the default Gemma 4 model) switches it
+ * to Cloudflare Workers AI; otherwise it talks to Anthropic.
+ */
+const workersAiModel = env('WORKERS_AI_MODEL')
+const ocrAiProvider: AiOcrProvider =
+  env('OCR_AI_PROVIDER') === 'workers-ai' || workersAiModel ? 'workers-ai' : 'anthropic'
+const workersAi = ocrAiProvider === 'workers-ai'
+
+/**
  * Build an OCR driver by name. For the `tesseract` engine, seed its parser
  * registry with the app's custom document parsers (see `./document-parsers`);
  * other drivers are resolved by the factory.
@@ -56,10 +67,12 @@ function buildOcrDriver(driver: OcrDriverName): OcrDriver {
 
   return OcrDriverFactory.create({
     driver,
-    endpoint: env('OCR_ENDPOINT'),
-    apiKey: env('OCR_API_KEY'),
+    endpoint: workersAi && driver === 'ai' ? undefined : env('OCR_ENDPOINT'),
+    apiKey: workersAi && driver === 'ai' ? env('CLOUDFLARE_API_TOKEN', env('OCR_API_KEY')) : env('OCR_API_KEY'),
     language: ocrLanguage,
-    model: env('OCR_AI_MODEL'),
+    aiProvider: ocrAiProvider,
+    accountId: env('CLOUDFLARE_ACCOUNT_ID'),
+    model: workersAi ? workersAiModel : env('OCR_AI_MODEL'),
     maxEdge: env('OCR_AI_MAX_EDGE') ? Number(env('OCR_AI_MAX_EDGE')) : undefined,
   })
 }

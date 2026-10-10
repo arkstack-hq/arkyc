@@ -27,6 +27,8 @@ export class OcrDriverFactory {
         return new ExternalOcrDriver(config)
       case 'ai':
         return new AnthropicOcrDriver({
+          provider: config.aiProvider,
+          accountId: config.accountId,
           apiKey: config.apiKey,
           model: config.model,
           baseUrl: config.endpoint,

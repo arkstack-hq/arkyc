@@ -63,6 +63,25 @@ OCR_AI_MAX_EDGE=1568                   # optional; longest uploaded edge (px)
 OCR_ENDPOINT=https://api.anthropic.com # optional; gateway / proxy override
 ```
 
+### Cloudflare Workers AI {#workers-ai}
+
+The same driver can run on [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/)
+instead of Anthropic. Setting `WORKERS_AI_MODEL` switches the backend; set
+`OCR_AI_PROVIDER=workers-ai` instead to use the default model,
+`@cf/google/gemma-4-26b-a4b-it`. Any model you choose must accept image input.
+
+```bash
+OCR_DRIVER=ai
+WORKERS_AI_MODEL=@cf/google/gemma-4-26b-a4b-it # the switch (or OCR_AI_PROVIDER=workers-ai)
+CLOUDFLARE_ACCOUNT_ID=...                      # required
+CLOUDFLARE_API_TOKEN=...                       # Workers AI token; falls back to OCR_API_KEY
+```
+
+Requests go to the account's OpenAI-compatible `/ai/v1/chat/completions`
+endpoint with the same prompt and field schema, so confidence scoring and the
+authenticity read below behave identically. `OCR_AI_MODEL` and `OCR_ENDPOINT`
+only apply to the Anthropic backend.
+
 Install the optional `sharp` (`pnpm add sharp -F @arkyc/ocr`) to downscale uploads
 to `OCR_AI_MAX_EDGE` and cut image-token cost.
 

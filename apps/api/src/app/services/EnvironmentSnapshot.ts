@@ -1,4 +1,5 @@
 import type { NotificationConfig } from '@arkstack/notifications'
+import { DEFAULT_WORKERS_AI_MODEL } from '@arkyc/ocr'
 import { settings } from './GlobalSettingsService'
 import { version } from '../../../package.json'
 
@@ -143,9 +144,19 @@ export async function buildEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
         driver('OCR driver', env('OCR_DRIVER', 'mock')),
         driver('OCR fallback', env('OCR_FALLBACK_DRIVER', 'mock')),
         ok('OCR language', env('OCR_LANGUAGE', 'eng')),
-        ok('AI model', env('OCR_AI_MODEL', '—')),
-        ok('AI endpoint', env('OCR_ENDPOINT', 'default')),
-        secret('AI API key', env('OCR_API_KEY')),
+        ...(env('OCR_AI_PROVIDER') === 'workers-ai' || env('WORKERS_AI_MODEL')
+          ? [
+              ok('AI provider', 'workers-ai'),
+              ok('AI model', env('WORKERS_AI_MODEL', DEFAULT_WORKERS_AI_MODEL)),
+              secret('Cloudflare account', env('CLOUDFLARE_ACCOUNT_ID')),
+              secret('AI API key', env('CLOUDFLARE_API_TOKEN', env('OCR_API_KEY'))),
+            ]
+          : [
+              ok('AI provider', 'anthropic'),
+              ok('AI model', env('OCR_AI_MODEL', '—')),
+              ok('AI endpoint', env('OCR_ENDPOINT', 'default')),
+              secret('AI API key', env('OCR_API_KEY')),
+            ]),
         driver('Liveness driver', env('LIVENESS_DRIVER', 'mock')),
         driver('Face-match driver', env('FACE_MATCH_DRIVER', 'mock')),
       ],

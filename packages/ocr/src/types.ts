@@ -1,4 +1,5 @@
 import type { DocumentType, OcrResultData } from '@arkyc/types'
+import type { AiOcrProvider } from './drivers/ai'
 
 /** The bytes + context handed to an OCR driver for extraction. */
 export interface OcrRequest {
@@ -37,6 +38,10 @@ export interface OcrConfig {
   apiKey?: string
   /** Tesseract language(s), e.g. `eng` (the `tesseract` driver). */
   language?: string
+  /** Vision backend for the `ai` driver (`anthropic` default, or `workers-ai`). */
+  aiProvider?: AiOcrProvider
+  /** Cloudflare account id (the `ai` driver with `aiProvider: 'workers-ai'`). */
+  accountId?: string
   /** Vision model id (the `ai` driver). */
   model?: string
   /** Longest image edge (px) uploaded by the `ai` driver. */

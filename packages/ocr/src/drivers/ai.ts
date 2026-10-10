@@ -14,6 +14,16 @@ const DEFAULT_BASE_URL = 'https://api.anthropic.com'
 export const DEFAULT_AI_MODEL = 'claude-haiku-4-5-20251001'
 
 /**
+ * Default Cloudflare Workers AI model: Gemma 4 accepts image input and tool calls.
+ */
+export const DEFAULT_WORKERS_AI_MODEL = '@cf/google/gemma-4-26b-a4b-it'
+
+/**
+ * Which hosted vision API backs the `ai` driver.
+ */
+export type AiOcrProvider = 'anthropic' | 'workers-ai'
+
+/**
  * Longest edge (px) we upload. The API downsamples anything larger anyway and
  * bills by the resampled size, so this is a cost/bandwidth bound, not a quality
  * one — small enough to be cheap, large enough to keep the MRZ legible.
@@ -58,10 +68,19 @@ export interface AiExtraction {
 export type AiVisionExtract = (request: OcrRequest, images: PreparedImage[]) => Promise<AiExtraction>
 
 export interface AnthropicOcrOptions {
+  /** Vision backend; defaults to `anthropic`. */
+  provider?: AiOcrProvider
+  /** Anthropic API key, or the Cloudflare API token for `workers-ai`. */
   apiKey?: string
-  /** Model id; defaults to {@link DEFAULT_AI_MODEL}. */
+  /** Cloudflare account id; required for `workers-ai` unless `baseUrl` is set. */
+  accountId?: string
+  /** Model id; defaults to {@link DEFAULT_AI_MODEL} or {@link DEFAULT_WORKERS_AI_MODEL}. */
   model?: string
-  /** API base URL; defaults to {@link DEFAULT_BASE_URL}. */
+  /**
+   * API base URL. Anthropic: defaults to {@link DEFAULT_BASE_URL}. Workers AI: the
+   * OpenAI-compatible base ending in `/v1` (e.g. an AI Gateway URL), defaulting to
+   * the account's `/ai/v1` endpoint.
+   */
   baseUrl?: string
   /** Longest image edge (px) to upload; defaults to {@link DEFAULT_MAX_EDGE}. */
   maxEdge?: number
@@ -74,8 +93,8 @@ export interface AnthropicOcrOptions {
 }
 
 /**
- * AI OCR driver: hands the document image(s) to a vision LLM (Claude by default)
- * and maps the structured response onto {@link OcrResultData}.
+ * AI OCR driver: hands the document image(s) to a vision LLM (Claude by default,
+ * or a Cloudflare Workers AI model with `provider: 'workers-ai'`) and maps the structured response onto {@link OcrResultData}.
  *
  * Confidence is **not** taken from the model's self-report — LLMs are poorly
  * calibrated and will state high confidence on hallucinated fields. Instead it's
@@ -93,27 +112,45 @@ export interface AnthropicOcrOptions {
 export class AnthropicOcrDriver implements OcrDriver {
   readonly name = 'ai'
 
+  private readonly provider: AiOcrProvider
   private readonly model: string
-  private readonly baseUrl: string
   private readonly maxEdge: number
   private readonly vision: AiVisionExtract
 
   constructor(options: AnthropicOcrOptions = {}) {
+    this.provider = options.provider ?? 'anthropic'
     if (!options.apiKey && !options.extract) {
       throw new Error('AnthropicOcrDriver requires config.apiKey')
     }
-    this.model = options.model ?? DEFAULT_AI_MODEL
-    this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '')
+    this.model = options.model ?? (this.provider === 'workers-ai' ? DEFAULT_WORKERS_AI_MODEL : DEFAULT_AI_MODEL)
     this.maxEdge = options.maxEdge ?? DEFAULT_MAX_EDGE
-    this.vision =
-      options.extract ??
-      anthropicVision({
+
+    const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+    const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES
+    if (options.extract) {
+      this.vision = options.extract
+    } else if (this.provider === 'workers-ai') {
+      if (!options.accountId && !options.baseUrl) {
+        throw new Error('AnthropicOcrDriver (workers-ai) requires config.accountId')
+      }
+      this.vision = workersAiVision({
         apiKey: options.apiKey as string,
         model: this.model,
-        baseUrl: this.baseUrl,
-        timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-        maxRetries: options.maxRetries ?? DEFAULT_MAX_RETRIES,
+        baseUrl: (
+          options.baseUrl ?? `https://api.cloudflare.com/client/v4/accounts/${options.accountId}/ai/v1`
+        ).replace(/\/$/, ''),
+        timeoutMs,
+        maxRetries,
       })
+    } else {
+      this.vision = anthropicVision({
+        apiKey: options.apiKey as string,
+        model: this.model,
+        baseUrl: (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, ''),
+        timeoutMs,
+        maxRetries,
+      })
+    }
   }
 
   async extract(request: OcrRequest): Promise<OcrResultData> {
@@ -129,6 +166,7 @@ export class AnthropicOcrDriver implements OcrDriver {
       ...(authenticity ? { authenticity } : {}),
       raw: {
         provider: 'ai',
+        backend: this.provider,
         model: this.model,
         legibility: raw.legibility ?? null,
         documentType: raw.documentType ?? request.documentType ?? null,
@@ -321,9 +359,9 @@ interface AnthropicResponse {
 const DOCUMENT_TYPES: readonly DocumentType[] = ['passport', 'id_card', 'drivers_license', 'residence_permit']
 
 /**
- * HTTP statuses worth a bounded retry: rate-limited / overloaded.
+ * HTTP statuses worth a bounded retry: rate-limited / overloaded / unavailable.
  */
-const RETRYABLE_STATUS = new Set([429, 529])
+const RETRYABLE_STATUS = new Set([429, 503, 529])
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -432,6 +470,116 @@ export function anthropicVision(opts: {
     }
 
     return mapToolInput(tool.input)
+  }
+}
+
+/**
+ * Minimal shape of the OpenAI-compatible chat-completions response we read.
+ */
+interface ChatCompletionResponse {
+  choices?: Array<{
+    message?: {
+      content?: string | null
+      tool_calls?: Array<{ function?: { name?: string; arguments?: string | Record<string, unknown> } }>
+    }
+  }>
+}
+
+/**
+ * Parse a JSON object out of model text, tolerating a ```json fence. Null when
+ * the text holds no object.
+ *
+ * @param text
+ * @returns
+ */
+function parseJsonObject(text: string | null | undefined): Record<string, unknown> | null {
+  if (!text) return null
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start < 0 || end <= start) return null
+  try {
+    const parsed = JSON.parse(text.slice(start, end + 1)) as unknown
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Build the vision call against Cloudflare Workers AI's OpenAI-compatible chat
+ * completions endpoint. Images go in as base64 data URLs and the model is forced
+ * to call `read_document`; when a model answers in plain text instead, a JSON
+ * object in the reply is accepted as the tool input.
+ *
+ * @param opts
+ * @returns
+ */
+export function workersAiVision(opts: {
+  apiKey: string
+  model: string
+  /** OpenAI-compatible base ending in `/v1`. */
+  baseUrl: string
+  timeoutMs?: number
+  maxRetries?: number
+}): AiVisionExtract {
+  return async (request, images) => {
+    const hint = request.documentType ? ` The document is a ${request.documentType}.` : ''
+    const country = request.country ? ` Issuing country hint: ${request.country}.` : ''
+    const res = await postWithRetry(
+      `${opts.baseUrl}/chat/completions`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${opts.apiKey}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: opts.model,
+          max_completion_tokens: 2048,
+          temperature: 0,
+          tools: [
+            {
+              type: 'function',
+              function: {
+                name: READ_TOOL.name,
+                description: READ_TOOL.description,
+                parameters: READ_TOOL.input_schema,
+              },
+            },
+          ],
+          tool_choice: 'required',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            {
+              role: 'user',
+              content: [
+                ...images.map((img) => ({
+                  type: 'image_url',
+                  image_url: { url: `data:${img.mediaType};base64,${img.data}` },
+                })),
+                { type: 'text', text: `Read this identity document and return its fields.${hint}${country}` },
+              ],
+            },
+          ],
+        }),
+      },
+      opts.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      opts.maxRetries ?? DEFAULT_MAX_RETRIES,
+    )
+
+    if (!res.ok) {
+      throw new Error(`AnthropicOcrDriver (workers-ai) request failed with status ${res.status}`)
+    }
+
+    const message = ((await res.json()) as ChatCompletionResponse).choices?.[0]?.message
+    const call = message?.tool_calls?.find((c) => c.function?.name === READ_TOOL.name) ?? message?.tool_calls?.[0]
+    const args = call?.function?.arguments
+    const input = typeof args === 'string' ? parseJsonObject(args) : (args ?? parseJsonObject(message?.content))
+    if (!input) {
+      throw new Error('AnthropicOcrDriver (workers-ai): model returned no structured fields')
+    }
+
+    return mapToolInput(input)
   }
 }
 

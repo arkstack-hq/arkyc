@@ -147,6 +147,57 @@ describe('ai ocr driver — http retry/timeout', () => {
   })
 })
 
+describe('ai ocr driver — workers ai backend', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const chatResponse = (message: Record<string, unknown>) =>
+    new Response(JSON.stringify({ choices: [{ message }] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    })
+
+  it('requires an account id', () => {
+    expect(() => OcrDriverFactory.create({ driver: 'ai', aiProvider: 'workers-ai', apiKey: 'k' })).toThrow(/accountId/)
+  })
+
+  it('calls the account chat-completions endpoint with the default gemma model', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      chatResponse({
+        tool_calls: [{ function: { name: 'read_document', arguments: JSON.stringify(fullFields) } }],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const driver = OcrDriverFactory.create({ driver: 'ai', aiProvider: 'workers-ai', apiKey: 'cf', accountId: 'acc' })
+    const result = await driver.extract({ image })
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://api.cloudflare.com/client/v4/accounts/acc/ai/v1/chat/completions')
+    expect((init.headers as Record<string, string>).authorization).toBe('Bearer cf')
+    const body = JSON.parse(init.body as string)
+    expect(body.model).toBe('@cf/google/gemma-4-26b-a4b-it')
+    expect(body.messages[1].content[0].image_url.url).toMatch(/^data:image\/jpeg;base64,/)
+    expect(result.fields.firstName).toBe('Ada')
+    expect(result.raw).toMatchObject({ backend: 'workers-ai', model: '@cf/google/gemma-4-26b-a4b-it' })
+  })
+
+  it('accepts object tool arguments and falls back to JSON in the message text', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        chatResponse({ tool_calls: [{ function: { name: 'read_document', arguments: fullFields } }] }),
+      )
+      .mockResolvedValueOnce(chatResponse({ content: '```json\n' + JSON.stringify(fullFields) + '\n```' }))
+      .mockResolvedValueOnce(chatResponse({ content: 'I cannot read this.' }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const driver = new AnthropicOcrDriver({ provider: 'workers-ai', apiKey: 'cf', accountId: 'acc', model: '@cf/x' })
+    expect((await driver.extract({ image })).fields.documentNumber).toBe('X1234567')
+    expect((await driver.extract({ image })).fields.lastName).toBe('Lovelace')
+    await expect(driver.extract({ image })).rejects.toThrow(/no structured fields/)
+  })
+})
+
 describe('scoreConfidence', () => {
   it('rises with completeness and structural validity', () => {
     expect(scoreConfidence({})).toBe(0)

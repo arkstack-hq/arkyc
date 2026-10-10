@@ -5,7 +5,7 @@
  * the {@link OcrDriver} interface; {@link OcrDriverFactory} selects one from config so
  * call sites stay driver-agnostic. The `tesseract` driver reads text in-process
  * (Tesseract.js, lazily loaded) and runs it through the document-parser registry;
- * `ai` hands the image to a vision LLM (Claude); point `external` at any OCR HTTP
+ * `ai` hands the image to a vision LLM (Claude, or a Cloudflare Workers AI model); point `external` at any OCR HTTP
  * service instead.
  */
 export * from './types'
@@ -16,9 +16,12 @@ export { TesseractOcrDriver } from './drivers/tesseract'
 export {
   AnthropicOcrDriver,
   anthropicVision,
+  workersAiVision,
   scoreConfidence,
   applyAuthenticity,
   DEFAULT_AI_MODEL,
+  DEFAULT_WORKERS_AI_MODEL,
+  type AiOcrProvider,
   type AnthropicOcrOptions,
   type AiVisionExtract,
   type AiExtraction,
