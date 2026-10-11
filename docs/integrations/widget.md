@@ -94,7 +94,8 @@ resolve to the [Client API](/api/client). To route through your own backend
 
 Each call carries the `X-Client-Token` header; forward it (and the request body)
 unchanged. `/realtime/auth` is only hit when realtime runs over an authed
-transport (pusher/firebase).
+transport (Pusher or Firebase Realtime Database); with polling the widget never
+calls it.
 
 ## The flow
 

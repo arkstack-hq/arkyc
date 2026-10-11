@@ -54,11 +54,12 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 13  | Dashboard                                  | ✅     | Multi-tenant React Router dashboard (Vite + Tailwind + alova); permission-aware UI                                                       |
 | 14  | Playground & Docs                          | ✅     | Runnable example integration + VitePress documentation site                                                                              |
 | 15  | Platform Admin & Global Settings           | ✅     | Super-admin tier above tenants (admin RBAC + `/admin`) + a typed global settings store/UI; platform actions audited separately           |
-| 16  | Realtime Event Delivery                    | ✅     | Transport abstraction with **pusher** (hosted or self-hosted soketi) + **firebase** drivers (admin-selectable); live dashboard updates   |
+| 16  | Realtime Event Delivery                    | ✅     | Live dashboard updates over a swappable transport; superseded by Phase 21 (transports now come from Arkstack)                            |
 | 17  | Improved Capture & Liveness Flow           | ✅     | Server-issued active-liveness challenges + improved document capture (glare hints/auto-capture); capture model resolves project > global |
-| 18  | Dashboard Revamp                           | ⬜     | Re-skin to the shadcn UI kit design system (default + project-management layouts)                                                        |
-| 19  | Hosted Website & Custom Docs Theme         | ⬜     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                          |
-| 20  | Hardening & Release                        | ⬜     | Security, rate limits, retention, v0.1.0                                                                                                 |
+| 18  | Dashboard Revamp                           | ✅     | Re-skin to the shadcn UI kit design system (default + project-management layouts)                                                        |
+| 19  | Hosted Website & Custom Docs Theme         | ✅     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                          |
+| 20  | Hardening & Release                        | ✅     | Security, rate limits, retention, v0.1.0                                                                                                 |
+| 21  | Arkstack Realtime & User Notifications     | 🚧     | Realtime on `@arkstack/notifications` + `@arkstack/realtime`; in-app notifications, live bell and device push                            |
 
 ---
 
@@ -387,6 +388,8 @@ capture model is offered).
 **Goal:** Push live updates (sessions, webhooks, review queue) to clients via a
 provider-abstracted transport, replacing polling.
 
+_Superseded by Phase 21: `@arkyc/realtime` and the admin transport setting were removed in favour of Arkstack's transports._
+
 **Scope**
 
 - [x] Transport interface (`@arkyc/realtime`) with **pusher** (hosted Pusher Channels by default; self-hosted soketi opt-in via `PUSHER_HOST`) and **firebase** drivers, plus `memory` (tests) and `off` — selected by the Phase 15 global setting with an env fallback.
@@ -472,6 +475,27 @@ liveness, offered per the admin's global capture-model setting.
 **Deliverables:** CI green, security checklist complete. (Version already at `1.2.11`; no `v0.1.0` tag.)
 
 **Exit criteria:** Full demo (create → verify → decide → review → webhook → SDK) runs against a hardened build with rate limits, signed media, and retention active.
+
+---
+
+## Phase 21 — Arkstack Realtime & User Notifications 🚧
+
+**Goal:** Run every realtime surface on Arkstack's transports and tell users about the work waiting for them, in the dashboard and on their devices.
+
+**Scope**
+
+- [x] Server realtime on `@arkstack/notifications`: `Broadcast` channel rules for organization, project, session and user channels (`src/routes/realtime.ts`); transports from env (`pusher`, `firebase`, `firebase-database`, `polling`, `memory`); `@arkyc/realtime`, `RealtimeService` and the admin transport setting removed.
+- [x] User notifications: `NotificationEvent` with database audiences in bounded batches; stored, streamed on `private-user.<id>` and pushed to registered devices (best effort, per-user `push` preference, dead tokens pruned).
+- [x] Triggers: a session needing review notifies its reviewers; an assigned review notifies the assignee.
+- [x] Account API: notifications (list, unread count, mark read, mark all read, delete), notification preferences, push-token register and unregister bound to the login session.
+- [x] Dashboard on `@arkstack/realtime`: live review queue and session detail (polling fallback), notification bell, notification settings with browser push (`push-sw.js`).
+- [x] Widget on `@arkstack/realtime` with client-token channel auth and a jsDelivr SDK fallback for plain script embeds.
+- [x] Soketi in docker-compose reachable from browsers: the API uses `soketi:6001`, browsers get `PUSHER_PUBLIC_HOST` (`localhost`).
+- [ ] Live verification against real infrastructure (see `LAUNCH_VERIFICATION.md`).
+
+**Deliverables:** One realtime stack across API, dashboard and widget; in-app and push notifications for reviewers.
+
+**Exit criteria:** A session entering review shows up live in a reviewer's bell and as a push on their registered browser, over Pusher or soketi, with polling as the zero-infrastructure fallback.
 
 ---
 

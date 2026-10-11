@@ -90,8 +90,12 @@ Comments should be simple guides to what a utility (variable, function, class, b
 
 - New nested config keys require `pnpm prepare` so `.arkstack/ark.d.ts` and build output are updated.
 
-## Notifications and push
+## Realtime, notifications and push
 
+- Realtime runs on Arkstack: `Broadcast` from `@arkstack/notifications` on the API, `@arkstack/realtime` in the dashboard and widget. The transport is env-driven (`REALTIME_TRANSPORT`); do not add transport code to Arkyc.
+- Build channel names with `realtimeChannels` from `@arkyc/types` (dot-separated segments). Every private channel needs a `Broadcast.channel` rule in `src/routes/realtime.ts`; the widget authorizes as its `VerificationSession`, dashboard users as their `User`.
+- Broadcast domain events with `broadcastSafely` from `src/support/realtime-channels.ts`, after the owning write, so a transport failure never fails the operation.
+- Tests run with `REALTIME_TRANSPORT=memory`; assert on `MemoryRealtimeDriver.broadcasts()`.
 - Emit application notifications through `NotificationEvent`. Set recipients, actor, action/subject context, then call `.dispatchSafely()` only after the owning write succeeds.
 - Never notify the actor about their own action unless the domain explicitly requires it.
 - User realtime notifications use authenticated `private-user.<id>` channels only.

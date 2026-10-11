@@ -57,8 +57,10 @@ pnpm lint
 
 ## Running in Docker
 
-`docker compose up -d` (above) starts **infra only** — Postgres, Redis and
-Soketi — for host-side development. To run the **API itself** in a container, use
+`docker compose up -d` (above) starts **infra only**: Postgres and Redis, for
+host-side development. Add `--profile realtime` to also start Soketi, a self-hosted
+Pusher-compatible server (set `REALTIME_TRANSPORT=pusher` and the `PUSHER_*`
+variables from `apps/api/.env.example`). To run the **API itself** in a container, use
 the opt-in `app` profile. The image (`Dockerfile`) mirrors the production build:
 it compiles the workspace and ships a slim, standalone artifact that runs the
 compiled server, applying migrations on startup.
@@ -83,8 +85,9 @@ export APP_KEY=$(cd apps/api && pnpm -s ark key:generate --show)
 
 The `api`/`worker` services read the compose service hostnames by default
 (`postgres`, `redis`, `soketi`); override `DATABASE_URL`, `QUEUE_CONNECTION`,
-`REALTIME_TRANSPORT`, etc. via your shell env or a root `.env`. See
-`apps/api/.env.example` for the full set of variables.
+`REALTIME_TRANSPORT`, etc. via your shell env or a root `.env`. Realtime defaults to
+`polling`, which needs no extra service. See `apps/api/.env.example` for the full
+set of variables.
 
 ## Workspace scripts
 

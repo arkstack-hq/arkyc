@@ -181,8 +181,9 @@ export function WidgetEmbed() {
         </tbody>
       </table>
       <p>
-        <code>/realtime/auth</code> is only called when realtime runs over an authed transport (pusher/firebase).
-        Against Arkyc directly (no proxy), just set <code>baseUrl</code> to <code>…/api/v1/client</code> and skip this.
+        <code>/realtime/auth</code> is only called when realtime runs over an authed transport (Pusher or Firebase
+        Realtime Database). Against Arkyc directly (no proxy), just set <code>baseUrl</code> to{' '}
+        <code>…/api/v1/client</code> and skip this.
       </p>
 
       <h2>Options</h2>
