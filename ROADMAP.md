@@ -486,7 +486,7 @@ liveness, offered per the admin's global capture-model setting.
 
 - [x] Server realtime on `@arkstack/notifications`: `Broadcast` channel rules for organization, project, session and user channels (`src/routes/realtime.ts`); transports from env (`pusher`, `firebase`, `firebase-database`, `polling`, `memory`); `@arkyc/realtime`, `RealtimeService` and the admin transport setting removed.
 - [x] User notifications: `NotificationEvent` with database audiences in bounded batches; stored, streamed on `private-user.<id>` and pushed to registered devices (best effort, per-user `push` preference, dead tokens pruned).
-- [x] Triggers: a session needing review notifies its reviewers; an assigned review notifies the assignee.
+- [x] Triggers: a session needing review notifies its reviewers; an assigned review notifies the assignee; someone else deciding an assigned session notifies the assignee; a webhook delivery that exhausts its retries notifies the project's webhook maintainers (hourly per endpoint); an invitation notifies an existing user, who can accept it in the dashboard with a verified email.
 - [x] Account API: notifications (list, unread count, mark read, mark all read, delete), notification preferences, push-token register and unregister bound to the login session.
 - [x] Dashboard on `@arkstack/realtime`: live review queue and session detail (polling fallback), notification bell, notification settings with browser push (`push-sw.js`).
 - [x] Widget on `@arkstack/realtime` with client-token channel auth and a jsDelivr SDK fallback for plain script embeds.

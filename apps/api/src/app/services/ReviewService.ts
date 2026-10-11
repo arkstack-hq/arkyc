@@ -110,6 +110,7 @@ export class ReviewService {
 
     await this.recordReview(session, actor, previousStatus, decision, reason ?? null)
     await this.emit(session, actor, action, { reason: reason ?? null })
+    await sessionNotifications.decided(session, decision, actor.actorId)
 
     return session
   }

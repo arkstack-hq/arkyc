@@ -9,7 +9,7 @@ export class Organizations {
     return alova.Get('/v1/dashboard/organizations', {
       name: 'organizations:list',
       cacheFor: CACHE,
-      hitSource: ['organization:create', 'organization:update'],
+      hitSource: ['organization:create', 'organization:update', 'invitation:accept'],
       transform: unwrap<Organization[]>,
     })
   }

@@ -11,6 +11,8 @@ import { VerificationSession } from '@app/models/VerificationSession'
 import { WebhookDelivery } from '@app/models/WebhookDelivery'
 import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
 import { WebhookJob } from '@app/jobs'
+import { WEBHOOK_MAX_ATTEMPTS } from '@app/jobs/WebhookJob'
+import { webhookNotifications } from '@app/notifications/WebhookNotifications'
 import { buildSessionAssets } from '@app/services/SessionAssetService'
 import { toArray } from 'src/support/collection'
 import { decryptSecret } from 'src/support/secret-cipher'
@@ -39,6 +41,9 @@ function ocrParseStage(raw: unknown): 'mrz' | 'custom' | 'generic' | undefined {
  * 60s proxy read timeout, so the request always returns a real response instead.
  */
 const DELIVERY_TIMEOUT_MS = 10_000
+
+/** The session id carried by test deliveries. */
+const TEST_SESSION_ID = '00000000-0000-0000-0000-000000000000'
 
 /** Map a session status to the webhook event it emits (omitted = no event). */
 const STATUS_EVENT: Partial<Record<VerificationStatus, WebhookEventName>> = {
@@ -157,6 +162,11 @@ export class WebhookService {
       delivery.status = 'failed'
       delivery.responseBody ??= error instanceof Error ? error.message : String(error)
       await delivery.save()
+
+      if (delivery.attempts >= WEBHOOK_MAX_ATTEMPTS && delivery.payload?.session_id !== TEST_SESSION_ID) {
+        await webhookNotifications.failing(endpoint, delivery)
+      }
+
       throw error
     }
   }
@@ -170,7 +180,7 @@ export class WebhookService {
   async sendTest(endpoint: WebhookEndpoint): Promise<WebhookDelivery> {
     const payload = WebhookPayload.build({
       event: 'verification.completed',
-      sessionId: '00000000-0000-0000-0000-000000000000',
+      sessionId: TEST_SESSION_ID,
       organizationId: endpoint.organizationId,
       projectId: endpoint.projectId,
       userReference: 'test',

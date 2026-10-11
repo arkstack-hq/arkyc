@@ -6,6 +6,12 @@ export const NOTIFICATION_TYPE = {
   reviewAssigned: 'review.assigned',
   /** A verification session in a project you review needs a manual decision. */
   sessionNeedsReview: 'session.requires_review',
+  /** Someone else approved or rejected a session assigned to you. */
+  reviewDecided: 'review.decided',
+  /** A webhook endpoint you maintain exhausted its delivery retries. */
+  webhookFailing: 'webhook.failing',
+  /** You were invited to join an organization. */
+  invitationReceived: 'invitation.received',
 } as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE]

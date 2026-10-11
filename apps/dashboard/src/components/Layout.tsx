@@ -8,6 +8,7 @@ import {
   KeyRound,
   LayoutDashboard,
   LogOut,
+  MailOpen,
   Moon,
   Plus,
   ScrollText,
@@ -253,6 +254,10 @@ function UserMenu() {
         <DropdownMenuItem onSelect={() => navigate('/account/notifications')}>
           <Bell className="size-4" />
           Notifications
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate('/invitations')}>
+          <MailOpen className="size-4" />
+          Invitations
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(e) => {

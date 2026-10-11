@@ -36,6 +36,7 @@ import RoleDetailPage from '@/pages/settings/RoleDetailPage'
 import RolesPage from '@/pages/settings/RolesPage'
 import SecurityPage from '@/pages/SecurityPage'
 import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
+import InvitationsPage from '@/pages/InvitationsPage'
 import SessionDetailPage from '@/pages/sessions/SessionDetailPage'
 import SessionsPage from '@/pages/sessions/SessionsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
@@ -109,6 +110,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <NotificationSettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invitations"
+          element={
+            <ProtectedRoute>
+              <InvitationsPage />
             </ProtectedRoute>
           }
         />

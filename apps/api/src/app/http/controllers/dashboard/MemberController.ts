@@ -1,20 +1,22 @@
+import { RequestException, perPage } from '@arkstack/common'
+
 import { BaseController } from '@controllers/BaseController'
 import EmptyResource from '@app/http/resources/EmptyResource'
 import { HttpContext } from 'clear-router/types/express'
 import InvitationResource from '@app/http/resources/InvitationResource'
 import MemberCollection from '@app/http/resources/MemberCollection'
-import MemberResource from '@app/http/resources/MemberResource'
 import MemberPermissionsResource from '@app/http/resources/MemberPermissionsResource'
-import { Permission } from '@app/models/Permission'
-import type { QueryBuilder } from 'arkormx'
-import { RequestException, perPage } from '@arkstack/common'
-import { Role } from '@app/models/Role'
+import MemberResource from '@app/http/resources/MemberResource'
 import { OrganizationInvitation } from '@app/models/OrganizationInvitation'
 import { OrganizationMember } from '@app/models/OrganizationMember'
-import { UserPermission } from '@app/models/UserPermission'
+import { Permission } from '@app/models/Permission'
+import type { QueryBuilder } from 'arkormx'
+import { Role } from '@app/models/Role'
 import { Token } from '@arkyc/auth'
-import { toArray } from 'src/support/collection'
+import { UserPermission } from '@app/models/UserPermission'
 import { audit } from '@app/services/AuditLogger'
+import { memberNotifications } from '@app/notifications/MemberNotifications'
+import { toArray } from 'src/support/collection'
 
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -131,6 +133,8 @@ export default class MemberController extends BaseController {
       metadata: { email: data.email },
     })
 
+    await memberNotifications.invited(invitation, req.user!.id)
+
     // The raw token is returned once so it can be delivered to the invitee.
     return new InvitationResource(invitation)
       .additional({
@@ -195,6 +199,7 @@ export default class MemberController extends BaseController {
       id: req.params.memberId,
       organizationId: req.organization!.id,
     }).firstOrFail()
+
     const data = await this.validate({ role_id: ['required', 'string'] })
 
     const role = await Role.where({ id: data.role_id, organizationId: req.organization!.id }).first()
@@ -228,6 +233,7 @@ export default class MemberController extends BaseController {
       id: req.params.memberId,
       organizationId: req.organization!.id,
     }).firstOrFail()
+
     const data = await this.validate({
       permission: ['required', 'string', 'exists:permissions,name'],
     })
@@ -276,6 +282,7 @@ export default class MemberController extends BaseController {
       userId: member.userId,
       permissionId: perm.id,
     }).first()
+
     if (grant) await grant.delete()
 
     await audit.recordForRequest(req, {

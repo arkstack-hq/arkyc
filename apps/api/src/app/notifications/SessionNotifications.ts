@@ -54,6 +54,36 @@ export class SessionNotifications {
       .dispatchSafely()
   }
 
+  /**
+   * Tell the assignee when someone else decides a session assigned to them.
+   *
+   * @param session
+   * @param decision
+   * @param actorId
+   */
+  async decided(
+    session: VerificationSession,
+    decision: 'approved' | 'rejected',
+    actorId: string | null,
+  ): Promise<void> {
+    if (!session.assignedTo || session.assignedTo === actorId) return
+
+    const context = await this.context(session)
+
+    await NotificationEvent.make(NOTIFICATION_TYPE.reviewDecided)
+      .to([session.assignedTo])
+      .by(actorId)
+      .about({
+        title: decision === 'approved' ? 'Assigned session approved' : 'Assigned session rejected',
+        description: `${this.label(session)} in ${context.projectName}, assigned to you, was ${decision} by another reviewer.`,
+        actionText: 'View session',
+        actionLink: context.link,
+        meta: { ...context.meta, decision },
+        tag: `review:${session.id}`,
+      })
+      .dispatchSafely()
+  }
+
   private label(session: VerificationSession): string {
     return session.userReference ? `Session for ${session.userReference}` : `Session ${session.id.slice(0, 8)}`
   }
