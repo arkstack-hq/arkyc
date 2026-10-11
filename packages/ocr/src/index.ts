@@ -41,3 +41,6 @@ export type { DocumentParser, ParseInput, ParseOutput } from './parsers/types'
 export { DocumentParserRegistry, createDocumentParserRegistry, type ParseStage } from './parsers/registry'
 export { mrzParser } from './parsers/mrz'
 export { genericTextParser } from './parsers/generic'
+
+// Deterministic document checks: MRZ check digits, MRZ against the visual zone, impossible dates.
+export { DocumentChecks, ageOn, type DocumentCheckInput, type DocumentIssue, type DocumentIssueCode } from './checks'

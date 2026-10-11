@@ -16,9 +16,15 @@ export interface OcrRequest {
   country?: string | null
   /**
    * Optional deterministic signals (used by the `mock` driver and tests to
-   * steer the extracted confidence / expiry). Ignored by real drivers.
+   * steer the extracted identity, confidence and expiry). Ignored by real drivers.
    */
-  hints?: { confidence?: number; expired?: boolean }
+  hints?: {
+    confidence?: number
+    expired?: boolean
+    fullName?: string
+    dateOfBirth?: string
+    documentNumber?: string
+  }
 }
 
 /** A pluggable OCR provider. */

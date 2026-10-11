@@ -18,7 +18,10 @@ export default class ClientTokenController extends BaseController {
     const token = readClientToken(req)
     if (!token) throw new ApiException('missing_client_token')
 
-    const claimed = await clientTokens.claim(token, readOrigin(req))
+    const claimed = await clientTokens.claim(token, readOrigin(req), {
+      ip: req.ip ?? null,
+      userAgent: req.get('user-agent') ?? null,
+    })
 
     return new GenericResource({ token: claimed.token, expires_at: claimed.expiresAt })
       .additional({

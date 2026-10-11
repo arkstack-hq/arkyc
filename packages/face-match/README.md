@@ -2,7 +2,7 @@
 
 Driver-based face matching for [Arkyc](https://github.com/arkstack-hq/arkyc) — an
 open-source, multi-tenant identity-verification platform. Compares the document
-portrait against the selfie; the active driver (`mock` or `external` HTTP) is
+portrait against the selfie; the active driver (`mock`, `external` HTTP, or `local` ONNX models) is
 chosen by config behind a stable result contract.
 
 ## Install

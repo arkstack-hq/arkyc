@@ -1,6 +1,7 @@
 import { Command } from '@h3ravel/musket'
 import { Logger } from '@arkstack/common'
 import { retentionService } from '@app/services/RetentionService'
+import { faceEmbeddings } from '@app/services/risk/FaceEmbeddingStore'
 
 /**
  * `ark retention:purge` — delete captured media for sessions past their
@@ -15,6 +16,10 @@ export class RetentionPurgeCommand extends Command {
 
   async handle() {
     const purged = await retentionService.purgeExpiredMedia()
-    Logger.success(`Retention purge complete — cleared media for ${purged} session(s).`, true)
+    const embeddings = await faceEmbeddings.purgeExpired()
+    Logger.success(
+      `Retention purge complete — cleared media for ${purged} session(s) and ${embeddings} face embedding(s).`,
+      true,
+    )
   }
 }

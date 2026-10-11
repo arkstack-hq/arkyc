@@ -94,5 +94,10 @@ describe('Arkyc server client', () => {
 
     expect(arkyc.webhooks.verify({ payload: body, secret, signature, timestamp: ts, now })).toBe(true)
     expect(arkyc.webhooks.verify({ payload: '{}', secret, signature, timestamp: ts, now })).toBe(false)
+
+    expect(arkyc.webhooks.constructEvent({ payload: body, secret, signature, timestamp: ts, now }).event).toBe(
+      'verification.approved',
+    )
+    expect(() => arkyc.webhooks.constructEvent({ payload: '{}', secret, signature, timestamp: ts, now })).toThrow()
   })
 })

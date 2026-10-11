@@ -10,6 +10,7 @@ import { toArray } from 'src/support/collection'
 import { Organization } from '@app/models/Organization'
 import { OrganizationMember } from '@app/models/OrganizationMember'
 import { Role } from '@app/models/Role'
+import { normalizeFaceEmbeddingSettings } from 'src/support/risk-settings'
 import { audit } from '@app/services/AuditLogger'
 
 /** Organization management. `show`/`update` run after `resolveOrganization` (req.organization). */
@@ -119,7 +120,11 @@ export default class OrganizationController extends BaseController {
     if (data.name) organization.name = data.name
     if (data.logo_url !== undefined) organization.logoUrl = data.logo_url
     if (data.settings && typeof data.settings === 'object') {
-      organization.settings = { ...(organization.settings ?? {}), ...data.settings }
+      const settings = { ...(data.settings as Record<string, unknown>) }
+      if ('face_embeddings' in settings) {
+        settings.face_embeddings = normalizeFaceEmbeddingSettings(settings.face_embeddings)
+      }
+      organization.settings = { ...(organization.settings ?? {}), ...settings }
     }
     await organization.save()
 

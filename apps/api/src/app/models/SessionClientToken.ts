@@ -18,6 +18,8 @@ export class SessionClientToken extends Model {
   declare kind: ClientTokenKind
   declare origin: string | null
   declare claimedAt: Date | null
+  declare ipAddress: string | null
+  declare userAgent: string | null
   declare expiresAt: Date
   declare createdAt: Date
   declare updatedAt: Date
@@ -26,6 +28,8 @@ export class SessionClientToken extends Model {
     sessionId: 'session_id',
     tokenHash: 'token_hash',
     claimedAt: 'claimed_at',
+    ipAddress: 'ip_address',
+    userAgent: 'user_agent',
     expiresAt: 'expires_at',
     createdAt: 'created_at',
     updatedAt: 'updated_at',

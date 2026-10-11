@@ -10,6 +10,7 @@ const SESSION_MUTATIONS = [
   'session:assign',
   'session:suspicious',
   'session:note',
+  'session:clear-signal',
 ]
 
 type SessionListParams = SessionListQuery & { page?: number; limit?: number }
@@ -75,6 +76,13 @@ export class Sessions {
   static markSuspicious(organizationId: string, id: string, input?: { reason?: string }) {
     return alova.Post<unknown>(`${t(organizationId)}/sessions/${id}/suspicious`, input ?? {}, {
       name: 'session:suspicious',
+    })
+  }
+
+  /** Clear a risk signal as a false positive. The reason is audited. */
+  static clearSignal(organizationId: string, id: string, signalId: string, input: { reason: string }) {
+    return alova.Patch<unknown>(`${t(organizationId)}/sessions/${id}/risk-signals/${signalId}/clear`, input, {
+      name: 'session:clear-signal',
     })
   }
 

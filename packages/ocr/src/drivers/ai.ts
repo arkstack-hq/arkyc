@@ -207,6 +207,7 @@ function normalizeFields(fields: OcrFields): OcrFields {
   set('dateOfBirth', fields.dateOfBirth)
   set('documentNumber', fields.documentNumber)
   set('expiryDate', fields.expiryDate)
+  set('issueDate', fields.issueDate)
   set('nationality', fields.nationality)
   return out
 }

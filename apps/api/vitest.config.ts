@@ -38,6 +38,8 @@ export default defineConfig({
       LIVENESS_DRIVER: 'mock',
       FACE_MATCH_DRIVER: 'mock',
       ADDRESS_DRIVER: 'mock',
+      SCREENING_DRIVER: 'mock',
+      NETWORK_DRIVER: 'mock',
       FILESYSTEM_DISK: 'local',
     },
   },

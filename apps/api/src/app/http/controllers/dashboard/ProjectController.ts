@@ -8,6 +8,7 @@ import ProjectCollection from '@app/http/resources/ProjectCollection'
 import ProjectResource from '@app/http/resources/ProjectResource'
 import { type FileLike, Storage } from '@arkstack/filesystem'
 import { Str } from '@h3ravel/support'
+import { normalizeVelocitySettings } from 'src/support/risk-settings'
 import { audit } from '@app/services/AuditLogger'
 
 export default class ProjectController extends BaseController {
@@ -119,7 +120,9 @@ export default class ProjectController extends BaseController {
     if (data.name) project.name = data.name
     if (data.status) project.status = data.status
     if (data.settings && typeof data.settings === 'object') {
-      project.settings = { ...(project.settings ?? {}), ...data.settings }
+      const settings = { ...(data.settings as Record<string, unknown>) }
+      if ('velocity' in settings) settings.velocity = normalizeVelocitySettings(settings.velocity)
+      project.settings = { ...(project.settings ?? {}), ...settings }
     }
     if (data.branding && typeof data.branding === 'object') {
       const { logo_key: _logoKey, ...branding } = data.branding as ProjectBranding

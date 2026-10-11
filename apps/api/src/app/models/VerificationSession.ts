@@ -20,6 +20,8 @@ import { FaceMatchCheck } from './FaceMatchCheck'
 import { AddressVerification } from './AddressVerification'
 import { Review } from './Review'
 import { ReviewNote } from './ReviewNote'
+import { SessionRiskSignal } from './SessionRiskSignal'
+import { SessionClientToken } from './SessionClientToken'
 import { VerificationSessionFactory } from 'src/database/factories/VerificationSessionFactory'
 
 export class VerificationSession extends Model {
@@ -129,5 +131,13 @@ export class VerificationSession extends Model {
 
   reviewNotes() {
     return this.hasMany(ReviewNote, 'sessionId')
+  }
+
+  riskSignals() {
+    return this.hasMany(SessionRiskSignal, 'sessionId')
+  }
+
+  clientTokens() {
+    return this.hasMany(SessionClientToken, 'sessionId')
   }
 }

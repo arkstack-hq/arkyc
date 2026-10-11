@@ -1,4 +1,4 @@
-import { type VerificationDecision, type VerificationStatus } from '@arkyc/types'
+import { type SessionRiskSignal, type VerificationDecision, type VerificationStatus } from '@arkyc/types'
 export interface GenericApiResponsePayload {
   status: string
   code: number
@@ -41,5 +41,6 @@ export interface SessionDetail {
         }[]
       | null
   } | null
+  risk_signals?: SessionRiskSignal[]
   media?: string[]
 }

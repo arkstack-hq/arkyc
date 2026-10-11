@@ -9,11 +9,17 @@ import Application from '../core/app'
 import { Validator } from 'kanun'
 import { View } from '@arkstack/view'
 import { fileValidatorPlugin } from '@kanun-hq/plugin-file'
-import { interopDefault } from '@arkstack/common'
+import { env, interopDefault } from '@arkstack/common'
 
 View.boot()
 Validator.use(fileValidatorPlugin)
 
 const expressApp = interopDefault(express)()
+
+// How many proxy hops (or which subnets) to trust for `req.ip`; network risk signals depend on it.
+const trustProxy = env('TRUST_PROXY')
+if (trustProxy) {
+  expressApp.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' || trustProxy)
+}
 
 export const app = new Application(expressApp)

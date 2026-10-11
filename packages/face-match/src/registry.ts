@@ -1,6 +1,7 @@
 import type { FaceMatchConfig, FaceMatchDriver } from './types'
 
 import { ExternalFaceMatchDriver } from './drivers/external'
+import { LocalFaceMatchDriver } from './drivers/local'
 import { MockFaceMatchDriver } from './drivers/mock'
 
 /** Selects a face-match driver from config. */
@@ -17,6 +18,8 @@ export class FaceMatchDriverFactory {
         return new MockFaceMatchDriver()
       case 'external':
         return new ExternalFaceMatchDriver(config)
+      case 'local':
+        return new LocalFaceMatchDriver(config)
       default:
         throw new Error(`Unknown face-match driver: ${(config as FaceMatchConfig).driver}`)
     }

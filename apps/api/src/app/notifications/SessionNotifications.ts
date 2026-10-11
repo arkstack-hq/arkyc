@@ -1,4 +1,4 @@
-import { NOTIFICATION_TYPE } from '@arkyc/types'
+import { NOTIFICATION_TYPE, type ScreeningHit } from '@arkyc/types'
 import { Organization } from '@app/models/Organization'
 import { Project } from '@app/models/Project'
 import type { VerificationSession } from '@app/models/VerificationSession'
@@ -80,6 +80,32 @@ export class SessionNotifications {
         actionLink: context.link,
         meta: { ...context.meta, decision },
         tag: `review:${session.id}`,
+      })
+      .dispatchSafely()
+  }
+
+  /**
+   * Tell the project's reviewers a session matched a watchlist.
+   *
+   * @param session
+   * @param hits
+   * @param monitoring Whether the hit came from re-screening a completed session.
+   */
+  async screeningHit(session: VerificationSession, hits: ScreeningHit[], monitoring = false): Promise<void> {
+    if (!hits.length) return
+
+    const context = await this.context(session)
+    const best = hits[0]!
+
+    await NotificationEvent.make(NOTIFICATION_TYPE.screeningHit)
+      .toAudience(() => NotificationAudience.sessionReviewers(session))
+      .about({
+        title: monitoring ? 'New watchlist match' : 'Watchlist match',
+        description: `${this.label(session)} in ${context.projectName} matched ${best.name} (${best.category.replace('_', ' ')})${hits.length > 1 ? ` and ${hits.length - 1} more` : ''}.`,
+        actionText: 'Review session',
+        actionLink: context.link,
+        meta: { ...context.meta, entity_ids: hits.map((hit) => hit.entity_id).join(',') },
+        tag: `screening:${session.id}`,
       })
       .dispatchSafely()
   }

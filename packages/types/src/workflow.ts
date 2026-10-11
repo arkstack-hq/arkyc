@@ -1,4 +1,5 @@
 import type { Id, IsoDateTime } from './common'
+import { DEFAULT_SCREENING_CONFIG, type RiskPolicyConfig, type ScreeningStepConfig } from './risk'
 
 /**
  * Workflows (Phase 19).
@@ -12,7 +13,7 @@ import type { Id, IsoDateTime } from './common'
  */
 
 /** A coarse verification stage a workflow can order and toggle. */
-export type WorkflowStepKey = 'document' | 'address' | 'liveness' | 'face_match'
+export type WorkflowStepKey = 'document' | 'screening' | 'address' | 'liveness' | 'face_match'
 
 /**
  * The default pipeline's stages, in canonical order — what runs when a session
@@ -24,10 +25,11 @@ export const WORKFLOW_STEP_KEYS: readonly WorkflowStepKey[] = ['document', 'live
 /**
  * Every stage a custom workflow may include, in canonical order. Used by the
  * workflow editor and to validate/normalise stored steps — a superset of
- * {@link WORKFLOW_STEP_KEYS} that adds the opt-in `address` stage.
+ * {@link WORKFLOW_STEP_KEYS} that adds the opt-in `screening` and `address` stages.
  */
 export const AVAILABLE_WORKFLOW_STEP_KEYS: readonly WorkflowStepKey[] = [
   'document',
+  'screening',
   'address',
   'liveness',
   'face_match',
@@ -69,8 +71,8 @@ export const DEFAULT_ADDRESS_CONFIG: AddressStepConfig = {
 export interface WorkflowStep {
   key: WorkflowStepKey
   enabled: boolean
-  /** Stage-specific configuration. Only the `address` stage uses this today. */
-  config?: AddressStepConfig
+  /** Stage-specific configuration, used by the `address` and `screening` stages. */
+  config?: AddressStepConfig | ScreeningStepConfig
 }
 
 /** Workflow-wide toggles. */
@@ -81,6 +83,10 @@ export interface WorkflowOptions {
    * to a third party. Disables the document portrait too, so face match can't run.
    */
   skip_ocr: boolean
+  /** Minimum age in years, from the extracted date of birth (`UNDERAGE`). */
+  min_age?: number
+  /** How each risk signal affects the decision. Unlisted signals route to review. */
+  risk_policy?: RiskPolicyConfig
 }
 
 /** The portable config of a workflow: ordered stages + options. */
@@ -114,7 +120,7 @@ export const DEFAULT_WORKFLOW_CONFIG: WorkflowConfig = {
  * absent or `enabled: false` does not run.
  */
 export function workflowEnables(config: WorkflowConfig | null | undefined, key: WorkflowStepKey): boolean {
-  // No workflow runs the default pipeline only — opt-in stages (`address`) are
+  // No workflow runs the default pipeline only — opt-in stages (`screening`, `address`) are
   // off unless a custom workflow turns them on.
   if (!config) return WORKFLOW_STEP_KEYS.includes(key)
 
@@ -130,7 +136,19 @@ export function workflowAddressConfig(config: WorkflowConfig | null | undefined)
   const step = config.steps.find((s) => s.key === 'address' && s.enabled)
   if (!step) return null
 
-  return { ...DEFAULT_ADDRESS_CONFIG, ...(step.config ?? {}) }
+  return { ...DEFAULT_ADDRESS_CONFIG, ...((step.config as AddressStepConfig | undefined) ?? {}) }
+}
+
+/**
+ * The resolved screening config for a session's workflow, or `null` when the
+ * screening stage isn't enabled. Screening needs OCR fields to screen.
+ */
+export function workflowScreeningConfig(config: WorkflowConfig | null | undefined): ScreeningStepConfig | null {
+  if (!config || !workflowRunsOcr(config)) return null
+  const step = config.steps.find((s) => s.key === 'screening' && s.enabled)
+  if (!step) return null
+
+  return { ...DEFAULT_SCREENING_CONFIG, ...((step.config as ScreeningStepConfig | undefined) ?? {}) }
 }
 
 /** Whether OCR parsing should run: the document stage is on and `skip_ocr` is off. */

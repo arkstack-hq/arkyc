@@ -1,0 +1,47 @@
+{
+  "name": "@arkyc/vision",
+  "version": "1.2.11",
+  "description": "Local face detection, alignment and ONNX model management for self-hosted biometrics",
+  "license": "MIT",
+  "keywords": [
+    "arkyc",
+    "kyc",
+    "biometrics",
+    "face-detection",
+    "onnx",
+    "yunet"
+  ],
+  "homepage": "https://docs.arkyc.toneflix.net",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arkstack-hq/arkyc.git",
+    "directory": "packages/vision"
+  },
+  "bugs": {
+    "url": "https://github.com/arkstack-hq/arkyc/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {},
+  "optionalDependencies": {
+    "onnxruntime-node": "^1.22.0",
+    "sharp": "^0.33.5"
+  }
+}

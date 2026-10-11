@@ -3,6 +3,7 @@ import { ErrorState, Loading } from '@/components/States'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
+import { DEFAULT_VELOCITY_SETTINGS } from '@arkyc/types'
 import { Theme } from '@arkyc/widget'
 import { Projects, errorMessage } from '@/lib/api'
 import { useForm, useRequest } from 'alova/client'
@@ -32,6 +33,8 @@ interface FormState {
   allowedOrigins: string
   handoffEnabled: boolean
   handoffAllowDesktop: boolean
+  velocityMaxSessions: string
+  velocityWindowMinutes: string
 }
 
 const THRESHOLD_FIELDS: { key: keyof VerificationThresholds; label: string }[] = [
@@ -75,6 +78,10 @@ function formFromProject(project: Project): FormState {
     allowedOrigins: (project.settings?.allowed_origins ?? []).join(', '),
     handoffEnabled: project.settings?.handoff?.enabled === true,
     handoffAllowDesktop: project.settings?.handoff?.allow_desktop !== false,
+    velocityMaxSessions: String(project.settings?.velocity?.max_sessions ?? DEFAULT_VELOCITY_SETTINGS.max_sessions),
+    velocityWindowMinutes: String(
+      project.settings?.velocity?.window_minutes ?? DEFAULT_VELOCITY_SETTINGS.window_minutes,
+    ),
   }
 }
 
@@ -120,6 +127,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
         ...(project.settings ?? {}),
         allowed_origins,
         handoff: { enabled: f.handoffEnabled, allow_desktop: f.handoffAllowDesktop },
+        velocity: { max_sessions: Number(f.velocityMaxSessions), window_minutes: Number(f.velocityWindowMinutes) },
       }
       if (Object.keys(thresholds).length > 0) settings.thresholds = thresholds
 
@@ -366,6 +374,43 @@ function ProjectSettingsForm({ project }: { project: Project }) {
               />
               Also let them continue on the desktop device
             </label>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Session velocity</CardTitle>
+            <CardDescription>
+              Flag a session for review when one network address opens more sessions than this, under different user
+              references, within the window.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="velocity-max">Sessions per address</FieldLabel>
+              <InputGroup>
+                <InputGroupInput
+                  id="velocity-max"
+                  type="number"
+                  min={1}
+                  value={form.velocityMaxSessions}
+                  onChange={(e) => set('velocityMaxSessions', e.target.value)}
+                />
+              </InputGroup>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="velocity-window">Window (minutes)</FieldLabel>
+              <InputGroup>
+                <InputGroupInput
+                  id="velocity-window"
+                  type="number"
+                  min={1}
+                  value={form.velocityWindowMinutes}
+                  onChange={(e) => set('velocityWindowMinutes', e.target.value)}
+                />
+              </InputGroup>
+            </Field>
+            <FieldError errors={error?.list?.settings} />
           </CardContent>
         </Card>
 

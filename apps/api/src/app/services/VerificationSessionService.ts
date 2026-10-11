@@ -204,6 +204,9 @@ export class VerificationSessionService {
       await OcrJob.dispatch(session.id, {
         ocrConfidence: input.signals?.ocrConfidence,
         expired: input.signals?.expired,
+        fullName: input.signals?.fullName,
+        dateOfBirth: input.signals?.dateOfBirth,
+        documentNumber: input.signals?.documentNumber,
       })
     }
 

@@ -43,6 +43,16 @@ export type DecisionReason =
   | 'MANUAL_APPROVAL'
   | 'MANUAL_REJECTION'
   | 'RETRY_REQUESTED'
+  | 'DUPLICATE_DOCUMENT'
+  | 'DUPLICATE_IDENTITY'
+  | 'DUPLICATE_FACE'
+  | 'DOCUMENT_TAMPERING'
+  | 'SANCTIONS_MATCH'
+  | 'PEP_MATCH'
+  | 'ADVERSE_MEDIA_MATCH'
+  | 'HIGH_RISK_DEVICE'
+  | 'VELOCITY_EXCEEDED'
+  | 'UNDERAGE'
 
 /**
  * A verification session: the full lifecycle of one verification flow, owned by

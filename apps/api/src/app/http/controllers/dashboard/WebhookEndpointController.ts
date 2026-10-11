@@ -23,6 +23,7 @@ const EVENT_NAMES: WebhookEventName[] = [
   'verification.completed',
   'verification.expired',
   'verification.cancelled',
+  'verification.screening_alert',
 ]
 const EVENTS_RULE = `in:${EVENT_NAMES.join(',')}`
 

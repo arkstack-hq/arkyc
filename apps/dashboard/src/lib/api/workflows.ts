@@ -20,6 +20,16 @@ export class Workflows {
     })
   }
 
+  /** One workflow. */
+  static get(organizationId: string, workflowId: string) {
+    return alova.Get(`${t(organizationId)}/workflows/${workflowId}`, {
+      name: 'workflow:detail',
+      cacheFor: CACHE,
+      hitSource: ['workflow:update'],
+      transform: unwrap<Workflow>,
+    })
+  }
+
   /** Create a workflow. */
   static create(organizationId: string, input: WorkflowInput) {
     return alova.Post(`${t(organizationId)}/workflows`, input, {

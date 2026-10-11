@@ -43,6 +43,7 @@ import SettingsPage from '@/pages/settings/SettingsPage'
 import VerifyEmailPage from '@/pages/VerifyEmailPage'
 import VerifyPage from '@/pages/VerifyPage'
 import WorkflowsPage from '@/pages/WorkflowsPage'
+import WorkflowEditorPage from '@/pages/workflows/WorkflowEditorPage'
 import { useAuth } from '@/contexts/auth-context'
 import { useRequest } from 'alova/client'
 
@@ -137,6 +138,8 @@ export default function App() {
           <Route path="sessions/:sessionId" element={<SessionDetailPage />} />
           <Route path="reviews" element={<ReviewsPage />} />
           <Route path="workflows" element={<WorkflowsPage />} />
+          <Route path="workflows/new" element={<WorkflowEditorPage />} />
+          <Route path="workflows/:workflowId" element={<WorkflowEditorPage />} />
           <Route path="audit-logs" element={<AuditLogsPage />} />
 
           <Route path="projects" element={<ProjectsPage />} />

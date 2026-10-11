@@ -18,6 +18,11 @@ Router.group('/v1/dashboard/organizations/:organizationId', () => {
   Router.post('/sessions/:id/assign', [SessionReviewController, 'assign'], scoped('reviews.assign'))
   Router.post('/sessions/:id/suspicious', [SessionReviewController, 'markSuspicious'], scoped('reviews.note'))
   Router.post('/sessions/:id/notes', [SessionReviewController, 'note'], scoped('reviews.note'))
+  Router.patch(
+    '/sessions/:id/risk-signals/:signalId/clear',
+    [SessionReviewController, 'clearSignal'],
+    scoped('reviews.approve'),
+  )
 
   Router.get('/audit-logs', [AuditLogController, 'index'], scoped('audit_logs.view'))
 })

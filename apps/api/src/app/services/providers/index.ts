@@ -9,6 +9,8 @@ import {
 } from '@arkyc/ocr'
 import { type LivenessDriverName, LivenessDriverFactory } from '@arkyc/liveness'
 import { type FaceMatchDriverName, FaceMatchDriverFactory } from '@arkyc/face-match'
+import { type ScreeningDriverName, ScreeningDriverFactory } from '@arkyc/screening'
+import { type NetworkDriverName, NetworkDriverFactory } from '@arkyc/network'
 import { type AddressDriverName, AddressVerifierFactory } from './address'
 import { documentParsers } from './document-parsers'
 
@@ -32,6 +34,9 @@ export interface ProviderSignals {
   multipleFaces?: boolean
   faceSimilarity?: number
   faceMatchPassed?: boolean
+  fullName?: string
+  dateOfBirth?: string
+  documentNumber?: string
   addressScore?: number
   addressPassed?: boolean
 }
@@ -102,16 +107,21 @@ export function resolveOcrDriver(aiEnabled: boolean): OcrDriver {
   return ocrDriver
 }
 
+/** Where the `local` biometric drivers keep their model files (`ark biometrics:setup` fills it). */
+export const biometricModelDirectory = env('BIOMETRICS_MODEL_DIR', 'storage/models')
+
 export const livenessDriver = LivenessDriverFactory.create({
   driver: env('LIVENESS_DRIVER', 'mock') as LivenessDriverName,
   endpoint: env('LIVENESS_ENDPOINT'),
   apiKey: env('LIVENESS_API_KEY'),
+  modelDirectory: biometricModelDirectory,
 })
 
 export const faceMatchDriver = FaceMatchDriverFactory.create({
   driver: env('FACE_MATCH_DRIVER', 'mock') as FaceMatchDriverName,
   endpoint: env('FACE_MATCH_ENDPOINT'),
   apiKey: env('FACE_MATCH_API_KEY'),
+  modelDirectory: biometricModelDirectory,
 })
 
 /**
@@ -125,4 +135,21 @@ export const addressVerifier = AddressVerifierFactory.create({
   orsUrl: env('ADDRESS_ORS_URL'),
   nominatimUrl: env('ADDRESS_NOMINATIM_URL'),
   userAgent: env('ADDRESS_USER_AGENT'),
+})
+
+/** Watchlist screening for the `screening` workflow stage and ongoing monitoring. */
+export const screeningDriver = ScreeningDriverFactory.create({
+  driver: env('SCREENING_DRIVER', 'mock') as ScreeningDriverName,
+  endpoint: env('SCREENING_ENDPOINT'),
+  apiKey: env('SCREENING_API_KEY'),
+  dataset: env('SCREENING_DATASET'),
+})
+
+/** IP intelligence for network risk signals. */
+export const networkDriver = NetworkDriverFactory.create({
+  driver: env('NETWORK_DRIVER', 'mock') as NetworkDriverName,
+  countryDatabase: env('MAXMIND_COUNTRY_DB'),
+  asnDatabase: env('MAXMIND_ASN_DB'),
+  anonymousIpDatabase: env('MAXMIND_ANONYMOUS_IP_DB'),
+  torExitList: env('TOR_EXIT_LIST'),
 })

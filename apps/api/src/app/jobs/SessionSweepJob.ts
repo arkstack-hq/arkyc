@@ -1,6 +1,8 @@
 import { Cache } from '@arkstack/cache'
 import { Job } from '@arkstack/jobs'
 import { retentionService } from '@app/services/RetentionService'
+import { faceEmbeddings } from '@app/services/risk/FaceEmbeddingStore'
+import { screeningMonitors } from '@app/services/risk/ScreeningMonitorService'
 import { sessionService } from '@app/services/VerificationSessionService'
 import { queueRunsInline, sessionSweepDriver, sessionSweepIntervalSeconds } from 'src/support/session-sweep'
 
@@ -8,7 +10,9 @@ import { queueRunsInline, sessionSweepDriver, sessionSweepIntervalSeconds } from
 const LEASE_KEY = 'session-sweep:lease'
 /** Once-per-day throttle so retention rides the sweep chain without its own cron/job. */
 const RETENTION_KEY = 'retention:daily'
+const SCREENING_KEY = 'screening-monitor:hourly'
 const DAY_SECONDS = 86_400
+const HOUR_SECONDS = 3_600
 
 /**
  * Session-expiry sweep as a self-perpetuating queued job (queue `maintenance`).
@@ -39,6 +43,10 @@ export class SessionSweepJob extends Job {
       // the throttle and runs it; the rest skip. Keeps the queue driver cron-free.
       if (await Cache.add(RETENTION_KEY, '1', DAY_SECONDS)) {
         await retentionService.purgeExpiredMedia().catch(() => {})
+        await faceEmbeddings.purgeExpired().catch(() => {})
+      }
+      if (await Cache.add(SCREENING_KEY, '1', HOUR_SECONDS)) {
+        await screeningMonitors.runDue().catch(() => {})
       }
     } finally {
       // Re-arm even if the batch threw, so a transient error can't break the loop.

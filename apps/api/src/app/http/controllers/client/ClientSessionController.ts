@@ -88,6 +88,9 @@ export default class ClientSessionController extends BaseController {
       quality_score: ['nullable', 'numeric', 'between:0,1'],
       ocr_confidence: ['nullable', 'numeric', 'between:0,1'],
       expired: ['nullable', 'boolean'],
+      full_name: ['nullable', 'string', 'max:200'],
+      date_of_birth: ['nullable', 'string', 'max:10'],
+      document_number: ['nullable', 'string', 'max:64'],
     })
 
     await sessionService.submitDocument(req.verificationSession!, 'front', {
@@ -265,6 +268,9 @@ export default class ClientSessionController extends BaseController {
       faceMatchPassed: data.face_match_passed as boolean | undefined,
       addressScore: data.address_score as number | undefined,
       addressPassed: data.address_passed as boolean | undefined,
+      fullName: data.full_name as string | undefined,
+      dateOfBirth: data.date_of_birth as string | undefined,
+      documentNumber: data.document_number as string | undefined,
     }
   }
 }

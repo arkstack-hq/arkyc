@@ -1,4 +1,5 @@
 import type { Entity, Id, IsoDateTime, Metadata, OrganizationScoped } from './common'
+import type { FaceEmbeddingSettings } from './risk'
 
 /** Membership lifecycle states for organization/project members. */
 export type MembershipStatus = 'active' | 'invited' | 'suspended'
@@ -21,6 +22,8 @@ export interface Organization extends Entity {
 export interface OrganizationSettings extends Metadata {
   /** Days to retain verification media before cleanup (Phase 15). */
   retention_days?: number
+  /** Store face embeddings to catch one face behind several identities. Off by default. */
+  face_embeddings?: Partial<FaceEmbeddingSettings>
 }
 
 /** Links a {@link User} to a {@link Organization} with a role. */

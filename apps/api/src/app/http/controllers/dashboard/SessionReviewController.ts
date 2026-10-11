@@ -1,3 +1,4 @@
+import { GenericResource } from 'resora'
 import { HttpContext } from 'clear-router/types/express'
 import { perPage } from '@arkstack/common'
 import { BaseController } from '@controllers/BaseController'
@@ -8,6 +9,8 @@ import { audit } from '@app/services/AuditLogger'
 import { type RetryKind, reviewService } from '@app/services/ReviewService'
 import { readObject } from 'src/support/storage'
 import { countryName } from '@app/services/providers/address'
+import { SessionRiskSignal } from '@app/models/SessionRiskSignal'
+import { toArray } from 'src/support/collection'
 
 const param = (value: unknown): string | undefined => (Array.isArray(value) ? value[0] : value) as string | undefined
 
@@ -55,13 +58,14 @@ export default class SessionReviewController extends BaseController {
    */
   async show({ req, res }: HttpContext) {
     const session = await this.scoped(req)
-    const [document, ocr, liveness, faceMatch, portrait, address] = await Promise.all([
+    const [document, ocr, liveness, faceMatch, portrait, address, signals] = await Promise.all([
       session.documentCaptures().latest('createdAt').first(),
       session.ocrResults().latest('createdAt').first(),
       session.livenessChecks().latest('createdAt').first(),
       session.faceMatchChecks().latest('createdAt').first(),
       session.documentPortraits().latest('createdAt').first(),
       session.addressVerifications().latest('createdAt').first(),
+      SessionRiskSignal.where({ sessionId: session.id }).orderBy({ createdAt: 'asc' }).limit(100).get(),
     ])
 
     const media: string[] = []
@@ -113,9 +117,55 @@ export default class SessionReviewController extends BaseController {
               methods: address.methods,
             }
           : null,
+        risk_signals: toArray(signals).map((signal) => this.riskSignal(signal)),
         media,
       },
     })
+  }
+
+  /** Clear a risk signal a reviewer judged a false positive. Audited, with a reason. */
+  async clearSignal({ req }: HttpContext) {
+    const data = await this.validate({ reason: ['required', 'string', 'max:2000'] })
+    const signalId = param(req.params.signalId)
+    const session = await this.scoped(req)
+    const signal = await SessionRiskSignal.where({ id: signalId, sessionId: session.id }).firstOrFail()
+
+    if (!signal.clearedAt) {
+      signal.clearedAt = new Date()
+      signal.clearedBy = req.user!.id
+      signal.clearReason = data.reason
+      await signal.save()
+
+      await audit.recordForRequest(req, {
+        projectId: session.projectId,
+        action: 'risk_signal.cleared',
+        entityType: 'verification_session',
+        entityId: session.id,
+        metadata: { signal_id: signal.id, key: signal.key, reason: data.reason },
+      })
+    }
+
+    return new GenericResource(this.riskSignal(signal))
+      .additional({ status: 'success', message: 'Risk signal cleared', code: 201 })
+      .response()
+      .setStatusCode(201)
+  }
+
+  private riskSignal(signal: SessionRiskSignal) {
+    return {
+      id: signal.id,
+      session_id: signal.sessionId,
+      key: signal.key,
+      severity: signal.severity,
+      score: signal.score,
+      advisory: signal.advisory,
+      source: signal.source,
+      evidence: signal.evidence ?? {},
+      cleared_at: signal.clearedAt,
+      cleared_by: signal.clearedBy,
+      clear_reason: signal.clearReason,
+      created_at: signal.createdAt,
+    }
   }
 
   /**

@@ -1,4 +1,10 @@
-import type { VerificationStatus, WebhookChecks, WebhookEvent, WebhookEventName } from '@arkyc/types'
+import {
+  workflowScreeningConfig,
+  type VerificationStatus,
+  type WebhookChecks,
+  type WebhookEvent,
+  type WebhookEventName,
+} from '@arkyc/types'
 import { WebhookPayload, WebhookSigner } from '@arkyc/webhooks'
 
 import { AddressVerification } from '@app/models/AddressVerification'
@@ -6,6 +12,7 @@ import { DocumentCapture } from '@app/models/DocumentCapture'
 import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
 import { LivenessCheck } from '@app/models/LivenessCheck'
 import { OcrResult } from '@app/models/OcrResult'
+import { SessionRiskSignal } from '@app/models/SessionRiskSignal'
 import { SessionRules } from '@arkyc/core'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { WebhookDelivery } from '@app/models/WebhookDelivery'
@@ -14,6 +21,7 @@ import { WebhookJob } from '@app/jobs'
 import { WEBHOOK_MAX_ATTEMPTS } from '@app/jobs/WebhookJob'
 import { webhookNotifications } from '@app/notifications/WebhookNotifications'
 import { buildSessionAssets } from '@app/services/SessionAssetService'
+import { screeningHits } from '@app/services/risk/types'
 import { toArray } from 'src/support/collection'
 import { decryptSecret } from 'src/support/secret-cipher'
 
@@ -261,6 +269,21 @@ export class WebhookService {
         score: address.score,
         methods: address.methods.map((m) => m.method),
       }
+    }
+
+    const signals = toArray(
+      await SessionRiskSignal.where({ sessionId: session.id }).orderBy({ createdAt: 'asc' }).limit(100).get(),
+    )
+    if (signals.length || session.riskScore != null) {
+      checks.risk = {
+        score: session.riskScore ?? null,
+        signals: signals.map((signal) => ({ key: signal.key, severity: signal.severity, cleared: !!signal.clearedAt })),
+      }
+    }
+
+    const hits = screeningHits(signals.filter((signal) => !signal.clearedAt).map((signal) => signal.toSignal()))
+    if (workflowScreeningConfig(session.workflow) || hits.length) {
+      checks.screening = { hits }
     }
 
     return checks

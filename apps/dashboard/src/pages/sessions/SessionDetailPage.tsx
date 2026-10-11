@@ -17,6 +17,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { formatDateTime, humanize } from '@/lib/utils'
 import type { SessionDetail } from '@/types/core'
+import { RiskSignalsCard } from './RiskSignalsCard'
 
 const IMAGE_KINDS = ['document_front', 'document_back', 'portrait', 'selfie'] as const
 
@@ -233,6 +234,17 @@ export default function SessionDetailPage() {
               <Row label="Expires at">{formatDateTime(data.expires_at)}</Row>
             </CardContent>
           </Card>
+
+          {data.risk_signals?.length ? (
+            <RiskSignalsCard
+              organizationId={organizationId}
+              sessionId={data.id}
+              signals={data.risk_signals}
+              identity={ocrFields}
+              canClear={can('reviews.approve')}
+              onChanged={() => void send()}
+            />
+          ) : null}
 
           {media.length ? (
             <Card className="md:col-span-2">

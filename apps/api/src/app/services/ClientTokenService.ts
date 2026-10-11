@@ -5,6 +5,12 @@ import { VerificationSession } from '@app/models/VerificationSession'
 import { ApiException } from 'src/support/apiErrors'
 import { isOriginAllowed, normalizeOrigin } from 'src/support/origins'
 
+/** The browser that claims a token. */
+export interface ClaimingClient {
+  ip: string | null
+  userAgent: string | null
+}
+
 /** A device token issued by a claim. */
 export interface ClaimedClientToken {
   session: VerificationSession
@@ -37,13 +43,19 @@ export class ClientTokenService {
 
   /**
    * Exchange a launch or handoff token for a device token bound to `origin`.
-   * Claiming is atomic, so a token can be claimed once.
+   * Claiming is atomic, so a token can be claimed once. The claiming address and
+   * browser are recorded for device risk signals.
    *
    * @param rawToken
    * @param origin
+   * @param client
    * @returns
    */
-  async claim(rawToken: string, origin: string | null): Promise<ClaimedClientToken> {
+  async claim(
+    rawToken: string,
+    origin: string | null,
+    client: ClaimingClient = { ip: null, userAgent: null },
+  ): Promise<ClaimedClientToken> {
     const token = await SessionClientToken.where({ tokenHash: Token.hash(rawToken) }).first()
     if (!token || token.kind === 'device') throw new ApiException('invalid_client_token')
 
@@ -53,12 +65,17 @@ export class ClientTokenService {
     const claimed = await SessionClientToken.query()
       .where({ id: token.id })
       .whereNull('claimedAt')
-      .updateFrom({ claimedAt: new Date(), origin: origin ? normalizeOrigin(origin) : null })
+      .updateFrom({
+        claimedAt: new Date(),
+        origin: origin ? normalizeOrigin(origin) : null,
+        ipAddress: client.ip,
+        userAgent: client.userAgent?.slice(0, 512) ?? null,
+      })
     if (claimed === 0) throw new ApiException('client_token_used')
 
     return {
       session,
-      token: await this.create(session, 'device', origin),
+      token: await this.create(session, 'device', origin, client),
       expiresAt: new Date(session.expiresAt),
     }
   }
@@ -89,6 +106,7 @@ export class ClientTokenService {
     session: VerificationSession,
     kind: SessionClientToken['kind'],
     origin: string | null,
+    client?: ClaimingClient,
   ): Promise<string> {
     const { token, tokenHash } = Token.createPair()
 
@@ -97,6 +115,8 @@ export class ClientTokenService {
       tokenHash,
       kind,
       origin: origin ? normalizeOrigin(origin) : null,
+      ipAddress: client?.ip ?? null,
+      userAgent: client?.userAgent?.slice(0, 512) ?? null,
       expiresAt: new Date(session.expiresAt),
     })
 

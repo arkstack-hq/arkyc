@@ -51,6 +51,7 @@ describe('workflows CRUD', () => {
     expect(res.body.data.steps).toEqual([
       { key: 'liveness', enabled: true },
       { key: 'document', enabled: true },
+      { key: 'screening', enabled: false },
       { key: 'address', enabled: false },
       { key: 'face_match', enabled: false },
     ])
@@ -162,6 +163,7 @@ describe('applying a workflow to a session', () => {
       { key: 'document', enabled: true },
       { key: 'liveness', enabled: false },
       { key: 'face_match', enabled: false },
+      { key: 'screening', enabled: false },
       { key: 'address', enabled: false },
     ])
   })

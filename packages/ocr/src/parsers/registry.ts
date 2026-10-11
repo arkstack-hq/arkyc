@@ -65,6 +65,19 @@ export class DocumentParserRegistry {
   }
 
   /**
+   * The visual-zone fields a custom parser reads next to an MRZ, kept so the two
+   * zones can be compared.
+   */
+  private visualZone(input: ParseInput): ParseOutput['fields'] | null {
+    for (const parser of this.candidates(input.country, input.documentType)) {
+      const out = parser.parse(input)
+      if (out) return out.fields
+    }
+
+    return null
+  }
+
+  /**
    * Parse fields from OCR text: MRZ first, then the matched custom parsers, then
    * the generic fallback. Always returns a result (empty fields, confidence 0,
    * when nothing could parse).
@@ -72,7 +85,12 @@ export class DocumentParserRegistry {
   parse(input: ParseInput): ParseOutput {
     // 1. MRZ — the gold standard when a machine-readable zone is present.
     const fromMrz = this.primary.parse(input)
-    if (fromMrz) return tag(fromMrz, this.primary.name, 'mrz')
+    if (fromMrz) {
+      const tagged = tag(fromMrz, this.primary.name, 'mrz')
+      const visual = this.visualZone(input)
+
+      return visual ? { ...tagged, raw: { ...(tagged.raw as object), visual } } : tagged
+    }
 
     // 2. Custom country/type-specific parsers, most specific first.
     for (const parser of this.candidates(input.country, input.documentType)) {

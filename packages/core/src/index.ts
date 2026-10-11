@@ -8,6 +8,7 @@
 export * from './thresholds'
 export * from './status'
 export * from './risk'
+export * from './signals'
 export * from './decision'
 export * from './session'
 export * from './normalize'

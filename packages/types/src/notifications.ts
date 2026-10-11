@@ -12,6 +12,8 @@ export const NOTIFICATION_TYPE = {
   webhookFailing: 'webhook.failing',
   /** You were invited to join an organization. */
   invitationReceived: 'invitation.received',
+  /** Watchlist screening matched a session in a project you review. */
+  screeningHit: 'screening.hit',
 } as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE]

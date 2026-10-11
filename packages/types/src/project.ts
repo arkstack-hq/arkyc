@@ -1,5 +1,6 @@
 import type { Entity, Id, IsoDateTime, Metadata, OrganizationScoped, ProjectScoped } from './common'
 
+import type { VelocitySettings } from './risk'
 import type { CaptureModel } from './settings'
 import type { MembershipStatus } from './organization'
 
@@ -67,6 +68,8 @@ export interface ProjectSettings extends Metadata {
   capture_model?: CaptureModel
   /** Cross-device session handoff (QR). Off unless the project opts in. */
   handoff?: ProjectHandoffSettings
+  /** Repeat-session limits per network address (`VELOCITY_EXCEEDED`). */
+  velocity?: Partial<VelocitySettings>
 }
 
 /**

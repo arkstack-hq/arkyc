@@ -19,9 +19,10 @@ export interface FlowContext {
   workflow?: WorkflowConfig | null
 }
 
-/** The widget screens that make up each coarse verification stage, in stage-local order. */
+/** The widget screens that make up each coarse verification stage, in stage-local order. Screening runs server-side only. */
 const STAGE_STEPS: Record<WorkflowStepKey, WidgetStep[]> = {
   document: ['document_selection', 'front_capture', 'back_capture', 'ocr_processing'],
+  screening: [],
   address: ['address_entry', 'address_processing'],
   liveness: ['active_liveness', 'selfie_capture', 'passive_liveness'],
   face_match: ['face_match'],

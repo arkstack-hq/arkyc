@@ -25,7 +25,9 @@ export class Risk {
    * The baseline is the inverse of the mean of the positive signals (document
    * quality, OCR confidence, liveness score, face-match similarity). Hard failure
    * signals (expired document, failed liveness/face-match, multiple faces) floor
-   * the risk near the top of the range so risky sessions never look safe.
+   * the risk near the top of the range so risky sessions never look safe. Each
+   * non-informational signal compounds the remaining headroom by its score, and
+   * a rejecting signal floors it like a hard failure.
    *
    * @param input
    * @returns
@@ -49,7 +51,12 @@ export class Risk {
       // A failed address only floors risk when it's a rejecting failure.
       (!input.address.passed && input.address.onFail === 'reject')
 
-    if (hardFailure) {
+    const signals = (input.signals ?? []).filter((signal) => signal.severity !== 'info')
+    for (const signal of signals) {
+      risk = 1 - (1 - risk) * (1 - Risk.clamp01(signal.score))
+    }
+
+    if (hardFailure || signals.some((signal) => signal.severity === 'reject')) {
       risk = Math.max(risk, 0.9)
     }
 

@@ -2,7 +2,7 @@
 
 Driver-based passive liveness detection for
 [Arkyc](https://github.com/arkstack-hq/arkyc) — an open-source, multi-tenant
-identity-verification platform. The active driver (`mock` or `external` HTTP) is
+identity-verification platform. The active driver (`mock`, `external` HTTP, or `local` ONNX models) is
 chosen by config behind a stable result contract, so a self-hosted model server
 is just an `external` endpoint.
 

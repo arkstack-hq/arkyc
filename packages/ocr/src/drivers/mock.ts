@@ -13,14 +13,16 @@ export class MockOcrDriver implements OcrDriver {
 
   async extract(request: OcrRequest): Promise<OcrResultData> {
     const confidence = clamp01(request.hints?.confidence ?? 0.92)
+    const fullName = request.hints?.fullName ?? 'Ada Lovelace'
+    const [firstName, ...rest] = fullName.split(/\s+/)
 
     return {
       fields: {
-        firstName: 'Ada',
-        lastName: 'Lovelace',
-        fullName: 'Ada Lovelace',
-        dateOfBirth: '1990-01-01',
-        documentNumber: 'X1234567',
+        firstName,
+        lastName: rest.join(' ') || undefined,
+        fullName,
+        dateOfBirth: request.hints?.dateOfBirth ?? '1990-01-01',
+        documentNumber: request.hints?.documentNumber ?? 'X1234567',
         expiryDate: request.hints?.expired ? '2000-01-01' : '2035-01-01',
         nationality: request.country ?? 'GB',
       },

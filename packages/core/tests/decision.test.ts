@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { DecisionReason, VerificationDecision } from '@arkyc/types'
-import { DecisionEngine, Thresholds, type DecisionInput } from '../src/index'
+import type { DecisionReason, RiskSignal, VerificationDecision } from '@arkyc/types'
+import { DecisionEngine, Risk, RiskSignals, Thresholds, type DecisionInput } from '../src/index'
 
 /** A session where every signal comfortably clears its threshold. */
 function goodInput(): DecisionInput {
@@ -194,5 +194,68 @@ describe('Thresholds.resolve', () => {
     const merged = Thresholds.resolve({ livenessThreshold: 0.99 })
     expect(merged.livenessThreshold).toBe(0.99)
     expect(merged.ocrConfidenceThreshold).toBe(Thresholds.DEFAULTS.ocrConfidenceThreshold)
+  })
+})
+
+describe('risk signals', () => {
+  const signal = (key: RiskSignal['key'], severity: RiskSignal['severity'] = 'review'): RiskSignal => ({
+    key,
+    severity,
+    score: 0.5,
+    evidence: {},
+  })
+
+  it('routes review signals to review after the built-in review triggers', () => {
+    const input = { ...goodInput(), signals: [signal('duplicate_document')] }
+    expect(DecisionEngine.decide(input)).toMatchObject({ decision: 'requires_review', reason: 'DUPLICATE_DOCUMENT' })
+
+    input.document.qualityScore = 0.1
+    expect(DecisionEngine.decide(input).reason).toBe('LOW_DOCUMENT_QUALITY')
+  })
+
+  it('rejects on a reject signal, after the built-in hard rejections', () => {
+    const input = { ...goodInput(), signals: [signal('sanctions_match', 'reject')] }
+    expect(DecisionEngine.decide(input)).toMatchObject({ decision: 'rejected', reason: 'SANCTIONS_MATCH' })
+
+    input.liveness.passed = false
+    expect(DecisionEngine.decide(input).reason).toBe('LIVENESS_FAILED')
+  })
+
+  it('ignores info signals and orders by signal precedence', () => {
+    expect(DecisionEngine.decide({ ...goodInput(), signals: [signal('velocity_exceeded', 'info')] }).reason).toBe(
+      'AUTO_APPROVED',
+    )
+    expect(
+      DecisionEngine.decide({ ...goodInput(), signals: [signal('velocity_exceeded'), signal('pep_match')] }).reason,
+    ).toBe('PEP_MATCH')
+  })
+
+  it('raises the risk score per signal and floors it on rejection', () => {
+    const base = Risk.score(goodInput())
+    expect(Risk.score({ ...goodInput(), signals: [signal('pep_match')] })).toBeGreaterThan(base)
+    expect(Risk.score({ ...goodInput(), signals: [signal('pep_match', 'info')] })).toBe(base)
+    expect(Risk.score({ ...goodInput(), signals: [signal('pep_match', 'reject')] })).toBeGreaterThanOrEqual(0.9)
+  })
+
+  it('resolves severity from policy, defaulting to review and capping soft signals', () => {
+    const resolved = RiskSignals.applyPolicy(
+      [
+        signal('duplicate_document'),
+        signal('velocity_exceeded'),
+        signal('duplicate_identity'),
+        { ...signal('document_tampering'), advisory: true },
+        signal('underage', 'info'),
+      ],
+      {
+        duplicate_document: 'reject',
+        velocity_exceeded: 'ignore',
+        duplicate_identity: 'reject',
+        document_tampering: 'reject',
+        underage: 'reject',
+      },
+    )
+
+    expect(resolved.map((s) => s.severity)).toEqual(['reject', 'info', 'review', 'review', 'info'])
+    expect(RiskSignals.applyPolicy([signal('pep_match')])[0]!.severity).toBe('review')
   })
 })

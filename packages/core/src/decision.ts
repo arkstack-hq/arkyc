@@ -1,6 +1,7 @@
-import type { DecisionReason, VerificationDecision, VerificationThresholds } from '@arkyc/types'
+import type { DecisionReason, RiskSignal, VerificationDecision, VerificationThresholds } from '@arkyc/types'
 
 import { Risk } from './risk'
+import { RiskSignals } from './signals'
 import { Thresholds } from './thresholds'
 
 /** Document signals fed to the decision engine. */
@@ -54,6 +55,8 @@ export interface DecisionInput {
   liveness: DecisionLivenessInput
   faceMatch: DecisionFaceMatchInput
   address: DecisionAddressInput
+  /** Fraud and compliance signals, with their policy-resolved severity. */
+  signals?: RiskSignal[]
 }
 
 /** The decision engine's verdict for a session. */
@@ -74,8 +77,9 @@ export class DecisionEngine {
    * evaluated in a fixed priority order so the result is deterministic.
    *
    * Reject precedence:  expired → liveness failed → face-match failed
+   *                       → address failed → reject signals
    * Review precedence:   multiple faces → low quality → low OCR
-   *                       → low liveness → low face-match
+   *                       → low liveness → low face-match → address → review signals
    *
    * @param input
    * @param thresholds
@@ -106,6 +110,12 @@ export class DecisionEngine {
       return verdict('rejected', 'ADDRESS_VERIFICATION_FAILED')
     }
 
+    const signals = input.signals ?? []
+    const rejectSignal = RiskSignals.reasonFor(signals, 'reject')
+    if (rejectSignal) {
+      return verdict('rejected', rejectSignal)
+    }
+
     // --- Manual review (borderline / ambiguous signals) ---
     if (input.liveness.multipleFaces === true) {
       return verdict('requires_review', 'MULTIPLE_FACES_DETECTED')
@@ -130,6 +140,11 @@ export class DecisionEngine {
     // a passed address below it is held for manual review (never rejected here).
     if (input.address.score < (input.address.threshold ?? t.addressThreshold)) {
       return verdict('requires_review', 'ADDRESS_LOW_CONFIDENCE')
+    }
+
+    const reviewSignal = RiskSignals.reasonFor(signals, 'review')
+    if (reviewSignal) {
+      return verdict('requires_review', reviewSignal)
     }
 
     // --- All checks cleared ---

@@ -12,6 +12,7 @@ export interface OcrFields {
   dateOfBirth?: IsoDate
   documentNumber?: string
   expiryDate?: IsoDate
+  issueDate?: IsoDate
   nationality?: string
 }
 

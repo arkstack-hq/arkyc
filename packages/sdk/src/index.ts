@@ -6,7 +6,17 @@
  */
 export { Arkyc } from './client'
 export { ArkycApiError } from './errors'
-export type { ApiErrorKey } from '@arkyc/types'
+export type {
+  ApiErrorKey,
+  DecisionReason,
+  RiskSeverity,
+  RiskSignalKey,
+  ScreeningHit,
+  WebhookChecks,
+  WebhookEvent,
+  WebhookEventName,
+  WebhookRiskCheck,
+} from '@arkyc/types'
 export type { ArkycOptions, CreateSessionParams, CreatedSession, VerificationSession } from './types'
 
 // Re-export the webhook signer (sign/verify + signature headers) so integrators

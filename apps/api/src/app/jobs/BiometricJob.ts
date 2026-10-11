@@ -13,6 +13,7 @@ import { LivenessCheck } from '@app/models/LivenessCheck'
 import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
 import { AddressVerification } from '@app/models/AddressVerification'
 import { Project } from '@app/models/Project'
+import { riskSignals } from '@app/services/risk/RiskSignalService'
 
 export interface BiometricJobHints {
   faceSimilarity?: number
@@ -20,8 +21,8 @@ export interface BiometricJobHints {
 }
 
 /**
- * Biometric job (queue `biometric`): runs face match, aggregates the persisted
- * signals through the decision engine, and lands the session's final decision.
+ * Biometric job (queue `biometric`): runs face match and the risk detectors,
+ * aggregates the persisted checks and risk signals through the decision engine, and lands the session's final decision.
  * Only acts on a `processing` session (idempotent on re-delivery) and throws if
  * OCR/liveness aren't ready yet so the job retries with backoff.
  */
@@ -64,6 +65,8 @@ export class BiometricJob extends Job {
     if (runsLiveness && !liveness) throw new Error('Liveness result is not ready yet')
     if (runsAddress && !address) throw new Error('Address verification is not ready yet')
 
+    const selfie = liveness?.selfieImagePath ? await readObject(liveness.selfieImagePath) : null
+
     let faceMatch: { passed: boolean; similarityScore: number } | null = null
     if (runsFaceMatch) {
       const portrait = await DocumentPortrait.where({ sessionId: session.id }).first()
@@ -71,7 +74,7 @@ export class BiometricJob extends Job {
 
       const result = await faceMatchDriver.compare({
         documentPortrait: await readObject(portrait.portraitImagePath),
-        selfie: await readObject(liveness!.selfieImagePath),
+        selfie: selfie ?? new Uint8Array(0),
         hints: { similarityScore: this.hints.faceSimilarity, passed: this.hints.faceMatchPassed },
       })
       await FaceMatchCheck.create({
@@ -88,6 +91,8 @@ export class BiometricJob extends Job {
       })
       faceMatch = { passed: result.passed, similarityScore: result.similarityScore }
     }
+
+    const signals = await riskSignals.evaluate({ session, workflow, capture, ocr, selfie })
 
     // Disabled or skipped stages pass through so they can't fail or flag the user.
     const decisionInput: DecisionInput = {
@@ -117,6 +122,7 @@ export class BiometricJob extends Job {
             threshold: addressConfig?.auto_approve_threshold,
           }
         : { passed: true, score: 1 },
+      signals,
     }
 
     const project = await Project.where({ id: session.projectId }).first()
@@ -131,6 +137,7 @@ export class BiometricJob extends Job {
       session.completedAt = new Date()
     }
     await transitionTo(session, decision)
+    await riskSignals.afterDecision(session, signals)
 
     await audit.record({
       organizationId: session.organizationId,
@@ -139,7 +146,7 @@ export class BiometricJob extends Job {
       action: 'session.auto_decided',
       entityType: 'verification_session',
       entityId: session.id,
-      metadata: { decision, reason, riskScore },
+      metadata: { decision, reason, riskScore, signals: signals.map((signal) => `${signal.key}:${signal.severity}`) },
     })
   }
 }

@@ -1,6 +1,8 @@
 import { Schedule } from '@arkstack/scheduler'
 import { sessionService } from '@app/services/VerificationSessionService'
 import { retentionService } from '@app/services/RetentionService'
+import { faceEmbeddings } from '@app/services/risk/FaceEmbeddingStore'
+import { screeningMonitors } from '@app/services/risk/ScreeningMonitorService'
 import { sessionSweepDriver } from 'src/support/session-sweep'
 
 /*
@@ -32,8 +34,17 @@ if (sessionSweepDriver() === 'schedule') {
   // its org's `retention_days`. Daily is plenty; the sweep only touches media once.
   Schedule.call(async () => {
     await retentionService.purgeExpiredMedia()
+    await faceEmbeddings.purgeExpired()
   })
     .daily()
     .withoutOverlapping()
     .description('Purge verification media past its retention window')
+
+  // Re-screen monitored identities whose next screening is due.
+  Schedule.call(async () => {
+    await screeningMonitors.runDue()
+  })
+    .hourly()
+    .withoutOverlapping()
+    .description('Re-screen monitored identities against watchlists')
 }

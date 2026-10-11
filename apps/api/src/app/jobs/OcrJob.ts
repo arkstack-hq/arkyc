@@ -15,6 +15,9 @@ const PORTRAIT_DETECTION_CONFIDENCE = 0.95
 export interface OcrJobHints {
   ocrConfidence?: number
   expired?: boolean
+  fullName?: string
+  dateOfBirth?: string
+  documentNumber?: string
 }
 
 /**
@@ -52,7 +55,13 @@ export class OcrJob extends Job {
       backImage: back.length ? back : undefined,
       documentType: capture.documentType,
       country: capture.country,
-      hints: { confidence: this.hints.ocrConfidence, expired: this.hints.expired },
+      hints: {
+        confidence: this.hints.ocrConfidence,
+        expired: this.hints.expired,
+        fullName: this.hints.fullName,
+        dateOfBirth: this.hints.dateOfBirth,
+        documentNumber: this.hints.documentNumber,
+      },
     })
     await logOcrExtraction({
       sessionId: session.id,

@@ -2,8 +2,14 @@ import {
   ADDRESS_METHODS,
   AVAILABLE_WORKFLOW_STEP_KEYS,
   DEFAULT_ADDRESS_CONFIG,
+  DEFAULT_SCREENING_CONFIG,
+  RISK_SIGNAL_KEYS,
   type AddressMethod,
   type AddressStepConfig,
+  type RiskPolicyConfig,
+  type RiskSignalKey,
+  type RiskSignalPolicy,
+  type ScreeningStepConfig,
   type WorkflowOptions,
   type WorkflowStep,
   type WorkflowStepKey,
@@ -13,6 +19,35 @@ import { ValidationException } from 'kanun'
 
 const KEY_SET = new Set<WorkflowStepKey>(AVAILABLE_WORKFLOW_STEP_KEYS)
 const METHOD_SET = new Set<AddressMethod>(ADDRESS_METHODS)
+const SIGNAL_SET = new Set<RiskSignalKey>(RISK_SIGNAL_KEYS)
+const POLICIES = new Set<RiskSignalPolicy>(['ignore', 'review', 'reject'])
+
+/** A number in [0, 1], or `fallback` when absent. */
+function unitInterval(raw: unknown, fallback: number, message: string): number {
+  if (raw == null || raw === '') return fallback
+
+  const value = Number(raw)
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    throw ValidationException.withMessages({ steps: [message] })
+  }
+
+  return value
+}
+
+/** Validate + canonicalise the screening stage's config. */
+function normalizeScreeningConfig(raw: unknown): ScreeningStepConfig {
+  const config = (raw ?? {}) as Partial<Record<keyof ScreeningStepConfig, unknown>>
+
+  return {
+    threshold: unitInterval(
+      config.threshold,
+      DEFAULT_SCREENING_CONFIG.threshold,
+      'The screening match threshold must be between 0 and 1.',
+    ),
+    on_hit: config.on_hit === 'reject' ? 'reject' : 'review',
+    monitor: config.monitor === true,
+  }
+}
 
 /** Validate + canonicalise the address stage's config (methods + on_fail + threshold). */
 function normalizeAddressConfig(raw: unknown): AddressStepConfig {
@@ -56,7 +91,7 @@ export function normalizeWorkflowSteps(raw: unknown): WorkflowStep[] {
   }
 
   const enabledByKey = new Map<WorkflowStepKey, boolean>()
-  const configByKey = new Map<WorkflowStepKey, AddressStepConfig>()
+  const configByKey = new Map<WorkflowStepKey, AddressStepConfig | ScreeningStepConfig>()
   const order: WorkflowStepKey[] = []
 
   for (const entry of raw) {
@@ -73,11 +108,15 @@ export function normalizeWorkflowSteps(raw: unknown): WorkflowStep[] {
     if (key === 'address' && enabled) {
       configByKey.set(key, normalizeAddressConfig((entry as { config?: unknown })?.config))
     }
+    if (key === 'screening' && enabled) {
+      configByKey.set(key, normalizeScreeningConfig((entry as { config?: unknown })?.config))
+    }
   }
 
   const steps: WorkflowStep[] = order.map((key) => {
     const step: WorkflowStep = { key, enabled: enabledByKey.get(key)! }
     if (key === 'address' && step.enabled) step.config = configByKey.get(key) ?? DEFAULT_ADDRESS_CONFIG
+    if (key === 'screening' && step.enabled) step.config = configByKey.get(key) ?? DEFAULT_SCREENING_CONFIG
 
     return step
   })
@@ -94,5 +133,37 @@ export function normalizeWorkflowSteps(raw: unknown): WorkflowStep[] {
 
 /** Coerce raw options into the canonical shape. */
 export function normalizeWorkflowOptions(raw: unknown): WorkflowOptions {
-  return { skip_ocr: (raw as { skip_ocr?: unknown })?.skip_ocr === true }
+  const input = (raw ?? {}) as { skip_ocr?: unknown; min_age?: unknown; risk_policy?: unknown }
+  const options: WorkflowOptions = { skip_ocr: input.skip_ocr === true }
+
+  if (input.min_age != null && input.min_age !== '') {
+    const minAge = Number(input.min_age)
+    if (!Number.isInteger(minAge) || minAge < 1 || minAge > 120) {
+      throw ValidationException.withMessages({ options: ['The minimum age must be a whole number from 1 to 120.'] })
+    }
+    options.min_age = minAge
+  }
+
+  const policy = normalizeRiskPolicy(input.risk_policy)
+  if (Object.keys(policy).length) options.risk_policy = policy
+
+  return options
+}
+
+/** Validate per-signal policies. */
+function normalizeRiskPolicy(raw: unknown): RiskPolicyConfig {
+  if (!raw || typeof raw !== 'object') return {}
+
+  const policy: RiskPolicyConfig = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (!SIGNAL_SET.has(key as RiskSignalKey)) {
+      throw ValidationException.withMessages({ options: [`Unknown risk signal "${key}".`] })
+    }
+    if (!POLICIES.has(value as RiskSignalPolicy)) {
+      throw ValidationException.withMessages({ options: [`Risk signal "${key}" needs ignore, review or reject.`] })
+    }
+    policy[key as RiskSignalKey] = value as RiskSignalPolicy
+  }
+
+  return policy
 }

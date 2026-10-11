@@ -1,6 +1,7 @@
 import type { LivenessConfig, LivenessDriver } from './types'
 
 import { ExternalLivenessDriver } from './drivers/external'
+import { LocalLivenessDriver } from './drivers/local'
 import { MockLivenessDriver } from './drivers/mock'
 
 /**
@@ -19,6 +20,8 @@ export class LivenessDriverFactory {
         return new MockLivenessDriver()
       case 'external':
         return new ExternalLivenessDriver(config)
+      case 'local':
+        return new LocalLivenessDriver(config)
       default:
         throw new Error(`Unknown liveness driver: ${(config as LivenessConfig).driver}`)
     }

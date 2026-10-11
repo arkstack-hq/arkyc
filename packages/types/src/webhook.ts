@@ -1,4 +1,5 @@
 import type { Entity, Id, IsoDateTime, ProjectScoped } from './common'
+import type { ScreeningHit, WebhookRiskCheck } from './risk'
 import type { DecisionReason, VerificationStatus } from './verification'
 
 /** The set of webhook event names Arkyc can deliver. */
@@ -13,6 +14,7 @@ export type WebhookEventName =
   | 'verification.completed'
   | 'verification.expired'
   | 'verification.cancelled'
+  | 'verification.screening_alert'
 
 /** Per-check summary included in a webhook payload. */
 export interface WebhookChecks {
@@ -36,6 +38,12 @@ export interface WebhookChecks {
     score: number
     /** Which corroboration methods ran. */
     methods: string[]
+  }
+  /** Risk signals raised against the session and the aggregate score. */
+  risk?: WebhookRiskCheck
+  /** Watchlist screening, when the workflow runs it. */
+  screening?: {
+    hits: ScreeningHit[]
   }
 }
 
