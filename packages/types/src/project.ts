@@ -12,7 +12,7 @@ export type ProjectStatus = 'active' | 'paused' | 'archived'
 
 /**
  * Per-project, configurable thresholds the decision engine compares scores
- * against. Defaults live in `@arkyc/core`; projects may override any subset.
+ * against. Projects may override any subset of {@link DEFAULT_VERIFICATION_THRESHOLDS}.
  */
 export interface VerificationThresholds {
   documentQualityThreshold: number
@@ -21,6 +21,15 @@ export interface VerificationThresholds {
   faceMatchThreshold: number
   /** Minimum address-verification confidence before flagging for review. */
   addressThreshold: number
+}
+
+/** Platform default verification thresholds. */
+export const DEFAULT_VERIFICATION_THRESHOLDS: VerificationThresholds = {
+  documentQualityThreshold: 0.75,
+  ocrConfidenceThreshold: 0.8,
+  livenessThreshold: 0.85,
+  faceMatchThreshold: 0.75,
+  addressThreshold: 0.6,
 }
 
 /** Visual branding applied to the widget for a project. */

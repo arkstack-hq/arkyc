@@ -3,7 +3,7 @@ import { ErrorState, Loading } from '@/components/States'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
-import { DEFAULT_VELOCITY_SETTINGS } from '@arkyc/types'
+import { DEFAULT_VELOCITY_SETTINGS, DEFAULT_VERIFICATION_THRESHOLDS } from '@arkyc/types'
 import { Theme } from '@arkyc/widget'
 import { Projects, errorMessage } from '@/lib/api'
 import { useForm, useRequest } from 'alova/client'
@@ -30,6 +30,7 @@ interface FormState {
   ocrConfidenceThreshold: string
   livenessThreshold: string
   faceMatchThreshold: string
+  addressThreshold: string
   allowedOrigins: string
   handoffEnabled: boolean
   handoffAllowDesktop: boolean
@@ -37,11 +38,32 @@ interface FormState {
   velocityWindowMinutes: string
 }
 
-const THRESHOLD_FIELDS: { key: keyof VerificationThresholds; label: string }[] = [
-  { key: 'documentQualityThreshold', label: 'Document quality' },
-  { key: 'ocrConfidenceThreshold', label: 'OCR confidence' },
-  { key: 'livenessThreshold', label: 'Liveness' },
-  { key: 'faceMatchThreshold', label: 'Face match' },
+const THRESHOLD_FIELDS: { key: keyof VerificationThresholds; label: string; description: string }[] = [
+  {
+    key: 'documentQualityThreshold',
+    label: 'Document quality',
+    description: 'Blurry, dark or cropped captures below this go to review.',
+  },
+  {
+    key: 'ocrConfidenceThreshold',
+    label: 'OCR confidence',
+    description: 'Documents read with less confidence than this go to review.',
+  },
+  {
+    key: 'livenessThreshold',
+    label: 'Liveness',
+    description: 'Selfies scoring below this as a live person go to review.',
+  },
+  {
+    key: 'faceMatchThreshold',
+    label: 'Face match',
+    description: 'Selfie and document portrait similarity needed to auto-approve.',
+  },
+  {
+    key: 'addressThreshold',
+    label: 'Address',
+    description: 'Address confidence needed to auto-verify, unless a workflow sets its own.',
+  },
 ]
 
 /**
@@ -62,7 +84,7 @@ function withCacheBust(url: string | null): string | null {
 }
 
 function formFromProject(project: Project): FormState {
-  const thresholds = project.settings?.thresholds ?? {}
+  const thresholds = { ...DEFAULT_VERIFICATION_THRESHOLDS, ...(project.settings?.thresholds ?? {}) }
   return {
     name: project.name ?? '',
     brandName: project.branding?.name ?? '',
@@ -70,11 +92,11 @@ function formFromProject(project: Project): FormState {
     primaryColor: project.branding?.primary_color ?? 'rgb(255, 255, 255)',
     theme: project.branding?.theme ?? 'light',
     borderRadius: project.branding?.border_radius != null ? String(project.branding.border_radius) : '',
-    documentQualityThreshold:
-      thresholds.documentQualityThreshold != null ? String(thresholds.documentQualityThreshold) : '',
-    ocrConfidenceThreshold: thresholds.ocrConfidenceThreshold != null ? String(thresholds.ocrConfidenceThreshold) : '',
-    livenessThreshold: thresholds.livenessThreshold != null ? String(thresholds.livenessThreshold) : '',
-    faceMatchThreshold: thresholds.faceMatchThreshold != null ? String(thresholds.faceMatchThreshold) : '',
+    documentQualityThreshold: String(thresholds.documentQualityThreshold),
+    ocrConfidenceThreshold: String(thresholds.ocrConfidenceThreshold),
+    livenessThreshold: String(thresholds.livenessThreshold),
+    faceMatchThreshold: String(thresholds.faceMatchThreshold),
+    addressThreshold: String(thresholds.addressThreshold),
     allowedOrigins: (project.settings?.allowed_origins ?? []).join(', '),
     handoffEnabled: project.settings?.handoff?.enabled === true,
     handoffAllowDesktop: project.settings?.handoff?.allow_desktop !== false,
@@ -111,12 +133,14 @@ function ProjectSettingsForm({ project }: { project: Project }) {
       }
       if (f.borderRadius.trim() !== '') branding.border_radius = Number(f.borderRadius)
 
-      const thresholds: Partial<VerificationThresholds> = {}
-      if (f.documentQualityThreshold.trim() !== '')
-        thresholds.documentQualityThreshold = Number(f.documentQualityThreshold)
-      if (f.ocrConfidenceThreshold.trim() !== '') thresholds.ocrConfidenceThreshold = Number(f.ocrConfidenceThreshold)
-      if (f.livenessThreshold.trim() !== '') thresholds.livenessThreshold = Number(f.livenessThreshold)
-      if (f.faceMatchThreshold.trim() !== '') thresholds.faceMatchThreshold = Number(f.faceMatchThreshold)
+      // Every threshold is sent, so a value reset to its default replaces an earlier override.
+      const thresholds = Object.fromEntries(
+        THRESHOLD_FIELDS.map(({ key }) => {
+          const value = f[key].trim()
+
+          return [key, value === '' ? DEFAULT_VERIFICATION_THRESHOLDS[key] : Number(value)]
+        }),
+      ) as unknown as VerificationThresholds
 
       const allowed_origins = f.allowedOrigins
         .split(',')
@@ -129,7 +153,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
         handoff: { enabled: f.handoffEnabled, allow_desktop: f.handoffAllowDesktop },
         velocity: { max_sessions: Number(f.velocityMaxSessions), window_minutes: Number(f.velocityWindowMinutes) },
       }
-      if (Object.keys(thresholds).length > 0) settings.thresholds = thresholds
+      settings.thresholds = thresholds
 
       return Projects.update(organizationId, projectId!, {
         name: f.name.trim(),
@@ -308,23 +332,48 @@ function ProjectSettingsForm({ project }: { project: Project }) {
         <Card>
           <CardHeader>
             <CardTitle>Verification thresholds</CardTitle>
-            <CardDescription>Override the default decision-engine thresholds.</CardDescription>
+            <CardDescription>
+              Scores from 0 to 1 a check must reach for a session to be approved automatically. Anything lower goes to
+              manual review. Raise them to review more sessions, lower them to approve more automatically.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {THRESHOLD_FIELDS.map((field) => (
-              <Field key={field.key}>
-                <FieldLabel htmlFor={field.key}>{field.label}</FieldLabel>
-                <InputGroup>
-                  <InputGroupInput
-                    id={field.key}
-                    type="number"
-                    step="any"
-                    value={form[field.key as keyof FormState] as string}
-                    onChange={(e) => set(field.key as keyof FormState, e.target.value)}
-                  />
-                </InputGroup>
-              </Field>
-            ))}
+          <CardContent className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+            {THRESHOLD_FIELDS.map((field) => {
+              const fallback = DEFAULT_VERIFICATION_THRESHOLDS[field.key]
+              const custom = form[field.key].trim() !== '' && Number(form[field.key]) !== fallback
+
+              return (
+                <Field key={field.key}>
+                  <div className="flex items-center justify-between gap-2">
+                    <FieldLabel htmlFor={field.key}>{field.label}</FieldLabel>
+                    {custom ? (
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                        onClick={() => set(field.key, String(fallback))}
+                      >
+                        Reset to {fallback}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Default</span>
+                    )}
+                  </div>
+                  <InputGroup>
+                    <InputGroupInput
+                      id={field.key}
+                      type="number"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={form[field.key]}
+                      placeholder={String(fallback)}
+                      onChange={(e) => set(field.key, e.target.value)}
+                    />
+                  </InputGroup>
+                  <p className="text-xs text-muted-foreground">{field.description}</p>
+                </Field>
+              )
+            })}
           </CardContent>
         </Card>
 
