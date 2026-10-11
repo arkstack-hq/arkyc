@@ -469,7 +469,7 @@ liveness, offered per the admin's global capture-model setting.
   - [x] Client tokens: the session's launch token is single-use and only claims a per-browser device token bound to the claiming origin; the cross-device QR carries its own single-use handoff token (`session_client_tokens`, `POST /v1/client/claim`, `POST /v1/client/handoff`).
 - [x] Data retention settings (per tenant) + media lifecycle/cleanup jobs — media-only purge honouring `retention_days` (`RetentionService`, scheduler + queue + `ark retention:purge`).
 - [x] Observability: pluggable `reportError` (structured logs + external-reporter seam) wired into the global error path + maintenance jobs; no-op metrics sink. Concrete vendor/metrics backend deferred.
-- [~] Test coverage pass + CI pipeline + `CHANGELOG.md` + `LICENSE` + contribution guide — done except a dedicated happy-path e2e. Versioning already past `v0.1.0` (at `1.2.11`).
+- [x] Test coverage pass + CI pipeline + `CHANGELOG.md` + `LICENSE` + contribution guide, plus a happy-path e2e (`apps/api/tests/e2e.test.ts`: SDK create → client claim and verify → review → signed webhooks → SDK retrieve). Versioning already past `v0.1.0` (at `1.2.11`).
 - [x] Performance: index review on hot tenant-scoped paths — added `verification_sessions(expires_at)` + `(organization_id, status)`.
 
 **Deliverables:** CI green, security checklist complete. (Version already at `1.2.11`; no `v0.1.0` tag.)
