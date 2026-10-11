@@ -22,8 +22,8 @@ export default (): NotificationConfig => {
         transport:
           ['staging', 'production'].includes(env('APP_ENV')) && !!env('MAIL_API_KEY')
             ? new SendPulseTransport({
-                apiKey: env('MAIL_API_KEY'),
-              })
+              apiKey: env('MAIL_API_KEY'),
+            })
             : env('MAIL_TRANSPORT', 'smtp'),
         from: {
           name: env('MAIL_FROM_NAME', 'Arcstack'),
@@ -40,9 +40,10 @@ export default (): NotificationConfig => {
       },
       realtime: {
         /**
-         * pusher | firebase | firebase-database | polling | memory
+         * pusher | firebase | firebase-database | polling | memory.
+         * A disabled value (`off`, `false`) falls back to polling.
          */
-        transport: env('REALTIME_TRANSPORT', 'polling'),
+        transport: env('REALTIME_TRANSPORT', 'polling') || 'polling',
         /**
          * Also push user notifications to their registered devices: 'firebase' or false.
          */
