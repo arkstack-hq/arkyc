@@ -28,7 +28,15 @@ export function createRealtimeClient(config: RealtimeServerConfig, options: Clie
 
   return createRealtime({
     ...config,
-    pusher: config.pusher && { ...config.pusher, authEndpoint, auth },
-    'firebase-database': config['firebase-database'] && { ...config['firebase-database'], authEndpoint, auth },
+    pusher: config.pusher && {
+      ...config.pusher,
+      authEndpoint,
+      auth,
+    },
+    'firebase-database': config['firebase-database'] && {
+      ...config['firebase-database'],
+      authEndpoint,
+      auth,
+    },
   })
 }
