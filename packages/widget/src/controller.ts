@@ -249,14 +249,14 @@ export class WidgetController {
 
   /**
    * Lazily connect the push transport for this session (once). Returns null for
-   * `polling`/`off`/`memory` or when the transport SDK can't load — the caller
-   * then polls instead.
+   * transports the widget does not stream over or when the transport SDK can't
+   * load, and the caller then polls instead.
    */
   private async resolveRealtime(): Promise<WidgetRealtimeClient | null> {
     if (this.rtResolved) return this.rtClient
     this.rtResolved = true
     const cfg = this.realtimeConfig
-    if (!cfg || cfg.transport === 'polling' || cfg.transport === 'off' || cfg.transport === 'memory') return null
+    if (!cfg || cfg.transport === 'polling' || cfg.transport === 'memory') return null
 
     const factory = this.config.realtimeFactory ?? createWidgetRealtimeClient
     // Build from the client's *resolved* base (absolute/proxy value, or the

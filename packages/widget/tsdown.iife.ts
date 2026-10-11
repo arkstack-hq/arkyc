@@ -16,7 +16,7 @@ export default defineConfig({
   entry: { 'arkyc-widget': 'src/index.ts' },
   format: ['iife'],
   globalName: 'Arkyc',
-  noExternal: [/^@arkyc\//, 'qrcode-generator'],
+  noExternal: [/^@arkyc\//, /^@arkstack\/realtime/, 'qrcode-generator'],
   footer: 'var ArkycWidget=Arkyc.ArkycWidget;var ArkycClient=Arkyc.ArkycClient;',
   dts: false,
   clean: false,

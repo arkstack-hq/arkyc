@@ -29,18 +29,16 @@ export interface ClientSession {
 }
 
 /**
- * Realtime connection info for this session (Phase 16). `transport` selects how
- * the widget watches the session: `pusher`/`firebase` subscribe to `channel`;
- * `polling` (and `off`/`memory`) mean poll the session endpoint instead. The
- * remaining fields carry the active transport's public connection params; `token`
- * is a per-session Firebase custom token when applicable.
+ * How the widget watches this session live: the API's public realtime config
+ * (`transport` plus that transport's settings) and the session's own channel.
+ * Transports the widget does not stream over mean polling the session instead.
  */
 export interface ClientRealtime {
-  transport: 'pusher' | 'firebase' | 'polling' | 'off' | 'memory'
+  transport: 'pusher' | 'firebase' | 'firebase-database' | 'polling' | 'memory'
   /** The private channel this session's events publish to. */
   channel: string
-  /** Per-session Firebase custom token (firebase transport only). */
-  token?: string | null
+  pusher?: Record<string, unknown>
+  'firebase-database'?: Record<string, unknown>
   [param: string]: unknown
 }
 
