@@ -56,7 +56,7 @@ pnpm --filter @arkyc/api exec ark seed
 ```
 
 `ark migrate` runs all migrations; `ark seed` syncs the permission catalogue and
-default roles, then creates a demo tenant with projects, members, and fixture
+default roles, then creates a demo organization with projects, members, and fixture
 sessions. The seeded owner user has the password `password` (its email is
 random; check the `users` table, or just register your own account in step 6).
 

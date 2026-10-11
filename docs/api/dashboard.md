@@ -2,7 +2,7 @@
 
 The management surface used by the dashboard UI. **Auth:** `Authorization: Bearer <jwt>`.
 
-Tenant-scoped routes run through `resolveTenant` (the caller must be an **active**
+Organization-scoped routes run through `resolveOrganization` (the caller must be an **active**
 member) and a `can('…')` [permission](/guide/rbac) guard. The required permission
 is listed per route below.
 
@@ -10,30 +10,54 @@ is listed per route below.
 
 **Base:** `/api/v1/auth` (no auth unless noted).
 
-| Method   | Path                          | Auth | Description                                |
-| -------- | ----------------------------- | ---- | ------------------------------------------ |
-| `POST`   | `/v1/auth/register`           | none | Register a user; returns a bearer token.   |
-| `POST`   | `/v1/auth/login`              | none | Verify credentials; issue a session token. |
-| `GET`    | `/v1/auth/me`                 | JWT  | The authenticated user.                    |
-| `DELETE` | `/v1/auth/logout`             | JWT  | Revoke the current token.                  |
-| `POST`   | `/v1/auth/invitations/accept` | JWT  | Accept a tenant invitation by token.       |
-| `POST`   | `/v1/auth/forgot`             | none | Email a password-reset code.               |
-| `PUT`    | `/v1/auth/forgot/:token`      | none | Consume a reset token; set a new password. |
+| Method   | Path                          | Auth | Description                                 |
+| -------- | ----------------------------- | ---- | ------------------------------------------- |
+| `POST`   | `/v1/auth/register`           | none | Register a user; returns a bearer token.    |
+| `POST`   | `/v1/auth/login`              | none | Verify credentials; issue a session token.  |
+| `GET`    | `/v1/auth/me`                 | JWT  | The authenticated user.                     |
+| `DELETE` | `/v1/auth/logout`             | JWT  | Revoke the current token.                   |
+| `POST`   | `/v1/auth/invitations/accept` | JWT  | Accept an organization invitation by token. |
+| `POST`   | `/v1/auth/forgot`             | none | Email a password-reset code.                |
+| `PUT`    | `/v1/auth/forgot/:token`      | none | Consume a reset token; set a new password.  |
 
-## Tenants
+## Account {#account}
 
-**Base:** `/api/v1/dashboard/tenants`
+The signed-in user's own notifications, devices, invitations and realtime access.
+**Base:** `/api/v1` · **Auth:** JWT.
 
-| Method  | Path                 | Permission       | Description                                   |
-| ------- | -------------------- | ---------------- | --------------------------------------------- |
-| `GET`   | `/tenants`           | none             | List the caller's tenants (paginated).        |
-| `POST`  | `/tenants`           | none             | Create a tenant; seeds roles; caller = owner. |
-| `GET`   | `/tenants/:tenantId` | `tenants.view`   | Show the tenant.                              |
-| `PATCH` | `/tenants/:tenantId` | `tenants.update` | Update name / logo / settings.                |
+| Method   | Path                                   | Description                                                                        |
+| -------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
+| `GET`    | `/v1/account/notifications`            | Notifications, newest first (paginated; `?unread=1`), with `unread_count`.         |
+| `PATCH`  | `/v1/account/notifications/:id/read`   | Mark one notification read.                                                        |
+| `PATCH`  | `/v1/account/notifications/read`       | Mark all unread notifications read (or only `ids`).                                |
+| `DELETE` | `/v1/account/notifications/:id`        | Delete a notification.                                                             |
+| `GET`    | `/v1/account/notification-preferences` | Delivery preferences (`push`).                                                     |
+| `PATCH`  | `/v1/account/notification-preferences` | Update the preferences.                                                            |
+| `POST`   | `/v1/account/push-tokens`              | Register this device's push token (`token`, `platform`, `device_name`).            |
+| `DELETE` | `/v1/account/push-tokens`              | Unregister this device.                                                            |
+| `GET`    | `/v1/account/invitations`              | Pending invitations for the user's email (verified email required; paginated).     |
+| `PATCH`  | `/v1/account/invitations/:id/accept`   | Accept a pending invitation without the link token (verified email required).      |
+| `POST`   | `/v1/realtime/auth`                    | Authorize a private realtime channel (organization, project, session or own user). |
+| `GET`    | `/v1/realtime/config`                  | The realtime transport and its public connection settings.                         |
+
+Users are notified when a session needs their review, a review is assigned to
+them, someone else decides a session assigned to them, a webhook endpoint they
+maintain stops delivering, and when they are invited to an organization.
+
+## Organizations
+
+**Base:** `/api/v1/dashboard/organizations`
+
+| Method  | Path                             | Permission             | Description                                          |
+| ------- | -------------------------------- | ---------------------- | ---------------------------------------------------- |
+| `GET`   | `/organizations`                 | none                   | List the caller's organizations (paginated).         |
+| `POST`  | `/organizations`                 | none                   | Create an organization; seeds roles; caller = owner. |
+| `GET`   | `/organizations/:organizationId` | `organizations.view`   | Show the organization.                               |
+| `PATCH` | `/organizations/:organizationId` | `organizations.update` | Update name / logo / settings.                       |
 
 ## Members & invitations
 
-**Base:** `/api/v1/dashboard/tenants/:tenantId`
+**Base:** `/api/v1/dashboard/organizations/:organizationId`
 
 | Method   | Path                                         | Permission       | Description                               |
 | -------- | -------------------------------------------- | ---------------- | ----------------------------------------- |
@@ -43,12 +67,12 @@ is listed per route below.
 | `PATCH`  | `/members/:memberId`                         | `members.update` | Change a member's role.                   |
 | `POST`   | `/invitations`                               | `members.invite` | Invite an email with a role.              |
 | `GET`    | `/members/:memberId/permissions`             | `members.view`   | Member's role / direct / effective perms. |
-| `POST`   | `/members/:memberId/permissions`             | `members.update` | Grant a direct tenant permission.         |
+| `POST`   | `/members/:memberId/permissions`             | `members.update` | Grant a direct organization permission.   |
 | `DELETE` | `/members/:memberId/permissions/:permission` | `members.update` | Revoke a direct permission.               |
 
 ## Projects & project members
 
-**Base:** `/api/v1/dashboard/tenants/:tenantId/projects`
+**Base:** `/api/v1/dashboard/organizations/:organizationId/projects`
 
 | Method   | Path                                           | Permission        | Description                                      |
 | -------- | ---------------------------------------------- | ----------------- | ------------------------------------------------ |
@@ -59,13 +83,13 @@ is listed per route below.
 | `GET`    | `/projects/:projectId/extended-access`         | `projects.view`   | Per-capability extended-access status.           |
 | `POST`   | `/projects/:projectId/extended-access/request` | `projects.update` | Request capabilities (`capabilities[]`, `pii`).  |
 | `GET`    | `/projects/:projectId/members`                 | `members.view`    | List project members.                            |
-| `POST`   | `/projects/:projectId/members`                 | `members.update`  | Add a tenant member to the project.              |
+| `POST`   | `/projects/:projectId/members`                 | `members.update`  | Add an organization member to the project.       |
 | `PATCH`  | `/projects/:projectId/members/:memberId`       | `members.update`  | Change a project member's role.                  |
 | `DELETE` | `/projects/:projectId/members/:memberId`       | `members.remove`  | Remove a project member.                         |
 
 ## API keys
 
-**Base:** `/api/v1/dashboard/tenants/:tenantId/projects/:projectId/api-keys`
+**Base:** `/api/v1/dashboard/organizations/:organizationId/projects/:projectId/api-keys`
 
 | Method   | Path               | Permission        | Description                                 |
 | -------- | ------------------ | ----------------- | ------------------------------------------- |
@@ -75,7 +99,7 @@ is listed per route below.
 
 ## Webhooks
 
-**Base:** `/api/v1/dashboard/tenants/:tenantId/projects/:projectId/webhooks`
+**Base:** `/api/v1/dashboard/organizations/:organizationId/projects/:projectId/webhooks`
 
 | Method   | Path                        | Permission        | Description                                 |
 | -------- | --------------------------- | ----------------- | ------------------------------------------- |
@@ -89,7 +113,7 @@ See [Webhooks](/integrations/webhooks) for the payload and signature.
 
 ## Sessions & reviews
 
-**Base:** `/api/v1/dashboard/tenants/:tenantId`
+**Base:** `/api/v1/dashboard/organizations/:organizationId`
 
 | Method | Path                          | Permission              | Description                                                         |
 | ------ | ----------------------------- | ----------------------- | ------------------------------------------------------------------- |
@@ -110,7 +134,7 @@ See [Webhooks](/integrations/webhooks) for the payload and signature.
 
 ## Roles & permissions
 
-**Base:** `/api/v1/dashboard/tenants/:tenantId`
+**Base:** `/api/v1/dashboard/organizations/:organizationId`
 
 | Method  | Path             | Permission        | Description                                 |
 | ------- | ---------------- | ----------------- | ------------------------------------------- |
@@ -124,7 +148,7 @@ See [Webhooks](/integrations/webhooks) for the payload and signature.
 
 **Base:** `/api/v1/admin`, `Authorization: Bearer <jwt>` plus a platform
 `canAdmin('…')` permission. This surface sits **above** organizations; an
-organization role never grants admin access (no `resolveTenant`).
+organization role never grants admin access (no `resolveOrganization`).
 
 | Method   | Path                                      | Permission                 | Description                                              |
 | -------- | ----------------------------------------- | -------------------------- | -------------------------------------------------------- |

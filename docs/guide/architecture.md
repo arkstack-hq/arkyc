@@ -87,7 +87,7 @@ request), while `database` and `redis` are durable. In production run workers wi
 
 ## Storage
 
-Document and selfie artifacts are written **private** under tenant/project-scoped
+Document and selfie artifacts are written **private** under organization/project-scoped
 keys via Arkstack's `Storage` (flydrive). The `s3` disk targets AWS S3; `gcs`,
 `local`, and `ftp` round it out. Switching
 backends is config + env, no code changes; see [Configuration](./configuration).

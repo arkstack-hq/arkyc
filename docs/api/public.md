@@ -5,7 +5,7 @@ from **your backend** with a project **secret key**; never from the browser.
 
 **Base:** `/api/v1` · **Auth:** `Authorization: Bearer sk_…` or `X-Api-Key: sk_…`
 
-The key resolves the tenant + project; a key can only touch its own project.
+The key resolves the organization + project; a key can only touch its own project.
 
 ## Endpoints
 

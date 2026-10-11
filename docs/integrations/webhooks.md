@@ -38,7 +38,7 @@ means.
 {
   "event": "verification.approved",
   "session_id": "…",
-  "tenant_id": "…",
+  "organization_id": "…",
   "project_id": "…",
   "user_reference": "user_123",
   "status": "approved",

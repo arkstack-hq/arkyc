@@ -27,7 +27,7 @@ pnpm --filter @arkyc/api exec ark migrate:rollback # roll back the last batch
 pnpm --filter @arkyc/api exec ark seed             # permissions + roles + demo data
 ```
 
-`ark seed` runs the permission/role sync (idempotent) and the demo-tenant seeder.
+`ark seed` runs the permission/role sync (idempotent) and the demo-organization seeder.
 
 ## Running the services
 
