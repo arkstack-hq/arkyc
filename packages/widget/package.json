@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/widget",
-  "version": "1.2.11",
+  "version": "2.0.0",
   "description": "Embeddable, framework-agnostic Arkyc identity-verification widget",
   "license": "MIT",
   "keywords": [
