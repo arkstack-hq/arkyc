@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { useRequest } from 'alova/client'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '@arkyc/types'
 import { Notifications, Realtime, errorMessage } from '@/lib/api'
@@ -89,13 +87,6 @@ export default function NotificationSettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl p-6 lg:p-8">
-      <Link
-        to="/"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-      >
-        <ArrowLeft className="size-4" />
-        Back to dashboard
-      </Link>
       <PageHeader title="Notifications" description="Choose how Arkyc reaches you." />
 
       {loading ? (

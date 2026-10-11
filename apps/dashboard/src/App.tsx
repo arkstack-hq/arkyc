@@ -19,6 +19,7 @@ import MemberPermissionsPage from '@/pages/members/MemberPermissionsPage'
 import MembersPage from '@/pages/members/MembersPage'
 import OnboardingPage from '@/pages/OnboardingPage'
 import { OrganizationLayout } from '@/components/Layout'
+import { AccountLayout } from '@/components/AccountLayout'
 import { Organizations } from '@/lib/api'
 import OverviewPage from '@/pages/OverviewPage'
 import PermissionsPage from '@/pages/settings/PermissionsPage'
@@ -99,29 +100,16 @@ export default function App() {
           }
         />
         <Route
-          path="/account/security"
           element={
             <ProtectedRoute>
-              <SecurityPage />
+              <AccountLayout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/account/notifications"
-          element={
-            <ProtectedRoute>
-              <NotificationSettingsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/invitations"
-          element={
-            <ProtectedRoute>
-              <InvitationsPage />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/account/security" element={<SecurityPage />} />
+          <Route path="/account/notifications" element={<NotificationSettingsPage />} />
+          <Route path="/invitations" element={<InvitationsPage />} />
+        </Route>
 
         <Route
           path="/o/:organizationSlug"

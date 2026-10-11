@@ -10,8 +10,6 @@ import { useForm, useRequest } from 'alova/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { FormEvent } from 'react'
-import { ArrowLeft } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { Loading, PageHeader } from '@/components/States'
 import { renderQrSvg } from '@/lib/qr'
 
@@ -45,13 +43,6 @@ export default function SecurityPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl p-6 lg:p-8">
-      <Link
-        to="/"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-      >
-        <ArrowLeft className="size-4" />
-        Back to dashboard
-      </Link>
       <PageHeader title="Security" description="Protect your account with two-factor authentication." />
 
       {loading ? (

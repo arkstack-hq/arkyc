@@ -1,5 +1,4 @@
-import { ArrowLeft } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { usePagination, useRequest } from 'alova/client'
 import { Invitations, errorMessage } from '@/lib/api'
 import type { PendingInvitation } from '@/lib/api'
@@ -41,13 +40,6 @@ export default function InvitationsPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl p-6 lg:p-8">
-      <Link
-        to="/"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-      >
-        <ArrowLeft className="size-4" />
-        Back to dashboard
-      </Link>
       <PageHeader title="Invitations" description="Organizations that invited you to join." />
 
       {loading ? (

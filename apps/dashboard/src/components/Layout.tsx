@@ -214,7 +214,8 @@ function OrganizationSidebar({ can }: { can: (perm: PermissionKey) => boolean })
   )
 }
 
-function UserMenu() {
+/** The signed-in user's menu: account pages, admin, theme and sign out. */
+export function UserMenu() {
   const { user, logout } = useAuth()
   const { isAdmin } = useAdmin()
   const navigate = useNavigate()
@@ -284,7 +285,6 @@ function OrganizationHeader({ can, scrolled }: { can: (perm: PermissionKey) => b
   const navigate = useNavigate()
   const location = useLocation()
   const [cmdOpen, setCmdOpen] = useState(false)
-  const [dark, setDark] = useState(isDark())
 
   const seg = activeSegment(location.pathname)
   const current = visibleNavItems(can).find((item) => isActiveItem(seg, item))
@@ -326,17 +326,26 @@ function OrganizationHeader({ can, scrolled }: { can: (perm: PermissionKey) => b
       <div className="ml-auto flex items-center gap-2">
         <CommandMenuTrigger onClick={() => setCmdOpen(true)} />
         <NotificationBell />
-        <button
-          type="button"
-          aria-label="Toggle theme"
-          onClick={() => setDark(toggleTheme())}
-          className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        </button>
+        <ThemeToggle />
       </div>
 
       <CommandMenu open={cmdOpen} onOpenChange={setCmdOpen} groups={groups} />
     </SidebarHeaderBar>
+  )
+}
+
+/** Switches between the light and dark theme. */
+export function ThemeToggle() {
+  const [dark, setDark] = useState(isDark())
+
+  return (
+    <button
+      type="button"
+      aria-label="Toggle theme"
+      onClick={() => setDark(toggleTheme())}
+      className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+    >
+      {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+    </button>
   )
 }
