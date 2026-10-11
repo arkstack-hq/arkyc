@@ -60,6 +60,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 | 19  | Hosted Website & Custom Docs Theme         | ✅     | Public marketing/docs site + bespoke VitePress theme; integration documentation                                                          |
 | 20  | Hardening & Release                        | ✅     | Security, rate limits, retention, v0.1.0                                                                                                 |
 | 21  | Arkstack Realtime & User Notifications     | 🚧     | Realtime on `@arkstack/notifications` + `@arkstack/realtime`; in-app notifications, live bell and device push                            |
+| 22  | Fraud Signals & Compliance Screening       | 🚧     | Duplicate identities, device and document risk signals, AML screening and monitoring, self-hostable biometrics                           |
 
 ---
 
@@ -496,6 +497,66 @@ liveness, offered per the admin's global capture-model setting.
 **Deliverables:** One realtime stack across API, dashboard and widget; in-app and push notifications for reviewers.
 
 **Exit criteria:** A session entering review shows up live in a reviewer's bell and as a push on their registered browser, over Pusher or soketi, with polling as the zero-infrastructure fallback.
+
+---
+
+## Phase 22 — Fraud Signals & Compliance Screening 🚧
+
+**Goal:** Catch repeat, synthetic and sanctioned identities, not just bad photos. Today a session is judged only on its own checks (document quality, OCR confidence, liveness, face match, address). This phase adds signals that look across sessions and outside data sources, feeds them into the existing decision engine, and makes the biometric checks runnable without a paid vendor.
+
+**Scope**
+
+_Risk signal framework_
+
+- [x] `RiskSignal` contract in `@arkyc/core` (`key`, `severity` of `info` / `review` / `reject`, risk contribution, evidence). `DecisionEngine` takes signals alongside the check inputs, keeping its fixed precedence: reject signals after the existing hard rejections, review signals after the existing review triggers.
+- [x] New `DecisionReason`s: `DUPLICATE_DOCUMENT`, `DUPLICATE_IDENTITY`, `DOCUMENT_TAMPERING`, `SANCTIONS_MATCH`, `PEP_MATCH`, `HIGH_RISK_DEVICE`, `VELOCITY_EXCEEDED`, `UNDERAGE`.
+- [x] Per-workflow signal policy (`ignore` / `review` / `reject` per signal) with safe defaults (review, never reject, unless the organization opts in).
+- [x] `session_risk_signals` table; signals shown on the dashboard session detail, included in the webhook `checks.risk` block and typed in the SDK.
+
+_Duplicate identities_
+
+- [x] Document fingerprint: a keyed hash (derived from `APP_KEY`) of the normalized country, document type and document number, stored per session and indexed per organization. A match under a different `user_reference` raises `DUPLICATE_DOCUMENT`. Raw numbers are never used for matching, and fingerprints survive media retention purges.
+- [x] Identity fingerprint: keyed hash of normalized name and date of birth, raising a review-only `DUPLICATE_IDENTITY`.
+- [x] Face duplicates (stretch): an optional `embed()` capability on face-match drivers and an organization-level opt-in to store face embeddings for similarity search. Biometric templates fall under GDPR Article 9 and BIPA-style laws, so this is off by default with its own retention.
+
+_Device and network signals_
+
+- [x] Record IP address and user agent when the widget claims its device token (already a single, authenticated choke point).
+- [x] Velocity: too many sessions from one IP or device across different user references within a window raises `VELOCITY_EXCEEDED`; limits per project.
+- [x] `@arkyc/network` driver package (`mock` first, then a MaxMind GeoLite2 database driver): IP country against document nationality, and VPN, Tor or hosting-provider IPs raising `HIGH_RISK_DEVICE`.
+
+_Document authenticity_
+
+- [x] Promote the `ai` OCR driver's existing `authenticity` read into a `DOCUMENT_TAMPERING` signal (review only; the model is advisory).
+- [x] Deterministic checks in `@arkyc/ocr`: MRZ check digits, MRZ against visual-zone fields, impossible dates (issue after expiry, birth after issue).
+- [x] Minimum age per workflow, from the extracted date of birth (`UNDERAGE`).
+
+_AML screening_
+
+- [x] `@arkyc/screening` driver package: `mock` first, then `opensanctions` (a self-hosted yente API or the hosted API) and a generic `external` HTTP driver. Results carry match score, list, entity type (sanction, PEP, adverse media) and the matched entity.
+- [x] A toggleable `screening` workflow stage after the document stage, with a match threshold and `on_hit` of `review` or `reject`.
+- [x] Review UI: show hits side by side with the extracted identity; reviewers can clear a false positive (audited, with a reason).
+- [x] A screening hit notifies the project's reviewers through `NotificationEvent`.
+
+_Self-hostable biometrics_
+
+- [x] A `local` face-match driver running an open face recognition model on ONNX Runtime in the worker, returning similarity (and embeddings for the stretch item above).
+- [x] A `local` passive liveness (anti-spoofing) driver on ONNX Runtime.
+- [x] Model download and setup command (`ark biometrics:setup`) and a benchmark command (`ark biometrics:benchmark`) for CPU latency and accuracy.
+- [ ] Documented accuracy against the `external` drivers on a public test set (tracked in `LAUNCH_VERIFICATION.md`).
+- [x] Ongoing monitoring: re-screen completed sessions on a schedule and raise new hits as signals, notifications and a `verification.screening_alert` webhook.
+
+**Deliverables:** Risk signals in the decision engine, dashboard, webhooks and SDK; duplicate document detection; device velocity and IP risk; deterministic document checks; an AML screening stage with a review flow; `local` face-match and liveness drivers.
+
+**Exit criteria:** A second session using an already-verified document under a different user lands in review with `DUPLICATE_DOCUMENT`; a seeded sanctions match lands in review (or is rejected when the workflow says so) with the hit visible to the reviewer and in the webhook; and a full verification runs end to end with `local` biometric drivers and no external provider.
+
+**Decisions**
+
+- Face embeddings are stored in Postgres with `pgvector`, per organization and opt-in, with their own retention.
+- Screening defaults to OpenSanctions (hosted API or self-hosted yente); commercial use needs an OpenSanctions data licence.
+- Local models are limited to licences compatible with an MIT project: YuNet (MIT), SFace (Apache-2.0), MiniFASNetV2 (Apache-2.0).
+- Ongoing monitoring is part of this phase.
+- Signals route to review by default; rejection is always an organization's opt-in per workflow.
 
 ---
 

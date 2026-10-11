@@ -22,6 +22,7 @@ verification.rejected
 verification.completed
 verification.expired
 verification.cancelled
+verification.screening_alert
 ```
 
 Events fire from a single transition choke point, covering the session service,
@@ -31,6 +32,10 @@ summary) carry the full `checks` block and `decision_reason`; progress events
 (`started`, `document_submitted`, `processing`) carry the status transition only.
 See [Verification lifecycle](/guide/verification-lifecycle) for what each status
 means.
+
+`verification.screening_alert` fires when [ongoing monitoring](/guide/fraud-signals#ongoing-monitoring)
+finds a new watchlist entry for an already completed session. The session's
+status is unchanged; read `checks.risk` and `checks.screening` for the new hit.
 
 ## Payload
 
@@ -45,7 +50,12 @@ means.
   "checks": {
     "document": { "quality_score": 0.93, "ocr_confidence": 0.88, "expired": false, "ocr_parse_stage": "mrz" },
     "liveness": { "passed": true, "score": 0.97 },
-    "face_match": { "passed": true, "similarity_score": 0.91 }
+    "face_match": { "passed": true, "similarity_score": 0.91 },
+    "risk": {
+      "score": 0.12,
+      "signals": [{ "key": "ip_country_mismatch", "severity": "info", "cleared": false }]
+    },
+    "screening": { "hits": [] }
   },
   "decision_reason": null,
   "created_at": "2026-06-21T20:05:00Z"
@@ -78,6 +88,10 @@ if (!ok) return res.status(400).end()
 ```
 
 Read the **raw** request body; verifying a re-serialized JSON object will fail.
+
+`checks.risk` lists every [risk signal](/guide/fraud-signals) on the session;
+`checks.screening` appears when the workflow screens (or a hit exists) and holds
+the uncleared watchlist hits.
 
 ## Express receiver example
 

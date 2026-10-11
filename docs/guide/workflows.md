@@ -13,22 +13,27 @@ Sessions created without a `workflow_id` use the **default pipeline**.
 | Stage      | Key          | In default pipeline | Notes                                                     |
 | ---------- | ------------ | ------------------- | --------------------------------------------------------- |
 | Document   | `document`   | ✅                  | Capture + OCR + portrait extraction.                      |
+| Screening  | `screening`  | ⛔ (opt-in)         | Sanctions and PEP screening of the extracted identity.    |
 | Liveness   | `liveness`   | ✅                  | Selfie / passive (or active) liveness.                    |
 | Face match | `face_match` | ✅                  | Document portrait vs. selfie.                             |
 | Address    | `address`    | ⛔ (opt-in)         | Residential-address verification (custom workflows only). |
 
 Each stage is **toggleable** and **ordered**. A workflow must keep at least one
-stage enabled. The `address` stage never appears in the default pipeline; it's
-available only on a custom workflow you build in the dashboard.
+stage enabled. The `screening` and `address` stages never appear in the default pipeline;
+they're available only on a custom workflow you build in the dashboard. Screening
+runs on the server and adds no widget screens; see
+[Fraud signals & screening](./fraud-signals#watchlist-screening).
 
 > Disabling `document` (or enabling `skip_ocr`) removes the document portrait, so
 > `face_match` has nothing to match against and is treated as passed-through.
 
 ## Options
 
-| Option     | Type      | Effect                                                                                        |
-| ---------- | --------- | --------------------------------------------------------------------------------------------- |
-| `skip_ocr` | `boolean` | Capture the document image but don't extract fields (data-capture-only). Disables face match. |
+| Option        | Type      | Effect                                                                                         |
+| ------------- | --------- | ---------------------------------------------------------------------------------------------- |
+| `skip_ocr`    | `boolean` | Capture the document image but don't extract fields (data-capture-only). Disables face match.  |
+| `min_age`     | `number`  | Minimum age in years from the extracted date of birth; younger holders raise `UNDERAGE`.       |
+| `risk_policy` | `object`  | Per-signal `ignore`, `review` or `reject`. See [Fraud signals](./fraud-signals#signal-policy). |
 
 ## Address stage
 

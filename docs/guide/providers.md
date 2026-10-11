@@ -6,9 +6,11 @@ active driver is chosen by config, so call sites stay provider-agnostic.
 | Provider   | Drivers                               |
 | ---------- | ------------------------------------- |
 | OCR        | `mock`, `tesseract`, `ai`, `external` |
-| Liveness   | `mock`, `external`                    |
-| Face match | `mock`, `external`                    |
+| Liveness   | `mock`, `external`, `local`           |
+| Face match | `mock`, `external`, `local`           |
 | Address    | `mock`, `live`                        |
+| Screening  | `mock`, `opensanctions`, `external`   |
+| Network    | `mock`, `maxmind`                     |
 
 - **`mock`**: deterministic, for dev and tests. Reads optional hint signals from
   the request so you can drive any outcome without a real provider.
@@ -20,6 +22,11 @@ active driver is chosen by config, so call sites stay provider-agnostic.
   flags tamper/replay signals. See [AI OCR](#ai-ocr-driver).
 - **`external`**: POSTs the image(s) to a configured HTTP endpoint and maps the
   JSON response into the provider's result shape.
+- **`local`** (liveness, face match): open models on ONNX Runtime inside the
+  worker, no external provider. See [Local biometrics](#local-biometrics).
+
+Screening and network drivers feed risk signals; see
+[Fraud signals & screening](./fraud-signals).
 
 This means production providers are integrated by **config alone**; a
 self-hosted model server is just an `external` endpoint.
@@ -30,8 +37,10 @@ Drivers are chosen from env in `apps/api/src/app/services/providers/`:
 
 ```bash
 OCR_DRIVER=mock          # mock | tesseract | ai | external
-LIVENESS_DRIVER=mock     # mock | external
-FACE_MATCH_DRIVER=mock   # mock | external
+LIVENESS_DRIVER=mock     # mock | external | local
+FACE_MATCH_DRIVER=mock   # mock | external | local
+SCREENING_DRIVER=mock    # mock | opensanctions | external
+NETWORK_DRIVER=mock      # mock | maxmind
 ```
 
 For `external`, configure the endpoint (and optional bearer key) per provider:
@@ -49,6 +58,44 @@ FACE_MATCH_DRIVER=external
 FACE_MATCH_ENDPOINT=https://face.internal/match
 FACE_MATCH_API_KEY=...
 ```
+
+## Local biometrics {#local-biometrics}
+
+`local` runs face matching and passive liveness in the API or worker process with
+models whose licences allow commercial use in an MIT project:
+
+| Model        | Use                   | Licence    |
+| ------------ | --------------------- | ---------- |
+| YuNet        | Face detection        | MIT        |
+| SFace        | Face recognition      | Apache-2.0 |
+| MiniFASNetV2 | Passive anti-spoofing | Apache-2.0 |
+
+```bash
+FACE_MATCH_DRIVER=local
+LIVENESS_DRIVER=local
+BIOMETRICS_MODEL_DIR=storage/models   # default
+
+pnpm --filter @arkyc/api exec ark biometrics:setup   # download + verify the models (about 40 MB)
+```
+
+The `onnxruntime-node` and `sharp` packages must be installed (they are optional
+dependencies of `@arkyc/vision`). Face match aligns both faces on five landmarks,
+compares SFace embeddings by cosine similarity (same person at `0.363` and above)
+and maps it to a score where the match threshold sits at `0.6`; the default
+`faceMatchThreshold` of `0.75` auto-approves from a cosine of about `0.46`.
+Liveness reports MiniFASNetV2's probability of a live face as the score, and flags
+a second face. Active liveness also checks the challenge sequence.
+
+Measure accuracy and latency on your own labelled pairs (`first,second,same` or
+`different` per line, paths relative to the file):
+
+```bash
+pnpm --filter @arkyc/api exec ark biometrics:benchmark pairs.csv --liveness
+```
+
+Run it against the `external` drivers too (set `*_DRIVER=external`) to compare. On
+an Apple M-series CPU a warm face match takes about 80 ms and a liveness check
+about 30 ms.
 
 ## AI OCR driver {#ai-ocr-driver}
 

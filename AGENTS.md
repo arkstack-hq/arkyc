@@ -45,6 +45,9 @@ Comments should be simple guides to what a utility (variable, function, class, b
 - To modifiy a column definition, construct the new definition in a migration file and end the chain with `.change()`
 - Seeders extend `Seeder`, are registered in `DatabaseSeeder`, and must be idempotent. Prefer `upsert` or row-level `updateOrCreate`; do not use destructive synchronization for seeded pivots.
 - Postgres `date` values may round-trip as JavaScript `Date` objects and shift by timezone. For calendar-day semantics, store/compare a date string or compare in SQL as appropriate.
+- Postgres needs the `pgvector` extension; `face_embeddings` has a dimensionless `vector` column and is read and written only through `FaceEmbeddingStore` with raw SQL.
+- `DB.raw(sql, bindings)` binds `?` placeholders by quoting values into the SQL. Never use `$1` style, and pass dates as ISO strings.
+- In `alterTable`, index columns are physical names except columns added in the same block (`table.index(['ipAddress', 'created_at'])`). In `createTable`, `.unique()` goes before `.foreign()` in a column chain.
 
 ## ArkORM query conventions (apps/api)
 
@@ -90,6 +93,16 @@ Comments should be simple guides to what a utility (variable, function, class, b
 ## Configuration and feature flags
 
 - New nested config keys require `pnpm prepare` so `.arkstack/ark.d.ts` and build output are updated.
+- The API consumes workspace packages from their `dist`. After changing anything under `packages/`, run `pnpm build:libs` before testing the API.
+- In console commands, `Logger.success(msg, true)` exits the process, so only the last message may pass `true`. Musket reads commas in an argument description as allowed choices.
+
+## Risk signals (apps/api)
+
+- `RiskSignalService` is the single place that runs detectors, applies the workflow policy (`RiskSignals.applyPolicy`) and stores signals. Add a fraud check as a `RiskDetector` in `src/app/services/risk/detectors` and register it there; never decide in a controller or job.
+- Signals default to review. A signal rejects only when a workflow's `risk_policy` (or the screening stage's `on_hit`) says so; advisory and review-only signals never reject.
+- Duplicate matching compares sessions with different, non-null `user_reference`s only, and uses `Fingerprints` (HMAC keyed from `APP_KEY`). Never store or compare raw document numbers.
+- Device signals skip private and loopback IPs, which is what every request looks like behind a proxy without `TRUST_PROXY`.
+- Tests pin `SCREENING_DRIVER` and `NETWORK_DRIVER` to `mock` in `vitest.config.ts`; the mock OCR's identity is fixed unless a test sends `full_name`, `date_of_birth` or `document_number` hints, so give each session a distinct identity when duplicates would interfere.
 
 ## Realtime, notifications and push
 

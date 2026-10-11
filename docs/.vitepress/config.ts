@@ -78,6 +78,7 @@ export default defineConfig({
             { text: 'Multi-tenancy', link: '/guide/multi-tenancy' },
             { text: 'RBAC & permissions', link: '/guide/rbac' },
             { text: 'Provider drivers', link: '/guide/providers' },
+            { text: 'Fraud signals & screening', link: '/guide/fraud-signals' },
           ],
         },
         {

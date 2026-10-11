@@ -10,10 +10,10 @@ The bundled `docker-compose.yml` provides everything for development:
 docker compose up -d
 ```
 
-| Service    | Image                | Port(s) | Credentials                   |
-| ---------- | -------------------- | ------- | ----------------------------- |
-| PostgreSQL | `postgres:16-alpine` | `5432`  | `arkyc` / `arkyc`, db `arkyc` |
-| Redis      | `redis:7-alpine`     | `6379`  | none                          |
+| Service    | Image                    | Port(s) | Credentials                   |
+| ---------- | ------------------------ | ------- | ----------------------------- |
+| PostgreSQL | `pgvector/pgvector:pg16` | `5432`  | `arkyc` / `arkyc`, db `arkyc` |
+| Redis      | `redis:7-alpine`         | `6379`  | none                          |
 
 Uploads default to the `local` disk (`storage/app`). For object storage, point
 the `s3` disk (AWS S3) or `gcs` disk at your bucket via env — see
@@ -70,6 +70,14 @@ table; `ark migrate` creates it.
 - `FILESYSTEM_DISK=s3` (or `gcs`) with private buckets and short signed-URL TTLs.
 - `QUEUE_CONNECTION=database` (or `redis`) with workers supervised.
 - Real provider endpoints via `*_DRIVER=external` (see [Provider drivers](./providers)).
+- Postgres with the **pgvector** extension available (`ark migrate` enables it for
+  face embeddings). Managed Postgres on most providers offers it; for a local
+  install, build pgvector against your server's `pg_config`.
+- `TRUST_PROXY` set when the API sits behind a load balancer, so device and
+  velocity signals see the client IP.
+- For self-hosted biometrics, `FACE_MATCH_DRIVER=local` / `LIVENESS_DRIVER=local`
+  and `ark biometrics:setup` on each worker (see [Provider drivers](./providers#local-biometrics)).
+- A screening data licence if you screen commercially (see [Fraud signals](./fraud-signals#watchlist-screening)).
 - Per-project **allowed origins** and webhook endpoints configured.
 - TLS in front of the API; restrict the dashboard origin.
 

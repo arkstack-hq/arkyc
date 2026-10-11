@@ -115,16 +115,17 @@ See [Webhooks](/integrations/webhooks) for the payload and signature.
 
 **Base:** `/api/v1/dashboard/organizations/:organizationId`
 
-| Method | Path                          | Permission              | Description                                                         |
-| ------ | ----------------------------- | ----------------------- | ------------------------------------------------------------------- |
-| `GET`  | `/sessions`                   | `sessions.view`         | List sessions; filter by `status`, `decision_reason`, `project_id`. |
-| `GET`  | `/sessions/:id`               | `sessions.view`         | Session detail.                                                     |
-| `POST` | `/sessions/:id/approve`       | `reviews.approve`       | Approve; optional `reason`.                                         |
-| `POST` | `/sessions/:id/reject`        | `reviews.reject`        | Reject; optional `reason`.                                          |
-| `POST` | `/sessions/:id/request-retry` | `reviews.request_retry` | Request a `kind` retry (document/selfie/full).                      |
-| `POST` | `/sessions/:id/assign`        | `reviews.assign`        | Assign to a reviewer (`user_id`).                                   |
-| `POST` | `/sessions/:id/suspicious`    | `reviews.note`          | Flag as suspicious.                                                 |
-| `POST` | `/sessions/:id/notes`         | `reviews.note`          | Attach a reviewer `note`.                                           |
+| Method  | Path                                         | Permission              | Description                                                                         |
+| ------- | -------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------- |
+| `GET`   | `/sessions`                                  | `sessions.view`         | List sessions; filter by `status`, `decision_reason`, `project_id`.                 |
+| `GET`   | `/sessions/:id`                              | `sessions.view`         | Session detail, including its `risk_signals`.                                       |
+| `POST`  | `/sessions/:id/approve`                      | `reviews.approve`       | Approve; optional `reason`.                                                         |
+| `POST`  | `/sessions/:id/reject`                       | `reviews.reject`        | Reject; optional `reason`.                                                          |
+| `POST`  | `/sessions/:id/request-retry`                | `reviews.request_retry` | Request a `kind` retry (document/selfie/full).                                      |
+| `POST`  | `/sessions/:id/assign`                       | `reviews.assign`        | Assign to a reviewer (`user_id`).                                                   |
+| `POST`  | `/sessions/:id/suspicious`                   | `reviews.note`          | Flag as suspicious.                                                                 |
+| `POST`  | `/sessions/:id/notes`                        | `reviews.note`          | Attach a reviewer `note`.                                                           |
+| `PATCH` | `/sessions/:id/risk-signals/:signalId/clear` | `reviews.approve`       | Clear a risk signal as a false positive; `reason` required, audited. Returns `201`. |
 
 ## Audit logs
 

@@ -98,6 +98,11 @@ const ok = arkyc.webhooks.verify({
 })
 ```
 
+`arkyc.webhooks.constructEvent(input)` verifies the signature and returns the
+typed `WebhookEvent` (it throws on a bad signature). `WebhookEvent`,
+`WebhookChecks`, `WebhookRiskCheck`, `ScreeningHit` and `DecisionReason` are
+exported for typing handlers.
+
 `WebhookSigner` (used by `verify`) is also re-exported from `@arkyc/sdk`. See
 [Webhooks](/integrations/webhooks).
 
