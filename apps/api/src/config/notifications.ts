@@ -119,6 +119,10 @@ export default (): NotificationConfig => {
         // Set to use a self-hosted Pusher-protocol server such as soketi.
         host: env('PUSHER_HOST', undefined),
         port: env('PUSHER_PORT', undefined),
+        // Where browsers reach that server, when it differs (e.g. soketi inside Docker).
+        public_host: env('PUSHER_PUBLIC_HOST', undefined),
+        public_port: env('PUSHER_PUBLIC_PORT', undefined),
+        public_use_tls: env('PUSHER_PUBLIC_USE_TLS', undefined),
       },
 
       /**
@@ -131,7 +135,7 @@ export default (): NotificationConfig => {
         client_email: env('FIREBASE_CLIENT_EMAIL', ''),
         private_key: env('FIREBASE_PRIVATE_KEY', ''),
         app_name: env('APP_NAME', 'Arkstack'),
-        admin_sdk_path: env('FIREBASE_ADMINSDK', 'firebase-adminsdk.json'),
+        admin_sdk_path: env('FIREBASE_ADMINSDK', 'storage/app/firebase-adminsdk.json'),
         web: {
           api_key: env('FIREBASE_API_KEY', ''),
           app_id: env('FIREBASE_APP_ID', ''),
@@ -150,7 +154,7 @@ export default (): NotificationConfig => {
         client_email: env('FIREBASE_CLIENT_EMAIL', ''),
         private_key: env('FIREBASE_PRIVATE_KEY', ''),
         app_name: env('APP_NAME', 'Arkstack'),
-        admin_sdk_path: env('FIREBASE_ADMINSDK', 'firebase-adminsdk.json'),
+        admin_sdk_path: env('FIREBASE_ADMINSDK', 'storage/app/firebase-adminsdk.json'),
         database_url: env('FIREBASE_DATABASE_URL', ''),
         web: {
           api_key: env('FIREBASE_API_KEY', ''),

@@ -46,7 +46,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@arkstack/realtime": "^0.19.3",
+    "@arkstack/realtime": "^0.19.4",
     "@arkyc/types": "workspace:^",
     "qrcode-generator": "^1.4.4"
   },

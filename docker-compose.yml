@@ -53,8 +53,9 @@ services:
     volumes:
       - arkyc_redis:/data
 
-  # Soketi — self-hostable, Pusher-compatible WebSocket server.
-  # Opt-in alternative to hosted Pusher: set PUSHER_HOST=127.0.0.1 in the API env.
+  # Soketi: self-hostable, Pusher-compatible WebSocket server (`--profile realtime`).
+  # For an API on the host, set REALTIME_TRANSPORT=pusher, PUSHER_HOST=127.0.0.1,
+  # PUSHER_PORT=6001 and PUSHER_USE_TLS=false in apps/api/.env.
   soketi:
     profiles: ['realtime']
     image: quay.io/soketi/soketi:latest-16-alpine
@@ -71,8 +72,8 @@ services:
 
   # ---------------------------------------------------------------------------
   # Containerized API + worker (opt-in). The services above are infra only, so a
-  # plain `docker compose up -d` still just boots Postgres/Redis/Soketi for
-  # host-side development. To run the whole stack in Docker instead:
+  # plain `docker compose up -d` still just boots Postgres/Redis (plus Soketi with
+  # `--profile realtime`) for host-side development. To run the whole stack in Docker instead:
   #
   #   docker compose --profile app up -d --build                      # API
   #   QUEUE_CONNECTION=redis \
@@ -121,6 +122,10 @@ services:
       PUSHER_HOST: soketi
       PUSHER_PORT: '6001'
       PUSHER_USE_TLS: 'false'
+      # Browsers on the host reach soketi through its published port.
+      PUSHER_PUBLIC_HOST: ${PUSHER_PUBLIC_HOST:-localhost}
+      PUSHER_PUBLIC_PORT: '6001'
+      PUSHER_PUBLIC_USE_TLS: 'false'
     volumes:
       - arkyc_storage:/app/storage
 
