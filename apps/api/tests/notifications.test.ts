@@ -3,6 +3,7 @@ import request from 'parasito'
 import { Broadcast, MemoryRealtimeDriver } from '@arkstack/notifications'
 import { NOTIFICATION_TYPE, realtimeChannels } from '@arkyc/types'
 import { app } from '../src/core/bootstrap'
+import { claimDeviceToken } from './helpers/client-token'
 import { Organization } from '../src/app/models/Organization'
 import { OrganizationMember } from '../src/app/models/OrganizationMember'
 import { Role } from '../src/app/models/Role'
@@ -58,7 +59,7 @@ async function join(account: Account, roleSlug: string): Promise<void> {
 async function reviewableSession(): Promise<string> {
   const open = await request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send({})
   const { id } = open.body.data
-  const token = open.body.client_token
+  const token = await claimDeviceToken(open.body.client_token)
 
   await client('get', 'session', token)
   await client('post', 'document/front', token).send({ quality_score: 0.4 })

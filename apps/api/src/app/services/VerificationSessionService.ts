@@ -1,7 +1,7 @@
 import { RequestException } from '@arkstack/common'
 import { ApiException } from 'src/support/apiErrors'
 import { SessionRules, StatusMachine } from '@arkyc/core'
-import { Token } from '@arkyc/auth'
+import { clientTokens } from './ClientTokenService'
 import { randomChallenges } from '@arkyc/liveness'
 import { type FileLike, Storage } from '@arkstack/filesystem'
 import type {
@@ -67,7 +67,6 @@ export class VerificationSessionService {
     scope: ProjectScope,
     input: { userReference?: string | null; metadata?: Metadata | null; workflowId?: string | null },
   ): Promise<{ session: VerificationSession; clientToken: string }> {
-    const { token, tokenHash } = Token.createPair()
     // Resolve and snapshot the workflow now so editing/deleting it never
     // disturbs this session. A null workflow runs the default pipeline.
     const workflow = await this.resolveWorkflow(scope.organization_id, input.workflowId ?? null)
@@ -83,7 +82,6 @@ export class VerificationSessionService {
       projectId: scope.project_id,
       userReference: input.userReference ?? null,
       status: 'pending',
-      clientTokenHash: tokenHash,
       expiresAt: new Date(Date.now() + SESSION_TTL_MS),
       metadata: input.metadata ?? null,
       captureModel,
@@ -92,7 +90,7 @@ export class VerificationSessionService {
       workflow,
     })
 
-    return { session, clientToken: token }
+    return { session, clientToken: await clientTokens.issue(session, 'launch') }
   }
 
   /**

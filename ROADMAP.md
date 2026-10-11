@@ -466,7 +466,7 @@ liveness, offered per the admin's global capture-model setting.
   - [x] Webhook signing secrets encrypted-at-rest (framework `Encryption`, `APP_KEY`), decrypted only at sign time, + re-encrypt migration.
   - [x] Per-project allowed-origins enforcement on client-token requests (opt-in; `origin_not_allowed`).
   - [x] Retry-limit + signed-URL TTL audit — all confirmed bounded (webhook 5 / OCR 3 / biometric 5 / liveness 3; asset TTL clamped).
-  - [ ] Deferred: client-token single-use / hard origin-binding (widget reuses its token within TTL).
+  - [x] Client tokens: the session's launch token is single-use and only claims a per-browser device token bound to the claiming origin; the cross-device QR carries its own single-use handoff token (`session_client_tokens`, `POST /v1/client/claim`, `POST /v1/client/handoff`).
 - [x] Data retention settings (per tenant) + media lifecycle/cleanup jobs — media-only purge honouring `retention_days` (`RetentionService`, scheduler + queue + `ark retention:purge`).
 - [x] Observability: pluggable `reportError` (structured logs + external-reporter seam) wired into the global error path + maintenance jobs; no-op metrics sink. Concrete vendor/metrics backend deferred.
 - [~] Test coverage pass + CI pipeline + `CHANGELOG.md` + `LICENSE` + contribution guide — done except a dedicated happy-path e2e. Versioning already past `v0.1.0` (at `1.2.11`).

@@ -158,6 +158,8 @@ export function WidgetEmbed() {
         </thead>
         <tbody>
           {[
+            ['POST', '/claim', '/api/v1/client/claim'],
+            ['POST', '/handoff', '/api/v1/client/handoff'],
             ['GET', '/session', '/api/v1/client/session'],
             ['POST', '/document/front', '/api/v1/client/document/front'],
             ['POST', '/document/back', '/api/v1/client/document/back'],

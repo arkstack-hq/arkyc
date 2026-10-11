@@ -266,7 +266,7 @@ export class WidgetController {
     try {
       this.rtClient = await factory(cfg, {
         authEndpoint: `${apiBase}/realtime/auth`,
-        token: this.config.token,
+        token: await this.client.authToken(),
       })
     } catch {
       this.rtClient = null
@@ -351,19 +351,23 @@ export class WidgetController {
     const target = this.handoffTarget()
     if (!target) return
     this.handoffActive = true
+    const url = this.buildHandoffUrl(target, await this.client.createHandoffToken())
     // Offer "continue on this device" only when the project permits it.
-    this.view.renderHandoff(renderQrSvg(this.buildHandoffUrl(target)), this.handoffConfig.allow_desktop)
+    this.view.renderHandoff(renderQrSvg(url), this.handoffConfig.allow_desktop)
     await this.pollHandoff()
   }
 
-  /** Build the hosted-page URL the QR encodes (carries the session token).
+  /**
+   * Build the hosted-page URL the QR encodes. It carries a single-use handoff
+   * token, never this browser's own token.
    *
    * @param target
+   * @param handoffToken
    * @returns
    */
-  private buildHandoffUrl(target: string): string {
+  private buildHandoffUrl(target: string, handoffToken: string): string {
     const pageOrigin = this.win.location?.origin ?? globalThis.location?.origin ?? ''
-    return composeHandoffUrl(target, this.config.token, this.client.base, pageOrigin)
+    return composeHandoffUrl(target, handoffToken, this.client.base, pageOrigin)
   }
 
   /**

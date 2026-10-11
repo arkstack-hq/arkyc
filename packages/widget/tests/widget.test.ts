@@ -489,8 +489,10 @@ describe('WidgetController cross-device handoff', () => {
       counts[key] = (counts[key] ?? 0) + 1
       const isSession = path.endsWith('/session')
       const status = isSession && counts[key] > approveAfter ? 'approved' : 'started'
-      const data: Record<string, unknown> = { id: 's1', status, expires_at: '2099-01-01' }
+      let data: Record<string, unknown> = { id: 's1', status, expires_at: '2099-01-01' }
       if (isSession) data.handoff = handoff
+      if (path.endsWith('/claim')) data = { token: 'device-token', expires_at: '2099-01-01' }
+      if (path.endsWith('/handoff')) data = { token: 'qr-token', expires_at: '2099-01-01' }
       return {
         ok: true,
         status: 200,
@@ -521,6 +523,9 @@ describe('WidgetController cross-device handoff', () => {
 
     const qr = findByClass(el, 'arkyc-qr')
     expect(qr?.innerHTML.includes('<svg')).toBe(true)
+    // The QR carries a freshly minted handoff token, requested with this browser's device token.
+    const minted = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/handoff'))
+    expect(minted?.[1]?.headers).toMatchObject({ 'X-Client-Token': 'device-token' })
     expect(find(el, 'Continue on this device')).toBeTruthy()
     // No "Get started" yet — the QR is the first screen on desktop.
     expect(find(el, 'Get started')).toBeFalsy()
@@ -646,11 +651,12 @@ describe('WidgetController realtime events', () => {
     // terminal here because the scheduler never fires).
     const fetchMock = vi.fn(async (url: string) => {
       const path = String(url).replace(/^https?:\/\/[^/]+/, '')
-      const data: Record<string, unknown> = { id: 's1', status: 'started', expires_at: '2099-01-01' }
+      let data: Record<string, unknown> = { id: 's1', status: 'started', expires_at: '2099-01-01' }
       if (path.endsWith('/session')) {
         data.handoff = { enabled: true, allow_desktop: true, url: 'https://verify.test/verify' }
         data.realtime = { transport: 'pusher', channel: 'private-session-s1' }
       }
+      if (path.endsWith('/claim')) data = { token: 'device-token', expires_at: '2099-01-01' }
       return {
         ok: true,
         status: 200,
@@ -682,8 +688,10 @@ describe('WidgetController realtime events', () => {
     expect(realtimeFactory).toHaveBeenCalledTimes(1)
     // Zero-config (no baseUrl): the auth endpoint is built from the resolved
     // hosted base, not the page origin (regression guard).
-    const authOpts = realtimeFactory.mock.calls[0]![1] as { authEndpoint: string }
+    const authOpts = realtimeFactory.mock.calls[0]![1] as { authEndpoint: string; token: string }
     expect(authOpts.authEndpoint).toBe('https://api.arkyc.toneflix.net/api/v1/client/realtime/auth')
+    // Channel auth uses the claimed device token, never the single-use launch token.
+    expect(authOpts.token).toBe('device-token')
     expect(pushHandler).toBeTruthy()
     expect(named.length).toBeGreaterThan(0) // got the bootstrap 'started' transition
 

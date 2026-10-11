@@ -1,4 +1,4 @@
-import { ApiKey as ApiKeyAuth, ClientToken } from '@arkyc/auth'
+import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { ApiKey } from '../src/app/models/ApiKey'
@@ -12,6 +12,8 @@ import { OrganizationMember } from '../src/app/models/OrganizationMember'
 import { User } from '../src/app/models/User'
 import { VerificationSession } from '../src/app/models/VerificationSession'
 import { app } from '../src/core/bootstrap'
+import { claimDeviceToken } from './helpers/client-token'
+import { clientTokens } from '../src/app/services/ClientTokenService'
 import { permissionStore } from '../src/app/services/ArkormPermissionStore'
 import request from 'parasito'
 
@@ -97,17 +99,15 @@ beforeAll(async () => {
     keyHash: key.keyHash,
   })
 
-  const ct = ClientToken.create(900)
-  fx.clientToken = ct.token
   const session = await VerificationSession.create({
     organizationId: organization.id,
     projectId: project.id,
     status: 'started',
-    clientTokenHash: ct.tokenHash,
-    expiresAt: ct.expiresAt,
+    expiresAt: new Date(Date.now() + 900 * 1000),
     metadata: {},
   })
   fx.sessionId = session.id
+  fx.clientToken = await clientTokens.issue(session, 'launch')
 
   // First (and only) login per user; reuse these tokens across tests.
   fx.ownerToken = await login(fx.ownerEmail, PASSWORD)
@@ -213,7 +213,13 @@ describe('public API-key surface', () => {
 
 describe('client-token surface', () => {
   it('resolves a session from a valid token and rejects a bad one', async () => {
-    const ok = await request(app).get('/api/v1/client/session').set('X-Client-Token', fx.clientToken)
+    // The launch token only buys a device token; it never authorizes a session call itself.
+    const launch = await request(app).get('/api/v1/client/session').set('X-Client-Token', fx.clientToken)
+    expect(launch.status).toBe(401)
+    expect(launch.body.error).toBe('invalid_client_token')
+
+    const device = await claimDeviceToken(fx.clientToken)
+    const ok = await request(app).get('/api/v1/client/session').set('X-Client-Token', device)
     expect(ok.status).toBe(201)
     expect(ok.body.data.id).toBe(fx.sessionId)
 

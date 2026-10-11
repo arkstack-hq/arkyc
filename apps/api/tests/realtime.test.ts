@@ -3,6 +3,7 @@ import request from 'parasito'
 import { MemoryRealtimeDriver } from '@arkstack/notifications'
 import { realtimeChannels, REALTIME_EVENT } from '@arkyc/types'
 import { app } from '../src/core/bootstrap'
+import { claimDeviceToken } from './helpers/client-token'
 import { Organization } from '../src/app/models/Organization'
 
 /** Realtime broadcasts from the transition + review choke points, and channel auth. */
@@ -35,7 +36,7 @@ const widgetAuth = (clientToken: string, channel: string) =>
 async function openSession(): Promise<{ id: string; token: string }> {
   const open = await request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send({})
 
-  return { id: open.body.data.id, token: open.body.client_token }
+  return { id: open.body.data.id, token: await claimDeviceToken(open.body.client_token) }
 }
 
 /** Open a session and walk it to `requires_review` (low document quality). */

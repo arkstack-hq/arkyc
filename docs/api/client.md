@@ -1,12 +1,33 @@
 # Client / Widget API
 
-The surface the in-browser widget uses to drive a single session. Authenticated
-with the **short-lived client token** from
-[`POST /v1/sessions`](./public#create-a-session).
+The surface the in-browser widget uses to drive a single session.
 
 **Base:** `/api/v1/client` · **Auth:** `X-Client-Token: <token>` (or `Authorization: Bearer <token>`)
 
-The token resolves the one session it was minted for; expired tokens are rejected.
+## Tokens
+
+The `client_token` from [`POST /v1/sessions`](./public#create-a-session) is a
+**single-use launch token**. It authorizes one call: `POST /v1/client/claim`, which
+returns this browser's **device token**. Every other endpoint takes the device token.
+
+- A launch token can be claimed once. A second claim returns `409 client_token_used`,
+  so a leaked link is useless after the user opens it.
+- A device token is bound to the `Origin` it was claimed from; the same token from
+  another origin returns `403 origin_not_allowed`.
+- Both expire with the session.
+- For cross-device handoff, `POST /v1/client/handoff` mints a single-use handoff
+  token for the QR code. The other device claims it for its own device token. Only
+  the newest handoff token is valid.
+
+The widget does all of this for you, and keeps the device token in `localStorage`
+until the session expires, so a reload continues the session.
+
+```http
+POST /api/v1/client/claim
+X-Client-Token: <launch or handoff token>
+
+201 { "data": { "token": "<device token>", "expires_at": "…" } }
+```
 
 ::: warning
 You normally don't call these endpoints directly; the [widget](/integrations/widget)
@@ -17,6 +38,8 @@ does. They're documented for custom flows.
 
 | Method | Path                        | Description                                                                    |
 | ------ | --------------------------- | ------------------------------------------------------------------------------ |
+| `POST` | `/v1/client/claim`          | Exchange a launch or handoff token for this browser's device token.            |
+| `POST` | `/v1/client/handoff`        | Mint a single-use handoff token for the cross-device QR code.                  |
 | `GET`  | `/v1/client/session`        | Fetch the session; marks it `started` on first load.                           |
 | `POST` | `/v1/client/document/front` | Submit the document front; runs OCR + portrait extraction.                     |
 | `POST` | `/v1/client/document/back`  | Submit the document back (skipped for single-sided docs).                      |

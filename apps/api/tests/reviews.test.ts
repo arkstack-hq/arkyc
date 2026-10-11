@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'parasito'
 import { app } from '../src/core/bootstrap'
+import { claimDeviceToken } from './helpers/client-token'
 import { Organization } from '../src/app/models/Organization'
 
 /** Phase 9 — human review of `requires_review` sessions + the audit trail. */
@@ -16,7 +17,7 @@ const client = (method: 'get' | 'post', path: string, token: string) =>
 async function reviewableSession(): Promise<string> {
   const open = await request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send({})
   const { id } = open.body.data
-  const token = open.body.client_token
+  const token = await claimDeviceToken(open.body.client_token)
 
   await client('get', 'session', token)
   await client('post', 'document/front', token).send({ quality_score: 0.4 })

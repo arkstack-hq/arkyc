@@ -72,6 +72,7 @@ Comments should be simple guides to what a utility (variable, function, class, b
 - Use `this.validate(rules, true)` when validated keys should be camelized.
 - Never combine a nullable array with wildcard rules such as `field.*`; validate optional array entries during normalization instead.
 - The authenticated account is `req.user!`.
+- Client API routes authenticate with `clientTokenAuth`, which accepts device tokens only and sets `req.verificationSession`. Launch and handoff tokens are single-use and only work on `POST /v1/client/claim`; issue and check them through `ClientTokenService`.
 - Route files under `src/routes/` are auto-loaded. A route without `[auth]` is probably public.
 - Paginate with `.paginate(perPage(req.query))` whenever result size is not strictly bounded for finegrained control replace `perPage` with `resolvePagination`.
 - Use domain services only for shared logic or real orchestration. Do not create thin one-caller service classes around a model query.
@@ -107,3 +108,11 @@ Comments should be simple guides to what a utility (variable, function, class, b
 - `ROADMAP.md`: product requirements and their checkbox state.
 - `LAUNCH_VERIFICATION.md`: verification requiring deployed infrastructure, devices, real traffic, provider accounts, DNS/certificates, or outside parties.
 - Keep implementation history, completed-work narratives, and bug postmortems out of this guide unless the resulting constraint cannot be understood without a very short explanation.
+
+## Testing
+
+Not everything requires coverage.
+
+- Skip writting tests for small/minor regression/bug fixes.
+- Do not write tests for small features that are part of a larger feature that has coverage touching.
+- Skip writting tests for small changes to existing features.

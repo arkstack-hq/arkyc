@@ -17,6 +17,8 @@ export const API_ERRORS: Record<ApiErrorKey, { status: number; message: string }
   invalid_client_token: { status: 401, message: 'Invalid client token' },
   session_expired: { status: 401, message: 'Session expired' },
   origin_not_allowed: { status: 403, message: 'Request origin is not allowed for this project' },
+  client_token_used: { status: 409, message: 'This verification link has already been used' },
+  handoff_disabled: { status: 403, message: 'Cross-device handoff is not enabled for this project' },
 
   // API key (integrator backend → Project API)
   missing_api_key: { status: 401, message: 'Missing API key' },

@@ -137,9 +137,16 @@ export class WidgetApiError extends Error {
   }
 }
 
+/** Where {@link ArkycClient} keeps this browser's device token between page loads. */
+export type ClientTokenStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+
 /** Options for {@link ArkycClient}. */
 export interface ArkycClientOptions {
-  /** Short-lived client token minted for this session. */
+  /**
+   * The session's single-use launch token (from session creation) or a handoff
+   * token (from a cross-device QR code). The client exchanges it for this
+   * browser's device token on its first request.
+   */
   token: string
   /**
    * The Client API **base** the widget appends each endpoint to — `{baseUrl}/session`,
@@ -153,6 +160,30 @@ export interface ArkycClientOptions {
   baseUrl?: string
   /** Injectable for testing; defaults to the global `fetch`. */
   fetch?: typeof fetch
+  /**
+   * Keeps the device token so a reload or second tab can continue the session.
+   * Defaults to `localStorage`; pass `null` to keep it in memory only.
+   */
+  storage?: ClientTokenStorage | null
+}
+
+/** The device token a claim returned. */
+interface StoredDeviceToken {
+  token: string
+  expires_at: string
+}
+
+/**
+ * `localStorage` when the page may use it, otherwise null.
+ *
+ * @returns
+ */
+function defaultStorage(): ClientTokenStorage | null {
+  try {
+    return globalThis.localStorage ?? null
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -206,6 +237,8 @@ export class ArkycClient {
   private readonly token: string
   private readonly baseUrl: string
   private readonly fetchImpl: typeof fetch
+  private readonly storage: ClientTokenStorage | null
+  private deviceToken?: Promise<string>
 
   constructor(options: ArkycClientOptions) {
     if (!options.token) throw new Error('ArkycClient requires a client `token`.')
@@ -214,6 +247,33 @@ export class ArkycClient {
     const f = options.fetch ?? globalThis.fetch
     if (!f) throw new Error('No `fetch` implementation available.')
     this.fetchImpl = f.bind(globalThis)
+    this.storage = options.storage === undefined ? defaultStorage() : options.storage
+  }
+
+  /**
+   * This browser's device token, claiming the launch or handoff token the first
+   * time. Other Client API calls (and realtime channel auth) send this token.
+   *
+   * @returns
+   */
+  authToken(): Promise<string> {
+    this.deviceToken ??= this.resolveDeviceToken().catch((error) => {
+      this.deviceToken = undefined
+      throw error
+    })
+
+    return this.deviceToken
+  }
+
+  /**
+   * Mint the single-use token a cross-device QR code carries.
+   *
+   * @returns
+   */
+  async createHandoffToken(): Promise<string> {
+    const data = await this.send<StoredDeviceToken>('POST', '/handoff', await this.authToken(), {})
+
+    return data.token
   }
 
   /**
@@ -319,7 +379,50 @@ export class ArkycClient {
   }
 
   private async request(method: string, path: string, body?: FormData | object): Promise<ClientSession> {
-    const headers: Record<string, string> = { 'X-Client-Token': this.token }
+    return await this.send<ClientSession>(method, path, await this.authToken(), body)
+  }
+
+  /** The storage key for the device token claimed from this client's token. */
+  private get storageKey(): string {
+    return `arkyc:device:${this.token}`
+  }
+
+  private async resolveDeviceToken(): Promise<string> {
+    const stored = this.readStoredToken()
+    if (stored) return stored
+
+    const claimed = await this.send<StoredDeviceToken>('POST', '/claim', this.token, {})
+    this.writeStoredToken(claimed)
+
+    return claimed.token
+  }
+
+  private readStoredToken(): string | null {
+    try {
+      const raw = this.storage?.getItem(this.storageKey)
+      if (!raw) return null
+
+      const stored = JSON.parse(raw) as StoredDeviceToken
+      if (new Date(stored.expires_at).getTime() > Date.now()) return stored.token
+
+      this.storage?.removeItem(this.storageKey)
+    } catch {
+      // Unreadable storage falls back to claiming.
+    }
+
+    return null
+  }
+
+  private writeStoredToken(token: StoredDeviceToken): void {
+    try {
+      this.storage?.setItem(this.storageKey, JSON.stringify(token))
+    } catch {
+      // Storage may be full or blocked; the token still works for this page.
+    }
+  }
+
+  private async send<T>(method: string, path: string, token: string, body?: FormData | object): Promise<T> {
+    const headers: Record<string, string> = { 'X-Client-Token': token }
     let payload: BodyInit | undefined
 
     if (body instanceof FormData) {
@@ -331,11 +434,11 @@ export class ArkycClient {
 
     const res = await this.fetchImpl(`${this.baseUrl}${path}`, { method, headers, body: payload })
     const text = await res.text()
-    const json = text ? (JSON.parse(text) as { message?: string; data?: ClientSession; error?: ApiErrorKey }) : {}
+    const json = text ? (JSON.parse(text) as { message?: string; data?: unknown; error?: ApiErrorKey }) : {}
 
     if (!res.ok) {
       throw new WidgetApiError(json.message ?? `Request failed (${res.status})`, res.status, json.error)
     }
-    return json.data as ClientSession
+    return json.data as T
   }
 }

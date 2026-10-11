@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { Organization } from '../src/app/models/Organization'
 import { app } from '../src/core/bootstrap'
+import { claimDeviceToken } from './helpers/client-token'
 import request from 'parasito'
 
 const fx = { token: '', organizationId: '', projectId: '', apiKeySecret: '' }
@@ -153,7 +154,9 @@ describe('applying a workflow to a session', () => {
     expect(open.body.data.workflow.options).toEqual({ skip_ocr: true })
 
     // The widget's client-session view carries the resolved workflow.
-    const clientView = await request(app).get('/api/v1/client/session').set('X-Client-Token', open.body.client_token)
+    const clientView = await request(app)
+      .get('/api/v1/client/session')
+      .set('X-Client-Token', await claimDeviceToken(open.body.client_token))
     expect(clientView.status).toBe(201)
     expect(clientView.body.data.workflow.steps).toEqual([
       { key: 'document', enabled: true },
@@ -204,7 +207,7 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
     )
 
     const open = await openSession({ workflow_id: workflowId })
-    const token = open.body.client_token
+    const token = await claimDeviceToken(open.body.client_token)
     await client('get', 'session', token)
     await client('post', 'document/front', token).send({})
     // No liveness step — complete straight after the document.
@@ -223,7 +226,7 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
     ])
 
     const open = await openSession({ workflow_id: workflowId })
-    const token = open.body.client_token
+    const token = await claimDeviceToken(open.body.client_token)
     await client('get', 'session', token)
     await client('post', 'document/front', token).send({})
     await client('post', 'liveness', token).send({})
@@ -244,7 +247,7 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
   it('runs an address-enabled workflow and approves when it passes (mock)', async () => {
     const workflowId = await makeWorkflow('With address', addressSteps('review'), { skip_ocr: true })
     const open = await openSession({ workflow_id: workflowId })
-    const token = open.body.client_token
+    const token = await claimDeviceToken(open.body.client_token)
     await client('get', 'session', token)
     await client('post', 'document/front', token).send({})
     const addr = await client('post', 'address', token).send({
@@ -263,7 +266,7 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
   it('flags review when address fails and on_fail is review', async () => {
     const workflowId = await makeWorkflow('Address review', addressSteps('review'), { skip_ocr: true })
     const open = await openSession({ workflow_id: workflowId })
-    const token = open.body.client_token
+    const token = await claimDeviceToken(open.body.client_token)
     await client('get', 'session', token)
     await client('post', 'document/front', token).send({})
     await client('post', 'address', token).send({ city: 'Kaduna', country: 'NG', address_passed: false })
@@ -277,7 +280,7 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
   it('rejects when address fails and on_fail is reject', async () => {
     const workflowId = await makeWorkflow('Address reject', addressSteps('reject'), { skip_ocr: true })
     const open = await openSession({ workflow_id: workflowId })
-    const token = open.body.client_token
+    const token = await claimDeviceToken(open.body.client_token)
     await client('get', 'session', token)
     await client('post', 'document/front', token).send({})
     await client('post', 'address', token).send({ city: 'Lagos', country: 'NG', address_passed: false })
@@ -290,7 +293,7 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
   it('requires the address submission before completing when the stage is on', async () => {
     const workflowId = await makeWorkflow('Address required', addressSteps('review'), { skip_ocr: true })
     const open = await openSession({ workflow_id: workflowId })
-    const token = open.body.client_token
+    const token = await claimDeviceToken(open.body.client_token)
     await client('get', 'session', token)
     await client('post', 'document/front', token).send({})
     const done = await client('post', 'complete', token).send({})
@@ -311,7 +314,7 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
 
   it('exposes signed asset URLs on retrieve and gates them by signature', async () => {
     const open = await openSession({})
-    const token = open.body.client_token
+    const token = await claimDeviceToken(open.body.client_token)
     await client('get', 'session', token)
     await client('post', 'document/front', token).send({})
 

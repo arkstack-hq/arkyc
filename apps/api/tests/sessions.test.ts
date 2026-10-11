@@ -10,6 +10,7 @@ import { DocumentCapture } from '../src/app/models/DocumentCapture'
 import { sessionService } from '../src/app/services/VerificationSessionService'
 import { retentionService } from '../src/app/services/RetentionService'
 import { app } from '../src/core/bootstrap'
+import { claimDeviceToken } from './helpers/client-token'
 import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
 import { realtimeChannels } from '@arkyc/types'
 import request from 'parasito'
@@ -34,7 +35,7 @@ async function openSession(): Promise<{ id: string; token: string }> {
   const res = await publicApi('post', 'sessions').send({ user_reference: 'user-123' })
   expect(res.status).toBe(201)
 
-  return { id: res.body.data.id, token: res.body.client_token }
+  return { id: res.body.data.id, token: await claimDeviceToken(res.body.client_token) }
 }
 
 /** Walk a session through document + liveness, returning the started token/id. */
@@ -390,7 +391,7 @@ describe('active liveness (Phase 17)', () => {
     const res = await activeApi('post', 'sessions').send({})
     expect(res.status).toBe(201)
 
-    return { id: res.body.data.id, token: res.body.client_token }
+    return { id: res.body.data.id, token: await claimDeviceToken(res.body.client_token) }
   }
 
   it('issues a randomized challenge sequence in the bootstrap', async () => {

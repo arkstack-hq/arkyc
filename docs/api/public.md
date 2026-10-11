@@ -53,7 +53,9 @@ Both fields are optional. Response (`201`):
 ```
 
 Hand `client_token` to the browser and launch the [widget](/integrations/widget)
-with it. The token is short-lived (default 15 minutes).
+with it. The token is short-lived (default 15 minutes) and **single-use**: the
+widget exchanges it for its own device token on first load, after which it can't
+be used again. See [Client API tokens](./client#tokens).
 
 ## Retrieve a session
 
