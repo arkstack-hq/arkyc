@@ -4,6 +4,28 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Configurable job queues.** Each job's queue now comes from config
+  (`queue.queues.*`), overridable via `QUEUE_NAME_OCR`, `QUEUE_NAME_BIOMETRIC`,
+  `QUEUE_NAME_WEBHOOK`, `QUEUE_NAME_MAINTENANCE` and `QUEUE_NAME_NOTIFICATIONS`.
+  Defaults are unchanged. Set them all to `default` to run a single
+  `ark queue:work` on a resource-limited host.
+
+### Fixed
+
+- **Stalled sessions and undelivered webhooks under PM2.** The bundled
+  `ecosystem.config.cjs` runs one `ark queue:work`, which only drains the `default`
+  queue, while every job is dispatched to a named queue. OCR, decisioning and webhook
+  jobs were never processed: sessions stalled in `processing` until they expired,
+  and no webhook (not even a dashboard test event) was delivered. Route the queues
+  to `default` (above), or run a worker per queue.
+- **Queue worker docs.** `--queue` takes one queue name, not a comma list, and
+  `ark queue:work webhook` named the connection rather than the queue. The
+  self-hosting guide now covers both worker layouts and all five queues.
+
 ## [2.0.0] - 2026-10-11
 
 Fraud signals and compliance screening, self-hostable biometrics, realtime on

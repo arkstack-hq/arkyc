@@ -21,12 +21,12 @@ export interface OcrJobHints {
 }
 
 /**
- * OCR job (queue `ocr`): reads the stored document front, runs the OCR driver
+ * OCR job (queue `queue.queues.ocr`): reads the stored document front, runs the OCR driver
  * + portrait extraction, and persists the results. Idempotent — a re-delivery
  * after the OCR result exists is a no-op.
  */
 export class OcrJob extends Job {
-  override queue = 'ocr'
+  override queue = config('queue.queues.ocr', 'ocr')
   override tries = 3
 
   constructor(

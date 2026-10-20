@@ -21,13 +21,13 @@ export interface BiometricJobHints {
 }
 
 /**
- * Biometric job (queue `biometric`): runs face match and the risk detectors,
+ * Biometric job (queue `queue.queues.biometric`): runs face match and the risk detectors,
  * aggregates the persisted checks and risk signals through the decision engine, and lands the session's final decision.
  * Only acts on a `processing` session (idempotent on re-delivery) and throws if
  * OCR/liveness aren't ready yet so the job retries with backoff.
  */
 export class BiometricJob extends Job {
-  override queue = 'biometric'
+  override queue = config('queue.queues.biometric', 'biometric')
   override tries = 5
   override backoff = 5
 

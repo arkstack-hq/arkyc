@@ -5,12 +5,12 @@ import { reportError } from 'src/support/observability'
 import { toArray } from 'src/support/collection'
 
 /**
- * Delivers one notification to a bounded batch of users (queue `notifications`).
+ * Delivers one notification to a bounded batch of users (queue `queue.queues.notifications`).
  * A failure for one user is reported and does not stop the rest, and the job
  * never throws, so a retry can't store a notification twice.
  */
 export class UserNotificationJob extends Job {
-  override queue = 'notifications'
+  override queue = config('queue.queues.notifications', 'notifications')
   override tries = 1
 
   constructor(

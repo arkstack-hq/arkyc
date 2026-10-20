@@ -82,14 +82,22 @@ See [Provider drivers](./providers), [Fraud signals & screening](./fraud-signals
 
 ### Queue
 
-| Variable                                                          | Default | Notes                                              |
-| ----------------------------------------------------------------- | ------- | -------------------------------------------------- |
-| `QUEUE_CONNECTION`                                                | `sync`  | `sync` (inline), `database` (durable), or `redis`. |
-| `QUEUE_TABLE`                                                     | `jobs`  | Table for the `database` connection.               |
-| `QUEUE_RETRY_AFTER`                                               | `90`    | Seconds before a reserved job is reclaimed.        |
-| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_QUEUE_DB` | none    | For the `redis` connection.                        |
+| Variable                                                          | Default         | Notes                                                                    |
+| ----------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------ |
+| `QUEUE_CONNECTION`                                                | `sync`          | `sync` (inline), `database` (durable), or `redis`.                       |
+| `QUEUE_TABLE`                                                     | `jobs`          | Table for the `database` connection.                                     |
+| `QUEUE_RETRY_AFTER`                                               | `90`            | Seconds before a reserved job is reclaimed.                              |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_QUEUE_DB` | none            | For the `redis` connection.                                              |
+| `QUEUE_NAME`                                                      | `default`       | The connection's default queue (what a worker without `--queue` drains). |
+| `QUEUE_NAME_OCR`                                                  | `ocr`           | Queue for `OcrJob` (config `queue.queues.ocr`).                          |
+| `QUEUE_NAME_BIOMETRIC`                                            | `biometric`     | Queue for `BiometricJob` (face match + decision).                        |
+| `QUEUE_NAME_WEBHOOK`                                              | `webhook`       | Queue for `WebhookJob` (webhook delivery).                               |
+| `QUEUE_NAME_MAINTENANCE`                                          | `maintenance`   | Queue for `SessionSweepJob`.                                             |
+| `QUEUE_NAME_NOTIFICATIONS`                                        | `notifications` | Queue for `UserNotificationJob`.                                         |
 
-With `database` or `redis`, run workers; see [Self-hosting](./self-hosting).
+With `database` or `redis`, every queue that receives jobs needs a worker. To run
+just one worker, set all `QUEUE_NAME_*` to `default`. See
+[Self-hosting](./self-hosting#queue-workers).
 
 ### Maintenance & cache
 

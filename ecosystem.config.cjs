@@ -24,8 +24,12 @@ module.exports = {
     },
 
     // Durable queue worker — only needed when QUEUE_CONNECTION is `database` or
-    // `redis` (the default `sync` runs jobs inline). Uncomment to run it; the
-    // deploy's `pm2 startOrReload ecosystem.config.cjs` picks it up automatically.
+    // `redis` (the default `sync` runs jobs inline). With no `--queue` it drains
+    // only the `default` queue, so `apps/api/.env` must route every job there:
+    // QUEUE_NAME_OCR, _BIOMETRIC, _WEBHOOK, _MAINTENANCE and _NOTIFICATIONS all
+    // set to `default`. Otherwise those jobs queue up and are never processed
+    // (sessions stall in `processing`, webhooks never deliver). To split the load
+    // instead, add one app per queue with `queue:work --queue <name>`.
     {
       name: 'arkyc-worker',
       cwd: './current',

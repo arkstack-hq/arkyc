@@ -1,7 +1,23 @@
-import type { QueueConfig } from '@arkstack/queue'
+import { QueueConfig } from '@arkstack/queue'
 import { env } from '@arkstack/common'
 
-export default (): QueueConfig => {
+export interface AppQueueConfig extends QueueConfig {
+  /**
+   * The queue each kind of job is dispatched onto. Every name is overridable, so a
+   * deployment that runs a worker per queue (docker-compose) keeps them separate,
+   * while a resource-limited one can point them all at a single queue (e.g.
+   * `default`) and run one `ark queue:work`.
+   */
+  queues: {
+    ocr: string
+    biometric: string
+    webhook: string
+    maintenance: string
+    notifications: string
+  }
+}
+
+export default (): AppQueueConfig => {
   return {
     /**
      * Default Queue Connection
@@ -39,6 +55,21 @@ export default (): QueueConfig => {
         queue: env('QUEUE_NAME', 'default'),
         retryAfter: env('QUEUE_RETRY_AFTER', 90),
       },
+    },
+
+    /**
+     * Job Queues
+     *
+     * The queue each kind of job is dispatched onto. A deployment running a worker
+     * per queue (docker-compose) keeps them separate; a resource-limited one can
+     * point them all at `default` and run a single `ark queue:work`.
+     */
+    queues: {
+      ocr: env('QUEUE_NAME_OCR', 'ocr'),
+      biometric: env('QUEUE_NAME_BIOMETRIC', 'biometric'),
+      webhook: env('QUEUE_NAME_WEBHOOK', 'webhook'),
+      maintenance: env('QUEUE_NAME_MAINTENANCE', 'maintenance'),
+      notifications: env('QUEUE_NAME_NOTIFICATIONS', 'notifications'),
     },
   }
 }

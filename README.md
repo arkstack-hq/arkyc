@@ -27,7 +27,8 @@ packages/
   widget/       @arkyc/widget — embeddable verification flow
 
 apps/api async work runs via the durable job queue and the `ark queue:work`
-command (`ocr` + `biometric` roles) — see Phase 8 in ROADMAP.md.
+command (`ocr`, `biometric`, `webhook`, `maintenance`, `notifications` queues,
+renameable via `QUEUE_NAME_*`) — see Phase 8 in ROADMAP.md.
 
 docs/           Documentation
 ```
@@ -70,8 +71,10 @@ compiled server, applying migrations on startup.
 docker compose --profile app up -d --build
 
 # Durable queue workers (only for QUEUE_CONNECTION=database|redis; the default
-# `sync` runs jobs inline). Jobs span four named queues and `queue:work` takes one
-# queue each, so the profile starts one worker per queue:
+# `sync` runs jobs inline). Jobs span five named queues and `queue:work` takes one
+# queue each, so the profile starts one worker per queue (ocr, biometric, webhook,
+# maintenance). On a small host, set every QUEUE_NAME_* to `default` and run a
+# single worker instead; see docs/guide/self-hosting.md#queue-workers.
 QUEUE_CONNECTION=database docker compose --profile app --profile worker up -d --build
 ```
 

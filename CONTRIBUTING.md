@@ -35,8 +35,11 @@ pnpm run play              # run the example playground app
 pnpm --filter @arkyc/dashboard dev
 ```
 
-Background work runs through the durable queue; process it with
-`cd apps/api && pnpm ark queue:work database --queue=ocr,biometric,webhook,maintenance`.
+Background work runs through the durable queue. A worker processes one queue
+(`--queue` takes a single name), so locally the simplest setup is to set every
+`QUEUE_NAME_*` to `default` in `apps/api/.env` and run
+`cd apps/api && pnpm ark queue:work database`. See
+[Self-hosting](docs/guide/self-hosting.md#queue-workers) for one worker per queue.
 Scheduled maintenance runs via `ark schedule:work` (dev) or a `schedule:run` cron.
 
 ## Quality gates

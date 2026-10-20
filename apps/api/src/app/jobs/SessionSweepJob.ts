@@ -15,7 +15,7 @@ const DAY_SECONDS = 86_400
 const HOUR_SECONDS = 3_600
 
 /**
- * Session-expiry sweep as a self-perpetuating queued job (queue `maintenance`).
+ * Session-expiry sweep as a self-perpetuating queued job (queue `queue.queues.maintenance`).
  * Runs one `sweepExpired()` batch, then re-queues itself after the configured
  * interval — so the sweep rides the queue worker with no cron (portable to hosts
  * like Railway). Active only when `SESSION_SWEEP_DRIVER=queue`; on an inline
@@ -23,7 +23,7 @@ const HOUR_SECONDS = 3_600
  * once with `ark session:sweep --loop`.
  */
 export class SessionSweepJob extends Job {
-  override queue = 'maintenance'
+  override queue = config('queue.queues.maintenance', 'maintenance')
   // The chain provides continuity; a single failed run shouldn't retry-storm.
   override tries = 1
 
