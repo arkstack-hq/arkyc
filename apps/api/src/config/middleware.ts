@@ -52,6 +52,6 @@ export default (): MiddlewareConfig => {
         next()
       },
     ],
-    after: [requestLogger()],
+    after: [],
   }
 }
