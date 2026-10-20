@@ -7,6 +7,7 @@ export default () => {
     allowed_origins: [
       app.url,
       app.frontend_url,
+      env('WEBSITE_URL', undefined),
       ...env('CORS_ALLOWED_ORIGINS', '')
         .split(',')
         .map((origin: string) => origin.trim()),
