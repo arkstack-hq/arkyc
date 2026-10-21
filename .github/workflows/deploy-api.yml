@@ -157,6 +157,7 @@ jobs:
             fi
             # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
+            rm -rf "$RELEASE/storage"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
             # Public storage symlinks (the `ark storage:link` equivalent — ark isn't
             # bundled in the prod artifact). Targets resolve via current/storage -> shared.
@@ -334,6 +335,12 @@ jobs:
             fi
             # Wire shared state into the artifact.
             ln -sfn "$SHARED/.env" "$RELEASE/.env"
+            # pnpm deploy copies the checkout's (non-ignored) storage/ into the artifact
+            # as a real directory; `ln -sfn` would then nest the link inside it
+            # (current/storage/storage) and anything written to storage/ (biometric
+            # models, GeoIP databases, logs) would vanish on the next deploy. Remove
+            # it so current/storage is the link to the persistent shared storage.
+            rm -rf "$RELEASE/storage"
             ln -sfn "$SHARED/storage" "$RELEASE/storage"
             # Public storage symlinks (the `ark storage:link` equivalent — ark isn't
             # bundled in the prod artifact). Targets resolve via current/storage -> shared.
