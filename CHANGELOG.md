@@ -4,6 +4,22 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.4] - 2026-10-21
+
+### Fixed
+
+- **Liveness: real people rejected as screen replays.** The anti-spoofing model
+  (MiniFASNetV2) looks at a crop 2.7× the face, which only fits when the face is
+  under ~37% of the frame's height. The widget accepted selfies with the face up
+  to 85% of the frame, and active liveness took its still at the end of the
+  sequence (often right after "move closer"), so the model saw a much tighter
+  crop than it was trained on and confidently scored a live face as a spoof.
+  - The selfie camera now frames the face at 20–40% of the frame height, and says
+    "Move back a little" when it's too close (it used to say "Center your face").
+  - Active liveness keeps the first well-framed frame as its still selfie.
+  - The liveness result's `raw` records `faceHeightRatio` and the actual
+    `cropScale`, to diagnose any remaining false rejections.
+
 ## [2.3.3] - 2026-10-21
 
 ### Changed
