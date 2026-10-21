@@ -42,12 +42,18 @@ function iso(year: number, month: number, day: number): IsoDate | undefined {
   return `${year}-${pad2(month)}-${pad2(day)}` as IsoDate
 }
 
-/** Matches one printed date: "12.08.64", "07/04/1964", "19 Jul 1994", "1964-04-07", "AUG 09,2017". */
+/**
+ * Matches one printed date: "12.08.64", "07/04/1964", "19 Jul 1994", "1964-04-07", "AUG 09,2017".
+ */
 export const DATE_PATTERN =
   /\b(?:(\d{1,2})[./-](\d{1,2})[./-](\d{4}|\d{2})|(\d{1,2})[\s-]+([A-Za-z]{3,9})[\s-]+(\d{4})|(\d{4})-(\d{2})-(\d{2})|([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s*(\d{4}))\b/
 
 /**
  * The first date in `text`, day-first (as printed outside the US), or undefined.
+ *
+ * @param text
+ * @param kind
+ * @returns
  */
 export function readDate(text: string, kind: DateKind): IsoDate | undefined {
   const match = text.match(DATE_PATTERN)
@@ -67,7 +73,9 @@ export function readDate(text: string, kind: DateKind): IsoDate | undefined {
   return month ? iso(Number(match[12]), month, Number(match[11])) : undefined
 }
 
-/** Digits OCR commonly reads in place of letters inside a name. */
+/**
+ * Digits OCR commonly reads in place of letters inside a name.
+ */
 const NAME_DIGITS: Record<string, string> = { '0': 'O', '1': 'I', '5': 'S', '8': 'B' }
 
 /**
@@ -75,6 +83,9 @@ const NAME_DIGITS: Record<string, string> = { '0': 'O', '1': 'I', '5': 'S', '8':
  * "NGOZI, AMAKA" → "Ngozi Amaka". Tokens that aren't plausibly name words
  * (mostly digits or symbols, single letters) are dropped; undefined when
  * nothing is left.
+ *
+ * @param text
+ * @returns
  */
 export function readName(text: string): string | undefined {
   const words = text
@@ -88,14 +99,26 @@ export function readName(text: string): string | undefined {
   return words.length ? words.join(' ') : undefined
 }
 
-/** Confidence for a layout parse: a base for recognising the layout plus a step per field read. */
+/**
+ * Confidence for a layout parse: a base for recognising the layout plus a step per field read.
+ *
+ * @param fields
+ * @param base
+ * @returns
+ */
 export function layoutConfidence(fields: OcrFields, base = 0.4): number {
   const read = Object.values(fields).filter(Boolean).length
 
   return Math.min(0.85, Number((base + read * 0.08).toFixed(2)))
 }
 
-/** Split OCR text into trimmed, non-empty lines. */
+/**
+ * Split OCR text into trimmed, non-empty lines.
+ *
+ * @param text
+ * @param given
+ * @returns
+ */
 export function textLines(text: string, given?: string[]): string[] {
   return (given ?? text.split(/\r?\n/)).map((line) => line.trim()).filter(Boolean)
 }

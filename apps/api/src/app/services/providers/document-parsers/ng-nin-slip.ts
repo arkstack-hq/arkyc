@@ -32,13 +32,18 @@ export const ngNinSlipParser: DocumentParser = {
     const dates = [...text.matchAll(/\b(\d{1,2}\s+[A-Za-z]{3,}\s+\d{4})\b(?=(.{0,12}))/g)]
       .map((match) => ({ iso: readDate(match[1]!, 'birth'), sexNext: /\b(MALE|FEMALE|[MF])\b/i.test(match[2]!) }))
       .filter((date) => date.iso)
+
     const birth = dates.find((date) => date.sexNext) ?? [...dates].sort((a, b) => a.iso!.localeCompare(b.iso!))[0]
+
     if (birth) fields.dateOfBirth = birth.iso
+
     const issue = dates.find((date) => date !== birth && date.iso! > birth!.iso!)
+
     if (issue) fields.issueDate = issue.iso
 
     // Given names print as "FIRST, MIDDLE" with the nationality code after them.
     const givenIndex = lines.findIndex((line) => /^[A-Za-z'-]{2,},\s*[A-Za-z'-]{2,}/.test(line))
+
     if (givenIndex >= 0) {
       fields.firstName = readName(lines[givenIndex]!.replace(/\bNGA\b.*$/i, ''))
 
@@ -51,12 +56,17 @@ export const ngNinSlipParser: DocumentParser = {
         ?.match(/^([A-Z][A-Z'-]+)$/)?.[1]
       if (surname) fields.lastName = readName(surname)
     }
+
     if (/\bNGA\b|Nigeria/i.test(text)) fields.nationality = 'NGA'
 
     if (!fields.documentNumber && !fields.dateOfBirth) return null
 
     const read = [fields.documentNumber, fields.dateOfBirth, fields.firstName, fields.lastName].filter(Boolean).length
 
-    return { fields, confidence: Number((0.4 + read * 0.1).toFixed(2)), raw: { layout: 'ng-nin-slip' } }
+    return {
+      fields,
+      confidence: Number((0.4 + read * 0.1).toFixed(2)),
+      raw: { layout: 'ng-nin-slip' },
+    }
   },
 }

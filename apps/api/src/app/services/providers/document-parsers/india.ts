@@ -16,6 +16,7 @@ const D = [
   [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
   [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
 ]
+
 const P = [
   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
   [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
@@ -27,7 +28,12 @@ const P = [
   [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
 ]
 
-/** Whether a digit string passes the Verhoeff check (its last digit is the check digit). */
+/**
+ * Whether a digit string passes the Verhoeff check (its last digit is the check digit).
+ *
+ * @param digits
+ * @returns
+ */
 export function verhoeffValid(digits: string): boolean {
   let check = 0
   ;[...digits].reverse().forEach((digit, i) => {
@@ -53,13 +59,16 @@ export const inAadhaarParser: DocumentParser = {
     const numbers = [...text.matchAll(/(?<!\d\s?)\b([2-9]\d{3})\s?(\d{4})\s?(\d{4})\b(?!\s?\d)/g)]
       .map((match) => `${match[1]}${match[2]}${match[3]}`)
       .filter(verhoeffValid)
+
     if (!numbers.length && !/aadhaar|uidai|unique\s*identification/i.test(text)) return null
 
     const lines = textLines(text, given)
     const fields: OcrFields = {}
+
     if (numbers[0]) fields.documentNumber = numbers[0]
 
     const dobIndex = lines.findIndex((line) => /\b(DOB|Date\s*of\s*Birth)\b/i.test(line))
+
     if (dobIndex >= 0) {
       fields.dateOfBirth = readDate(lines[dobIndex]!, 'birth')
       const name = lines[dobIndex - 1]
@@ -69,6 +78,7 @@ export const inAadhaarParser: DocumentParser = {
     for (const key of Object.keys(fields) as (keyof OcrFields)[]) {
       if (!fields[key]) delete fields[key]
     }
+
     if (!fields.documentNumber && !fields.dateOfBirth) return null
 
     return {

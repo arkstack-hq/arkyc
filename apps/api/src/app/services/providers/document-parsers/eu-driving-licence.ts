@@ -53,6 +53,7 @@ const MARKERS: [Field, string][] = [
   ['3', '3'],
   ['5', '[5S]'],
 ]
+
 const MARKER = new RegExp(
   `(?:^|(?<=[\\s|]))(${MARKERS.map(([, pattern]) => pattern).join('|')}|4[cd])[.,](?=\\s|\\d)`,
   'gm',
@@ -113,20 +114,28 @@ export const euDrivingLicenceParser: DocumentParser = {
     const fields: OcrFields = {}
     const surname = values.get('1')
     const given = values.get('2')
+
     if (surname) fields.lastName = cleanName(surname)
     if (given) fields.firstName = cleanName(given)
+
     fields.dateOfBirth = readDate(values.get('3') ?? '', 'birth')
     fields.issueDate = readDate(values.get('4a') ?? '', 'issue')
     fields.expiryDate = readDate(values.get('4b') ?? '', 'expiry')
     const number = values.get('5')?.match(/[A-Z0-9]*\d[A-Z0-9]*/)?.[0]
+
     if (number && number.length >= 5) fields.documentNumber = number
 
     for (const key of Object.keys(fields) as (keyof OcrFields)[]) {
       if (!fields[key]) delete fields[key]
     }
+
     // Two stray markers aren't a licence: it must also have yielded a date or the number.
     if (!fields.dateOfBirth && !fields.issueDate && !fields.expiryDate && !fields.documentNumber) return null
 
-    return { fields, confidence: layoutConfidence(fields), raw: { layout: 'eu-driving-licence' } }
+    return {
+      fields,
+      confidence: layoutConfidence(fields),
+      raw: { layout: 'eu-driving-licence' },
+    }
   },
 }

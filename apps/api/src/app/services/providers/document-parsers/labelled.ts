@@ -110,6 +110,10 @@ function readValue(field: LabelledField, value: string): string | undefined {
  * Read labelled fields from OCR lines. A label's value is the rest of its line,
  * or the next line when the label stands alone (or heads a row of labels whose
  * values print beneath them, matched up in order).
+ *
+ * @param text
+ * @param given
+ * @returns
  */
 export function readLabelledFields(text: string, given?: string[]): OcrFields {
   const lines = textLines(text, given)

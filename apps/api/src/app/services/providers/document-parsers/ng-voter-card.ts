@@ -64,6 +64,10 @@ export const ngVoterCardParser: DocumentParser = {
     }
     if (!fields.documentNumber && !fields.dateOfBirth) return null
 
-    return { fields, confidence: layoutConfidence(fields), raw: { layout: 'ng-voter-card' } }
+    return {
+      fields,
+      confidence: layoutConfidence(fields),
+      raw: { layout: 'ng-voter-card' },
+    }
   },
 }
