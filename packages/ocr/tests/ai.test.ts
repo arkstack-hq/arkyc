@@ -181,6 +181,36 @@ describe('ai ocr driver — workers ai backend', () => {
     expect(result.raw).toMatchObject({ backend: 'workers-ai', model: '@cf/google/gemma-4-26b-a4b-it' })
   })
 
+  it('requires every identity field, and treats an empty answer as unread', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      chatResponse({
+        tool_calls: [
+          {
+            function: {
+              name: 'read_document',
+              arguments: JSON.stringify({ ...fullFields, lastName: '', documentNumber: '', fullName: '' }),
+            },
+          },
+        ],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const driver = new AnthropicOcrDriver({ provider: 'workers-ai', apiKey: 'cf', accountId: 'acc', model: '@cf/x' })
+    const result = await driver.extract({ image })
+
+    // A model can't answer with the authenticity read alone (both Gemma and
+    // Llama 4 Scout did): the schema makes it return each identity field.
+    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    expect(body.tools[0].function.parameters.required).toEqual(
+      expect.arrayContaining(['lastName', 'firstName', 'dateOfBirth', 'documentNumber']),
+    )
+    expect(body.messages[0].content).toMatch(/main task is to read the identity fields/)
+    expect(result.fields.firstName).toBe('Ada')
+    expect(result.fields.lastName).toBeUndefined()
+    expect(result.fields.documentNumber).toBeUndefined()
+  })
+
   it('accepts object tool arguments and falls back to JSON in the message text', async () => {
     const fetchMock = vi
       .fn()
