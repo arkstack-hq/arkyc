@@ -204,6 +204,9 @@ interface StepDots {
  * so it can run under a fake DOM in tests. The view owns capture-screen camera
  * mechanics and raises only high-level events to the controller.
  */
+/** Consecutive well-framed samples before active liveness takes its still. */
+const FRAMING_HOLD = 4
+
 /** What to tell the user when the selfie isn't framed right yet. */
 export function framingHint(sample: { scale: number }, tuning: FaceTuning): string {
   if (sample.scale <= tuning.selfieMinScale) return 'Move a little closer'
@@ -887,9 +890,10 @@ export class WidgetView {
       dots.setActive(index)
     }
 
-    // The still selfie for the anti-spoofing check and face match, taken the first
-    // time the face is well framed. Grabbing it at the end instead catches the
-    // face after "move closer", too large for the anti-spoofing model's crop.
+    // The still selfie for the anti-spoofing check and face match, taken once the
+    // face is framed and before the challenges. Grabbing it at the end instead
+    // catches the face after "move closer", too large for the model's crop. Only
+    // without face detection (manual advance) does it fall back to the end.
     let framedStill: Promise<Blob> | null = null
 
     const finish = () => {
@@ -956,6 +960,13 @@ export class WidgetView {
             showManualAdvance()
             return
           }
+          // Frame the face before the challenges: the still taken then is what the
+          // anti-spoofing check scores, so it must be at a distance the model can
+          // judge (a face filling the frame reads as a spoof).
+          prompt.textContent = 'Position your face in the circle'
+          face.setCue(null)
+          let framing = 0
+
           // While the success check is held, pause detection so the next cue
           // doesn't flash in before the user sees the confirmation.
           let flashing = false
@@ -967,7 +978,21 @@ export class WidgetView {
             if (flashing) return
             const sample = analyzer.analyze(video)
             if (!sample) return
-            if (!framedStill && isSelfieReady(sample, this.tuning)) framedStill = this.camera.grabFrame(video)
+
+            if (!framedStill) {
+              framing = sample.present && isSelfieReady(sample, this.tuning) ? framing + 1 : 0
+              if (!sample.present) prompt.textContent = 'Position your face in the circle'
+              else prompt.textContent = framing ? 'Hold still…' : framingHint(sample, this.tuning)
+              face.setState(framing ? 'good' : 'wait')
+              face.setProgress(framing / FRAMING_HOLD)
+              if (framing >= FRAMING_HOLD) {
+                framedStill = this.camera.grabFrame(video)
+                showPrompt()
+                armChallenge()
+              }
+              return
+            }
+
             const hit = detector.feed(sample)
             face.setProgress(detector.progress)
             if (hit) {

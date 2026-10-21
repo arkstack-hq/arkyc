@@ -16,6 +16,11 @@ const INPUT_SIZE = 80
 const CROP_SCALE = 2.7
 /** Output index of the "real face" class. */
 const REAL = 1
+/**
+ * Below this crop scale (the face fills the frame) the model can't judge the face:
+ * it reads a crop that tight as a spoof whatever is in front of the camera.
+ */
+const MIN_JUDGEABLE_CROP = 1.5
 /** A second face counts when it is at least this large relative to the main one. */
 const SECOND_FACE_RATIO = 0.25
 
@@ -49,6 +54,22 @@ export class LocalLivenessDriver implements LivenessDriver {
     }
 
     const region = this.cropRegion(face, image.width, image.height)
+    const cropScale = region[3] / face.box[3]
+    const faceHeightRatio = round(face.box[3] / image.height)
+
+    if (cropScale < MIN_JUDGEABLE_CROP) {
+      // Too close to judge, which is no evidence of a spoof: pass with a zero
+      // score so the decision engine sends it to a reviewer (low liveness
+      // confidence) instead of declining a real person. A failed challenge
+      // sequence still fails.
+      return this.result(
+        sequenceOk,
+        0,
+        { faceTooClose: true, screenReplay: active && !sequenceOk },
+        { judged: false, faces: faces.length, sequenceOk, faceHeightRatio, cropScale: round(cropScale) },
+      )
+    }
+
     const crop = cropResize(image, region, INPUT_SIZE, INPUT_SIZE)
     const logits = Object.values(await antiSpoof.run(toTensor(crop, 'bgr'), [1, 3, INPUT_SIZE, INPUT_SIZE]))[0]!
     const realProbability = softmax(Array.from(logits))[REAL]!
@@ -76,8 +97,8 @@ export class LocalLivenessDriver implements LivenessDriver {
         // The model expects a crop CROP_SCALE× the face; a face that fills the
         // frame forces a tighter one (cropScale below CROP_SCALE), which it
         // tends to score as a spoof. Kept to diagnose false rejections.
-        faceHeightRatio: round(face.box[3] / image.height),
-        cropScale: round(region[3] / face.box[3]),
+        faceHeightRatio,
+        cropScale: round(cropScale),
       },
     )
   }
