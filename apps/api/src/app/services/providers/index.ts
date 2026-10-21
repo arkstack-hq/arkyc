@@ -79,6 +79,12 @@ function buildOcrDriver(driver: OcrDriverName): OcrDriver {
     accountId: env('CLOUDFLARE_ACCOUNT_ID'),
     model: workersAi ? workersAiModel : env('OCR_AI_MODEL'),
     maxEdge: env('OCR_AI_MAX_EDGE') ? Number(env('OCR_AI_MAX_EDGE')) : undefined,
+    // Large vision models (e.g. a 26B Workers AI model) can exceed the 30s default.
+    timeoutMs: env('OCR_AI_TIMEOUT_MS') ? Number(env('OCR_AI_TIMEOUT_MS')) : undefined,
+    maxRetries:
+      env('OCR_AI_MAX_RETRIES') != null && env('OCR_AI_MAX_RETRIES') !== ''
+        ? Number(env('OCR_AI_MAX_RETRIES'))
+        : undefined,
   })
 }
 

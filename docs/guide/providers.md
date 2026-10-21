@@ -200,6 +200,8 @@ OCR_DRIVER=ai
 OCR_API_KEY=sk-ant-...                 # Anthropic API key (required)
 OCR_AI_MODEL=claude-haiku-4-5-20251001 # optional; Haiku is the cheap default
 OCR_AI_MAX_EDGE=1568                   # optional; longest uploaded edge (px)
+OCR_AI_TIMEOUT_MS=30000                # optional; per-attempt timeout (ms)
+OCR_AI_MAX_RETRIES=2                   # optional; retries on timeout / network error / 429 / 529
 OCR_ENDPOINT=https://api.anthropic.com # optional; gateway / proxy override
 ```
 
@@ -249,6 +251,20 @@ extraction:
 OCR_DRIVER=ai
 OCR_FALLBACK_DRIVER=tesseract
 ```
+
+The fallback also takes over when the AI call **fails** (an HTTP error, or no
+answer within `OCR_AI_TIMEOUT_MS` after `OCR_AI_MAX_RETRIES` retries) or **reads
+no identity field** (no name, document number or date of birth). The session is
+then decided on the fallback's fields; the stored `raw_response` records
+`fallbackFrom`, the `reason`, the AI's own payload under `primary` (its tool
+arguments in `primary.modelOutput`) and the fallback's under `fallback`.
+
+Large vision models are slow: a 26B Workers AI model reading a full-resolution
+front and back can exceed the 30s default on every attempt. Raise
+`OCR_AI_TIMEOUT_MS` (for example to `90000`), lower `OCR_AI_MAX_EDGE` (for
+example to `1024`), or choose a faster model. Each failed attempt costs the full
+timeout, so `(retries + 1) × timeout` bounds how long OCR waits before falling
+back.
 
 ### Per-project access
 
