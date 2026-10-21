@@ -4,7 +4,28 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.2.0] - 2026-10-21
+
+### Added
+
+- **Face-match reject floor** (`faceMatchRejectThreshold`, per project, dashboard
+  Settings → Verification thresholds). Unset, the face-match driver's verdict
+  decides and a failed match is rejected, as before. Set, the similarity score
+  decides: below the floor is rejected, from the floor up to `faceMatchThreshold`
+  goes to manual review, above it auto-approves. ID-card portraits score lower
+  against a live selfie, so this lets weak-but-genuine ID matches reach a
+  reviewer instead of an automatic rejection.
+
+- **Configurable AI OCR timeout and retries:** `OCR_AI_TIMEOUT_MS` (default
+  `30000`) and `OCR_AI_MAX_RETRIES` (default `2`). The `ai` driver always
+  accepted them, but the app never passed them, so a slow model (e.g. a 26B
+  Workers AI vision model) timed out on every attempt and OCR fell back.
+
+### Changed
+
+- **Project thresholds are validated.** Each must be a number from 0 to 1;
+  `null` clears an override; unknown keys are dropped; the reject floor may not
+  exceed `faceMatchThreshold` (all `422`). Previously any value was stored.
 
 ### Fixed
 
