@@ -4,6 +4,30 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-10-21
+
+### Added
+
+- **Document parsers for IDs without an MRZ** (tried after the MRZ, before the
+  generic scraper):
+  - Nigerian NIN slip: NIN, date of birth, issue date, given names, and the
+    surname when OCR reads it cleanly.
+  - EU-format driving licences (EU, EEA, UK, Switzerland) by their numbered
+    fields, tolerating common OCR misreads of the markers ("42." for "4a.").
+  - Nigerian voter card (PVC): VIN (read from the back's cleaner print when
+    present), surname, given names, date of birth and registration date.
+  - Indian Aadhaar (number checked with its Verhoeff check digit) and PAN cards.
+  - A labelled-field parser for any country: cards that print English or French
+    labels ("Surname", "Date of Birth", "Licence No", "Prénoms"…), such as the
+    Nigerian driving licence.
+
+### Changed
+
+- **OCR fills gaps from the fallback driver.** A primary (AI) read that misses a
+  name, the document number or the date of birth is kept, and the fallback
+  driver fills only the fields it left empty. Before, any field at all (e.g. a
+  lone date of birth) stopped the fallback, so the session had no name or number.
+
 ## [2.2.0] - 2026-10-21
 
 ### Added
