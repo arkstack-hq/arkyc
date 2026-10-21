@@ -16,6 +16,20 @@ const IDENTITY_FIELDS: (keyof OcrFields)[] = ['firstName', 'lastName', 'fullName
 
 const readAnything = (fields: OcrFields): boolean => IDENTITY_FIELDS.some((key) => Boolean(fields[key]))
 
+/** A read missing any of these (a name, the number, the birth date) is topped up by the fallback. */
+const missingCore = (fields: OcrFields): boolean =>
+  !(fields.firstName || fields.lastName || fields.fullName) || !fields.documentNumber || !fields.dateOfBirth
+
+/** `primary`'s fields, with the gaps filled from `fallback`. */
+const fillGaps = (primary: OcrFields, fallback: OcrFields): OcrFields => {
+  const filled: OcrFields = { ...primary }
+  for (const [key, value] of Object.entries(fallback) as [keyof OcrFields, string][]) {
+    if (value && !filled[key]) (filled as Record<string, string>)[key] = value
+  }
+
+  return filled
+}
+
 /** Confidence reported for the (mock) portrait extraction off the document. */
 const PORTRAIT_DETECTION_CONFIDENCE = 0.95
 
@@ -109,6 +123,10 @@ export class OcrJob extends Job {
    * answers the tool call but leaves the fields empty). Without the fallback the job
    * fails and the decision waits forever on "OCR result is not ready yet". The
    * primary's authenticity read and raw payload are kept, so nothing is lost.
+   *
+   * A primary read that misses a name, the document number or the birth date
+   * (e.g. a model that only read the date of birth off a NIN slip) is kept, and
+   * the fallback fills only the fields it left empty.
    */
   private async extract(
     primary: ReturnType<typeof resolveOcrDriver>,
@@ -121,7 +139,8 @@ export class OcrJob extends Job {
     let reason: string
     try {
       first = await primary.extract(request)
-      if (readAnything(first.fields)) return first
+      if (readAnything(first.fields))
+        return missingCore(first.fields) ? this.topUp(primary, first, request, sessionId) : first
       reason = 'read no identity fields'
     } catch (error) {
       reason = error instanceof Error ? error.message : String(error)
@@ -138,6 +157,39 @@ export class OcrJob extends Job {
       ...fallback,
       authenticity: fallback.authenticity ?? first?.authenticity,
       raw: { fallbackFrom: primary.name, reason, primary: first?.raw ?? null, fallback: fallback.raw ?? null },
+    }
+  }
+
+  /** Fill the fields `first` left empty from the fallback driver; keep `first` if that fails. */
+  private async topUp(
+    primary: ReturnType<typeof resolveOcrDriver>,
+    first: OcrResultData,
+    request: Parameters<ReturnType<typeof resolveOcrDriver>['extract']>[0],
+    sessionId: string,
+  ): Promise<OcrResultData> {
+    let fallback: OcrResultData
+    try {
+      fallback = await fallbackOcrDriver.extract(request)
+    } catch (error) {
+      Logger.warn(`OcrJob ${sessionId}: ${fallbackOcrDriver.name} top-up failed: ${String(error)}`, false, true)
+
+      return first
+    }
+
+    const fields = fillGaps(first.fields, fallback.fields)
+    const added = (Object.keys(fields) as (keyof OcrFields)[]).filter((key) => !first.fields[key])
+    if (!added.length) return first
+
+    Logger.warn(
+      `OcrJob ${sessionId}: ${primary.name} OCR missed ${added.join(', ')}; filled from ${fallbackOcrDriver.name}`,
+      false,
+      true,
+    )
+
+    return {
+      ...first,
+      fields,
+      raw: { toppedUpFrom: fallbackOcrDriver.name, added, primary: first.raw ?? null, fallback: fallback.raw ?? null },
     }
   }
 }

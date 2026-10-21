@@ -45,16 +45,54 @@ describe('OcrJob primary → fallback OCR', () => {
     vi.restoreAllMocks()
   })
 
-  it('keeps the primary result when it read identity fields', async () => {
+  it('keeps the primary result when it read a name, the number and the birth date', async () => {
     const primary = {
       name: 'ai',
-      extract: vi.fn(async () => ({ fields: { fullName: 'Ada Lovelace' }, confidence: 0.9, raw: { provider: 'ai' } })),
+      extract: vi.fn(async () => ({
+        fields: { fullName: 'Ada Lovelace', documentNumber: 'A1234567', dateOfBirth: '1815-12-10' },
+        confidence: 0.9,
+        raw: { provider: 'ai' },
+      })),
     }
 
-    const result = await extract(primary)
+    const result = await extract(primary as never)
 
     expect(result.fields.fullName).toBe('Ada Lovelace')
     expect(fallback.extract).not.toHaveBeenCalled()
+  })
+
+  it('fills only the fields the primary missed from the fallback', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const primary = {
+      name: 'ai',
+      extract: vi.fn(async () => ({
+        fields: { dateOfBirth: '1988-03-03', lastName: 'EZE' },
+        confidence: 0.8,
+        authenticity,
+        raw: { provider: 'ai' },
+      })),
+    }
+
+    const result = await extract(primary as never)
+
+    // The primary's own reads win; the fallback only adds what was missing.
+    expect(result.fields).toEqual({ dateOfBirth: '1988-03-03', lastName: 'EZE', documentNumber: '12345678901' })
+    expect(result.confidence).toBe(0.8)
+    expect(result.authenticity).toBe(authenticity)
+    expect(result.raw).toMatchObject({ toppedUpFrom: 'tesseract', added: ['documentNumber'] })
+  })
+
+  it('keeps a partial primary read when the top-up fails', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    fallback.extract.mockRejectedValueOnce(new Error('tesseract failed'))
+    const primary = {
+      name: 'ai',
+      extract: vi.fn(async () => ({ fields: { dateOfBirth: '1988-03-03' }, confidence: 0.8, raw: { provider: 'ai' } })),
+    }
+
+    const result = await extract(primary as never)
+
+    expect(result.fields).toEqual({ dateOfBirth: '1988-03-03' })
   })
 
   it('falls back when the primary throws (e.g. a misconfigured AI provider)', async () => {
