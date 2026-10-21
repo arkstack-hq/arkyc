@@ -9,7 +9,7 @@ const base: FaceSample = {
   present: true,
   centerX: 0.5,
   centerY: 0.5,
-  scale: 0.5,
+  scale: 0.3,
   turn: 0,
   pitch: 0.4,
   blink: 0,
@@ -26,6 +26,8 @@ describe('isSelfieReady', () => {
     expect(isSelfieReady(s({ centerX: 0.9 }))).toBe(false)
     expect(isSelfieReady(s({ scale: 0.1 }))).toBe(false)
     expect(isSelfieReady(s({ scale: 0.95 }))).toBe(false)
+    // Too close for the server's anti-spoofing crop (2.7× the face must fit).
+    expect(isSelfieReady(s({ scale: 0.5 }))).toBe(false)
   })
 })
 
@@ -93,5 +95,15 @@ describe('makeChallengeDetector', () => {
     expect(d.progress).toBeLessThan(1)
     d.feed(s({ blink: 0.1 })) // re-opened
     expect(d.progress).toBe(1)
+  })
+})
+
+describe('framingHint', () => {
+  it('asks to move back when the face is too large, closer when too small', async () => {
+    const { framingHint } = await import('../src/ui')
+
+    expect(framingHint({ scale: 0.6 }, DEFAULT_TUNING)).toBe('Move back a little')
+    expect(framingHint({ scale: 0.1 }, DEFAULT_TUNING)).toBe('Move a little closer')
+    expect(framingHint({ scale: 0.3 }, DEFAULT_TUNING)).toBe('Center your face')
   })
 })

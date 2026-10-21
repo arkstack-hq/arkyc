@@ -204,6 +204,14 @@ interface StepDots {
  * so it can run under a fake DOM in tests. The view owns capture-screen camera
  * mechanics and raises only high-level events to the controller.
  */
+/** What to tell the user when the selfie isn't framed right yet. */
+export function framingHint(sample: { scale: number }, tuning: FaceTuning): string {
+  if (sample.scale <= tuning.selfieMinScale) return 'Move a little closer'
+  if (sample.scale >= tuning.selfieMaxScale) return 'Move back a little'
+
+  return 'Center your face'
+}
+
 export class WidgetView {
   private readonly root: HTMLElement
   private readonly body: HTMLElement
@@ -786,7 +794,7 @@ export class WidgetView {
           face.setState('good')
           face.setProgress(streak / need)
         } else {
-          hint.textContent = sample.scale <= this.tuning.selfieMinScale ? 'Move a little closer' : 'Center your face'
+          hint.textContent = framingHint(sample, this.tuning)
           streak = 0
           face.setState('wait')
           face.setProgress(0)
@@ -879,12 +887,17 @@ export class WidgetView {
       dots.setActive(index)
     }
 
+    // The still selfie for the anti-spoofing check and face match, taken the first
+    // time the face is well framed. Grabbing it at the end instead catches the
+    // face after "move closer", too large for the anti-spoofing model's crop.
+    let framedStill: Promise<Blob> | null = null
+
     const finish = () => {
       advance.setAttribute('disabled', 'true')
       // Grab a still selfie from the live video before stopping the recorder, so
       // active liveness yields a face image for review + face matching.
-      void this.camera
-        .grabFrame(video)
+      void (framedStill ?? this.camera.grabFrame(video))
+        .catch(() => this.camera.grabFrame(video))
         .then((selfie) =>
           Promise.resolve(recording?.stop() ?? Promise.resolve(null)).then((blob) =>
             this.handlers.onActiveLiveness(blob, performed, selfie),
@@ -954,6 +967,7 @@ export class WidgetView {
             if (flashing) return
             const sample = analyzer.analyze(video)
             if (!sample) return
+            if (!framedStill && isSelfieReady(sample, this.tuning)) framedStill = this.camera.grabFrame(video)
             const hit = detector.feed(sample)
             face.setProgress(detector.progress)
             if (hit) {
