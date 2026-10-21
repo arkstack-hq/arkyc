@@ -7,6 +7,12 @@ import request from 'parasito'
 
 const fx = { token: '', organizationId: '', projectId: '', apiKeySecret: '' }
 
+/** A valid 1x1 JPEG, for upload fields that require an image. */
+const TINY_JPEG = Buffer.from(
+  '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=',
+  'base64',
+)
+
 const authed = (method: 'get' | 'post' | 'patch' | 'delete', path: string) =>
   request(app)[method](`/api/v1/dashboard${path}`).set('Authorization', `Bearer ${fx.token}`)
 
@@ -263,6 +269,36 @@ describe('workflow-driven pipeline (jobs run inline in tests)', () => {
 
     const final = await retrieve(open.body.data.id)
     expect(final.body.data.status).toBe('approved')
+  })
+
+  it('keeps an uploaded proof of address and shows it to reviewers and integrators', async () => {
+    const steps = addressSteps('review').map((step) =>
+      step.key === 'address' ? { ...step, config: { methods: ['poa_document'], on_fail: 'review' } } : step,
+    )
+    const workflowId = await makeWorkflow('Address with proof', steps, { skip_ocr: true })
+    const open = await openSession({ workflow_id: workflowId })
+    const id = open.body.data.id
+    const token = await claimDeviceToken(open.body.client_token)
+    await client('get', 'session', token)
+    await client('post', 'document/front', token).send({})
+    const form = new FormData()
+    form.append('line1', '31 Gwarri Avenue')
+    form.append('city', 'Kaduna')
+    form.append('country', 'NG')
+    form.append('poa', new Blob([TINY_JPEG], { type: 'image/jpeg' }), 'proof.jpg')
+    const addr = await client('post', 'address', token).send(form)
+    expect(addr.status, addr.text).toBe(201)
+    await client('post', 'complete', token).send({})
+
+    // Integrators get a signed link to it with the session.
+    const session = await retrieve(id)
+    expect(session.body.data.assets?.proof_of_address).toMatch(/proof_of_address/)
+
+    // Reviewers see it with the session's media and can open it.
+    const detail = await authed('get', `/organizations/${fx.organizationId}/sessions/${id}`)
+    expect(detail.body.data.media).toContain('proof_of_address')
+    const media = await authed('get', `/organizations/${fx.organizationId}/sessions/${id}/media/proof_of_address`)
+    expect(media.status).toBe(200)
   })
 
   it('flags review when address fails and on_fail is review', async () => {

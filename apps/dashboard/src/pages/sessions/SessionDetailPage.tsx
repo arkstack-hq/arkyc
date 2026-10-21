@@ -19,7 +19,7 @@ import { formatDateTime, humanize } from '@/lib/utils'
 import type { SessionDetail } from '@/types/core'
 import { RiskSignalsCard } from './RiskSignalsCard'
 
-const IMAGE_KINDS = ['document_front', 'document_back', 'portrait', 'selfie'] as const
+const IMAGE_KINDS = ['document_front', 'document_back', 'portrait', 'selfie', 'proof_of_address'] as const
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (

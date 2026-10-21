@@ -17,9 +17,9 @@ export function clampAssetTtl(seconds: unknown): number {
 }
 
 /** The downloadable session assets. */
-export type AssetKind = 'document_front' | 'document_back' | 'selfie'
+export type AssetKind = 'document_front' | 'document_back' | 'selfie' | 'proof_of_address'
 
-const ASSET_KINDS: readonly AssetKind[] = ['document_front', 'document_back', 'selfie']
+const ASSET_KINDS: readonly AssetKind[] = ['document_front', 'document_back', 'selfie', 'proof_of_address']
 
 export function isAssetKind(value: string): value is AssetKind {
   return (ASSET_KINDS as readonly string[]).includes(value)

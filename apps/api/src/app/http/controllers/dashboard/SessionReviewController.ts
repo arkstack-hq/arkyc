@@ -20,6 +20,7 @@ const MEDIA_CONTENT_TYPE: Record<string, string> = {
   document_back: 'image/jpeg',
   portrait: 'image/jpeg',
   selfie: 'image/jpeg',
+  proof_of_address: 'image/jpeg',
   video: 'video/webm',
 }
 
@@ -74,6 +75,7 @@ export default class SessionReviewController extends BaseController {
     if (portrait?.portraitImagePath) media.push('portrait')
     if (liveness?.selfieImagePath) media.push('selfie')
     if (liveness?.videoPath) media.push('video')
+    if (address?.documentImagePath) media.push('proof_of_address')
 
     return res.json({
       status: 'success',
@@ -203,6 +205,8 @@ export default class SessionReviewController extends BaseController {
         return (await session.livenessChecks().latest('createdAt').first())?.selfieImagePath ?? null
       case 'video':
         return (await session.livenessChecks().latest('createdAt').first())?.videoPath ?? null
+      case 'proof_of_address':
+        return (await session.addressVerifications().latest('createdAt').first())?.documentImagePath ?? null
       default:
         return null
     }

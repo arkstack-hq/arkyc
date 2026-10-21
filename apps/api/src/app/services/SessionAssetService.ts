@@ -1,5 +1,6 @@
 import { type AssetKind, clampAssetTtl, signedAssetUrl } from 'src/support/asset-url'
 
+import { AddressVerification } from '@app/models/AddressVerification'
 import { DocumentCapture } from '@app/models/DocumentCapture'
 import { LivenessCheck } from '@app/models/LivenessCheck'
 import { VerificationSession } from '@app/models/VerificationSession'
@@ -27,6 +28,10 @@ export async function buildSessionAssets(session: VerificationSession): Promise<
 
   if (liveness?.selfieImagePath) assets.selfie = signedAssetUrl(session.id, 'selfie', ttl)
 
+  const address = await AddressVerification.where({ sessionId: session.id }).first()
+
+  if (address?.documentImagePath) assets.proof_of_address = signedAssetUrl(session.id, 'proof_of_address', ttl)
+
   return assets
 }
 
@@ -46,5 +51,7 @@ export async function assetObjectKey(session: VerificationSession, kind: AssetKi
       return (await DocumentCapture.where({ sessionId: session.id }).first())?.backImagePath ?? null
     case 'selfie':
       return (await LivenessCheck.where({ sessionId: session.id }).first())?.selfieImagePath ?? null
+    case 'proof_of_address':
+      return (await AddressVerification.where({ sessionId: session.id }).first())?.documentImagePath ?? null
   }
 }
