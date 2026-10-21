@@ -9,7 +9,7 @@ const DEBUG_ENVS = new Set(['local', 'development'])
 
 /** Whether OCR debug logging is enabled (local/development only). */
 function debugEnabled(): boolean {
-  return DEBUG_ENVS.has(config('app.name', 'Arkyc'))
+  return DEBUG_ENVS.has(String(config('app.env', 'production')))
 }
 
 /** What was fed to the OCR driver, and what it returned. */

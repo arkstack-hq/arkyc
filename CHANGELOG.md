@@ -4,10 +4,24 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.1] - 2026-10-21
 
 ### Fixed
 
+- **OCR falls back instead of stalling the decision.** When the primary driver
+  fails (e.g. a misconfigured AI provider answering 404) or reads no identity
+  field, `OcrJob` now uses `OCR_FALLBACK_DRIVER`, keeping the primary's
+  authenticity read and raw payload. Previously the job failed and the decision
+  waited on "OCR result is not ready yet" until the session expired.
+- **AI OCR keeps what the model read.** Field aliases (`surname`, `first_name`,
+  `nin`, `dob`, …) and a nested `fields` object are mapped, numeric values are
+  accepted, and the model's tool arguments are stored as `raw.modelOutput`.
+- **`BiometricJob` is idempotent across retries.** A retried job reuses the
+  recorded face match instead of re-running the model and inserting a duplicate
+  check. Each step (face match, every risk detector, decision) now logs its timing,
+  so a job killed or stuck mid-run can be pinned to its last unfinished step.
+- **OCR debug logging** (`storage/logs/ocr.log`) checked `app.name` instead of
+  `app.env`, so it never wrote; it now logs in `local`/`development`.
 - **The PM2 queue worker never processed a job.** PM2 ran `script` under node:
   - With `node_modules/.bin/ark` (a pnpm shell-script shim), node parsed shell as
     JS and the worker crash-looped (`SyntaxError: missing ) after argument list`).

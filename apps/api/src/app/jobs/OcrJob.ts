@@ -1,6 +1,8 @@
 import { Job } from '@arkstack/jobs'
 import { Storage } from '@arkstack/filesystem'
-import { resolveOcrDriver } from '@app/services/providers'
+import { fallbackOcrDriver, resolveOcrDriver } from '@app/services/providers'
+import { Logger } from '@arkstack/common'
+import type { OcrFields, OcrResultData } from '@arkyc/types'
 import { readObject, sessionObjectKey } from 'src/support/storage'
 import { aiOcrEnabledForProject } from 'src/support/access'
 import { logOcrExtraction } from 'src/support/ocr-log'
@@ -8,6 +10,11 @@ import { VerificationSession } from '@app/models/VerificationSession'
 import { DocumentCapture } from '@app/models/DocumentCapture'
 import { OcrResult } from '@app/models/OcrResult'
 import { DocumentPortrait } from '@app/models/DocumentPortrait'
+
+/** Fields that identify the person; a result with none of them read nothing useful. */
+const IDENTITY_FIELDS: (keyof OcrFields)[] = ['firstName', 'lastName', 'fullName', 'documentNumber', 'dateOfBirth']
+
+const readAnything = (fields: OcrFields): boolean => IDENTITY_FIELDS.some((key) => Boolean(fields[key]))
 
 /** Confidence reported for the (mock) portrait extraction off the document. */
 const PORTRAIT_DETECTION_CONFIDENCE = 0.95
@@ -50,7 +57,7 @@ export class OcrJob extends Job {
     // AI processing is gated per project; fall back to OCR_FALLBACK_DRIVER when
     // it isn't granted (no-op for non-`ai` primaries).
     const aiEnabled = await aiOcrEnabledForProject(session)
-    const ocr = await resolveOcrDriver(aiEnabled).extract({
+    const request = {
       image,
       backImage: back.length ? back : undefined,
       documentType: capture.documentType,
@@ -62,7 +69,8 @@ export class OcrJob extends Job {
         dateOfBirth: this.hints.dateOfBirth,
         documentNumber: this.hints.documentNumber,
       },
-    })
+    }
+    const ocr = await this.extract(resolveOcrDriver(aiEnabled), request, session.id)
     await logOcrExtraction({
       sessionId: session.id,
       documentType: capture.documentType,
@@ -93,5 +101,43 @@ export class OcrJob extends Job {
       portraitImagePath: portraitPath,
       detectionConfidence: PORTRAIT_DETECTION_CONFIDENCE,
     })
+  }
+
+  /**
+   * Run the primary OCR driver, falling back to OCR_FALLBACK_DRIVER when it fails
+   * (e.g. a misconfigured AI provider) or reads no identity field (e.g. a model that
+   * answers the tool call but leaves the fields empty). Without the fallback the job
+   * fails and the decision waits forever on "OCR result is not ready yet". The
+   * primary's authenticity read and raw payload are kept, so nothing is lost.
+   */
+  private async extract(
+    primary: ReturnType<typeof resolveOcrDriver>,
+    request: Parameters<ReturnType<typeof resolveOcrDriver>['extract']>[0],
+    sessionId: string,
+  ): Promise<OcrResultData> {
+    if (primary === fallbackOcrDriver) return primary.extract(request)
+
+    let first: OcrResultData | null = null
+    let reason: string
+    try {
+      first = await primary.extract(request)
+      if (readAnything(first.fields)) return first
+      reason = 'read no identity fields'
+    } catch (error) {
+      reason = error instanceof Error ? error.message : String(error)
+    }
+
+    Logger.warn(
+      `OcrJob ${sessionId}: ${primary.name} OCR ${reason}; falling back to ${fallbackOcrDriver.name}`,
+      false,
+      true,
+    )
+    const fallback = await fallbackOcrDriver.extract(request)
+
+    return {
+      ...fallback,
+      authenticity: fallback.authenticity ?? first?.authenticity,
+      raw: { fallbackFrom: primary.name, reason, primary: first?.raw ?? null, fallback: fallback.raw ?? null },
+    }
   }
 }

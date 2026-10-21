@@ -58,6 +58,8 @@ export interface AiExtraction {
   documentType?: DocumentType | null
   /** Best-effort tamper/replay read; omitted when the model reported nothing. */
   authenticity?: OcrAuthenticity
+  /** The model's own tool-call arguments, kept for debugging what it actually returned. */
+  modelOutput?: Record<string, unknown>
 }
 
 /**
@@ -171,6 +173,7 @@ export class AnthropicOcrDriver implements OcrDriver {
         legibility: raw.legibility ?? null,
         documentType: raw.documentType ?? request.documentType ?? null,
         authenticity: authenticity ?? null,
+        modelOutput: raw.modelOutput ?? null,
       },
     }
   }
@@ -299,7 +302,11 @@ const READ_TOOL = {
       lastName: { type: 'string', description: 'Surname / family name as printed.' },
       fullName: { type: 'string', description: 'Full name if given/surname cannot be separated.' },
       dateOfBirth: { type: 'string', description: 'Date of birth, ISO 8601 YYYY-MM-DD.' },
-      documentNumber: { type: 'string', description: 'Document/serial number as printed.' },
+      documentNumber: {
+        type: 'string',
+        description:
+          'Document/serial number as printed; for a national ID card or slip, the national identification number (e.g. NIN).',
+      },
       issueDate: {
         type: 'string',
         description: 'Date of issue ("issued"/"valid from"/"issue date"), ISO 8601 YYYY-MM-DD. NOT the expiry.',
@@ -591,17 +598,44 @@ export function workersAiVision(opts: {
  * @returns
  */
 function mapToolInput(input: Record<string, unknown>): AiExtraction {
-  const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+  const str = (v: unknown): string | undefined => {
+    if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+
+    return typeof v === 'string' && v.trim() ? v.trim() : undefined
+  }
+  // Models don't always use the schema's exact keys (snake_case, `surname`, a
+  // national-ID label like `nin`) or may nest them under `fields`; read the first
+  // alias present so a correct read isn't discarded over naming.
+  const nested = input.fields && typeof input.fields === 'object' ? (input.fields as Record<string, unknown>) : {}
+  const source = { ...nested, ...input }
+  const pick = (...keys: string[]): string | undefined => {
+    for (const key of keys) {
+      const value = str(source[key])
+      if (value) return value
+    }
+
+    return undefined
+  }
   const docType = str(input.documentType)
   return {
+    modelOutput: input,
     fields: {
-      firstName: str(input.firstName),
-      lastName: str(input.lastName),
-      fullName: str(input.fullName),
-      dateOfBirth: str(input.dateOfBirth),
-      documentNumber: str(input.documentNumber),
-      expiryDate: str(input.expiryDate),
-      nationality: str(input.nationality),
+      firstName: pick('firstName', 'first_name', 'givenName', 'givenNames', 'given_names', 'forename', 'forenames'),
+      lastName: pick('lastName', 'last_name', 'surname', 'familyName', 'family_name'),
+      fullName: pick('fullName', 'full_name', 'name'),
+      dateOfBirth: pick('dateOfBirth', 'date_of_birth', 'dob', 'birthDate', 'birth_date'),
+      documentNumber: pick(
+        'documentNumber',
+        'document_number',
+        'idNumber',
+        'id_number',
+        'nin',
+        'nationalIdNumber',
+        'national_id_number',
+        'number',
+      ),
+      expiryDate: pick('expiryDate', 'expiry_date', 'dateOfExpiry', 'date_of_expiry', 'expiry'),
+      nationality: pick('nationality'),
     },
     legibility: typeof input.legibility === 'number' ? input.legibility : undefined,
     documentType: docType && (DOCUMENT_TYPES as readonly string[]).includes(docType) ? (docType as DocumentType) : null,

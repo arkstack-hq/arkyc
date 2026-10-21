@@ -1,4 +1,5 @@
 import { Job } from '@arkstack/jobs'
+import { Logger } from '@arkstack/common'
 import { type DecisionInput, DecisionEngine, SessionRules } from '@arkyc/core'
 import { workflowAddressConfig, workflowEnables, workflowRunsOcr } from '@arkyc/types'
 import { faceMatchDriver } from '@app/services/providers'
@@ -14,6 +15,20 @@ import { FaceMatchCheck } from '@app/models/FaceMatchCheck'
 import { AddressVerification } from '@app/models/AddressVerification'
 import { Project } from '@app/models/Project'
 import { riskSignals } from '@app/services/risk/RiskSignalService'
+
+/**
+ * Log how long each step of a session's decision takes, so a job that stalls or is
+ * killed mid-run (e.g. by the OOM killer, which leaves no `Failed` line) can be
+ * pinned to the step it never finished: the last "started" without its "done".
+ */
+async function timed<T>(sessionId: string, step: string, run: () => Promise<T>): Promise<T> {
+  const startedAt = Date.now()
+  Logger.info(`BiometricJob ${sessionId} ${step} started`, false, true)
+  const result = await run()
+  Logger.info(`BiometricJob ${sessionId} ${step} done in ${Date.now() - startedAt}ms`, false, true)
+
+  return result
+}
 
 export interface BiometricJobHints {
   faceSimilarity?: number
@@ -68,15 +83,22 @@ export class BiometricJob extends Job {
     const selfie = liveness?.selfieImagePath ? await readObject(liveness.selfieImagePath) : null
 
     let faceMatch: { passed: boolean; similarityScore: number } | null = null
-    if (runsFaceMatch) {
+    // A retried job reuses the face match it already recorded rather than re-running
+    // the model and inserting a duplicate check.
+    const recorded = runsFaceMatch ? await FaceMatchCheck.where({ sessionId: session.id }).first() : null
+    if (recorded) {
+      faceMatch = { passed: recorded.passed, similarityScore: recorded.similarityScore }
+    } else if (runsFaceMatch) {
       const portrait = await DocumentPortrait.where({ sessionId: session.id }).first()
       if (!portrait) throw new Error('Document portrait is not ready yet')
 
-      const result = await faceMatchDriver.compare({
-        documentPortrait: await readObject(portrait.portraitImagePath),
-        selfie: selfie ?? new Uint8Array(0),
-        hints: { similarityScore: this.hints.faceSimilarity, passed: this.hints.faceMatchPassed },
-      })
+      const result = await timed(session.id, 'face match', async () =>
+        faceMatchDriver.compare({
+          documentPortrait: await readObject(portrait.portraitImagePath),
+          selfie: selfie ?? new Uint8Array(0),
+          hints: { similarityScore: this.hints.faceSimilarity, passed: this.hints.faceMatchPassed },
+        }),
+      )
       await FaceMatchCheck.create({
         organizationId: session.organizationId,
         projectId: session.projectId,
@@ -92,7 +114,9 @@ export class BiometricJob extends Job {
       faceMatch = { passed: result.passed, similarityScore: result.similarityScore }
     }
 
-    const signals = await riskSignals.evaluate({ session, workflow, capture, ocr, selfie })
+    const signals = await timed(session.id, 'risk signals', () =>
+      riskSignals.evaluate({ session, workflow, capture, ocr, selfie }),
+    )
 
     // Disabled or skipped stages pass through so they can't fail or flag the user.
     const decisionInput: DecisionInput = {
@@ -136,8 +160,8 @@ export class BiometricJob extends Job {
       session.finalDecision = decision
       session.completedAt = new Date()
     }
-    await transitionTo(session, decision)
-    await riskSignals.afterDecision(session, signals)
+    await timed(session.id, `decision (${decision})`, () => transitionTo(session, decision))
+    await timed(session.id, 'after decision', () => riskSignals.afterDecision(session, signals))
 
     await audit.record({
       organizationId: session.organizationId,
