@@ -280,9 +280,18 @@ export class WidgetController {
       onClose: () => this.finishClose(),
       // The session was already fetched + resolved during bootstrap; just advance.
       onStart: () => void this.run(() => this.enter(this.next())),
+      onCountrySelected: (country) => {
+        if (!country) return
+        this.country = country
+        this.render()
+      },
+      onChangeCountry: () => {
+        this.country = null
+        this.render()
+      },
       onDocumentSelected: (type, country) => {
         this.documentType = type
-        this.country = country || null
+        this.country = country || this.country
         void this.run(() => this.enter('front_capture'))
       },
       onImage: (blob) => void this.run(() => this.onImage(blob)),
@@ -367,7 +376,11 @@ export class WidgetController {
    */
   private buildHandoffUrl(target: string, handoffToken: string): string {
     const pageOrigin = this.win.location?.origin ?? globalThis.location?.origin ?? ''
-    return composeHandoffUrl(target, handoffToken, this.client.base, pageOrigin)
+    const url = composeHandoffUrl(target, handoffToken, this.client.base, pageOrigin)
+    // Carry the integrator's country to the phone so it's preselected there too.
+    const country = this.config.defaultCountry?.trim().toUpperCase()
+
+    return country ? `${url}&country=${encodeURIComponent(country)}` : url
   }
 
   /**
@@ -600,10 +613,25 @@ export class WidgetController {
     }
   }
 
+  /**
+   * The country to preselect on the country screen: the integrator's
+   * `defaultCountry`, else the region of the browser's language (`en-NG` → `NG`).
+   */
+  private suggestedCountry(): string | null {
+    const configured = this.config.defaultCountry?.trim().toUpperCase()
+    if (configured) return configured
+
+    const region = this.nav?.language?.split('-')[1]?.toUpperCase()
+
+    return region && /^[A-Z]{2}$/.test(region) ? region : null
+  }
+
   private render(): void {
     this.view.render({
       step: this.step,
       documentType: this.documentType,
+      country: this.country,
+      suggestedCountry: this.suggestedCountry(),
       decision: this.result?.decision,
       status: this.result?.status,
       terminalNotice: this.terminalOnLoad,
@@ -851,6 +879,7 @@ export const buildController = (options: BaseWidgetOptions, onSettle: () => void
     handoff: options.handoff,
     handoffUrl: options.handoffUrl,
     branding: options.branding,
+    defaultCountry: options.defaultCountry,
     signals: options.signals,
     onComplete: options.onComplete,
     onError: options.onError,

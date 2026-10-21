@@ -68,7 +68,8 @@ export class ArkycWidget {
     if (!doc || !win) throw new Error('ArkycWidget.open must run in a browser environment.')
 
     const widgetUrl = ArkycWidget.resolveWidgetUrl(options.widgetUrl).replace(/\/$/, '')
-    const src = `${widgetUrl}?token=${encodeURIComponent(options.token)}`
+    const country = options.defaultCountry ? `&country=${encodeURIComponent(options.defaultCountry)}` : ''
+    const src = `${widgetUrl}?token=${encodeURIComponent(options.token)}${country}`
 
     const overlay = doc.createElement('div')
     overlay.setAttribute('data-arkyc-widget', '')

@@ -86,6 +86,8 @@ export interface WidgetControllerConfig {
   token: string
   /** API origin (defaults to the widget's own origin). */
   baseUrl?: string
+  /** Country to preselect on the country screen (see {@link BaseWidgetOptions.defaultCountry}). */
+  defaultCountry?: string | null
   /** Disable cross-device handoff entirely (set on the hosted page to avoid recursion). */
   handoff?: boolean
   /** Override the server-provided handoff page URL. */
@@ -168,6 +170,12 @@ export interface BaseWidgetOptions {
   /** Branding (colors, logo, radius, theme, name). Usually sourced from project config. */
   branding?: ProjectBranding | null
   /**
+   * ISO 3166-1 alpha-2 country to preselect on the country screen (e.g. `NG` when
+   * your users are in Nigeria). The user can still change it. When omitted, the
+   * widget preselects the region of the browser's language (`en-NG` → `NG`).
+   */
+  defaultCountry?: string | null
+  /**
    * Open the widget edge-to-edge (no surrounding padding/backdrop gap, no card
    * max-size or border radius). Applies to {@link ArkycWidget.open} only.
    */
@@ -224,6 +232,10 @@ export interface WidgetHandle {
 export interface ViewHandlers {
   onClose(): void
   onStart(): void
+  /** The country screen was confirmed (an ISO 3166-1 alpha-2 code). */
+  onCountrySelected(country: string): void
+  /** Return from the document-type screen to the country screen. */
+  onChangeCountry(): void
   onDocumentSelected(type: DocumentType, country: string): void
   /** A capture screen produced an image (or `null` when skipped in demo mode). */
   onImage(blob: Blob | null): void

@@ -45,6 +45,10 @@ class FakeEl {
     this.attributes[key] = value
   }
 
+  removeAttribute(key: string): void {
+    delete this.attributes[key]
+  }
+
   addEventListener(type: string, fn: () => void): void {
     ;(this.listeners[type] ??= []).push(fn)
   }
@@ -183,6 +187,7 @@ function makeController(over: Partial<ConstructorParameters<typeof WidgetControl
     pollMs: 0,
     maxPolls: 5,
     postToParent: true,
+    defaultCountry: 'NG',
     ...over,
   })
   body.appendChild(controller.element as never)
@@ -197,6 +202,8 @@ describe('WidgetController flow', () => {
     controller.start()
     await flush() // connect → welcome
     clickText(controller.element as unknown as FakeEl, 'Get started')
+    await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // country
     await flush()
     clickText(controller.element as unknown as FakeEl, 'Passport')
     await flush()
@@ -267,6 +274,8 @@ describe('WidgetController flow', () => {
     await flush() // connect → welcome
     clickText(el, 'Get started')
     await flush()
+    clickText(el, 'Continue') // country
+    await flush()
     clickText(el, 'Passport')
     await flush()
     clickText(el, 'Continue') // front instruction
@@ -296,6 +305,8 @@ describe('WidgetController flow', () => {
     controller.start()
     await flush() // connect → welcome
     clickText(controller.element as unknown as FakeEl, 'Get started')
+    await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // country
     await flush()
     clickText(controller.element as unknown as FakeEl, 'ID Card')
     await flush()
@@ -327,6 +338,8 @@ describe('WidgetController flow', () => {
     controller.start()
     await flush() // connect → welcome
     clickText(controller.element as unknown as FakeEl, 'Get started')
+    await flush()
+    clickText(controller.element as unknown as FakeEl, 'Continue') // country
     await flush()
     clickText(controller.element as unknown as FakeEl, 'Passport')
     await flush()
@@ -382,6 +395,8 @@ describe('WidgetController flow', () => {
     controller.start()
     await flush()
     clickText(el, 'Get started')
+    await flush()
+    clickText(el, 'Continue') // country
     await flush()
     clickText(el, 'Passport')
     await flush()
@@ -615,6 +630,8 @@ describe('WidgetController realtime events', () => {
     controller.start()
     await flush()
     clickText(el, 'Get started')
+    await flush()
+    clickText(el, 'Continue') // country
     await flush()
     clickText(el, 'Passport')
     await flush()
@@ -897,5 +914,75 @@ describe('ArkycWidget launchers', () => {
       fetch: (async () => ({ ok: true, status: 200, text: async () => '{}' })) as never,
     })
     expect(body.children.length).toBe(1)
+  })
+})
+
+describe('country screen', () => {
+  it('asks for the issuing country on its own screen before the document type', async () => {
+    const { controller, fetchMock } = makeController({ defaultCountry: null })
+    const el = controller.element as unknown as FakeEl
+
+    controller.start()
+    await flush()
+    clickText(el, 'Get started')
+    await flush()
+
+    // Nothing preselected (no defaultCountry, no browser language): Continue is disabled.
+    expect(find(el, 'Choose your country')).toBeTruthy()
+    expect(find(el, 'Passport')).toBeUndefined()
+    const continueBtn = find(el, 'Continue')!
+    expect(continueBtn.attributes.disabled).toBe('true')
+
+    const select = findByAttr(el, 'name', 'country')!
+    select.value = 'GH'
+    ;(select.listeners.change ?? []).forEach((fn) => fn())
+    expect(continueBtn.attributes.disabled).toBeUndefined()
+    continueBtn.click()
+    await flush()
+
+    expect(find(el, 'Select your document')).toBeTruthy()
+    expect(find(el, 'Issued in 🇬🇭 Ghana')).toBeTruthy()
+
+    clickText(el, 'Passport')
+    await flush()
+    clickText(el, 'Continue') // front instruction
+    await flush()
+    clickText(el, 'Skip (demo)')
+    await flush()
+
+    const front = fetchMock.mock.calls.find(([url]) => String(url).includes('document/front'))
+    expect((front?.[1] as RequestInit).body).toBeTruthy()
+    expect(((front?.[1] as RequestInit).body as FormData).get('country')).toBe('GH')
+  })
+
+  it('preselects defaultCountry, then the region of the browser language', async () => {
+    const configured = makeController({ defaultCountry: 'ng' })
+    configured.controller.start()
+    await flush()
+    clickText(configured.controller.element as unknown as FakeEl, 'Get started')
+    await flush()
+    expect(findByAttr(configured.controller.element as unknown as FakeEl, 'name', 'country')!.value).toBe('NG')
+
+    const fromLanguage = makeController({ defaultCountry: null, nav: { language: 'en-KE' } as Navigator })
+    fromLanguage.controller.start()
+    await flush()
+    clickText(fromLanguage.controller.element as unknown as FakeEl, 'Get started')
+    await flush()
+    expect(findByAttr(fromLanguage.controller.element as unknown as FakeEl, 'name', 'country')!.value).toBe('KE')
+  })
+
+  it('goes back to the country screen from the document screen', async () => {
+    const { controller } = makeController()
+    const el = controller.element as unknown as FakeEl
+    controller.start()
+    await flush()
+    clickText(el, 'Get started')
+    await flush()
+    clickText(el, 'Continue')
+    await flush()
+    clickText(el, 'Change country')
+    await flush()
+
+    expect(find(el, 'Choose your country')).toBeTruthy()
   })
 })

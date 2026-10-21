@@ -31,10 +31,15 @@ function completionOutcome(status: WidgetResult['status']): Outcome {
  * with a success/close screen so the page never falls back to a blank screen.
  */
 export default function VerifyPage() {
-  const [{ token, baseUrl }] = useState(() => {
+  const [{ token, baseUrl, defaultCountry }] = useState(() => {
     const params = new URLSearchParams(window.location.search)
     // Prefer the baseUrl the QR carried (custom hosting); else this app's API.
-    return { token: params.get('token') ?? '', baseUrl: params.get('baseUrl') ?? API_BASE }
+    return {
+      token: params.get('token') ?? '',
+      baseUrl: params.get('baseUrl') ?? API_BASE,
+      // The integrator's country (SDK `defaultCountry`, or carried by the handoff QR).
+      defaultCountry: params.get('country'),
+    }
   })
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   // StrictMode mounts the effect twice; its cleanup closes the widget, which fires
@@ -47,6 +52,7 @@ export default function VerifyPage() {
     const handle = ArkycWidget.open({
       token,
       baseUrl,
+      defaultCountry,
       fullscreen: true,
       handoff: false,
       onComplete: (result) => setOutcome(completionOutcome(result.status)),
@@ -62,7 +68,7 @@ export default function VerifyPage() {
       tearingDown.current = true
       handle.close()
     }
-  }, [token, baseUrl])
+  }, [token, baseUrl, defaultCountry])
 
   if (!token) {
     return (

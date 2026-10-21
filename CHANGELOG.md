@@ -4,6 +4,24 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.3] - 2026-10-21
+
+### Changed
+
+- **Widget: the issuing country has its own screen.** It used to be a dropdown
+  among the document-type buttons, easy to skip, so sessions often reached OCR
+  with no country and country-specific document parsers didn't run. The widget
+  now asks the user to choose their country first (Continue stays disabled until a
+  country is chosen), then the document type, with a "Change country" link back.
+
+### Added
+
+- **`defaultCountry` widget option** (`@arkyc/widget` and the SDK's
+  `ArkycWidget.open`): preselects the country screen, e.g. `NG`. Without it the
+  widget preselects the region of the browser's language (`en-NG` → `NG`). The
+  hosted `/verify` page reads it from `?country=`, and the handoff QR carries it
+  to the phone.
+
 ## [2.3.2] - 2026-10-21
 
 ### Fixed
