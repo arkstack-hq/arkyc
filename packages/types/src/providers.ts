@@ -57,6 +57,8 @@ export interface SpoofSignals {
   multipleFaces?: boolean
   faceNotCentered?: boolean
   poorLighting?: boolean
+  /** The face filled the frame too much for the anti-spoofing check to judge it. */
+  faceTooClose?: boolean
 }
 
 /** The shape returned by any passive-liveness driver. */
