@@ -33,7 +33,7 @@ module.exports = {
     {
       name: 'arkyc-worker',
       cwd: './current',
-      script: 'node_modules/.bin/ark',
+      script: 'node_modules/@arkstack/console/dist/index.js',
       args: ['queue:work', '--queue=webhook,*'],
       autorestart: true,
       env: { NODE_ENV: 'production' },

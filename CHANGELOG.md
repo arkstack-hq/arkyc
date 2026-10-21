@@ -4,6 +4,19 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The PM2 queue worker never started.** `ecosystem.config.cjs` ran
+  `node_modules/.bin/ark`, which pnpm generates as a shell-script shim; PM2 runs
+  `script` with node, so the worker crash-looped on
+  `SyntaxError: missing ) after argument list` and no job (OCR, decisioning,
+  webhook delivery) was ever processed. It now runs the CLI's JS entry,
+  `node_modules/@arkstack/console/dist/index.js`. Recreate the process to apply
+  it: `pm2 delete arkyc-worker && pm2 start ecosystem.config.cjs --only arkyc-worker`
+  (a reload keeps the old `script`).
+
 ## [2.1.0] - 2026-10-21
 
 ### Added
