@@ -53,6 +53,19 @@ describe('ArkycWidget.open', () => {
     expect(iframe?.src).toBe('https://verify.test?token=ct_xyz')
     expect(dom.body.appendChild).toHaveBeenCalled()
 
+    // A default country rides along for the hosted page to preselect.
+    const withCountry = fakeDom()
+    ArkycWidget.open({
+      token: 'ct_xyz',
+      widgetUrl: 'https://verify.test',
+      defaultCountry: 'NG',
+      doc: withCountry.doc,
+      win: withCountry.win,
+    })
+    expect(withCountry.created.find((el) => el.src.includes('verify.test'))?.src).toBe(
+      'https://verify.test?token=ct_xyz&country=NG',
+    )
+
     // Ignores unrelated postMessages.
     dom.fire({ type: 'other' })
     expect(onComplete).not.toHaveBeenCalled()

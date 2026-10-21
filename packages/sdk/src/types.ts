@@ -128,6 +128,11 @@ export interface OpenWidgetOptions {
   token: string
   /** Hosted widget origin (default `https://arkyc.toneflix.net/verify`). */
   widgetUrl?: string
+  /**
+   * ISO 3166-1 alpha-2 country to preselect on the widget's country screen (e.g.
+   * `NG`). The user can still change it.
+   */
+  defaultCountry?: string
   onComplete?: (result: WidgetResult) => void
   onError?: (error: unknown) => void
   onClose?: () => void

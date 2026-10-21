@@ -49,6 +49,10 @@ import type { ViewHandlers } from './types'
 export interface ViewState {
   step: WidgetStep
   documentType: DocumentType | null
+  /** The confirmed issuing country; null while the country screen is showing. */
+  country?: string | null
+  /** The country to preselect on the country screen. */
+  suggestedCountry?: string | null
   decision?: VerificationDecision | null
   /** The session status (drives the close-only terminal notice). */
   status?: VerificationStatus
@@ -332,7 +336,7 @@ export class WidgetView {
       case 'welcome':
         return this.renderWelcome(state.handoffAvailable)
       case 'document_selection':
-        return this.renderDocumentSelection()
+        return state.country ? this.renderDocumentSelection(state.country) : this.renderCountrySelection(state)
       case 'front_capture':
         return this.renderCapture('Front of document', 'environment', state.allowSkip, false, state.strictCapture)
       case 'back_capture':
@@ -436,24 +440,51 @@ export class WidgetView {
     }
   }
 
-  private renderDocumentSelection(): void {
-    this.body.appendChild(this.dom.h('h2', { class: 'arkyc-h', text: 'Select your document' }))
-    const country = this.dom.field('Country', {
+  /**
+   * Its own screen, before the document type, so the issuing country isn't an
+   * easy-to-skip field among the document buttons. It decides which document
+   * layouts the server tries first.
+   */
+  private renderCountrySelection(state: ViewState): void {
+    const select = this.dom.field('Choose a country', {
       class: 'arkyc-btn arkyc-btn-ghost arkyc-text-center',
       name: 'country',
       autocomplete: 'country',
       choices: countries.map(({ name, iso2, flag }) => ({ value: iso2, label: `${flag} ${name}` })),
     })
+    const suggested = state.suggestedCountry
+    if (suggested && countries.some((c) => c.iso2 === suggested)) select.value = suggested
 
+    const chosen = () => (select.value || '').trim().toUpperCase()
+    const proceed = this.button('Continue', () => {
+      if (chosen()) this.handlers.onCountrySelected(chosen())
+    })
+    const sync = () => (chosen() ? proceed.removeAttribute?.('disabled') : proceed.setAttribute('disabled', 'true'))
+    select.addEventListener('change', sync)
+    sync()
+
+    this.dom.append(this.body, [
+      this.dom.h('h2', { class: 'arkyc-h', text: 'Where is your ID from?' }),
+      this.dom.h('p', { class: 'arkyc-p', text: 'Choose the country that issued the document you will use.' }),
+      this.dom.h('div', { class: 'arkyc-choices' }, [select]),
+    ])
+    this.footer.appendChild(proceed)
+  }
+
+  private renderDocumentSelection(country: string): void {
+    const issuer = countries.find((c) => c.iso2 === country)
     const buttons = (Object.keys(DOCUMENT_LABELS) as DocumentType[]).map((type) => {
-      const btn = this.button(DOCUMENT_LABELS[type], () =>
-        this.handlers.onDocumentSelected(type, (country.value || '').trim().toUpperCase()),
-      )
+      const btn = this.button(DOCUMENT_LABELS[type], () => this.handlers.onDocumentSelected(type, country))
       btn.classList.add('arkyc-btn-ghost')
       return btn
     })
 
-    this.body.appendChild(this.dom.h('div', { class: 'arkyc-choices' }, [country, ...buttons]))
+    this.dom.append(this.body, [
+      this.dom.h('h2', { class: 'arkyc-h', text: 'Select your document' }),
+      this.dom.h('p', { class: 'arkyc-p', text: `Issued in ${issuer ? `${issuer.flag} ${issuer.name}` : country}` }),
+      this.dom.h('div', { class: 'arkyc-choices' }, buttons),
+    ])
+    this.footer.appendChild(this.button('Change country', () => this.handlers.onChangeCountry(), 'arkyc-btn-ghost'))
   }
 
   private renderCapture(title: string, facing: Facing, allowSkip?: boolean, selfie = false, strict = false): void {
