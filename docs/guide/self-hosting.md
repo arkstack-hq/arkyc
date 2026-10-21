@@ -113,6 +113,9 @@ table; `ark migrate` creates it.
   install, build pgvector against your server's `pg_config`.
 - `TRUST_PROXY` set when the API sits behind a load balancer, so device and
   velocity signals see the client IP.
+- For network risk signals, `NETWORK_DRIVER=maxmind` with the GeoLite2 databases
+  in `shared/storage/geoip` and a scheduled update (see
+  [IP intelligence (GeoIP)](./providers#geoip)); otherwise leave it on `mock`.
 - For self-hosted biometrics, `FACE_MATCH_DRIVER=local` / `LIVENESS_DRIVER=local`
   and `ark biometrics:setup` on each worker (see [Provider drivers](./providers#local-biometrics)).
 - A screening data licence if you screen commercially (see [Fraud signals](./fraud-signals#watchlist-screening)).

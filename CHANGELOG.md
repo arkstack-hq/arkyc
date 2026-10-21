@@ -16,6 +16,14 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and Redis re-delivered the job every `QUEUE_RETRY_AFTER`, so the session never
   got its decision and expired in `processing`. It now logs and carries on.
 
+### Docs
+
+- **GeoIP setup.** The provider guide now covers the `maxmind` network driver end
+  to end: getting a MaxMind licence key, downloading GeoLite2 Country and ASN
+  (`geoipupdate` or direct download), the optional Anonymous IP database and Tor
+  exit list, where to keep the files so they survive deploys
+  (`shared/storage/geoip`), restarting the API and worker, and scheduled updates.
+
 ## [2.1.1] - 2026-10-21
 
 ### Fixed

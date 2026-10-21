@@ -102,7 +102,9 @@ agent. At decision time:
 - **Network**: the `NETWORK_DRIVER` looks the IP up. The `maxmind` driver reads
   local GeoLite2 Country and ASN databases, recognizes hosting providers from the
   ASN owner, takes VPN and proxy flags from the commercial GeoIP2 Anonymous IP
-  database when present, and Tor exits from `TOR_EXIT_LIST`.
+  database when present, and Tor exits from `TOR_EXIT_LIST`. See
+  [IP intelligence (GeoIP)](./providers#geoip) to download and configure the
+  databases.
 
 Private and loopback addresses are skipped. Behind a load balancer set
 `TRUST_PROXY` (for example `1`) or every request looks like the proxy.

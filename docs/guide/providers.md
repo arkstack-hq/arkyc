@@ -97,6 +97,94 @@ Run it against the `external` drivers too (set `*_DRIVER=external`) to compare. 
 an Apple M-series CPU a warm face match takes about 80 ms and a liveness check
 about 30 ms.
 
+## IP intelligence (GeoIP) {#geoip}
+
+The `maxmind` network driver resolves the country and network owner behind a
+session's IP for the [network risk signals](./fraud-signals#device-network)
+(foreign or hosting networks, VPN, proxy, Tor). It reads **local** MaxMind
+databases, so nothing leaves your server, but you have to put the files in place.
+`NETWORK_DRIVER=mock` (the default) needs none of this.
+
+| Database                       | Variable                  | Gives                       | Cost                   |
+| ------------------------------ | ------------------------- | --------------------------- | ---------------------- |
+| GeoLite2 Country               | `MAXMIND_COUNTRY_DB`      | Country of the IP           | Free (MaxMind account) |
+| GeoLite2 ASN                   | `MAXMIND_ASN_DB`          | Network owner (hosting)     | Free (MaxMind account) |
+| GeoIP2 Anonymous IP (optional) | `MAXMIND_ANONYMOUS_IP_DB` | VPN, proxy, hosting flags   | Commercial             |
+| Tor exit list (optional)       | `TOR_EXIT_LIST`           | Tor exit nodes, one IP/line | Free                   |
+
+### 1. Get a licence key
+
+Create a free account at [maxmind.com](https://www.maxmind.com/en/geolite2/signup),
+then **Manage License Keys → Generate new license key**. Note your **Account ID**
+and the key.
+
+### 2. Download the databases
+
+With MaxMind's [`geoipupdate`](https://github.com/maxmind/geoipupdate) (recommended,
+since it also handles updates), write a `GeoIP.conf`:
+
+```ini
+AccountID <your account id>
+LicenseKey <your licence key>
+EditionIDs GeoLite2-Country GeoLite2-ASN
+DatabaseDirectory /var/www/api.example.com/shared/storage/geoip
+```
+
+```bash
+mkdir -p /var/www/api.example.com/shared/storage/geoip
+geoipupdate -f /path/to/GeoIP.conf
+```
+
+Or download each edition directly (HTTP basic auth with your Account ID and
+licence key) and extract the `.mmdb`:
+
+```bash
+for edition in GeoLite2-Country GeoLite2-ASN; do
+  curl -fsSL -u "$ACCOUNT_ID:$LICENSE_KEY" \
+    "https://download.maxmind.com/geoip/databases/$edition/download?suffix=tar.gz" \
+    | tar -xz --strip-components=1 -C storage/geoip --wildcards "*.mmdb"
+done
+```
+
+Optionally, the Tor exit list:
+
+```bash
+curl -fsSL https://check.torproject.org/torbulkexitlist -o storage/geoip/tor-exit-nodes.txt
+```
+
+### 3. Configure the driver
+
+```bash
+NETWORK_DRIVER=maxmind
+MAXMIND_COUNTRY_DB=storage/geoip/GeoLite2-Country.mmdb
+MAXMIND_ASN_DB=storage/geoip/GeoLite2-ASN.mmdb
+# MAXMIND_ANONYMOUS_IP_DB=storage/geoip/GeoIP2-Anonymous-IP.mmdb
+# TOR_EXIT_LIST=storage/geoip/tor-exit-nodes.txt
+```
+
+Paths are relative to the API's working directory. In the PM2 deploy that is
+`current/`, whose `storage` links to `shared/storage`, so keep the files under
+**`shared/storage/geoip`** and they survive every deploy. The `maxmind` package is
+an optional dependency of `@arkyc/network` and is installed by default.
+
+Restart the API **and** the queue worker (`pm2 restart arkyc-api arkyc-worker
+--update-env`). The worker runs the risk detectors, and both processes open the
+databases once and keep them in memory.
+
+### 4. Keep them current
+
+MaxMind updates GeoLite2 twice a week, and its licence requires replacing outdated
+copies. Schedule the update plus a restart, for example weekly:
+
+```bash
+# crontab -e
+0 4 * * 3 geoipupdate -f /path/to/GeoIP.conf && pm2 restart arkyc-api arkyc-worker
+```
+
+If a configured database is missing or unreadable, the lookup fails, the error is
+logged (`scope: network`), and the session is decided without network signals;
+it does not block verification.
+
 ## AI OCR driver {#ai-ocr-driver}
 
 `OCR_DRIVER=ai` hands the document image(s) to Anthropic's Claude vision models

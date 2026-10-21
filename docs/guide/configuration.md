@@ -40,33 +40,33 @@ the dashboard and playground read their own `.env` files (Vite). Copy each
 
 ### Providers
 
-| Variable                                                     | Default                         | Notes                                                                      |
-| ------------------------------------------------------------ | ------------------------------- | -------------------------------------------------------------------------- |
-| `OCR_DRIVER`                                                 | `mock`                          | `mock`, `tesseract`, `ai`, or `external`.                                  |
-| `LIVENESS_DRIVER` / `FACE_MATCH_DRIVER`                      | `mock`                          | `mock`, `external`, or `local`.                                            |
-| `BIOMETRICS_MODEL_DIR`                                       | `storage/models`                | Model files for the `local` drivers (`ark biometrics:setup`).              |
-| `SCREENING_DRIVER`                                           | `mock`                          | `mock`, `opensanctions`, or `external`.                                    |
-| `SCREENING_API_KEY` / `SCREENING_ENDPOINT`                   | none / hosted API               | OpenSanctions key, or a yente / external endpoint.                         |
-| `SCREENING_DATASET`                                          | `default`                       | OpenSanctions dataset or collection to match against.                      |
-| `SCREENING_MONITOR_INTERVAL_HOURS`                           | `24`                            | How often monitored identities are re-screened.                            |
-| `NETWORK_DRIVER`                                             | `mock`                          | `mock` or `maxmind`.                                                       |
-| `MAXMIND_COUNTRY_DB` / `MAXMIND_ASN_DB`                      | none                            | GeoLite2 (or GeoIP2) database paths for `maxmind`.                         |
-| `MAXMIND_ANONYMOUS_IP_DB` / `TOR_EXIT_LIST`                  | none                            | Optional VPN/proxy database and Tor exit list.                             |
-| `TRUST_PROXY`                                                | unset                           | Proxy hops or subnets to trust for the client IP.                          |
-| `OCR_FALLBACK_DRIVER`                                        | `mock`                          | Used when `OCR_DRIVER=ai` but a project isn't granted the `ai` capability. |
-| `OCR_LANGUAGE`                                               | `eng`                           | Tesseract language data for the `tesseract` driver.                        |
-| `OCR_API_KEY`                                                | none                            | Anthropic API key for `OCR_DRIVER=ai`.                                     |
-| `OCR_AI_MODEL`                                               | `claude-haiku-4-5-20251001`     | Vision model for the `ai` driver.                                          |
-| `OCR_AI_MAX_EDGE`                                            | `1568`                          | Longest uploaded image edge (px) for the `ai` driver.                      |
-| `OCR_AI_PROVIDER`                                            | `anthropic`                     | `anthropic` or `workers-ai` (implied when `WORKERS_AI_MODEL` is set).      |
-| `WORKERS_AI_MODEL`                                           | `@cf/google/gemma-4-26b-a4b-it` | Workers AI vision model; setting it selects the Workers AI backend.        |
-| `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN`             | none                            | Workers AI credentials (token falls back to `OCR_API_KEY`).                |
-| `OCR_ENDPOINT` / `LIVENESS_ENDPOINT` / `FACE_MATCH_ENDPOINT` | none                            | `external` HTTP endpoint (or API base override for `ai`).                  |
-| `LIVENESS_API_KEY` / `FACE_MATCH_API_KEY`                    | none                            | Optional bearer for the endpoint.                                          |
-| `ADDRESS_DRIVER`                                             | `mock`                          | `mock` or `live` (address stage; opt-in workflows).                        |
-| `ADDRESS_ORS_API_KEY`                                        | none                            | openrouteservice key for the `live` driver's `geocode_lookup`.             |
-| `ADDRESS_ORS_URL` / `ADDRESS_NOMINATIM_URL`                  | public endpoints                | Geocoder base overrides (forward / reverse).                               |
-| `ADDRESS_USER_AGENT`                                         | `Arkyc/1.0 (…)`                 | User-Agent sent to Nominatim (per its usage policy).                       |
+| Variable                                                     | Default                         | Notes                                                                              |
+| ------------------------------------------------------------ | ------------------------------- | ---------------------------------------------------------------------------------- |
+| `OCR_DRIVER`                                                 | `mock`                          | `mock`, `tesseract`, `ai`, or `external`.                                          |
+| `LIVENESS_DRIVER` / `FACE_MATCH_DRIVER`                      | `mock`                          | `mock`, `external`, or `local`.                                                    |
+| `BIOMETRICS_MODEL_DIR`                                       | `storage/models`                | Model files for the `local` drivers (`ark biometrics:setup`).                      |
+| `SCREENING_DRIVER`                                           | `mock`                          | `mock`, `opensanctions`, or `external`.                                            |
+| `SCREENING_API_KEY` / `SCREENING_ENDPOINT`                   | none / hosted API               | OpenSanctions key, or a yente / external endpoint.                                 |
+| `SCREENING_DATASET`                                          | `default`                       | OpenSanctions dataset or collection to match against.                              |
+| `SCREENING_MONITOR_INTERVAL_HOURS`                           | `24`                            | How often monitored identities are re-screened.                                    |
+| `NETWORK_DRIVER`                                             | `mock`                          | `mock` or `maxmind`.                                                               |
+| `MAXMIND_COUNTRY_DB` / `MAXMIND_ASN_DB`                      | none                            | GeoLite2 (or GeoIP2) database paths for `maxmind`; see [GeoIP](./providers#geoip). |
+| `MAXMIND_ANONYMOUS_IP_DB` / `TOR_EXIT_LIST`                  | none                            | Optional VPN/proxy database and Tor exit list.                                     |
+| `TRUST_PROXY`                                                | unset                           | Proxy hops or subnets to trust for the client IP.                                  |
+| `OCR_FALLBACK_DRIVER`                                        | `mock`                          | Used when `OCR_DRIVER=ai` but a project isn't granted the `ai` capability.         |
+| `OCR_LANGUAGE`                                               | `eng`                           | Tesseract language data for the `tesseract` driver.                                |
+| `OCR_API_KEY`                                                | none                            | Anthropic API key for `OCR_DRIVER=ai`.                                             |
+| `OCR_AI_MODEL`                                               | `claude-haiku-4-5-20251001`     | Vision model for the `ai` driver.                                                  |
+| `OCR_AI_MAX_EDGE`                                            | `1568`                          | Longest uploaded image edge (px) for the `ai` driver.                              |
+| `OCR_AI_PROVIDER`                                            | `anthropic`                     | `anthropic` or `workers-ai` (implied when `WORKERS_AI_MODEL` is set).              |
+| `WORKERS_AI_MODEL`                                           | `@cf/google/gemma-4-26b-a4b-it` | Workers AI vision model; setting it selects the Workers AI backend.                |
+| `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN`             | none                            | Workers AI credentials (token falls back to `OCR_API_KEY`).                        |
+| `OCR_ENDPOINT` / `LIVENESS_ENDPOINT` / `FACE_MATCH_ENDPOINT` | none                            | `external` HTTP endpoint (or API base override for `ai`).                          |
+| `LIVENESS_API_KEY` / `FACE_MATCH_API_KEY`                    | none                            | Optional bearer for the endpoint.                                                  |
+| `ADDRESS_DRIVER`                                             | `mock`                          | `mock` or `live` (address stage; opt-in workflows).                                |
+| `ADDRESS_ORS_API_KEY`                                        | none                            | openrouteservice key for the `live` driver's `geocode_lookup`.                     |
+| `ADDRESS_ORS_URL` / `ADDRESS_NOMINATIM_URL`                  | public endpoints                | Geocoder base overrides (forward / reverse).                                       |
+| `ADDRESS_USER_AGENT`                                         | `Arkyc/1.0 (…)`                 | User-Agent sent to Nominatim (per its usage policy).                               |
 
 See [Provider drivers](./providers), [Fraud signals & screening](./fraud-signals) and [Workflows](./workflows).
 
