@@ -8,14 +8,18 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- **The PM2 queue worker never started.** `ecosystem.config.cjs` ran
-  `node_modules/.bin/ark`, which pnpm generates as a shell-script shim; PM2 runs
-  `script` with node, so the worker crash-looped on
-  `SyntaxError: missing ) after argument list` and no job (OCR, decisioning,
-  webhook delivery) was ever processed. It now runs the CLI's JS entry,
-  `node_modules/@arkstack/console/dist/index.js`. Recreate the process to apply
-  it: `pm2 delete arkyc-worker && pm2 start ecosystem.config.cjs --only arkyc-worker`
-  (a reload keeps the old `script`).
+- **The PM2 queue worker never processed a job.** PM2 ran `script` under node:
+  - With `node_modules/.bin/ark` (a pnpm shell-script shim), node parsed shell as
+    JS and the worker crash-looped (`SyntaxError: missing ) after argument list`).
+  - With the CLI's JS entry, PM2 loads it from its `ProcessContainerFork`, so the
+    CLI's entry-point check (`process.argv[1]` is this file) fails and the worker
+    sits "online" doing nothing, printing nothing.
+
+  Either way no OCR, decisioning or webhook job ran: sessions stalled in
+  `processing` and deliveries stayed `pending`. The worker now executes the shim
+  directly (`interpreter: 'none'`), so the CLI runs as the real entry point.
+  Recreate the process to apply it (a reload keeps the old `script`):
+  `pm2 delete arkyc-worker && pm2 start ecosystem.config.cjs --only arkyc-worker`.
 
 ## [2.1.0] - 2026-10-21
 
