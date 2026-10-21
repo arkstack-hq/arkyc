@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/permissions",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "description": "Role-based access control resolution and enforcement",
   "license": "MIT",
   "keywords": [
