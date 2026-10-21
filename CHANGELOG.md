@@ -11,7 +11,7 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Widget: the issuing country has its own screen.** It used to be a dropdown
   among the document-type buttons, easy to skip, so sessions often reached OCR
   with no country and country-specific document parsers didn't run. The widget
-  now asks "Where is your ID from?" first (Continue stays disabled until a
+  now asks the user to choose their country first (Continue stays disabled until a
   country is chosen), then the document type, with a "Change country" link back.
 
 ### Added

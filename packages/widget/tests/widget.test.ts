@@ -928,7 +928,7 @@ describe('country screen', () => {
     await flush()
 
     // Nothing preselected (no defaultCountry, no browser language): Continue is disabled.
-    expect(find(el, 'Where is your ID from?')).toBeTruthy()
+    expect(find(el, 'Choose your country')).toBeTruthy()
     expect(find(el, 'Passport')).toBeUndefined()
     const continueBtn = find(el, 'Continue')!
     expect(continueBtn.attributes.disabled).toBe('true')
@@ -983,6 +983,6 @@ describe('country screen', () => {
     clickText(el, 'Change country')
     await flush()
 
-    expect(find(el, 'Where is your ID from?')).toBeTruthy()
+    expect(find(el, 'Choose your country')).toBeTruthy()
   })
 })

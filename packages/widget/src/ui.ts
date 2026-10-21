@@ -464,8 +464,11 @@ export class WidgetView {
     sync()
 
     this.dom.append(this.body, [
-      this.dom.h('h2', { class: 'arkyc-h', text: 'Where is your ID from?' }),
-      this.dom.h('p', { class: 'arkyc-p', text: 'Choose the country that issued the document you will use.' }),
+      this.dom.h('h2', { class: 'arkyc-h', text: 'Choose your country' }),
+      this.dom.h('p', {
+        class: 'arkyc-p',
+        text: "Pick the country that issued the ID you'll use, so we can read it correctly.",
+      }),
       this.dom.h('div', { class: 'arkyc-choices' }, [select]),
     ])
     this.footer.appendChild(proceed)
