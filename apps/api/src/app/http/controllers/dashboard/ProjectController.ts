@@ -8,7 +8,7 @@ import ProjectCollection from '@app/http/resources/ProjectCollection'
 import ProjectResource from '@app/http/resources/ProjectResource'
 import { type FileLike, Storage } from '@arkstack/filesystem'
 import { Str } from '@h3ravel/support'
-import { normalizeVelocitySettings } from 'src/support/risk-settings'
+import { normalizeVelocitySettings, mergeThresholds } from 'src/support/risk-settings'
 import { audit } from '@app/services/AuditLogger'
 
 export default class ProjectController extends BaseController {
@@ -133,7 +133,7 @@ export default class ProjectController extends BaseController {
     if (data.thresholds && typeof data.thresholds === 'object') {
       project.settings = {
         ...(project.settings ?? {}),
-        thresholds: { ...(project.settings?.thresholds ?? {}), ...data.thresholds },
+        thresholds: mergeThresholds(project.settings?.thresholds, data.thresholds),
       }
     }
     await project.save()

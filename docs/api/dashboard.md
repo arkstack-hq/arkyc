@@ -87,6 +87,12 @@ maintain stops delivering, and when they are invited to an organization.
 | `PATCH`  | `/projects/:projectId/members/:memberId`       | `members.update`  | Change a project member's role.                  |
 | `DELETE` | `/projects/:projectId/members/:memberId`       | `members.remove`  | Remove a project member.                         |
 
+`thresholds` takes any of `documentQualityThreshold`, `ocrConfidenceThreshold`,
+`livenessThreshold`, `faceMatchThreshold`, `faceMatchRejectThreshold` and
+`addressThreshold`, each a number from `0` to `1`; `null` clears an override.
+`faceMatchRejectThreshold` may not exceed `faceMatchThreshold` (`422`). Unknown
+keys are ignored.
+
 ## API keys
 
 **Base:** `/api/v1/dashboard/organizations/:organizationId/projects/:projectId/api-keys`
