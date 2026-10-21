@@ -1,3 +1,4 @@
+import type { DocumentParser } from '@arkyc/ocr'
 import type { IsoDate, OcrFields } from '@arkyc/types'
 
 /**
@@ -121,4 +122,22 @@ export function layoutConfidence(fields: OcrFields, base = 0.4): number {
  */
 export function textLines(text: string, given?: string[]): string[] {
   return (given ?? text.split(/\r?\n/)).map((line) => line.trim()).filter(Boolean)
+}
+
+/**
+ * Scope a parser to its countries while still running it when no country was
+ * selected (the widget doesn't always ask). The registry skips a country-scoped
+ * parser whenever the country is missing, so the scope moves into `parse`: a
+ * named other country is declined, a missing one is allowed, and the parser's
+ * own layout check decides the rest.
+ */
+export function countryOrUnknown(countries: string[], parser: DocumentParser): DocumentParser {
+  const allowed = countries.map((country) => country.toUpperCase())
+
+  return {
+    ...parser,
+    countries: undefined,
+    parse: (input) =>
+      input.country && !allowed.includes(input.country.trim().toUpperCase()) ? null : parser.parse(input),
+  }
 }

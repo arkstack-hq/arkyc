@@ -1,6 +1,6 @@
 import type { DocumentParser } from '@arkyc/ocr'
 import type { OcrFields } from '@arkyc/types'
-import { layoutConfidence, readDate, readName, textLines } from './shared'
+import { countryOrUnknown, layoutConfidence, readDate, readName, textLines } from './shared'
 
 /** The 19-character VIN, printed in groups of 4-4-4-4-3. */
 const VIN = /\b([0-9A-Z]{4})\s?([0-9A-Z]{4})\s?([0-9A-Z]{4})\s?([0-9A-Z]{4})\s?([0-9A-Z]{3})\b/
@@ -35,11 +35,11 @@ function readVin(lines: string[]): string | undefined {
  * holder as an unlabelled "SURNAME, GIVEN NAMES" line, then labelled date of
  * birth, gender, occupation and address; the back repeats the VIN and the
  * registration date. A serial number printed down the left edge puts a stray
- * character at the start of most OCR'd lines, so line matches allow one.
+ * character at the start of most OCR'd lines, so line matches allow one. Also
+ * runs when no country was selected; the voter-card wording gates it.
  */
-export const ngVoterCardParser: DocumentParser = {
+export const ngVoterCardParser: DocumentParser = countryOrUnknown(['NG', 'NGA'], {
   name: 'ng-voter-card',
-  countries: ['NG', 'NGA'],
   documentTypes: ['id_card'],
   parse: ({ text, lines: given }) => {
     if (!/VOTER|ELECTORAL|\bINEC\b|\bVIN\b/i.test(text)) return null
@@ -70,4 +70,4 @@ export const ngVoterCardParser: DocumentParser = {
       raw: { layout: 'ng-voter-card' },
     }
   },
-}
+})

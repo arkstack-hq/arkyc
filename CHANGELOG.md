@@ -4,6 +4,19 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Nigerian NIN slip and voter card parsers ran only when the country was
+  `NG`.** The widget doesn't always send a country, and the registry skips a
+  country-scoped parser when none is given, so a slip went to the generic
+  scraper and only its date of birth was read. Both parsers now also run when no
+  country was selected (still declining any other named country), and recognise
+  the document from its own wording.
+- **NIN slip names behind OCR noise.** A 720p capture puts stray marks before
+  the given names (`| bt NGOZI, AMAKA`); they are now found anywhere on the line.
+
 ## [2.3.1] - 2026-10-21
 
 ### Fixed
