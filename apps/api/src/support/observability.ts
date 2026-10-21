@@ -34,7 +34,7 @@ export function reportError(error: unknown, context?: Record<string, unknown>): 
   if (!reporter) return
   try {
     const result = reporter(err, context)
-    if (result instanceof Promise) result.catch(() => { })
+    if (result instanceof Promise) result.catch(() => {})
   } catch {
     // A broken reporter must not cascade.
   }
@@ -46,7 +46,7 @@ export interface Metrics {
   timing(name: string, ms: number, tags?: Record<string, string>): void
 }
 
-const noopMetrics: Metrics = { increment: () => { }, timing: () => { } }
+const noopMetrics: Metrics = { increment: () => {}, timing: () => {} }
 let sink: Metrics = noopMetrics
 
 /** Register (or reset to no-op) the metrics sink. */
