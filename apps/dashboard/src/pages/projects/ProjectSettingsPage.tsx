@@ -30,6 +30,7 @@ interface FormState {
   ocrConfidenceThreshold: string
   livenessThreshold: string
   faceMatchThreshold: string
+  faceMatchRejectThreshold: string
   addressThreshold: string
   allowedOrigins: string
   handoffEnabled: boolean
@@ -38,7 +39,10 @@ interface FormState {
   velocityWindowMinutes: string
 }
 
-const THRESHOLD_FIELDS: { key: keyof VerificationThresholds; label: string; description: string }[] = [
+/** The thresholds every project has a value for (the optional reject floor is edited separately). */
+type ScoreThreshold = Exclude<keyof VerificationThresholds, 'faceMatchRejectThreshold'>
+
+const THRESHOLD_FIELDS: { key: ScoreThreshold; label: string; description: string }[] = [
   {
     key: 'documentQualityThreshold',
     label: 'Document quality',
@@ -72,6 +76,23 @@ const THRESHOLD_FIELDS: { key: keyof VerificationThresholds; label: string; desc
  * unique per response, and any added query param would invalidate its signature,
  * so it is returned untouched.
  */
+/**
+ * What's wrong with a threshold input, or null when it's valid. Blank is valid: it
+ * means the default (or, for the reject floor, off). Mirrors the API's checks so
+ * a bad value is caught here rather than as a 422 on save.
+ */
+function thresholdError(raw: string, max = 1, maxLabel?: string): string | null {
+  const value = raw.trim()
+  if (value === '') return null
+
+  const score = Number(value)
+  if (!Number.isFinite(score)) return 'Enter a number, e.g. 0.75.'
+  if (score < 0) return 'Must be 0 or more.'
+  if (score > max) return maxLabel ?? `Must be ${max} or less.`
+
+  return null
+}
+
 function withCacheBust(url: string | null): string | null {
   if (!url || /[?&]x-(amz|goog)-signature=/i.test(url)) return url
   try {
@@ -96,6 +117,8 @@ function formFromProject(project: Project): FormState {
     ocrConfidenceThreshold: String(thresholds.ocrConfidenceThreshold),
     livenessThreshold: String(thresholds.livenessThreshold),
     faceMatchThreshold: String(thresholds.faceMatchThreshold),
+    faceMatchRejectThreshold:
+      thresholds.faceMatchRejectThreshold != null ? String(thresholds.faceMatchRejectThreshold) : '',
     addressThreshold: String(thresholds.addressThreshold),
     allowedOrigins: (project.settings?.allowed_origins ?? []).join(', '),
     handoffEnabled: project.settings?.handoff?.enabled === true,
@@ -141,6 +164,9 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           return [key, value === '' ? DEFAULT_VERIFICATION_THRESHOLDS[key] : Number(value)]
         }),
       ) as unknown as VerificationThresholds
+      // Blank clears the floor (null), handing the verdict back to the face-match driver.
+      const rejectFloor = f.faceMatchRejectThreshold.trim()
+      thresholds.faceMatchRejectThreshold = rejectFloor === '' ? null : Number(rejectFloor)
 
       const allowed_origins = f.allowedOrigins
         .split(',')
@@ -186,6 +212,19 @@ function ProjectSettingsForm({ project }: { project: Project }) {
     onSuccess: onLogoUploaded,
   } = useRequest((file: File) => Projects.uploadLogo(organizationId, projectId!, file), { immediate: false })
   onLogoUploaded(({ data }) => setLogoUrl(withCacheBust(data.branding?.logo_url ?? null)))
+
+  // The reject floor can't sit above the face-match threshold (blank = its default).
+  const faceMatchInput = Number(form.faceMatchThreshold.trim() || DEFAULT_VERIFICATION_THRESHOLDS.faceMatchThreshold)
+  const floorMax = Number.isFinite(faceMatchInput) ? Math.min(1, Math.max(0, faceMatchInput)) : 1
+  const thresholdErrors: Record<string, string | null> = {
+    ...Object.fromEntries(THRESHOLD_FIELDS.map(({ key }) => [key, thresholdError(form[key])])),
+    faceMatchRejectThreshold: thresholdError(
+      form.faceMatchRejectThreshold,
+      floorMax,
+      `Must not be above Face match (${floorMax}), or matches meant for review would be rejected.`,
+    ),
+  }
+  const thresholdsInvalid = Object.values(thresholdErrors).some(Boolean)
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -367,13 +406,59 @@ function ProjectSettingsForm({ project }: { project: Project }) {
                       step={0.05}
                       value={form[field.key]}
                       placeholder={String(fallback)}
+                      aria-invalid={Boolean(thresholdErrors[field.key])}
+                      aria-describedby={`${field.key}-hint`}
                       onChange={(e) => set(field.key, e.target.value)}
                     />
                   </InputGroup>
-                  <p className="text-xs text-muted-foreground">{field.description}</p>
+                  <p id={`${field.key}-hint`} className="text-xs text-muted-foreground">
+                    {field.description} <span className="whitespace-nowrap">0 to 1 · default {fallback}</span>
+                  </p>
+                  {thresholdErrors[field.key] ? <FieldError>{thresholdErrors[field.key]}</FieldError> : null}
                 </Field>
               )
             })}
+            <Field>
+              <div className="flex items-center justify-between gap-2">
+                <FieldLabel htmlFor="faceMatchRejectThreshold">Face match reject floor</FieldLabel>
+                {form.faceMatchRejectThreshold.trim() !== '' ? (
+                  <button
+                    type="button"
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => set('faceMatchRejectThreshold', '')}
+                  >
+                    Clear
+                  </button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Off</span>
+                )}
+              </div>
+              <InputGroup>
+                <InputGroupInput
+                  id="faceMatchRejectThreshold"
+                  type="number"
+                  min={0}
+                  max={floorMax}
+                  step={0.05}
+                  value={form.faceMatchRejectThreshold}
+                  placeholder="Off"
+                  aria-invalid={Boolean(thresholdErrors.faceMatchRejectThreshold)}
+                  aria-describedby="faceMatchRejectThreshold-hint"
+                  onChange={(e) => set('faceMatchRejectThreshold', e.target.value)}
+                />
+              </InputGroup>
+              <p id="faceMatchRejectThreshold-hint" className="text-xs text-muted-foreground">
+                Similarity below this is rejected; between it and Face match goes to review. Off: the face-match driver
+                decides, and a failed match is rejected. Suits ID-to-selfie, where document portraits score lower.{' '}
+                <span className="whitespace-nowrap">
+                  0 to {floorMax} (Face match) · try 0.3 for ID cards · blank = off
+                </span>
+              </p>
+              {thresholdErrors.faceMatchRejectThreshold ? (
+                <FieldError>{thresholdErrors.faceMatchRejectThreshold}</FieldError>
+              ) : null}
+            </Field>
+            <FieldError className="sm:col-span-2" errors={error?.list?.thresholds} />
           </CardContent>
         </Card>
 
@@ -465,7 +550,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
 
         <div className="flex items-center gap-3">
           {canEdit ? (
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving || thresholdsInvalid}>
               {saving ? <Spinner /> : null}
               Save
             </Button>

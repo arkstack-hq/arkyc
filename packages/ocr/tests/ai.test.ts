@@ -246,6 +246,31 @@ describe('ai ocr driver — workers ai backend', () => {
     const driver = new AnthropicOcrDriver({ provider: 'workers-ai', apiKey: 'cf', accountId: 'acc', model: '@cf/x' })
     expect((await driver.extract({ image })).fields).toMatchObject({ lastName: 'Lovelace', documentNumber: 'X1' })
   })
+
+  it('honours a configured timeout and retry count from the factory config', async () => {
+    // A model that never answers: each attempt hangs until its timeout aborts it.
+    const fetchMock = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => reject(new Error('The operation was aborted due to timeout')))
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const driver = OcrDriverFactory.create({
+      driver: 'ai',
+      aiProvider: 'workers-ai',
+      apiKey: 'cf',
+      accountId: 'acc',
+      timeoutMs: 20,
+      maxRetries: 1,
+    })
+    const startedAt = Date.now()
+
+    await expect(driver.extract({ image })).rejects.toThrow(/timeout/)
+    expect(fetchMock).toHaveBeenCalledTimes(2) // first attempt + 1 retry
+    expect(Date.now() - startedAt).toBeLessThan(5_000)
+  })
 })
 
 describe('scoreConfidence', () => {

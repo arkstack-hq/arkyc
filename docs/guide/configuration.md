@@ -58,6 +58,8 @@ the dashboard and playground read their own `.env` files (Vite). Copy each
 | `OCR_API_KEY`                                                | none                            | Anthropic API key for `OCR_DRIVER=ai`.                                             |
 | `OCR_AI_MODEL`                                               | `claude-haiku-4-5-20251001`     | Vision model for the `ai` driver.                                                  |
 | `OCR_AI_MAX_EDGE`                                            | `1568`                          | Longest uploaded image edge (px) for the `ai` driver.                              |
+| `OCR_AI_TIMEOUT_MS`                                          | `30000`                         | Per-attempt timeout (ms) for the `ai` driver; raise it for large vision models.    |
+| `OCR_AI_MAX_RETRIES`                                         | `2`                             | Retries for the `ai` driver on a timeout, network error, 429 or 529.               |
 | `OCR_AI_PROVIDER`                                            | `anthropic`                     | `anthropic` or `workers-ai` (implied when `WORKERS_AI_MODEL` is set).              |
 | `WORKERS_AI_MODEL`                                           | `@cf/google/gemma-4-26b-a4b-it` | Workers AI vision model; setting it selects the Workers AI backend.                |
 | `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN`             | none                            | Workers AI credentials (token falls back to `OCR_API_KEY`).                        |

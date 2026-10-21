@@ -33,6 +33,8 @@ export class OcrDriverFactory {
           model: config.model,
           baseUrl: config.endpoint,
           maxEdge: config.maxEdge,
+          timeoutMs: config.timeoutMs,
+          maxRetries: config.maxRetries,
         })
       default:
         throw new Error(`Unknown OCR driver: ${(config as OcrConfig).driver}`)

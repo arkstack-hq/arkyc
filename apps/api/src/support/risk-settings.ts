@@ -2,8 +2,10 @@ import { ValidationException } from 'kanun'
 import {
   DEFAULT_FACE_EMBEDDING_SETTINGS,
   DEFAULT_VELOCITY_SETTINGS,
+  DEFAULT_VERIFICATION_THRESHOLDS,
   type FaceEmbeddingSettings,
   type VelocitySettings,
+  type VerificationThresholds,
 } from '@arkyc/types'
 
 /** A whole number in [min, max], or `fallback` when absent. */
@@ -64,4 +66,61 @@ export function normalizeFaceEmbeddingSettings(raw: unknown): FaceEmbeddingSetti
       'Face embedding retention must be from 1 to 3650 days.',
     ),
   }
+}
+
+/**
+ * The verification thresholds a project can override, each a score in [0, 1].
+ */
+const THRESHOLD_KEYS: (keyof VerificationThresholds)[] = [
+  'documentQualityThreshold',
+  'ocrConfidenceThreshold',
+  'livenessThreshold',
+  'faceMatchThreshold',
+  'faceMatchRejectThreshold',
+  'addressThreshold',
+]
+
+/**
+ * Merge a project's threshold overrides into its current ones. Each value must be
+ * a number from 0 to 1; `null` (or blank) clears the override, falling back to the
+ * default (for `faceMatchRejectThreshold`: off). Unknown keys are dropped. The
+ * face-match reject floor may not sit above the face-match threshold, or matches
+ * meant for review would be rejected.
+ *
+ * @param current  The project's stored overrides.
+ * @param raw      The requested changes.
+ * @returns        The merged overrides to store.
+ */
+export function mergeThresholds(
+  current: Partial<VerificationThresholds> | undefined,
+  raw: unknown,
+): Partial<VerificationThresholds> {
+  const input = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const merged: Partial<VerificationThresholds> = { ...(current ?? {}) }
+
+  for (const key of THRESHOLD_KEYS) {
+    if (!(key in input)) continue
+    const value = input[key]
+
+    if (value == null || value === '') {
+      delete merged[key]
+      continue
+    }
+
+    const score = Number(value)
+    if (!Number.isFinite(score) || score < 0 || score > 1) {
+      throw ValidationException.withMessages({ thresholds: [`${key} must be a number from 0 to 1.`] })
+    }
+    merged[key] = score
+  }
+
+  const floor = merged.faceMatchRejectThreshold
+  const faceMatch = merged.faceMatchThreshold ?? DEFAULT_VERIFICATION_THRESHOLDS.faceMatchThreshold
+  if (typeof floor === 'number' && floor > faceMatch) {
+    throw ValidationException.withMessages({
+      thresholds: [`faceMatchRejectThreshold (${floor}) must not be above faceMatchThreshold (${faceMatch}).`],
+    })
+  }
+
+  return merged
 }

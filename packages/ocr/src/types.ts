@@ -52,4 +52,8 @@ export interface OcrConfig {
   model?: string
   /** Longest image edge (px) uploaded by the `ai` driver. */
   maxEdge?: number
+  /** Per-attempt request timeout (ms) for the `ai` driver; large vision models may need more. */
+  timeoutMs?: number
+  /** Retries after a timeout, network error or 429/529 for the `ai` driver. */
+  maxRetries?: number
 }

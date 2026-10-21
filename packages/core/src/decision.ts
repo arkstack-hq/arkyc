@@ -101,7 +101,13 @@ export class DecisionEngine {
     if (!input.liveness.passed) {
       return verdict('rejected', 'LIVENESS_FAILED')
     }
-    if (!input.faceMatch.passed) {
+
+    const faceMatchRejected =
+      typeof t.faceMatchRejectThreshold === 'number'
+        ? input.faceMatch.similarityScore < t.faceMatchRejectThreshold
+        : !input.faceMatch.passed
+
+    if (faceMatchRejected) {
       return verdict('rejected', 'FACE_MATCH_FAILED')
     }
     // Address only rejects when the workflow opts in (`on_fail: 'reject'`);
