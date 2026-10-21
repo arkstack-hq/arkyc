@@ -221,7 +221,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
     faceMatchRejectThreshold: thresholdError(
       form.faceMatchRejectThreshold,
       floorMax,
-      `Must not be above Face match (${floorMax}), or matches meant for review would be rejected.`,
+      `Keep this at or below Face match (${floorMax}).`,
     ),
   }
   const thresholdsInvalid = Object.values(thresholdErrors).some(Boolean)
@@ -448,11 +448,8 @@ function ProjectSettingsForm({ project }: { project: Project }) {
                 />
               </InputGroup>
               <p id="faceMatchRejectThreshold-hint" className="text-xs text-muted-foreground">
-                Similarity below this is rejected; between it and Face match goes to review. Off: the face-match driver
-                decides, and a failed match is rejected. Suits ID-to-selfie, where document portraits score lower.{' '}
-                <span className="whitespace-nowrap">
-                  0 to {floorMax} (Face match) · try 0.3 for ID cards · blank = off
-                </span>
+                Matches below this are declined, and those between this and Face match go to a reviewer. Leave it empty
+                to decline any match that fails. 0.3 works well for ID cards.
               </p>
               {thresholdErrors.faceMatchRejectThreshold ? (
                 <FieldError>{thresholdErrors.faceMatchRejectThreshold}</FieldError>
