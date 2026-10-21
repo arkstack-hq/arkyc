@@ -196,6 +196,56 @@ describe('ai ocr driver — workers ai backend', () => {
     expect((await driver.extract({ image })).fields.lastName).toBe('Lovelace')
     await expect(driver.extract({ image })).rejects.toThrow(/no structured fields/)
   })
+  it('maps common field aliases (NIN slip style) and keeps the model output', async () => {
+    const nin = {
+      surname: 'OKAFOR',
+      first_name: 'CHIDI',
+      nin: 12345678901,
+      dob: '1990-05-17',
+      documentType: 'id_card',
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          chatResponse({ tool_calls: [{ function: { name: 'read_document', arguments: JSON.stringify(nin) } }] }),
+        ),
+    )
+
+    const driver = new AnthropicOcrDriver({ provider: 'workers-ai', apiKey: 'cf', accountId: 'acc', model: '@cf/x' })
+    const result = await driver.extract({ image })
+
+    expect(result.fields).toMatchObject({
+      lastName: 'OKAFOR',
+      firstName: 'CHIDI',
+      documentNumber: '12345678901',
+      dateOfBirth: '1990-05-17',
+    })
+    // What the model actually returned is kept for debugging.
+    expect((result.raw as { modelOutput: unknown }).modelOutput).toEqual(nin)
+  })
+
+  it('reads fields nested under a `fields` object', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        chatResponse({
+          tool_calls: [
+            {
+              function: {
+                name: 'read_document',
+                arguments: JSON.stringify({ fields: { lastName: 'Lovelace', documentNumber: 'X1' } }),
+              },
+            },
+          ],
+        }),
+      ),
+    )
+
+    const driver = new AnthropicOcrDriver({ provider: 'workers-ai', apiKey: 'cf', accountId: 'acc', model: '@cf/x' })
+    expect((await driver.extract({ image })).fields).toMatchObject({ lastName: 'Lovelace', documentNumber: 'X1' })
+  })
 })
 
 describe('scoreConfidence', () => {
