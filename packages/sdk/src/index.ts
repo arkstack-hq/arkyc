@@ -17,11 +17,22 @@ export type {
   WebhookEventName,
   WebhookRiskCheck,
 } from '@arkyc/types'
-export type { ArkycOptions, CreateSessionParams, CreatedSession, VerificationSession } from './types'
+export type {
+  ArkycOptions,
+  CreateSessionParams,
+  CreateWebhookEndpointParams,
+  CreatedSession,
+  CreatedWebhookEndpoint,
+  ListWebhookEndpointsParams,
+  UpdateWebhookEndpointParams,
+  VerificationSession,
+  WebhookEndpoint,
+} from './types'
 
 // Re-export the webhook signer (sign/verify + signature headers) so integrators
 // don't need a separate dependency.
 export { type VerifyWebhookInput, WebhookSigner } from '@arkyc/webhooks'
 
 export { Webhooks } from './Webhooks'
+export { WebhookEndpoints } from './WebhookEndpoints'
 export { Sessions } from './Sessions'

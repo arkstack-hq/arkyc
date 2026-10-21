@@ -10,6 +10,21 @@ events to subscribe to. The **signing secret** is shown once; store it. You can
 also send a test delivery, or use the
 [Dashboard API](/api/dashboard#webhooks).
 
+From your server, create and update endpoints with your secret key through the
+[Public API](/api/public#webhook-endpoints) or the SDK, with no dashboard edits.
+That suits a development server reached through a tunnel whose URL changes on
+every start. Since you store the signing secret anyway, update the endpoint **by
+its secret** and there is no endpoint id to keep:
+
+```ts
+if (process.env.ARKYC_WEBHOOK_SECRET) {
+  await arkyc.webhooks.endpoints.updateBySecret(process.env.ARKYC_WEBHOOK_SECRET, { url })
+} else {
+  const { secret } = await arkyc.webhooks.endpoints.create({ url, events })
+  // Save `secret` as ARKYC_WEBHOOK_SECRET: it is shown only this once.
+}
+```
+
 ## Events
 
 ```
@@ -141,7 +156,8 @@ out-of-order arrivals:
 A queue-backed worker signs and POSTs each delivery, recording `webhook_deliveries`
 (attempts, response status/body). Failures retry with backoff and dead-letter
 after the max attempts. Deliveries go on the `webhook` queue (`QUEUE_NAME_WEBHOOK`),
-so a worker must process it, e.g. `ark queue:work database --queue=webhook`. With
+so a worker must process it, e.g. `ark queue:work database --queue=webhook` (or a
+single worker on `'--queue=webhook,*'`). With
 no such worker, deliveries (including dashboard test events) are queued but never
 sent. See [Self-hosting](/guide/self-hosting#queue-workers).
 

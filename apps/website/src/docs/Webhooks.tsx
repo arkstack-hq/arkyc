@@ -8,8 +8,8 @@ export function Webhooks() {
       <h1>Webhooks</h1>
       <p>
         Webhooks are your source of truth for the verification decision. Add an endpoint to your project in the
-        dashboard, choose which events to receive, and Arkyc delivers each one, HMAC-SHA256 signed, with automatic
-        retries and a deliveries log.
+        dashboard (or <Link to="/docs/webhooks#manage-endpoints">from your server</Link>), choose which events to
+        receive, and Arkyc delivers each one, HMAC-SHA256 signed, with automatic retries and a deliveries log.
       </p>
 
       <h2>Events</h2>
@@ -90,6 +90,35 @@ export function Webhooks() {
           '})',
         ]}
       />
+
+      <h2 id="manage-endpoints">Manage endpoints from your server</h2>
+      <p>
+        Endpoints can also be created and updated with your secret key, with no dashboard edits. That suits a
+        development server reachable through a tunnel whose URL changes on every start. Creating an endpoint returns its
+        signing <code>secret</code> once. Store it as your verification secret, and you can later update that endpoint{' '}
+        <strong>by its secret</strong>, so there is no endpoint id to keep. The secret never changes on update. Deleting
+        an endpoint is dashboard-only.
+      </p>
+      <CodeCard
+        title="sync-webhook.ts"
+        code={[
+          'const url = `${tunnelUrl}/webhooks/arkyc`',
+          '',
+          'if (WEBHOOK_SECRET) {',
+          '  // Repoint the endpoint this secret belongs to (404 if none does).',
+          '  await arkyc.webhooks.endpoints.updateBySecret(WEBHOOK_SECRET, { url })',
+          '} else {',
+          '  const { endpoint, secret } = await arkyc.webhooks.endpoints.create({',
+          '    url,',
+          "    events: ['verification.approved', 'verification.rejected'],",
+          '  })',
+          '  // Save `secret` as WEBHOOK_SECRET: it is shown only this once.',
+          '}',
+        ]}
+      />
+      <p>
+        See the <Link to="/docs/sdk#webhook-endpoints">Server SDK</Link> for the full endpoint methods.
+      </p>
 
       <h2>Retries and deliveries</h2>
       <p>

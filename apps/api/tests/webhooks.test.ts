@@ -188,3 +188,125 @@ describe('webhook endpoints', () => {
     expect(deliveries.some((d) => d.status === 'failed')).toBe(true)
   })
 })
+
+describe('webhook endpoints via the Public Project API (secret key)', () => {
+  const api = (method: 'get' | 'post' | 'patch' | 'delete', path: string, key = fx.apiKeySecret) =>
+    request(app)[method](`/api/v1/webhooks${path}`).set('Authorization', `Bearer ${key}`)
+
+  it('creates an endpoint and returns the signing secret once', async () => {
+    const res = await api('post', '').send({ url: receiverUrl, events: ['verification.approved'] })
+
+    expect(res.status).toBe(201)
+    expect(res.body.secret).toMatch(/^whsec_/)
+    expect(res.body.data).toMatchObject({ project_id: fx.projectId, url: receiverUrl, status: 'active' })
+    expect(res.body.data.secret_hash).toBeUndefined()
+
+    const stored = await WebhookEndpoint.where({ id: res.body.data.id }).firstOrFail()
+    expect(decryptSecret(stored.secretHash)).toBe(res.body.secret)
+  })
+
+  it('lists and shows only the key’s project endpoints', async () => {
+    const created = await api('post', '').send({ url: receiverUrl, events: ['verification.started'] })
+
+    const list = await api('get', '')
+    expect(list.status).toBe(200)
+    expect(list.body.data.map((e: { id: string }) => e.id)).toContain(created.body.data.id)
+    expect(list.body.data.every((e: { project_id: string }) => e.project_id === fx.projectId)).toBe(true)
+
+    const show = await api('get', `/${created.body.data.id}`)
+    expect(show.status).toBe(200)
+    expect(show.body.data.id).toBe(created.body.data.id)
+  })
+
+  it('updates the url without changing the signing secret', async () => {
+    const created = await api('post', '').send({ url: receiverUrl, events: ['verification.approved'] })
+    const before = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
+
+    const res = await api('patch', `/${created.body.data.id}`).send({ url: 'https://fresh-tunnel.example.com/hook' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.url).toBe('https://fresh-tunnel.example.com/hook')
+    expect(res.body.data.events).toEqual(['verification.approved'])
+    expect(res.body.secret).toBeUndefined()
+
+    const after = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
+    expect(decryptSecret(after.secretHash)).toBe(decryptSecret(before.secretHash))
+  })
+
+  it('rejects an invalid url or event (422)', async () => {
+    expect((await api('post', '').send({ url: 'not a url', events: ['verification.approved'] })).status).toBe(422)
+    expect((await api('post', '').send({ url: receiverUrl, events: ['not.an.event'] })).status).toBe(422)
+  })
+
+  it("can't read or change another project's endpoint (404)", async () => {
+    const created = await api('post', '').send({ url: receiverUrl, events: ['verification.approved'] })
+    const other = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'Wh Other' })
+    const otherKey = await authed(
+      'post',
+      `/organizations/${fx.organizationId}/projects/${other.body.data.id}/api-keys`,
+    ).send({
+      name: 'Other key',
+    })
+
+    expect((await api('get', `/${created.body.data.id}`, otherKey.body.secret)).status).toBe(404)
+    expect(
+      (await api('patch', `/${created.body.data.id}`, otherKey.body.secret).send({ url: 'https://x.example.com' }))
+        .status,
+    ).toBe(404)
+  })
+
+  it('requires a secret key, and offers no delete', async () => {
+    expect((await request(app).get('/api/v1/webhooks')).status).toBe(401)
+
+    const created = await api('post', '').send({ url: receiverUrl, events: ['verification.approved'] })
+    expect((await api('delete', `/${created.body.data.id}`)).status).toBe(404)
+    expect(await WebhookEndpoint.where({ id: created.body.data.id }).first()).not.toBeNull()
+  })
+
+  describe('update by signing secret (no endpoint id)', () => {
+    it('updates the endpoint whose secret matches, leaving the secret as is', async () => {
+      const created = await api('post', '').send({ url: receiverUrl, events: ['verification.approved'] })
+      const secret = created.body.secret as string
+
+      const res = await api('patch', '').send({ secret, url: 'https://next-tunnel.example.com/hook' })
+
+      expect(res.status).toBe(200)
+      expect(res.body.data).toMatchObject({ id: created.body.data.id, url: 'https://next-tunnel.example.com/hook' })
+      expect(res.body.secret).toBeUndefined()
+      expect(JSON.stringify(res.body)).not.toContain(secret)
+
+      const stored = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
+      expect(decryptSecret(stored.secretHash)).toBe(secret)
+    })
+
+    it('404s for a secret no endpoint in the project has', async () => {
+      const res = await api('patch', '').send({ secret: 'whsec_nope', url: 'https://x.example.com/hook' })
+
+      expect(res.status).toBe(404)
+    })
+
+    it("never matches another project's endpoint", async () => {
+      const other = await authed('post', `/organizations/${fx.organizationId}/projects`).send({
+        name: 'Wh Secret Other',
+      })
+      const otherKey = await authed(
+        'post',
+        `/organizations/${fx.organizationId}/projects/${other.body.data.id}/api-keys`,
+      ).send({ name: 'Secret other key' })
+      const created = await api('post', '').send({ url: receiverUrl, events: ['verification.approved'] })
+
+      const res = await api('patch', '', otherKey.body.secret).send({
+        secret: created.body.secret,
+        url: 'https://hijack.example.com/hook',
+      })
+
+      expect(res.status).toBe(404)
+      const stored = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
+      expect(stored.url).toBe(receiverUrl)
+    })
+
+    it('requires the secret (422)', async () => {
+      expect((await api('patch', '').send({ url: 'https://x.example.com/hook' })).status).toBe(422)
+    })
+  })
+})

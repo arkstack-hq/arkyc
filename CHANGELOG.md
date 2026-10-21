@@ -4,15 +4,21 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.0] - 2026-10-21
 
 ### Added
 
+- **Webhook endpoints over the Public API.** With the project's secret key:
+  `GET /v1/webhooks`, `POST /v1/webhooks` (returns the signing secret once),
+  `GET /v1/webhooks/:id`, `PATCH /v1/webhooks/:id`, and `PATCH /v1/webhooks` to
+  update the endpoint **by its signing secret** (sent in the body), so an
+  integrator storing the secret needs no endpoint id. No delete over this API.
+  `@arkyc/sdk` exposes them on `arkyc.webhooks.endpoints` (`list`, `retrieve`,
+  `create`, `update`, `updateBySecret`).
 - **Configurable job queues.** Each job's queue now comes from config
   (`queue.queues.*`), overridable via `QUEUE_NAME_OCR`, `QUEUE_NAME_BIOMETRIC`,
   `QUEUE_NAME_WEBHOOK`, `QUEUE_NAME_MAINTENANCE` and `QUEUE_NAME_NOTIFICATIONS`.
-  Defaults are unchanged. Set them all to `default` to run a single
-  `ark queue:work` on a resource-limited host.
+  Defaults are unchanged.
 
 ### Fixed
 
@@ -20,11 +26,19 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `ecosystem.config.cjs` runs one `ark queue:work`, which only drains the `default`
   queue, while every job is dispatched to a named queue. OCR, decisioning and webhook
   jobs were never processed: sessions stalled in `processing` until they expired,
-  and no webhook (not even a dashboard test event) was delivered. Route the queues
-  to `default` (above), or run a worker per queue.
-- **Queue worker docs.** `--queue` takes one queue name, not a comma list, and
-  `ark queue:work webhook` named the connection rather than the queue. The
-  self-hosting guide now covers both worker layouts and all five queues.
+  and no webhook (not even a dashboard test event) was delivered. The worker now
+  runs `queue:work --queue=webhook,*`: every queue, webhook deliveries first.
+
+### Changed
+
+- **Webhook endpoint URLs are validated** as URLs on create and update, in the
+  dashboard API too (previously any string was accepted and failed only at
+  delivery).
+- **`@arkstack/*` 0.19.6.** Brings `queue:work` priority lists
+  (`--queue=webhook,ocr`) and the `*` wildcard for every queue.
+- **Queue worker docs.** `ark queue:work webhook` named the connection rather than
+  the queue. The self-hosting guide now covers one worker per queue and a single
+  `--queue=webhook,*` worker, across all five queues.
 
 ## [2.0.0] - 2026-10-11
 

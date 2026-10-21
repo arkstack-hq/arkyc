@@ -4,6 +4,8 @@ import type {
   Metadata,
   VerificationDecision,
   VerificationStatus,
+  WebhookEndpointStatus,
+  WebhookEventName,
   WorkflowConfig,
 } from '@arkyc/types'
 
@@ -47,6 +49,45 @@ export interface CreateSessionParams {
 export interface CreatedSession {
   session: VerificationSession
   clientToken: string
+}
+
+/** A webhook endpoint as returned by the public API (the signing secret is never included). */
+export interface WebhookEndpoint {
+  id: string
+  project_id: string
+  url: string
+  events: WebhookEventName[]
+  status: WebhookEndpointStatus
+  created_at: string
+}
+
+/** Parameters for registering a webhook endpoint. */
+export interface CreateWebhookEndpointParams {
+  /** The URL deliveries are POSTed to. */
+  url: string
+  /** The events to deliver. */
+  events: WebhookEventName[]
+}
+
+/** Parameters for updating a webhook endpoint: only the fields supplied change. */
+export interface UpdateWebhookEndpointParams {
+  url?: string
+  events?: WebhookEventName[]
+  status?: WebhookEndpointStatus
+}
+
+/** A freshly registered endpoint plus its signing secret, returned only this once. */
+export interface CreatedWebhookEndpoint {
+  endpoint: WebhookEndpoint
+  /** The `whsec_…` signing secret. Store it now: it is never returned again. */
+  secret: string
+}
+
+/** Pagination for listing webhook endpoints. */
+export interface ListWebhookEndpointsParams {
+  page?: number
+  /** Endpoints per page (the API caps this at 50). */
+  perPage?: number
 }
 
 /** Configuration for the server SDK client. */

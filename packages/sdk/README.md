@@ -42,6 +42,27 @@ const ok = arkyc.webhooks.verify({
 if (!ok) return res.status(400).end()
 ```
 
+## Webhook endpoints
+
+Manage the project's endpoints with the secret key. `create` returns the signing
+secret exactly once; updates change only the fields passed, never the secret.
+There is no delete (use the dashboard).
+
+```ts
+const { endpoint, secret } = await arkyc.webhooks.endpoints.create({
+  url: 'https://example.com/webhooks/arkyc',
+  events: ['verification.approved', 'verification.rejected'],
+})
+
+await arkyc.webhooks.endpoints.list() // { page, perPage } to paginate
+await arkyc.webhooks.endpoints.retrieve(endpoint.id)
+await arkyc.webhooks.endpoints.update(endpoint.id, { status: 'disabled' })
+
+// No id needed: find the endpoint by the signing secret you already store,
+// e.g. to repoint a dev endpoint at a fresh tunnel URL on boot.
+await arkyc.webhooks.endpoints.updateBySecret(secret, { url: 'https://new-tunnel.example.com/webhooks/arkyc' })
+```
+
 ## Browser
 
 ```ts

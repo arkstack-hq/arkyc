@@ -73,8 +73,8 @@ docker compose --profile app up -d --build
 # Durable queue workers (only for QUEUE_CONNECTION=database|redis; the default
 # `sync` runs jobs inline). Jobs span five named queues and `queue:work` takes one
 # queue each, so the profile starts one worker per queue (ocr, biometric, webhook,
-# maintenance). On a small host, set every QUEUE_NAME_* to `default` and run a
-# single worker instead; see docs/guide/self-hosting.md#queue-workers.
+# maintenance). On a small host, run one worker with `--queue='webhook,*'` to
+# work every queue instead; see docs/guide/self-hosting.md#queue-workers.
 QUEUE_CONNECTION=database docker compose --profile app --profile worker up -d --build
 ```
 

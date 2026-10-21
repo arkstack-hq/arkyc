@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto'
 import { HttpContext } from 'clear-router/types/express'
 import { perPage } from '@arkstack/common'
 import { BaseController } from '@controllers/BaseController'
@@ -9,23 +8,7 @@ import WebhookEndpointResource from '@app/http/resources/WebhookEndpointResource
 import WebhookEndpointCollection from '@app/http/resources/WebhookEndpointCollection'
 import { audit } from '@app/services/AuditLogger'
 import { webhookService } from '@app/services/WebhookService'
-import { encryptSecret } from 'src/support/secret-cipher'
-
-/** The webhook event names a subscription may include. */
-const EVENT_NAMES: WebhookEventName[] = [
-  'verification.started',
-  'verification.document_submitted',
-  'verification.address_submitted',
-  'verification.processing',
-  'verification.requires_review',
-  'verification.approved',
-  'verification.rejected',
-  'verification.completed',
-  'verification.expired',
-  'verification.cancelled',
-  'verification.screening_alert',
-]
-const EVENTS_RULE = `in:${EVENT_NAMES.join(',')}`
+import { createEndpointRules, updateEndpointRules } from 'src/support/webhook-endpoints'
 
 /** Webhook endpoint management for a project. Gated by `webhooks.*`. */
 export default class WebhookEndpointController extends BaseController {
@@ -47,23 +30,12 @@ export default class WebhookEndpointController extends BaseController {
    */
   async create({ req }: HttpContext) {
     const project = await this.scopedProject(req)
-    const data = await this.validate({
-      url: ['required', 'string', 'max:2048'],
-      events: ['required', 'array'],
-      'events.*': ['string', EVENTS_RULE],
-    })
+    const data = await this.validate(createEndpointRules)
 
-    // Returned once in plaintext; persisted encrypted-at-rest (decrypted only at
-    // sign time). The column keeps its `secret_hash` name for compatibility.
-    const secret = `whsec_${randomBytes(24).toString('hex')}`
-    const endpoint = await WebhookEndpoint.create({
-      organizationId: project.organizationId,
-      projectId: project.id,
-      url: data.url,
-      secretHash: encryptSecret(secret),
-      events: data.events as WebhookEventName[],
-      status: 'active',
-    })
+    const { endpoint, secret } = await webhookService.createEndpoint(
+      { organizationId: project.organizationId, projectId: project.id },
+      { url: data.url, events: data.events as WebhookEventName[] },
+    )
 
     await audit.recordForRequest(req, {
       projectId: project.id,
@@ -86,21 +58,17 @@ export default class WebhookEndpointController extends BaseController {
   /** Update an endpoint's url / events / status. */
   async update({ req }: HttpContext) {
     const project = await this.scopedProject(req)
-    const data = await this.validate({
-      url: ['nullable', 'string', 'max:2048'],
-      events: ['nullable', 'array'],
-      'events.*': ['string', EVENTS_RULE],
-      status: ['nullable', 'in:active,disabled'],
-    })
+    const data = await this.validate(updateEndpointRules)
 
     const endpoint = await WebhookEndpoint.where({
       id: req.params.webhookId,
       projectId: project.id,
     }).firstOrFail()
-    if (data.url) endpoint.url = data.url
-    if (data.events) endpoint.events = data.events as WebhookEventName[]
-    if (data.status) endpoint.status = data.status
-    await endpoint.save()
+    await webhookService.updateEndpoint(endpoint, {
+      url: data.url,
+      events: data.events as WebhookEventName[] | null,
+      status: data.status,
+    })
 
     await audit.recordForRequest(req, {
       projectId: project.id,

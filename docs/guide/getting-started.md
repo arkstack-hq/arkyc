@@ -68,8 +68,8 @@ pnpm --filter @arkyc/api dev      # ark dev, http://localhost:3100
 
 Because providers default to `mock` and the queue defaults to `sync`, no worker
 process is required for local development. (For the durable queue, set
-`QUEUE_CONNECTION=database` and run a worker per queue, or set every
-`QUEUE_NAME_*` to `default` and run a single `ark queue:work`; see
+`QUEUE_CONNECTION=database` and run `ark queue:work database '--queue=webhook,*'`,
+which works every queue; see
 [Self-hosting](./self-hosting#queue-workers).)
 
 ## 6. Run the dashboard

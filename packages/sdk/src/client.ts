@@ -27,9 +27,10 @@ export class Arkyc {
   readonly sessions: Sessions
 
   /**
-   * Webhook helpers.
+   * Webhook helpers: signature verification, plus endpoint management at
+   * `webhooks.endpoints`.
    */
-  readonly webhooks = new Webhooks()
+  readonly webhooks: Webhooks
 
   constructor(options: ArkycOptions) {
     if (!options.secretKey) throw new Error('Arkyc requires a `secretKey`.')
@@ -41,6 +42,7 @@ export class Arkyc {
     // overridable per `sessions.create({ workflowId })`.
     this.workflowId = options.workflowId ?? null
     this.sessions = new Sessions(this.request.bind(this), this.workflowId)
+    this.webhooks = new Webhooks(this.request.bind(this))
   }
 
   /**
