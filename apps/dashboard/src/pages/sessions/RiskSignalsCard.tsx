@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useRequest } from 'alova/client'
 import type { ScreeningHit, SessionRiskSignal } from '@arkyc/types'
 import { Sessions } from '@/lib/api'
@@ -66,7 +67,8 @@ function SignalRow({
   })
 
   const hits = (signal.evidence.hits as ScreeningHit[] | undefined) ?? []
-  const details = Object.entries(signal.evidence).filter(([key]) => key !== 'hits')
+  const matched = matchedSessions(signal.evidence)
+  const details = Object.entries(signal.evidence).filter(([key]) => !STRUCTURED_EVIDENCE.includes(key))
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border p-3">
@@ -98,6 +100,8 @@ function SignalRow({
           ))}
         </dl>
       ) : null}
+
+      {matched.length ? <MatchedSessions sessions={matched} /> : null}
 
       {hits.length ? <ScreeningHits hits={hits} identity={identity} /> : null}
 
@@ -133,6 +137,57 @@ function SignalRow({
           </div>
         </form>
       ) : null}
+    </div>
+  )
+}
+
+/** Evidence keys rendered as their own section rather than as plain detail rows. */
+const STRUCTURED_EVIDENCE = ['hits', 'matched_session_ids', 'matches']
+
+interface MatchedSession {
+  id: string
+  /** Face similarity (0–1), for face matches. */
+  similarity?: number
+}
+
+/**
+ * The other sessions a duplicate signal points at: `matched_session_ids` from the
+ * identity/document detectors, `matches` (with similarity) from face reuse.
+ */
+export function matchedSessions(evidence: Record<string, unknown>): MatchedSession[] {
+  const ids = Array.isArray(evidence.matched_session_ids) ? evidence.matched_session_ids : []
+  const faces = Array.isArray(evidence.matches) ? evidence.matches : []
+
+  return [
+    ...ids.filter((id): id is string => typeof id === 'string').map((id) => ({ id })),
+    ...faces
+      .filter(
+        (match): match is { session_id: string; similarity?: number } =>
+          typeof match === 'object' && match !== null && typeof match.session_id === 'string',
+      )
+      .map((match) => ({ id: match.session_id, similarity: match.similarity })),
+  ]
+}
+
+/** Links to every session a duplicate signal matched, to compare them side by side. */
+function MatchedSessions({ sessions }: { sessions: MatchedSession[] }) {
+  return (
+    <div className="flex flex-col gap-1 text-sm">
+      <p className="text-xs font-medium text-muted-foreground">
+        Matched {sessions.length === 1 ? 'session' : `${sessions.length} sessions`}
+      </p>
+      <ul className="flex flex-col gap-1">
+        {sessions.map((session) => (
+          <li key={session.id} className="flex items-center justify-between gap-2">
+            <Link to={`../${session.id}`} className="font-mono text-primary hover:underline">
+              {session.id}
+            </Link>
+            {session.similarity != null ? (
+              <Badge variant="secondary">{(session.similarity * 100).toFixed(0)}% similar</Badge>
+            ) : null}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
