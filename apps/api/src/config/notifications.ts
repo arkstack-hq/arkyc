@@ -22,8 +22,8 @@ export default (): NotificationConfig => {
         transport:
           ['staging', 'production'].includes(env('APP_ENV')) && !!env('MAIL_API_KEY')
             ? new SendPulseTransport({
-              apiKey: env('MAIL_API_KEY'),
-            })
+                apiKey: env('MAIL_API_KEY'),
+              })
             : env('MAIL_TRANSPORT', 'smtp'),
         from: {
           name: env('MAIL_FROM_NAME', 'Arcstack'),
