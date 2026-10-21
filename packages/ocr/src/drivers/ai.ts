@@ -264,10 +264,15 @@ export function applyAuthenticity(fieldScore: number, authenticity?: OcrAuthenti
 }
 
 const SYSTEM_PROMPT =
-  'You are an OCR engine for identity documents. Read the visible printed text and ' +
-  'the machine-readable zone (MRZ) if present, and return the fields exactly as ' +
-  'printed. Do not guess, infer, or correct values you cannot clearly read — omit a ' +
-  'field rather than fabricate it. Dates must be ISO 8601 (YYYY-MM-DD).\n\n' +
+  'You are an OCR engine for identity documents. Your main task is to read the ' +
+  'identity fields: the surname, the given names, the date of birth and the ' +
+  'document number (on a national ID card or slip, the national identification ' +
+  'number, e.g. a NIN). Read the visible printed text and the machine-readable ' +
+  'zone (MRZ) if present, and return every field exactly as printed, even on a ' +
+  'photo with glare, blur or a busy background. Do not guess, infer, or correct ' +
+  'a value you cannot read; return an empty string for it, and an empty string ' +
+  'for a field the document does not print. Every identity field must be in your ' +
+  'answer. Dates must be ISO 8601 (YYYY-MM-DD).\n\n' +
   'Identity documents print BOTH a date of issue and a date of expiry — never ' +
   'confuse them. `expiryDate` is only the expiry/expiration/"valid until"/"date of ' +
   'expiry" value (in an MRZ, the second date field, not the first). `issueDate` is ' +
@@ -275,7 +280,8 @@ const SYSTEM_PROMPT =
   'issue date. If a document shows only an issue date and no expiry, return the ' +
   'issue date in `issueDate` and leave `expiryDate` empty — do not put the issue ' +
   'date in `expiryDate`.\n\n' +
-  'ALSO assess document authenticity, to the best of your ability, from the image ' +
+  'After reading the fields, ALSO assess document authenticity, to the best of ' +
+  'your ability, from the image ' +
   'alone — and report it. Be conservative: raise a flag only on a clear, visible ' +
   'sign. A genuine document that was merely photographed imperfectly (blur, glare ' +
   'on a glossy original, a shadow, a crop) must NOT be flagged. Set `screenReplay` ' +
@@ -292,15 +298,29 @@ const SYSTEM_PROMPT =
   'supporting notes in `authenticityObservations`. You read and assess the ' +
   'document; you do not make the final accept/reject decision.'
 
+/** The identity fields every answer must include (empty when unreadable or not printed). */
+const IDENTITY_KEYS = [
+  'lastName',
+  'firstName',
+  'fullName',
+  'dateOfBirth',
+  'documentNumber',
+  'expiryDate',
+  'nationality',
+]
+
 const READ_TOOL = {
   name: 'read_document',
   description: 'Return the identity fields read from the document image(s).',
   input_schema: {
     type: 'object',
     properties: {
-      firstName: { type: 'string', description: 'Given name(s) as printed.' },
-      lastName: { type: 'string', description: 'Surname / family name as printed.' },
-      fullName: { type: 'string', description: 'Full name if given/surname cannot be separated.' },
+      lastName: { type: 'string', description: 'Surname / family name as printed; empty if unreadable.' },
+      firstName: { type: 'string', description: 'Given name(s) as printed; empty if unreadable.' },
+      fullName: {
+        type: 'string',
+        description: 'Full name only if given names and surname cannot be separated; otherwise empty.',
+      },
       dateOfBirth: { type: 'string', description: 'Date of birth, ISO 8601 YYYY-MM-DD.' },
       documentNumber: {
         type: 'string',
@@ -353,6 +373,9 @@ const READ_TOOL = {
         description: 'Brief notes supporting any authenticity flag raised.',
       },
     },
+    // Required so a model can't answer with the authenticity read alone: each
+    // identity field must be returned, as an empty string when it isn't readable.
+    required: IDENTITY_KEYS,
   },
 } as const
 
