@@ -18,6 +18,14 @@ export interface VerificationThresholds {
   documentQualityThreshold: number
   ocrConfidenceThreshold: number
   livenessThreshold: number
+  /**
+   * Liveness score below which a failed check is declined outright. A failed
+   * check scoring from here up is borderline (a laptop webcam's noise can look
+   * like a screen to the anti-spoofing model) and goes to manual review instead.
+   * At or below `livenessThreshold`. A failed challenge sequence scores 0, so it
+   * is always declined.
+   */
+  livenessRejectThreshold: number
   faceMatchThreshold: number
   /**
    * Face-match similarity below which a session is rejected outright. Unset (the
@@ -39,6 +47,7 @@ export const DEFAULT_VERIFICATION_THRESHOLDS: VerificationThresholds = {
   documentQualityThreshold: 0.75,
   ocrConfidenceThreshold: 0.8,
   livenessThreshold: 0.85,
+  livenessRejectThreshold: 0.2,
   faceMatchThreshold: 0.75,
   addressThreshold: 0.6,
 }

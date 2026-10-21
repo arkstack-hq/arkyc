@@ -29,6 +29,7 @@ interface FormState {
   documentQualityThreshold: string
   ocrConfidenceThreshold: string
   livenessThreshold: string
+  livenessRejectThreshold: string
   faceMatchThreshold: string
   faceMatchRejectThreshold: string
   addressThreshold: string
@@ -57,6 +58,12 @@ const THRESHOLD_FIELDS: { key: ScoreThreshold; label: string; description: strin
     key: 'livenessThreshold',
     label: 'Liveness',
     description: 'Selfies scoring below this as a live person go to review.',
+  },
+  {
+    key: 'livenessRejectThreshold',
+    label: 'Liveness reject floor',
+    description:
+      'Selfies that fail below this are declined, and those between this and Liveness go to a reviewer. Laptop webcams often score just under 0.5.',
   },
   {
     key: 'faceMatchThreshold',
@@ -116,6 +123,9 @@ function formFromProject(project: Project): FormState {
     documentQualityThreshold: String(thresholds.documentQualityThreshold),
     ocrConfidenceThreshold: String(thresholds.ocrConfidenceThreshold),
     livenessThreshold: String(thresholds.livenessThreshold),
+    livenessRejectThreshold: String(
+      thresholds.livenessRejectThreshold ?? DEFAULT_VERIFICATION_THRESHOLDS.livenessRejectThreshold,
+    ),
     faceMatchThreshold: String(thresholds.faceMatchThreshold),
     faceMatchRejectThreshold:
       thresholds.faceMatchRejectThreshold != null ? String(thresholds.faceMatchRejectThreshold) : '',
@@ -216,8 +226,17 @@ function ProjectSettingsForm({ project }: { project: Project }) {
   // The reject floor can't sit above the face-match threshold (blank = its default).
   const faceMatchInput = Number(form.faceMatchThreshold.trim() || DEFAULT_VERIFICATION_THRESHOLDS.faceMatchThreshold)
   const floorMax = Number.isFinite(faceMatchInput) ? Math.min(1, Math.max(0, faceMatchInput)) : 1
+  // The liveness floor can't sit above the liveness threshold either.
+  const livenessInput = Number(form.livenessThreshold.trim() || DEFAULT_VERIFICATION_THRESHOLDS.livenessThreshold)
+  const livenessFloorMax = Number.isFinite(livenessInput) ? Math.min(1, Math.max(0, livenessInput)) : 1
+
   const thresholdErrors: Record<string, string | null> = {
     ...Object.fromEntries(THRESHOLD_FIELDS.map(({ key }) => [key, thresholdError(form[key])])),
+    livenessRejectThreshold: thresholdError(
+      form.livenessRejectThreshold,
+      livenessFloorMax,
+      `Keep this at or below Liveness (${livenessFloorMax}).`,
+    ),
     faceMatchRejectThreshold: thresholdError(
       form.faceMatchRejectThreshold,
       floorMax,

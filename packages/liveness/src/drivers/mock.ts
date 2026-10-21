@@ -24,7 +24,7 @@ export class MockLivenessDriver implements LivenessDriver {
 
     return {
       passed,
-      score: sequenceOk ? score : Math.min(score, 0.3),
+      score: sequenceOk ? score : 0,
       spoofSignals: {
         screenReplay: active && !sequenceOk,
         printedPhoto: false,

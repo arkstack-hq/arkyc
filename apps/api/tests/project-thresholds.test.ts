@@ -45,6 +45,14 @@ describe('project verification thresholds', () => {
     expect(res.status).toBe(422)
   })
 
+  it('saves a liveness reject floor, but not above the liveness threshold', async () => {
+    const res = await update({ livenessRejectThreshold: 0.3 })
+    expect(res.status, res.text).toBe(200)
+    expect(await stored()).toMatchObject({ livenessRejectThreshold: 0.3 })
+
+    expect((await update({ livenessThreshold: 0.5, livenessRejectThreshold: 0.6 })).status).toBe(422)
+  })
+
   it('rejects a score outside 0 to 1', async () => {
     expect((await update({ livenessThreshold: 1.5 })).status).toBe(422)
     expect((await update({ livenessThreshold: 'high' })).status).toBe(422)

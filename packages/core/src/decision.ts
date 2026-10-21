@@ -98,7 +98,9 @@ export class DecisionEngine {
     if (input.document.expired) {
       return verdict('rejected', 'DOCUMENT_EXPIRED')
     }
-    if (!input.liveness.passed) {
+    // Only a clear spoof is declined; a failed check scoring at or above the floor
+    // is borderline and goes to a reviewer below.
+    if (!input.liveness.passed && input.liveness.score < t.livenessRejectThreshold) {
       return verdict('rejected', 'LIVENESS_FAILED')
     }
 
@@ -132,7 +134,7 @@ export class DecisionEngine {
     if (input.document.ocrConfidence < t.ocrConfidenceThreshold) {
       return verdict('requires_review', 'OCR_LOW_CONFIDENCE')
     }
-    if (input.liveness.score < t.livenessThreshold) {
+    if (!input.liveness.passed || input.liveness.score < t.livenessThreshold) {
       return verdict('requires_review', 'LIVENESS_LOW_CONFIDENCE')
     }
     if (input.faceMatch.similarityScore < t.faceMatchThreshold) {
