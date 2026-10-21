@@ -141,7 +141,8 @@ out-of-order arrivals:
 A queue-backed worker signs and POSTs each delivery, recording `webhook_deliveries`
 (attempts, response status/body). Failures retry with backoff and dead-letter
 after the max attempts. Deliveries go on the `webhook` queue (`QUEUE_NAME_WEBHOOK`),
-so a worker must process it, e.g. `ark queue:work database --queue=webhook`. With
+so a worker must process it, e.g. `ark queue:work database --queue=webhook` (or a
+single worker on `'--queue=webhook,*'`). With
 no such worker, deliveries (including dashboard test events) are queued but never
 sent. See [Self-hosting](/guide/self-hosting#queue-workers).
 

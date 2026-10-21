@@ -95,8 +95,8 @@ See [Provider drivers](./providers), [Fraud signals & screening](./fraud-signals
 | `QUEUE_NAME_MAINTENANCE`                                          | `maintenance`   | Queue for `SessionSweepJob`.                                             |
 | `QUEUE_NAME_NOTIFICATIONS`                                        | `notifications` | Queue for `UserNotificationJob`.                                         |
 
-With `database` or `redis`, every queue that receives jobs needs a worker. To run
-just one worker, set all `QUEUE_NAME_*` to `default`. See
+With `database` or `redis`, every queue that receives jobs needs a worker. One
+worker can work them all with `--queue='webhook,*'`. See
 [Self-hosting](./self-hosting#queue-workers).
 
 ### Maintenance & cache

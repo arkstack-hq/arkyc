@@ -52,10 +52,14 @@ QUEUE_CONNECTION=database   # in apps/api/.env
 ```
 
 Jobs are dispatched onto five queues, each named by config (`queue.queues.*`, set
-via `QUEUE_NAME_*`). A worker processes exactly **one** queue: with no `--queue` it
-drains the connection's `default` queue only, and `--queue` takes a single name
-(not a comma list). **Every queue that receives jobs needs a worker**, or those
-jobs wait forever: sessions stall in `processing` and webhooks are never delivered.
+via `QUEUE_NAME_*`). **Every queue that receives jobs needs a worker that works
+it**, or those jobs wait forever: sessions stall in `processing` and webhooks are
+never delivered. Note that a worker with no `--queue` drains only the connection's
+`default` queue, which none of Arkyc's jobs use by default.
+
+`--queue` takes one queue, a comma-separated **priority list** (each loop takes the
+first job found walking the list), or `*` for **every** queue (needs
+`@arkstack/queue` 0.19.6+). Quote `*` in a shell, or zsh/bash may expand it.
 
 | Queue (`QUEUE_NAME_*`)     | Default         | Jobs                                      |
 | -------------------------- | --------------- | ----------------------------------------- |
@@ -77,25 +81,18 @@ pnpm --filter @arkyc/api exec ark queue:work database --queue=maintenance
 pnpm --filter @arkyc/api exec ark queue:work database --queue=notifications
 ```
 
-**A single worker** (for a resource-limited host): route every queue to `default`
-in `apps/api/.env` and run one worker without `--queue`. This is what the bundled
-PM2 config (`ecosystem.config.cjs`) runs.
+**A single worker** (for a resource-limited host) works every queue, webhook
+deliveries first. This is what the bundled PM2 config (`ecosystem.config.cjs`)
+runs:
 
 ```bash
-QUEUE_NAME_OCR=default
-QUEUE_NAME_BIOMETRIC=default
-QUEUE_NAME_WEBHOOK=default
-QUEUE_NAME_MAINTENANCE=default
-QUEUE_NAME_NOTIFICATIONS=default
+pnpm --filter @arkyc/api exec ark queue:work database '--queue=webhook,*'
 ```
 
-```bash
-pnpm --filter @arkyc/api exec ark queue:work database
-```
-
-A job's queue is fixed when it is dispatched, so after changing `QUEUE_NAME_*`,
-drain anything already waiting on the old names once, e.g.
-`ark queue:work database --queue=webhook --stop-when-empty`.
+`*` also picks up jobs left on any queue name, so nothing needs draining after
+changing `QUEUE_NAME_*`. (The older single-worker setup, every `QUEUE_NAME_*` set to
+`default` and a bare `ark queue:work`, still works. But jobs already waiting on the
+old names then need a one-off `--queue=<name> --stop-when-empty` drain.)
 
 Use `redis` in place of `database` for the redis connection. `--once` processes a
 single job and exits; `--stop-when-empty` drains and exits (handy for cron/CI). Retries use each job's `tries`/`backoff`;
@@ -107,8 +104,8 @@ table; `ark migrate` creates it.
 - Strong `JWT_SECRET` and `TWO_FACTOR_ENCRYPTION_KEY`; never reuse the examples.
 - `DATABASE_URL` to a managed Postgres; run `ark migrate` on deploy.
 - `FILESYSTEM_DISK=s3` (or `gcs`) with private buckets and short signed-URL TTLs.
-- `QUEUE_CONNECTION=database` (or `redis`) with a supervised worker for **every**
-  queue in use, or all `QUEUE_NAME_*` set to `default` with a single worker (see
+- `QUEUE_CONNECTION=database` (or `redis`) with supervised workers covering
+  **every** queue: one per queue, or a single `--queue=webhook,*` worker (see
   [Queue workers](#queue-workers)).
 - Real provider endpoints via `*_DRIVER=external` (see [Provider drivers](./providers)).
 - Postgres with the **pgvector** extension available (`ark migrate` enables it for

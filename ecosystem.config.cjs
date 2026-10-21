@@ -24,17 +24,17 @@ module.exports = {
     },
 
     // Durable queue worker — only needed when QUEUE_CONNECTION is `database` or
-    // `redis` (the default `sync` runs jobs inline). With no `--queue` it drains
-    // only the `default` queue, so `apps/api/.env` must route every job there:
-    // QUEUE_NAME_OCR, _BIOMETRIC, _WEBHOOK, _MAINTENANCE and _NOTIFICATIONS all
-    // set to `default`. Otherwise those jobs queue up and are never processed
-    // (sessions stall in `processing`, webhooks never deliver). To split the load
-    // instead, add one app per queue with `queue:work --queue <name>`.
+    // `redis` (the default `sync` runs jobs inline). One process works EVERY queue
+    // (`*`), taking webhook deliveries first so a burst of OCR/biometric work
+    // can't delay them. Without `--queue` it would drain only `default` and every
+    // job (all on named queues) would wait forever. To split the load instead,
+    // add one app per queue with `--queue=<name>`. Args are an array, so `*`
+    // reaches the worker literally (no shell globbing).
     {
       name: 'arkyc-worker',
       cwd: './current',
       script: 'node_modules/.bin/ark',
-      args: 'queue:work',
+      args: ['queue:work', '--queue=webhook,*'],
       autorestart: true,
       env: { NODE_ENV: 'production' },
     },

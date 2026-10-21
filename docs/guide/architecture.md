@@ -86,8 +86,8 @@ shown:
 The queue **connection** is config-selected (`QUEUE_CONNECTION`): `sync` runs jobs
 **inline** (the dev/test default; no worker needed, a session resolves within the
 request), while `database` and `redis` are durable. In production every queue in
-use needs a worker: one `ark queue:work <connection> --queue=<name>` per queue, or
-all `QUEUE_NAME_*` set to `default` and a single `ark queue:work <connection>`. See
+use needs a worker: one `ark queue:work <connection> --queue=<name>` per queue, or a
+single `ark queue:work <connection> '--queue=webhook,*'` working them all. See
 [Self-hosting](./self-hosting#queue-workers).
 
 ## Storage
