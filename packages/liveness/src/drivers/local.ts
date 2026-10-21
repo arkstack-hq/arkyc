@@ -48,7 +48,8 @@ export class LocalLivenessDriver implements LivenessDriver {
       return this.result(false, 0, { faceNotCentered: true }, { faceFound: false, sequenceOk })
     }
 
-    const crop = cropResize(image, this.cropRegion(face, image.width, image.height), INPUT_SIZE, INPUT_SIZE)
+    const region = this.cropRegion(face, image.width, image.height)
+    const crop = cropResize(image, region, INPUT_SIZE, INPUT_SIZE)
     const logits = Object.values(await antiSpoof.run(toTensor(crop, 'bgr'), [1, 3, INPUT_SIZE, INPUT_SIZE]))[0]!
     const realProbability = softmax(Array.from(logits))[REAL]!
 
@@ -67,7 +68,17 @@ export class LocalLivenessDriver implements LivenessDriver {
         multipleFaces,
         faceNotCentered,
       },
-      { realProbability, detection: face.score, faces: faces.length, sequenceOk },
+      {
+        realProbability,
+        detection: face.score,
+        faces: faces.length,
+        sequenceOk,
+        // The model expects a crop CROP_SCALE× the face; a face that fills the
+        // frame forces a tighter one (cropScale below CROP_SCALE), which it
+        // tends to score as a spoof. Kept to diagnose false rejections.
+        faceHeightRatio: round(face.box[3] / image.height),
+        cropScale: round(region[3] / face.box[3]),
+      },
     )
   }
 
@@ -121,3 +132,5 @@ function softmax(values: number[]): number[] {
 
   return exps.map((value) => value / sum)
 }
+
+const round = (value: number) => Math.round(value * 1000) / 1000

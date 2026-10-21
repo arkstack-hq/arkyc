@@ -238,8 +238,11 @@ export const DEFAULT_TUNING: FaceTuning = {
   closerFactor: 1.22,
   selfieCenterTol: 0.2,
   selfieCenterYTol: 0.25,
-  selfieMinScale: 0.28,
-  selfieMaxScale: 0.85,
+  // Face height as a share of the frame. The server's anti-spoofing model looks
+  // at a crop 2.7× the face, which only fits when the face is under ~37% of the
+  // frame; a closer face gets a tighter crop and tends to be scored as a spoof.
+  selfieMinScale: 0.2,
+  selfieMaxScale: 0.4,
 }
 
 /**
