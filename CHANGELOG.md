@@ -4,6 +4,21 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.5] - 2026-10-21
+
+### Fixed
+
+- **Liveness: close-up selfies still declined as screen replays.** On a laptop,
+  a face can stay larger than the framing window through the whole active
+  sequence, so 2.3.4 never caught a well-framed frame and sent the close-up
+  (measured at 96% of the frame height, a crop narrower than the face).
+  - Active liveness now frames the face first ("Move back a little" until it
+    fits), takes the still there, then starts the challenges.
+  - A crop too tight for the anti-spoofing model to judge (`cropScale` under
+    1.5) is no longer called a spoof: it passes with a zero score, which sends
+    the session to manual review, and raises a new `faceTooClose` signal. This
+    also covers older widgets.
+
 ## [2.3.4] - 2026-10-21
 
 ### Fixed
