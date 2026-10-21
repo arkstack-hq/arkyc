@@ -4,6 +4,17 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-10-21
+
+### Fixed
+
+- **Widget: document photos were captured at 640×480.** The camera was opened
+  without a resolution, so browsers used their 640×480 default and a card's
+  names and numbers came out a few pixels tall. OCR (AI and Tesseract alike)
+  then read little beyond the boldest field, such as the date of birth. The
+  document camera now asks for 1080p (`ideal`, so it still opens on cameras
+  that can't deliver it); the selfie camera is unchanged.
+
 ## [2.3.0] - 2026-10-21
 
 ### Added

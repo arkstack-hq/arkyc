@@ -8,6 +8,24 @@
 /** Which camera to request: `environment` for documents, `user` for selfies. */
 export type Facing = 'environment' | 'user'
 
+/**
+ * Video constraints per camera. With no resolution requested, browsers open the
+ * camera at 640×480, which leaves a card's names and numbers a few pixels tall,
+ * too small for OCR to read. Documents ask for 1080p (`ideal`, so a camera that
+ * can't deliver it still opens at its best). Selfies keep the default: the face
+ * fills the frame, and a larger stream would only inflate the liveness video.
+ */
+export const VIDEO_CONSTRAINTS: Record<Facing, MediaTrackConstraints> = {
+  environment: {
+    facingMode: 'environment',
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+  },
+  user: {
+    facingMode: 'user',
+  },
+}
+
 export class Camera {
   private stream: MediaStream | null = null
 
@@ -30,7 +48,7 @@ export class Camera {
    */
   async start(video: HTMLVideoElement, facing: Facing): Promise<MediaStream> {
     const stream = await this.nav.mediaDevices.getUserMedia({
-      video: { facingMode: facing },
+      video: VIDEO_CONSTRAINTS[facing],
       audio: false,
     })
     this.stream = stream
