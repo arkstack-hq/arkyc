@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/vision",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "description": "Local face detection, alignment and ONNX model management for self-hosted biometrics",
   "license": "MIT",
   "keywords": [
