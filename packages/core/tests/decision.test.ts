@@ -36,12 +36,31 @@ describe('DecisionEngine.decide', () => {
       reason: 'DOCUMENT_EXPIRED',
     },
     {
-      name: 'rejects failed liveness',
+      name: 'rejects failed liveness below the reject floor (a clear spoof)',
       mutate: (i) => {
         i.liveness.passed = false
+        i.liveness.score = 0.1
       },
       decision: 'rejected',
       reason: 'LIVENESS_FAILED',
+    },
+    {
+      name: 'reviews failed liveness at or above the reject floor (borderline)',
+      mutate: (i) => {
+        i.liveness.passed = false
+        i.liveness.score = 0.46
+      },
+      decision: 'requires_review',
+      reason: 'LIVENESS_LOW_CONFIDENCE',
+    },
+    {
+      name: 'reviews a failed liveness check even when its score is high',
+      mutate: (i) => {
+        i.liveness.passed = false
+        i.liveness.score = 0.95
+      },
+      decision: 'requires_review',
+      reason: 'LIVENESS_LOW_CONFIDENCE',
     },
     {
       name: 'rejects failed face match',
@@ -169,6 +188,7 @@ describe('DecisionEngine.decide', () => {
   it('orders reject reasons: expired before liveness before face match', () => {
     const input = goodInput()
     input.liveness.passed = false
+    input.liveness.score = 0
     input.faceMatch.passed = false
     expect(DecisionEngine.decide(input).reason).toBe('LIVENESS_FAILED')
   })
@@ -231,6 +251,7 @@ describe('DecisionEngine — face-match reject floor', () => {
   it('keeps hard rejections ahead of the face-match floor', () => {
     const input = idToSelfie()
     input.liveness.passed = false
+    input.liveness.score = 0
 
     expect(DecisionEngine.decide(input, { faceMatchRejectThreshold: 0.3 }).reason).toBe('LIVENESS_FAILED')
   })
@@ -269,7 +290,17 @@ describe('risk signals', () => {
     expect(DecisionEngine.decide(input)).toMatchObject({ decision: 'rejected', reason: 'SANCTIONS_MATCH' })
 
     input.liveness.passed = false
+    input.liveness.score = 0
     expect(DecisionEngine.decide(input).reason).toBe('LIVENESS_FAILED')
+  })
+
+  it('honours a per-project liveness reject floor', () => {
+    const input = goodInput()
+    input.liveness.passed = false
+    input.liveness.score = 0.3
+
+    expect(DecisionEngine.decide(input).reason).toBe('LIVENESS_LOW_CONFIDENCE')
+    expect(DecisionEngine.decide(input, { livenessRejectThreshold: 0.5 }).reason).toBe('LIVENESS_FAILED')
   })
 
   it('ignores info signals and orders by signal precedence', () => {

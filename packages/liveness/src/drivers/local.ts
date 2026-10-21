@@ -79,7 +79,8 @@ export class LocalLivenessDriver implements LivenessDriver {
     const [cx, cy] = [face.box[0] + face.box[2] / 2, face.box[1] + face.box[3] / 2]
     const faceNotCentered = Math.abs(cx / image.width - 0.5) > 0.3 || Math.abs(cy / image.height - 0.5) > 0.3
 
-    const score = sequenceOk ? realProbability : Math.min(realProbability, 0.3)
+    // A failed challenge sequence is no liveness at all: score 0, always declined.
+    const score = sequenceOk ? realProbability : 0
 
     return this.result(
       realProbability >= 0.5 && sequenceOk,

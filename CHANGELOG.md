@@ -4,6 +4,29 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-10-21
+
+### Added
+
+- **Liveness reject floor** (`livenessRejectThreshold`, per project, default
+  `0.2`, dashboard Settings → Verification thresholds). A failed liveness check
+  is declined only when it scores below the floor (a clear spoof); a failed check
+  scoring from the floor up is borderline and goes to manual review. Laptop
+  webcams often score just under 0.5 on a real person, which used to be an
+  automatic decline. It may not sit above the liveness threshold. A failed
+  challenge sequence now scores 0, so it is always declined.
+- **Searchable country screen.** The widget's country step is now a search box
+  over a scrollable list, matching names from the start of any word and ignoring
+  accents ("cote" finds Côte d'Ivoire), or a two-letter code. The preselected
+  country sits at the top, highlighted.
+
+### Fixed
+
+- **The widget's country list was missing about 50 issuing countries and
+  territories** (Côte d'Ivoire, Palestine, Kosovo, Taiwan, Hong Kong, Puerto
+  Rico and others). It now lists every ISO 3166-1 country plus Kosovo,
+  alphabetically.
+
 ## [2.3.5] - 2026-10-21
 
 ### Fixed

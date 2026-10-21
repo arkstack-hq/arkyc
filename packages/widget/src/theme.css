@@ -272,6 +272,35 @@ select.arkyc-addr-input {
   max-width: 340px;
 }
 
+.arkyc-country-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.arkyc-country {
+  padding: 9px 11px;
+  font-size: 14px;
+  text-align: left;
+  color: var(--arkyc-fg);
+  background: var(--arkyc-bg);
+  border: 1px solid var(--arkyc-border);
+  border-radius: var(--arkyc-radius);
+  cursor: pointer;
+}
+
+.arkyc-country:hover {
+  border-color: color-mix(in srgb, var(--arkyc-primary) 45%, var(--arkyc-border));
+}
+
+.arkyc-country.arkyc-selected {
+  font-weight: 600;
+  border-color: var(--arkyc-primary);
+  background: color-mix(in srgb, var(--arkyc-primary) 10%, var(--arkyc-bg));
+}
+
 .arkyc-preview {
   width: 100%;
   max-width: 360px;

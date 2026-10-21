@@ -75,6 +75,7 @@ const THRESHOLD_KEYS: (keyof VerificationThresholds)[] = [
   'documentQualityThreshold',
   'ocrConfidenceThreshold',
   'livenessThreshold',
+  'livenessRejectThreshold',
   'faceMatchThreshold',
   'faceMatchRejectThreshold',
   'addressThreshold',
@@ -119,6 +120,15 @@ export function mergeThresholds(
   if (typeof floor === 'number' && floor > faceMatch) {
     throw ValidationException.withMessages({
       thresholds: [`faceMatchRejectThreshold (${floor}) must not be above faceMatchThreshold (${faceMatch}).`],
+    })
+  }
+
+  const livenessFloor = merged.livenessRejectThreshold ?? DEFAULT_VERIFICATION_THRESHOLDS.livenessRejectThreshold
+  const liveness = merged.livenessThreshold ?? DEFAULT_VERIFICATION_THRESHOLDS.livenessThreshold
+
+  if (livenessFloor > liveness) {
+    throw ValidationException.withMessages({
+      thresholds: [`livenessRejectThreshold (${livenessFloor}) must not be above livenessThreshold (${liveness}).`],
     })
   }
 
