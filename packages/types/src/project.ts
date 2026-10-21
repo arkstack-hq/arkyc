@@ -1,8 +1,8 @@
 import type { Entity, Id, IsoDateTime, Metadata, OrganizationScoped, ProjectScoped } from './common'
 
-import type { VelocitySettings } from './risk'
 import type { CaptureModel } from './settings'
 import type { MembershipStatus } from './organization'
+import type { VelocitySettings } from './risk'
 
 /** Deployment environment for a project. */
 export type ProjectEnvironment = 'production' | 'staging' | 'development'
@@ -19,7 +19,18 @@ export interface VerificationThresholds {
   ocrConfidenceThreshold: number
   livenessThreshold: number
   faceMatchThreshold: number
-  /** Minimum address-verification confidence before flagging for review. */
+  /**
+   * Face-match similarity below which a session is rejected outright. Unset (the
+   * default), the face-match driver's own verdict decides, and a failed match is
+   * rejected. Set it below `faceMatchThreshold` so weak-but-plausible matches go to
+   * manual review instead: rejected below this, reviewed from here up to
+   * `faceMatchThreshold`, auto-approved above it. Document portraits often score
+   * lower against a live selfie than two photos do, so this suits ID-to-selfie.
+   */
+  faceMatchRejectThreshold?: number | null
+  /**
+   * Minimum address-verification confidence before flagging for review.
+   */
   addressThreshold: number
 }
 

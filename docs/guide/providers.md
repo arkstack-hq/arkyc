@@ -83,6 +83,11 @@ dependencies of `@arkyc/vision`). Face match aligns both faces on five landmarks
 compares SFace embeddings by cosine similarity (same person at `0.363` and above)
 and maps it to a score where the match threshold sits at `0.6`; the default
 `faceMatchThreshold` of `0.75` auto-approves from a cosine of about `0.46`.
+A document portrait matched against a selfie often lands below the `0.6` match
+point (cosines of `0.2` to `0.35` are common for the same person), which the
+driver reports as no match and the engine rejects. To review those instead, set
+a project **face-match reject floor** (`faceMatchRejectThreshold`, e.g. `0.3`;
+see [Decision engine](./architecture#decision-engine)).
 Liveness reports MiniFASNetV2's probability of a live face as the score, and flags
 a second face. Active liveness also checks the challenge sequence.
 

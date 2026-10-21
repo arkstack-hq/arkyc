@@ -68,6 +68,14 @@ returns `approved | requires_review | rejected` and a `DecisionReason`. Default
 thresholds: document quality `0.75`, OCR confidence `0.8`, liveness `0.85`,
 face match `0.75`; overridable per project.
 
+Face match is rejected when the driver reports no match, unless the project sets
+a **face-match reject floor** (`faceMatchRejectThreshold`). Then the similarity
+score decides: below the floor is rejected (`FACE_MATCH_FAILED`), from the floor
+up to the face-match threshold goes to manual review
+(`FACE_MATCH_LOW_CONFIDENCE`), and above it auto-approves. ID-card portraits
+score lower against a live selfie than two photos do, so a floor around `0.3`
+sends genuine-but-weak ID matches to a reviewer instead of rejecting them.
+
 ## Async pipeline
 
 Heavy analysis runs off the request path via **`@arkstack/jobs`** + **`@arkstack/queue`**.

@@ -185,6 +185,57 @@ describe('DecisionEngine.decide', () => {
   })
 })
 
+describe('DecisionEngine — face-match reject floor', () => {
+  // An ID-to-selfie match like the ones seen in production: the driver says "no
+  // match" (cosine below its own cut-off), at a similarity score of about 0.40.
+  const idToSelfie = () => {
+    const input = goodInput()
+    input.faceMatch.passed = false
+    input.faceMatch.similarityScore = 0.4
+    return input
+  }
+
+  it("without a floor, the driver's verdict rejects (unchanged behaviour)", () => {
+    expect(DecisionEngine.decide(idToSelfie()).reason).toBe('FACE_MATCH_FAILED')
+    expect(DecisionEngine.decide(idToSelfie(), { faceMatchRejectThreshold: null }).reason).toBe('FACE_MATCH_FAILED')
+  })
+
+  it('above the floor but below faceMatchThreshold: manual review, not rejection', () => {
+    const result = DecisionEngine.decide(idToSelfie(), { faceMatchRejectThreshold: 0.3 })
+
+    expect(result.decision).toBe('requires_review')
+    expect(result.reason).toBe('FACE_MATCH_LOW_CONFIDENCE')
+  })
+
+  it('below the floor: rejected', () => {
+    const input = idToSelfie()
+    input.faceMatch.similarityScore = 0.2
+
+    expect(DecisionEngine.decide(input, { faceMatchRejectThreshold: 0.3 }).reason).toBe('FACE_MATCH_FAILED')
+  })
+
+  it('exactly at the floor is not rejected (>=)', () => {
+    const input = idToSelfie()
+    input.faceMatch.similarityScore = 0.3
+
+    expect(DecisionEngine.decide(input, { faceMatchRejectThreshold: 0.3 }).decision).toBe('requires_review')
+  })
+
+  it('a strong match still auto-approves with a floor set', () => {
+    const input = goodInput()
+    input.faceMatch.similarityScore = 0.9
+
+    expect(DecisionEngine.decide(input, { faceMatchRejectThreshold: 0.3 }).reason).toBe('AUTO_APPROVED')
+  })
+
+  it('keeps hard rejections ahead of the face-match floor', () => {
+    const input = idToSelfie()
+    input.liveness.passed = false
+
+    expect(DecisionEngine.decide(input, { faceMatchRejectThreshold: 0.3 }).reason).toBe('LIVENESS_FAILED')
+  })
+})
+
 describe('Thresholds.resolve', () => {
   it('returns defaults when no overrides given', () => {
     expect(Thresholds.resolve()).toEqual(Thresholds.DEFAULTS)
