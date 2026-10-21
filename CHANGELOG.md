@@ -8,6 +8,13 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Webhook endpoints over the Public API.** With the project's secret key:
+  `GET /v1/webhooks`, `POST /v1/webhooks` (returns the signing secret once),
+  `GET /v1/webhooks/:id`, `PATCH /v1/webhooks/:id`, and `PATCH /v1/webhooks` to
+  update the endpoint **by its signing secret** (sent in the body), so an
+  integrator storing the secret needs no endpoint id. No delete over this API.
+  `@arkyc/sdk` exposes them on `arkyc.webhooks.endpoints` (`list`, `retrieve`,
+  `create`, `update`, `updateBySecret`).
 - **Configurable job queues.** Each job's queue now comes from config
   (`queue.queues.*`), overridable via `QUEUE_NAME_OCR`, `QUEUE_NAME_BIOMETRIC`,
   `QUEUE_NAME_WEBHOOK`, `QUEUE_NAME_MAINTENANCE` and `QUEUE_NAME_NOTIFICATIONS`.
@@ -24,6 +31,9 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Webhook endpoint URLs are validated** as URLs on create and update, in the
+  dashboard API too (previously any string was accepted and failed only at
+  delivery).
 - **`@arkstack/*` 0.19.6.** Brings `queue:work` priority lists
   (`--queue=webhook,ocr`) and the `*` wildcard for every queue.
 - **Queue worker docs.** `ark queue:work webhook` named the connection rather than

@@ -4,6 +4,7 @@ import { Router } from '@arkstack/driver-express'
 import { apiKeyAuth, apiLimiter } from '@app/http/middlewares'
 import SessionController from '@controllers/public/SessionController'
 import SessionAssetController from '@controllers/public/SessionAssetController'
+import WebhookEndpointController from '@controllers/public/WebhookEndpointController'
 
 // Public Project API (secret API key `Bearer sk_…` / `X-Api-Key`).
 
@@ -24,6 +25,16 @@ Router.group('/v1/sessions', () => {
   Router.post('/', [SessionController, 'create'], [apiLimiter, apiKeyAuth])
   Router.get('/:id', [SessionController, 'show'], [apiLimiter, apiKeyAuth])
   Router.post('/:id/cancel', [SessionController, 'cancel'], [apiLimiter, apiKeyAuth])
+})
+
+// Webhook endpoints (no delete over the Public API).
+Router.group('/v1/webhooks', () => {
+  Router.get('/', [WebhookEndpointController, 'index'], [apiLimiter, apiKeyAuth])
+  Router.post('/', [WebhookEndpointController, 'create'], [apiLimiter, apiKeyAuth])
+  // Update the endpoint identified by its signing secret (`secret` in the body).
+  Router.patch('/', [WebhookEndpointController, 'updateBySecret'], [apiLimiter, apiKeyAuth])
+  Router.get('/:id', [WebhookEndpointController, 'show'], [apiLimiter, apiKeyAuth])
+  Router.patch('/:id', [WebhookEndpointController, 'update'], [apiLimiter, apiKeyAuth])
 })
 
 // Signed, time-limited session assets served inline as images (no API key — the

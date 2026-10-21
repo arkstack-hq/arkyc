@@ -106,6 +106,28 @@ export function ServerSdk() {
       <p>
         The SDK also verifies signed webhook deliveries, see <Link to="/docs/webhooks">Webhooks</Link>.
       </p>
+
+      <h2 id="webhook-endpoints">Webhook endpoints</h2>
+      <p>
+        <code>arkyc.webhooks.endpoints</code> manages the project’s endpoints with the secret key. <code>create</code>{' '}
+        returns the signing <code>secret</code> exactly once. <code>update</code> and <code>updateBySecret</code> change
+        only the fields you pass, and never the secret. There is no delete: remove endpoints in the dashboard.
+      </p>
+      <CodeCard
+        code={[
+          'const { endpoint, secret } = await arkyc.webhooks.endpoints.create({',
+          "  url: 'https://example.com/webhooks/arkyc',",
+          "  events: ['verification.approved', 'verification.rejected'],",
+          '})',
+          '',
+          'await arkyc.webhooks.endpoints.list() // first page; { page, perPage } to paginate',
+          'await arkyc.webhooks.endpoints.retrieve(endpoint.id)',
+          "await arkyc.webhooks.endpoints.update(endpoint.id, { status: 'disabled' })",
+          '',
+          '// No id needed: find the endpoint by the signing secret you already store.',
+          "await arkyc.webhooks.endpoints.updateBySecret(secret, { url: 'https://new-tunnel.example.com/webhooks/arkyc' })",
+        ]}
+      />
     </Prose>
   )
 }

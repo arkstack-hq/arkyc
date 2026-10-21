@@ -2,9 +2,11 @@ import {
   workflowScreeningConfig,
   type VerificationStatus,
   type WebhookChecks,
+  type WebhookEndpointStatus,
   type WebhookEvent,
   type WebhookEventName,
 } from '@arkyc/types'
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { WebhookPayload, WebhookSigner } from '@arkyc/webhooks'
 
 import { AddressVerification } from '@app/models/AddressVerification'
@@ -23,7 +25,7 @@ import { webhookNotifications } from '@app/notifications/WebhookNotifications'
 import { buildSessionAssets } from '@app/services/SessionAssetService'
 import { screeningHits } from '@app/services/risk/types'
 import { toArray } from 'src/support/collection'
-import { decryptSecret } from 'src/support/secret-cipher'
+import { decryptSecret, encryptSecret } from 'src/support/secret-cipher'
 
 /**
  * Read the OCR parse stage from a stored driver `rawResponse`, if present.
@@ -185,6 +187,63 @@ export class WebhookService {
    * @param endpoint
    * @returns
    */
+  /**
+   * Register an endpoint for a project. The signing secret is generated here and
+   * returned exactly once in plaintext; it is persisted encrypted at rest and only
+   * decrypted at sign time (the column keeps its `secret_hash` name).
+   */
+  async createEndpoint(
+    owner: { organizationId: string; projectId: string },
+    input: { url: string; events: WebhookEventName[] },
+  ): Promise<{ endpoint: WebhookEndpoint; secret: string }> {
+    const secret = `whsec_${randomBytes(24).toString('hex')}`
+    const endpoint = await WebhookEndpoint.create({
+      organizationId: owner.organizationId,
+      projectId: owner.projectId,
+      url: input.url,
+      secretHash: encryptSecret(secret),
+      events: input.events,
+      status: 'active',
+    })
+
+    return { endpoint, secret }
+  }
+
+  /**
+   * Update an endpoint's url / events / status. Only supplied fields change; the
+   * signing secret never does, so receivers keep verifying deliveries.
+   */
+  async updateEndpoint(
+    endpoint: WebhookEndpoint,
+    input: { url?: string | null; events?: WebhookEventName[] | null; status?: WebhookEndpointStatus | null },
+  ): Promise<WebhookEndpoint> {
+    if (input.url) endpoint.url = input.url
+    if (input.events) endpoint.events = input.events
+    if (input.status) endpoint.status = input.status
+    await endpoint.save()
+
+    return endpoint
+  }
+
+  /**
+   * The project's endpoint whose signing secret is `secret`, or `null`. Secrets
+   * are encrypted with a random IV (not deterministic), so they can't be queried
+   * for: each of the project's endpoints is decrypted and compared in constant
+   * time. Projects hold a handful of endpoints, so this stays cheap.
+   */
+  async findEndpointBySecret(projectId: string, secret: string): Promise<WebhookEndpoint | null> {
+    const candidate = Buffer.from(secret)
+    const endpoints = toArray(await WebhookEndpoint.where({ projectId }).get())
+
+    return (
+      endpoints.find((endpoint) => {
+        const stored = Buffer.from(decryptSecret(endpoint.secretHash))
+
+        return stored.length === candidate.length && timingSafeEqual(stored, candidate)
+      }) ?? null
+    )
+  }
+
   async sendTest(endpoint: WebhookEndpoint): Promise<WebhookDelivery> {
     const payload = WebhookPayload.build({
       event: 'verification.completed',
