@@ -917,15 +917,32 @@ describe('ArkycWidget launchers', () => {
   })
 })
 
-describe('country screen', () => {
-  it('asks for the issuing country on its own screen before the document type', async () => {
-    const { controller, fetchMock } = makeController({ defaultCountry: null })
-    const el = controller.element as unknown as FakeEl
+/** Type into the country search box. */
+function searchCountries(root: FakeEl, query: string): void {
+  const search = findByAttr(root, 'name', 'country-search')!
+  search.value = query
+  ;(search.listeners.input ?? []).forEach((fn) => fn())
+}
 
-    controller.start()
+/** The country codes currently listed, in order. */
+function listedCountries(root: FakeEl): string[] {
+  const list = findByClass(root, 'arkyc-country-list')!
+  return list.children.map((child) => child.attributes['data-country']).filter(Boolean) as string[]
+}
+
+describe('country screen', () => {
+  const openCountryScreen = async (over: Parameters<typeof makeController>[0] = {}) => {
+    const made = makeController(over)
+    const el = made.controller.element as unknown as FakeEl
+    made.controller.start()
     await flush()
     clickText(el, 'Get started')
     await flush()
+    return { ...made, el }
+  }
+
+  it('asks for the issuing country on its own screen before the document type', async () => {
+    const { el, fetchMock } = await openCountryScreen({ defaultCountry: null })
 
     // Nothing preselected (no defaultCountry, no browser language): Continue is disabled.
     expect(find(el, 'Choose your country')).toBeTruthy()
@@ -933,9 +950,9 @@ describe('country screen', () => {
     const continueBtn = find(el, 'Continue')!
     expect(continueBtn.attributes.disabled).toBe('true')
 
-    const select = findByAttr(el, 'name', 'country')!
-    select.value = 'GH'
-    ;(select.listeners.change ?? []).forEach((fn) => fn())
+    searchCountries(el, 'gha')
+    expect(listedCountries(el)).toEqual(['GH'])
+    clickText(el, '🇬🇭 Ghana')
     expect(continueBtn.attributes.disabled).toBeUndefined()
     continueBtn.click()
     await flush()
@@ -951,33 +968,32 @@ describe('country screen', () => {
     await flush()
 
     const front = fetchMock.mock.calls.find(([url]) => String(url).includes('document/front'))
-    expect((front?.[1] as RequestInit).body).toBeTruthy()
     expect(((front?.[1] as RequestInit).body as FormData).get('country')).toBe('GH')
   })
 
-  it('preselects defaultCountry, then the region of the browser language', async () => {
-    const configured = makeController({ defaultCountry: 'ng' })
-    configured.controller.start()
-    await flush()
-    clickText(configured.controller.element as unknown as FakeEl, 'Get started')
-    await flush()
-    expect(findByAttr(configured.controller.element as unknown as FakeEl, 'name', 'country')!.value).toBe('NG')
+  it('filters by name ignoring accents, or by country code, and says when nothing matches', async () => {
+    const { el } = await openCountryScreen({ defaultCountry: null })
 
-    const fromLanguage = makeController({ defaultCountry: null, nav: { language: 'en-KE' } as Navigator })
-    fromLanguage.controller.start()
-    await flush()
-    clickText(fromLanguage.controller.element as unknown as FakeEl, 'Get started')
-    await flush()
-    expect(findByAttr(fromLanguage.controller.element as unknown as FakeEl, 'name', 'country')!.value).toBe('KE')
+    searchCountries(el, 'cote')
+    expect(listedCountries(el)).toContain('CI')
+    searchCountries(el, 'ng')
+    expect(listedCountries(el)).toContain('NG')
+    searchCountries(el, 'zzzz')
+    expect(listedCountries(el)).toEqual([])
+    expect(find(el, 'No country matches your search.')).toBeTruthy()
+  })
+
+  it('preselects defaultCountry at the top of the list, then the region of the browser language', async () => {
+    const configured = await openCountryScreen({ defaultCountry: 'ng' })
+    expect(listedCountries(configured.el)[0]).toBe('NG')
+    expect(findByClass(configured.el, 'arkyc-selected')!.attributes['data-country']).toBe('NG')
+
+    const fromLanguage = await openCountryScreen({ defaultCountry: null, nav: { language: 'en-KE' } as Navigator })
+    expect(findByClass(fromLanguage.el, 'arkyc-selected')!.attributes['data-country']).toBe('KE')
   })
 
   it('goes back to the country screen from the document screen', async () => {
-    const { controller } = makeController()
-    const el = controller.element as unknown as FakeEl
-    controller.start()
-    await flush()
-    clickText(el, 'Get started')
-    await flush()
+    const { el } = await openCountryScreen()
     clickText(el, 'Continue')
     await flush()
     clickText(el, 'Change country')

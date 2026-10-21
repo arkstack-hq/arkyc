@@ -204,6 +204,26 @@ interface StepDots {
  * so it can run under a fake DOM in tests. The view owns capture-screen camera
  * mechanics and raises only high-level events to the controller.
  */
+/** Lower-cased, accents removed: so "cote" finds "Côte d'Ivoire". */
+function foldText(text: string): string {
+  return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim()
+}
+
+/**
+ * A search matches a country from the start of its name or of any word in it
+ * ("korea" finds South Korea, "gha" finds Ghana but not Afghanistan), or by its
+ * exact two-letter code.
+ */
+function countryMatches(name: string, iso2: string, query: string): boolean {
+  const folded = foldText(name)
+
+  return (
+    folded.startsWith(query) ||
+    folded.split(/[^\p{L}\p{N}]+/u).some((word) => word.startsWith(query)) ||
+    iso2.toLowerCase() === query
+  )
+}
+
 /** Consecutive well-framed samples before active liveness takes its still. */
 const FRAMING_HOLD = 4
 
@@ -457,21 +477,71 @@ export class WidgetView {
    * layouts the server tries first.
    */
   private renderCountrySelection(state: ViewState): void {
-    const select = this.dom.field('Choose a country', {
-      class: 'arkyc-btn arkyc-btn-ghost arkyc-text-center',
-      name: 'country',
-      autocomplete: 'country',
-      choices: countries.map(({ name, iso2, flag }) => ({ value: iso2, label: `${flag} ${name}` })),
-    })
-    const suggested = state.suggestedCountry
-    if (suggested && countries.some((c) => c.iso2 === suggested)) select.value = suggested
+    const suggested = countries.some((c) => c.iso2 === state.suggestedCountry) ? state.suggestedCountry! : null
+    let chosen: string | null = suggested
 
-    const chosen = () => (select.value || '').trim().toUpperCase()
     const proceed = this.button('Continue', () => {
-      if (chosen()) this.handlers.onCountrySelected(chosen())
+      if (chosen) this.handlers.onCountrySelected(chosen)
     })
-    const sync = () => (chosen() ? proceed.removeAttribute?.('disabled') : proceed.setAttribute('disabled', 'true'))
-    select.addEventListener('change', sync)
+    const sync = () => (chosen ? proceed.removeAttribute?.('disabled') : proceed.setAttribute('disabled', 'true'))
+
+    const search = this.dom.h<HTMLInputElement>('input', {
+      class: 'arkyc-addr-input',
+      type: 'search',
+      name: 'country-search',
+      placeholder: 'Search countries',
+      autocomplete: 'off',
+      'aria-label': 'Search countries',
+    })
+
+    const list = this.dom.h('div', {
+      class: 'arkyc-country-list',
+      role: 'listbox',
+      'aria-label': 'Countries',
+    })
+
+    const renderList = () => {
+      this.clear(list)
+      const query = foldText(search.value)
+      const matches = countries.filter(({ name, iso2 }) => !query || countryMatches(name, iso2, query))
+
+      // With no search, keep the chosen country on top so a preselection is visible.
+      if (!query && chosen) matches.sort((a, b) => Number(b.iso2 === chosen) - Number(a.iso2 === chosen))
+
+      if (!matches.length) {
+        list.appendChild(
+          this.dom.h('p', {
+            class: 'arkyc-p',
+            text: 'No country matches your search.',
+          }),
+        )
+        return
+      }
+
+      for (const { name, iso2, flag } of matches) {
+        const selected = iso2 === chosen
+        list.appendChild(
+          this.dom.h('button', {
+            type: 'button',
+            class: selected ? 'arkyc-country arkyc-selected' : 'arkyc-country',
+            role: 'option',
+            'aria-selected': String(selected),
+            'data-country': iso2,
+            text: `${flag} ${name}`,
+            on: {
+              click: () => {
+                chosen = iso2
+                renderList()
+                sync()
+              },
+            },
+          }),
+        )
+      }
+    }
+
+    search.addEventListener('input', renderList)
+    renderList()
     sync()
 
     this.dom.append(this.body, [
@@ -480,7 +550,7 @@ export class WidgetView {
         class: 'arkyc-p',
         text: "Pick the country that issued the ID you'll use.",
       }),
-      this.dom.h('div', { class: 'arkyc-choices' }, [select]),
+      this.dom.h('div', { class: 'arkyc-choices' }, [search, list]),
     ])
     this.footer.appendChild(proceed)
   }
