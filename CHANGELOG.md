@@ -4,10 +4,16 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.3.2] - 2026-10-21
 
 ### Fixed
 
+- **AI OCR answered with the authenticity read alone.** Both Gemma 4 and Llama 4
+  Scout called the tool with only `authenticityConfidence` and observations (e.g.
+  "heavy glare"), leaving every identity field out, so OCR fell back to Tesseract.
+  The prompt led with authenticity and said to omit unreadable fields, and the
+  schema required nothing. The identity fields are now required (an empty string
+  when unreadable or not printed), and the prompt makes reading them the main task.
 - **Nigerian NIN slip and voter card parsers ran only when the country was
   `NG`.** The widget doesn't always send a country, and the registry skips a
   country-scoped parser when none is given, so a slip went to the generic
