@@ -22,7 +22,7 @@
     "@arkstack/common": "^0.20.1",
     "@arkstack/console": "^0.20.1",
     "@arkstack/contract": "^0.20.1",
-    "@arkstack/database": "^0.20.0",
+    "@arkstack/database": "^0.20.1",
     "@arkstack/driver-express": "^0.20.1",
     "@arkstack/filesystem": "^0.20.1",
     "@arkstack/foundry": "^0.20.1",
