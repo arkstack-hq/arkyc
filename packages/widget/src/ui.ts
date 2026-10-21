@@ -467,7 +467,7 @@ export class WidgetView {
       this.dom.h('h2', { class: 'arkyc-h', text: 'Choose your country' }),
       this.dom.h('p', {
         class: 'arkyc-p',
-        text: "Pick the country that issued the ID you'll use, so we can read it correctly.",
+        text: "Pick the country that issued the ID you'll use.",
       }),
       this.dom.h('div', { class: 'arkyc-choices' }, [select]),
     ])
