@@ -1,3 +1,4 @@
+import { Logger } from '@arkstack/common'
 import { RiskSignals } from '@arkyc/core'
 import { workflowScreeningConfig, type RiskPolicyConfig, type WorkflowConfig } from '@arkyc/types'
 import { SessionRiskSignal } from '@app/models/SessionRiskSignal'
@@ -34,7 +35,12 @@ export class RiskSignalService {
   async evaluate(context: RiskContext): Promise<DetectedSignal[]> {
     const detected: DetectedSignal[] = []
     for (const detector of this.detectors) {
+      // Per-detector timing: the face-duplicate detector runs a face model again and
+      // screening calls out over the network, so either can be the step that stalls.
+      const startedAt = Date.now()
+      Logger.info(`Risk detector ${detector.source} started (session ${context.session.id})`, false, true)
       for (const signal of await detector.detect(context)) detected.push({ ...signal, source: detector.source })
+      Logger.info(`Risk detector ${detector.source} done in ${Date.now() - startedAt}ms`, false, true)
     }
 
     const signals = RiskSignals.applyPolicy(detected, this.policy(context.workflow))
