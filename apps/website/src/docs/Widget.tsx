@@ -101,6 +101,18 @@ export function Widget() {
           </tr>
           <tr>
             <td>
+              <code>defaultCountry</code>
+            </td>
+            <td>
+              <code>string</code>
+            </td>
+            <td>
+              ISO 3166-1 alpha-2 country preselected on the widget’s country screen (e.g. <code>NG</code>). Users can
+              still change it.
+            </td>
+          </tr>
+          <tr>
+            <td>
               <code>onComplete</code>
             </td>
             <td>
