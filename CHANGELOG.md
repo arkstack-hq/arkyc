@@ -4,6 +4,18 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **A handled error no longer kills the process.** `reportError` logged through
+  `Logger.error`, which exits by default, so every reported error, though caught,
+  exited the API or queue worker. In the worker it struck mid-job: e.g. the
+  device risk detector reporting a missing GeoIP database
+  (`storage/geoip/GeoLite2-Country.mmdb`) killed the worker, PM2 restarted it,
+  and Redis re-delivered the job every `QUEUE_RETRY_AFTER`, so the session never
+  got its decision and expired in `processing`. It now logs and carries on.
+
 ## [2.1.1] - 2026-10-21
 
 ### Fixed
