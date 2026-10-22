@@ -4,6 +4,17 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-10-22
+
+### Changed
+
+- **Deletion shows its progress.** A deleted project or organization is marked as queued for deletion (`deletion_requested_at`) until the background job removes it. The dashboard shows a "Deleting" badge and disables the delete button meanwhile, and a repeat request returns `409`. Stored files are now removed by folder, so the job finishes faster.
+
+### Fixed
+
+- The dashboard failed to load `pusher-js` for realtime because the SDK wasn't bundled.
+- The admin area could crash with React error #310 after loading.
+
 ## [2.5.0] - 2026-10-22
 
 ### Added
