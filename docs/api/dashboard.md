@@ -48,12 +48,17 @@ maintain stops delivering, and when they are invited to an organization.
 
 **Base:** `/api/v1/dashboard/organizations`
 
-| Method  | Path                             | Permission             | Description                                          |
-| ------- | -------------------------------- | ---------------------- | ---------------------------------------------------- |
-| `GET`   | `/organizations`                 | none                   | List the caller's organizations (paginated).         |
-| `POST`  | `/organizations`                 | none                   | Create an organization; seeds roles; caller = owner. |
-| `GET`   | `/organizations/:organizationId` | `organizations.view`   | Show the organization.                               |
-| `PATCH` | `/organizations/:organizationId` | `organizations.update` | Update name / logo / settings.                       |
+| Method   | Path                             | Permission             | Description                                                                                    |
+| -------- | -------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `GET`    | `/organizations`                 | none                   | List the caller's organizations (paginated).                                                   |
+| `POST`   | `/organizations`                 | none                   | Create an organization; seeds roles; caller = owner.                                           |
+| `GET`    | `/organizations/:organizationId` | `organizations.view`   | Show the organization.                                                                         |
+| `PATCH`  | `/organizations/:organizationId` | `organizations.update` | Update name / logo / settings.                                                                 |
+| `DELETE` | `/organizations/:organizationId` | `organizations.delete` | Permanently delete it with everything in it. Body `name` must match exactly (`422` otherwise). |
+
+Deleting an organization also deletes every project, session, captured file,
+member, role and audit log in it. The deletion is recorded in the platform audit
+log, and runs on the maintenance queue.
 
 ## Members & invitations
 
@@ -74,18 +79,19 @@ maintain stops delivering, and when they are invited to an organization.
 
 **Base:** `/api/v1/dashboard/organizations/:organizationId/projects`
 
-| Method   | Path                                           | Permission        | Description                                      |
-| -------- | ---------------------------------------------- | ----------------- | ------------------------------------------------ |
-| `GET`    | `/projects`                                    | `projects.view`   | List projects (paginated).                       |
-| `POST`   | `/projects`                                    | `projects.create` | Create a project.                                |
-| `GET`    | `/projects/:projectId`                         | `projects.view`   | Show a project.                                  |
-| `PATCH`  | `/projects/:projectId`                         | `projects.update` | Update name/status/settings/branding/thresholds. |
-| `GET`    | `/projects/:projectId/extended-access`         | `projects.view`   | Per-capability extended-access status.           |
-| `POST`   | `/projects/:projectId/extended-access/request` | `projects.update` | Request capabilities (`capabilities[]`, `pii`).  |
-| `GET`    | `/projects/:projectId/members`                 | `members.view`    | List project members.                            |
-| `POST`   | `/projects/:projectId/members`                 | `members.update`  | Add an organization member to the project.       |
-| `PATCH`  | `/projects/:projectId/members/:memberId`       | `members.update`  | Change a project member's role.                  |
-| `DELETE` | `/projects/:projectId/members/:memberId`       | `members.remove`  | Remove a project member.                         |
+| Method   | Path                                           | Permission        | Description                                                                                        |
+| -------- | ---------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------- |
+| `GET`    | `/projects`                                    | `projects.view`   | List projects (paginated).                                                                         |
+| `POST`   | `/projects`                                    | `projects.create` | Create a project.                                                                                  |
+| `GET`    | `/projects/:projectId`                         | `projects.view`   | Show a project.                                                                                    |
+| `PATCH`  | `/projects/:projectId`                         | `projects.update` | Update name/status/settings/branding/thresholds.                                                   |
+| `DELETE` | `/projects/:projectId`                         | `projects.delete` | Permanently delete it with its sessions, media, keys and webhooks. Body `name` must match exactly. |
+| `GET`    | `/projects/:projectId/extended-access`         | `projects.view`   | Per-capability extended-access status.                                                             |
+| `POST`   | `/projects/:projectId/extended-access/request` | `projects.update` | Request capabilities (`capabilities[]`, `pii`).                                                    |
+| `GET`    | `/projects/:projectId/members`                 | `members.view`    | List project members.                                                                              |
+| `POST`   | `/projects/:projectId/members`                 | `members.update`  | Add an organization member to the project.                                                         |
+| `PATCH`  | `/projects/:projectId/members/:memberId`       | `members.update`  | Change a project member's role.                                                                    |
+| `DELETE` | `/projects/:projectId/members/:memberId`       | `members.remove`  | Remove a project member.                                                                           |
 
 `thresholds` takes any of `documentQualityThreshold`, `ocrConfidenceThreshold`,
 `livenessThreshold`, `faceMatchThreshold`, `faceMatchRejectThreshold` and

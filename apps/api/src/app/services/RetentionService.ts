@@ -61,7 +61,7 @@ export class RetentionService {
   }
 
   /** Delete a single session's stored media, null the paths, and stamp the marker. */
-  private async purgeSessionMedia(session: VerificationSession): Promise<void> {
+  async purgeSessionMedia(session: VerificationSession): Promise<void> {
     const disk = Storage.disk()
 
     for (const capture of toArray(await DocumentCapture.where({ sessionId: session.id }).get())) {

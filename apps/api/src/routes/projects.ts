@@ -15,6 +15,7 @@ Router.group('/v1/dashboard/organizations/:organizationId/projects', () => {
   Router.post('/', [ProjectController, 'create'], scoped('projects.create'))
   Router.get('/:projectId', [ProjectController, 'show'], scoped('projects.view'))
   Router.patch('/:projectId', [ProjectController, 'update'], scoped('projects.update'))
+  Router.delete('/:projectId', [ProjectController, 'destroy'], scoped('projects.delete'))
   Router.post('/:projectId/logo', [ProjectController, 'uploadLogo'], scoped('projects.update'))
 
   // Extended access (owner requests capabilities; platform admins grant/revoke each)

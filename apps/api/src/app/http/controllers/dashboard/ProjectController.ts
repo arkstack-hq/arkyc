@@ -10,6 +10,9 @@ import { type FileLike, Storage } from '@arkstack/filesystem'
 import { Str } from '@h3ravel/support'
 import { normalizeVelocitySettings, mergeThresholds } from 'src/support/risk-settings'
 import { audit } from '@app/services/AuditLogger'
+import { DeletionJob } from '@app/jobs'
+import { ValidationException } from 'kanun'
+import { GenericResource } from 'resora'
 
 export default class ProjectController extends BaseController {
   /**
@@ -46,6 +49,7 @@ export default class ProjectController extends BaseController {
     })
 
     const slug = (data.slug || Str.slug(data.name)).toLowerCase()
+
     RequestException.abortIf(
       await Project.where({ organizationId: req.organization!.id, slug }).first(),
       'A project with this slug already exists in this organization',
@@ -117,19 +121,26 @@ export default class ProjectController extends BaseController {
       id: req.params.projectId,
       organizationId: req.organization!.id,
     }).firstOrFail()
+
     if (data.name) project.name = data.name
+
     if (data.status) project.status = data.status
+
     if (data.settings && typeof data.settings === 'object') {
       const settings = { ...(data.settings as Record<string, unknown>) }
+
       if ('velocity' in settings) settings.velocity = normalizeVelocitySettings(settings.velocity)
       project.settings = { ...(project.settings ?? {}), ...settings }
     }
+
     if (data.branding && typeof data.branding === 'object') {
       const { logo_key: _logoKey, ...branding } = data.branding as ProjectBranding
+
       project.branding = { ...(project.branding ?? {}), ...branding }
       // An explicit logo_url (including null) replaces the uploaded logo.
       if ('logo_url' in branding) delete project.branding.logo_key
     }
+
     if (data.thresholds && typeof data.thresholds === 'object') {
       project.settings = {
         ...(project.settings ?? {}),
@@ -170,9 +181,11 @@ export default class ProjectController extends BaseController {
     const logo = data.logo as FileLike
     const ext = logo.mimetype === 'image/png' ? 'png' : 'jpg'
     const key = `organizations/${project.organizationId}/projects/${project.id}/branding/logo.${ext}`
+
     await Storage.disk().put(key, logo, { visibility: 'public', contentType: logo.mimetype })
 
     const { logo_url: _logoUrl, logo_key: previousKey, ...branding } = project.branding ?? {}
+
     project.branding = { ...branding, logo_key: key }
     await project.save()
 
@@ -193,6 +206,39 @@ export default class ProjectController extends BaseController {
     return new ProjectResource(project).additional({
       status: 'success',
       message: 'Logo uploaded',
+      code: 200,
+    })
+  }
+
+  /**
+   * Permanently delete a project and everything attached to it, including its
+   * sessions. The caller confirms by typing the project's name.
+   *
+   * @param   ctx  The HTTP context (`:projectId`, `req.organization`).
+   * @returns      The deleted project's id.
+   */
+  async destroy({ req }: HttpContext) {
+    const data = await this.validate({ name: ['required', 'string'] })
+    const project = await Project.where({
+      id: req.params.projectId,
+      organizationId: req.organization!.id,
+    }).firstOrFail()
+
+    if (String(data.name).trim() !== project.name) {
+      throw ValidationException.withMessages({ name: ['Type the project name exactly to confirm.'] })
+    }
+
+    await audit.recordForRequest(req, {
+      action: 'project.deleted',
+      entityType: 'project',
+      entityId: project.id,
+      metadata: { name: project.name },
+    })
+    await DeletionJob.dispatch('project', project.id)
+
+    return new GenericResource({ id: project.id }).additional({
+      status: 'success',
+      message: 'Project deleted',
       code: 200,
     })
   }

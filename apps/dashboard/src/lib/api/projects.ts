@@ -15,7 +15,7 @@ export class Projects {
     return alova.Get<Paginated<Project>>(`${t(organizationId)}/projects`, {
       name: 'projects:list',
       cacheFor: CACHE,
-      hitSource: ['project:create', 'project:update'],
+      hitSource: ['project:create', 'project:update', 'project:delete'],
       params: params(query),
     })
   }
@@ -25,7 +25,7 @@ export class Projects {
     return alova.Get(`${t(organizationId)}/projects`, {
       name: 'projects:options',
       cacheFor: CACHE,
-      hitSource: ['project:create', 'project:update'],
+      hitSource: ['project:create', 'project:update', 'project:delete'],
       params: { limit: String(PICKER_LIMIT) },
       transform: unwrap<Project[]>,
     })
@@ -65,5 +65,10 @@ export class Projects {
       name: 'project:update',
       transform: unwrap<Project>,
     })
+  }
+
+  /** Permanently delete a project and everything in it. `name` must match the project's. */
+  static remove(organizationId: string, projectId: string, input: { name: string }) {
+    return alova.Delete(p(organizationId, projectId), input, { name: 'project:delete' })
   }
 }

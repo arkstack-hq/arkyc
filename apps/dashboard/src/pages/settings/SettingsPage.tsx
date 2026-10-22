@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { DeleteResourceCard } from '@/components/DeleteResourceCard'
 import { useForm } from 'alova/client'
 import { Organizations, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
@@ -25,6 +26,7 @@ export default function SettingsPage() {
   onSuccess(() => setSaved(true))
 
   const canUpdate = can('settings.update')
+  const navigate = useNavigate()
 
   return (
     <div className="p-6 lg:p-8">
@@ -86,6 +88,18 @@ export default function SettingsPage() {
         </Card>
 
         <FaceEmbeddingsCard canUpdate={canUpdate} />
+
+        {organization && can('organizations.delete') ? (
+          <div className="md:col-span-2">
+            <DeleteResourceCard
+              kind="organization"
+              name={organization.name}
+              consequences="All its projects, sessions, captured media, members, roles and audit logs are deleted with it."
+              remove={(name) => Organizations.remove(organizationId, { name })}
+              onDeleted={() => navigate('/')}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   )

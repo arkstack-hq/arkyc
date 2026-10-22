@@ -11,6 +11,7 @@ Router.group('/v1/dashboard/organizations', () => {
   Router.post('/', [OrganizationController, 'create'], [auth])
   Router.get('/:organizationId', [OrganizationController, 'show'], scoped('organizations.view'))
   Router.patch('/:organizationId', [OrganizationController, 'update'], scoped('organizations.update'))
+  Router.delete('/:organizationId', [OrganizationController, 'destroy'], scoped('organizations.delete'))
 })
 
 export default () => {}
