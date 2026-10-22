@@ -6,6 +6,7 @@ export default class GlobalSettingsResource extends Resource {
     return {
       platform: this.platform,
       capture: this.capture,
+      compliance: this.compliance,
       assets: this.assets,
     }
   }

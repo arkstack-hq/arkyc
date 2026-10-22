@@ -25,3 +25,6 @@ export type { WidgetResult, ApiErrorKey } from '@arkyc/types'
 export { ArkycWidget } from './ArkycWidget'
 export { WidgetHandler } from './WidgetHandler'
 export * from './types'
+
+// ISO 3166-1 countries with English names and flags, alphabetical.
+export { countries } from './countries'

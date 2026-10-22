@@ -11,6 +11,7 @@ import { Str } from '@h3ravel/support'
 import { normalizeVelocitySettings, mergeThresholds } from 'src/support/risk-settings'
 import { audit } from '@app/services/AuditLogger'
 import { DeletionJob } from '@app/jobs'
+import { businessVerifications } from '@app/services/BusinessVerificationService'
 import { ValidationException } from 'kanun'
 import { GenericResource } from 'resora'
 
@@ -50,6 +51,15 @@ export default class ProjectController extends BaseController {
 
     const slug = (data.slug || Str.slug(data.name)).toLowerCase()
 
+    // Production needs a verified business; until then projects start in development.
+    const canGoLive = await businessVerifications.canGoLive(req.organization!)
+
+    if (data.environment === 'production' && !canGoLive) {
+      throw ValidationException.withMessages({
+        environment: ['Verify your business in organization settings before creating a production project.'],
+      })
+    }
+
     RequestException.abortIf(
       await Project.where({ organizationId: req.organization!.id, slug }).first(),
       'A project with this slug already exists in this organization',
@@ -60,7 +70,7 @@ export default class ProjectController extends BaseController {
       organizationId: req.organization!.id,
       name: data.name,
       slug,
-      environment: data.environment ?? 'production',
+      environment: data.environment ?? (canGoLive ? 'production' : 'development'),
       settings: data.settings ?? {},
       branding: { primary_color: DEFAULT_PRIMARY_COLOR, ...((data.branding as ProjectBranding | null) ?? {}) },
       status: 'active',

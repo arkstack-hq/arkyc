@@ -1,4 +1,5 @@
 import { RequestException } from '@arkstack/common'
+import { businessVerifications } from '@app/services/BusinessVerificationService'
 import { ApiException } from 'src/support/apiErrors'
 import { SessionRules, StatusMachine } from '@arkyc/core'
 import { clientTokens } from './ClientTokenService'
@@ -67,6 +68,8 @@ export class VerificationSessionService {
     scope: ProjectScope,
     input: { userReference?: string | null; metadata?: Metadata | null; workflowId?: string | null },
   ): Promise<{ session: VerificationSession; clientToken: string }> {
+    await businessVerifications.assertCanVerify(scope.project_id)
+
     // Resolve and snapshot the workflow now so editing/deleting it never
     // disturbs this session. A null workflow runs the default pipeline.
     const workflow = await this.resolveWorkflow(scope.organization_id, input.workflowId ?? null)

@@ -79,7 +79,8 @@ describe('projects & api keys', () => {
   it('creates and lists a project', async () => {
     const res = await authed('post', `/organizations/${ctx.organizationId}/projects`).send({ name: 'Web App' })
     expect(res.status).toBe(201)
-    expect(res.body.data.environment).toBe('production')
+    // Unverified organizations start in development until their business is verified.
+    expect(res.body.data.environment).toBe('development')
     projectId = res.body.data.id
 
     const list = await authed('get', `/organizations/${ctx.organizationId}/projects`)
@@ -98,7 +99,7 @@ describe('projects & api keys', () => {
       name: 'Default key',
     })
     expect(create.status).toBe(201)
-    expect(create.body.secret).toMatch(/^sk_live_/)
+    expect(create.body.secret).toMatch(/^sk_test_/)
     const keyId = create.body.data.id
 
     const list = await authed('get', `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys`)

@@ -8,6 +8,7 @@ import AdminUserController from '@controllers/admin/UserController'
 import AdminAuditLogController from '@controllers/admin/AuditLogController'
 import AdminExtendedAccessController from '@controllers/admin/ExtendedAccessController'
 import AdminStatsController from '@controllers/admin/StatsController'
+import AdminBusinessVerificationController from '@controllers/admin/BusinessVerificationController'
 
 // Platform-admin surface, above organizations. Guarded by `canAdmin(...)` after `auth`
 // only — NO `resolveOrganization`; an organization role never grants admin access.
@@ -34,6 +35,21 @@ Router.group('/v1/admin', () => {
     '/organizations/:organizationId/projects',
     [AdminOrganizationController, 'projects'],
     [auth, canAdmin('admin.organizations.view')],
+  )
+
+  // Business verification review.
+  const viewOrgs = [auth, canAdmin('admin.organizations.view')]
+  const manageOrgs = [auth, canAdmin('admin.organizations.manage')]
+  Router.get('/business-verifications', [AdminBusinessVerificationController, 'index'], viewOrgs)
+  Router.get('/business-verifications/count', [AdminBusinessVerificationController, 'count'], viewOrgs)
+  Router.get('/business-verifications/:id', [AdminBusinessVerificationController, 'show'], viewOrgs)
+  Router.get('/business-verifications/:id/documents/:kind', [AdminBusinessVerificationController, 'document'], viewOrgs)
+  Router.patch('/business-verifications/:id/approve', [AdminBusinessVerificationController, 'approve'], manageOrgs)
+  Router.patch('/business-verifications/:id/reject', [AdminBusinessVerificationController, 'reject'], manageOrgs)
+  Router.patch(
+    '/organizations/:organizationId/verification',
+    [AdminBusinessVerificationController, 'setOrganizationStatus'],
+    manageOrgs,
   )
 
   Router.get('/users', [AdminUserController, 'index'], [auth, canAdmin('admin.users.view')])

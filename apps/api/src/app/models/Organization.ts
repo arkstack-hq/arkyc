@@ -1,6 +1,6 @@
 import { Model } from 'arkormx'
 import type { CastMap } from 'arkormx'
-import type { OrganizationSettings } from '@arkyc/types'
+import type { BusinessVerificationStatus, OrganizationSettings } from '@arkyc/types'
 import { Role } from './Role'
 import { OrganizationMember } from './OrganizationMember'
 import { OrganizationInvitation } from './OrganizationInvitation'
@@ -9,6 +9,7 @@ import { ApiKey } from './ApiKey'
 import { VerificationSession } from './VerificationSession'
 import { WebhookEndpoint } from './WebhookEndpoint'
 import { AuditLog } from './AuditLog'
+import { BusinessVerification } from './BusinessVerification'
 import { OrganizationFactory } from 'src/database/factories/OrganizationFactory'
 
 export class Organization extends Model {
@@ -21,17 +22,25 @@ export class Organization extends Model {
   declare slug: string
   declare logoUrl: string | null
   declare settings: OrganizationSettings | null
+  declare verificationStatus: BusinessVerificationStatus
+  declare verifiedAt: Date | null
   declare createdAt: Date
   declare updatedAt: Date
 
   protected static override columns = {
     logoUrl: 'logo_url',
+    verificationStatus: 'verification_status',
+    verifiedAt: 'verified_at',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }
 
   protected override casts: CastMap = {
     settings: 'json',
+  }
+
+  businessVerifications() {
+    return this.hasMany(BusinessVerification, 'organizationId')
   }
 
   roles() {

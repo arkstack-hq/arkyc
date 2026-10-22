@@ -52,6 +52,7 @@ export class GlobalSettingsService {
     return {
       platform: { ...base.platform, ...(patch.platform ?? {}) },
       capture: { ...base.capture, ...(patch.capture ?? {}) },
+      compliance: { ...base.compliance, ...(patch.compliance ?? {}) },
       assets: { ...base.assets, ...(patch.assets ?? {}) },
     }
   }

@@ -3,6 +3,7 @@ import { DocsLink } from '@/components/Layout'
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
+  BadgeCheck,
   Building2,
   ChevronsUpDown,
   LayoutDashboard,
@@ -24,6 +25,8 @@ import { isDark, toggleTheme } from '@/lib/theme'
 import { Loading } from '@/components/States'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { BusinessVerifications } from '@/lib/api'
+import { useAttentionCount } from '@/hooks/useAttentionCount'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -68,6 +71,7 @@ const NAV: AdminNavItem[] = [
   { to: 'settings', label: 'Settings', icon: Settings, perm: 'admin.settings.view' },
   { to: 'organizations', label: 'Organizations', icon: Building2, perm: 'admin.organizations.view' },
   { to: 'extended-access', label: 'Extended access', icon: Sparkles, perm: 'admin.extended_access.view' },
+  { to: 'business-verifications', label: 'Business verification', icon: BadgeCheck, perm: 'admin.organizations.view' },
   { to: 'users', label: 'Users', icon: Users, perm: 'admin.users.view' },
   { to: 'audit-logs', label: 'Audit log', icon: ScrollText, perm: 'admin.audit.view' },
 ]
@@ -100,7 +104,14 @@ export function AdminLayout() {
   if (!isAdmin) return <Navigate to="/" replace />
 
   const items = NAV.filter((item) => can(item.perm))
-  const badges: Partial<Record<string, number>> = { 'extended-access': pendingAccess }
+  const pendingVerifications = useAttentionCount(
+    () => BusinessVerifications.adminPendingCount(),
+    can('admin.organizations.view'),
+  )
+  const badges: Partial<Record<string, number>> = {
+    'extended-access': pendingAccess,
+    'business-verifications': pendingVerifications,
+  }
 
   return (
     <SidebarProvider>

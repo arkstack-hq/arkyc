@@ -158,6 +158,11 @@ function OrganizationSidebar({ can }: { can: (perm: PermissionKey) => boolean })
   const seg = activeSegment(location.pathname)
   const badges: Partial<Record<string, number>> = {
     reviews: useAttentionCount(() => Sessions.reviewCount(organization!.id), !!organization && can('reviews.view')),
+    // An unverified or rejected business needs someone who can update settings to act.
+    settings:
+      can('organizations.update') && ['unverified', 'rejected'].includes(organization?.verification_status ?? '')
+        ? 1
+        : 0,
   }
 
   return (

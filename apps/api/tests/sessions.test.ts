@@ -50,7 +50,12 @@ async function toLiveness(signals: Record<string, unknown> = {}): Promise<{ id: 
 
 beforeAll(async () => {
   const s = Date.now()
-  const organization = await Organization.create({ name: 'Sess Co', slug: `sess-${s}`, settings: {} })
+  const organization = await Organization.create({
+    name: 'Sess Co',
+    slug: `sess-${s}`,
+    settings: {},
+    verificationStatus: 'verified',
+  })
   fx.organizationId = organization.id
   const project = await Project.create({
     organizationId: organization.id,

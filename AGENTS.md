@@ -104,6 +104,12 @@ Comments should be simple guides to what a utility (variable, function, class, b
 - Device signals skip private and loopback IPs, which is what every request looks like behind a proxy without `TRUST_PROXY`.
 - Tests pin `SCREENING_DRIVER` and `NETWORK_DRIVER` to `mock` in `vitest.config.ts`; the mock OCR's identity is fixed unless a test sends `full_name`, `date_of_birth` or `document_number` hints, so give each session a distinct identity when duplicates would interfere.
 
+## Business verification and deletion (apps/api)
+
+- `BusinessVerificationService` is the one authority for the production gate: `canGoLive` for project creation and `assertCanVerify` inside session creation. Don't re-check organization verification elsewhere.
+- Tests that create a `production` project directly must give its organization `verificationStatus: 'verified'`; API-created projects in unverified organizations default to `development`.
+- Delete projects and organizations through `DeletionService` (via `DeletionJob`): it purges stored media in bounded batches before the row delete cascades. Never delete those rows directly.
+
 ## Realtime, notifications and push
 
 - Realtime runs on Arkstack: `Broadcast` from `@arkstack/notifications` on the API, `@arkstack/realtime` in the dashboard and widget. The transport is env-driven (`REALTIME_TRANSPORT`); do not add transport code to Arkyc.

@@ -1,4 +1,5 @@
 import type { Entity, Id, IsoDateTime, Metadata, OrganizationScoped } from './common'
+import type { BusinessVerificationStatus } from './business'
 import type { FaceEmbeddingSettings } from './risk'
 
 /** Membership lifecycle states for organization/project members. */
@@ -16,6 +17,9 @@ export interface Organization extends Entity {
   slug: string
   logo_url: string | null
   settings: OrganizationSettings
+  /** Whether the organization has proven it may handle personal data in production. */
+  verification_status: BusinessVerificationStatus
+  verified_at: IsoDateTime | null
 }
 
 /** Organization-level configuration (free-form, with known optional keys). */

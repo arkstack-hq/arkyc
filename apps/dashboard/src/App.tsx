@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AdminAuditLogsPage from '@/pages/admin/AdminAuditLogsPage'
 import AdminExtendedAccessPage from '@/pages/admin/AdminExtendedAccessPage'
 import AdminExtendedAccessReviewPage from '@/pages/admin/AdminExtendedAccessReviewPage'
+import AdminBusinessVerificationsPage from '@/pages/admin/AdminBusinessVerificationsPage'
+import AdminBusinessVerificationReviewPage from '@/pages/admin/AdminBusinessVerificationReviewPage'
 import { AdminLayout } from '@/components/AdminLayout'
 import AdminOrganizationDetailPage from '@/pages/admin/AdminOrganizationDetailPage'
 import AdminOrganizationsPage from '@/pages/admin/AdminOrganizationsPage'
@@ -41,6 +43,7 @@ import InvitationsPage from '@/pages/InvitationsPage'
 import SessionDetailPage from '@/pages/sessions/SessionDetailPage'
 import SessionsPage from '@/pages/sessions/SessionsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
+import BusinessVerificationPage from '@/pages/settings/BusinessVerificationPage'
 import VerifyEmailPage from '@/pages/VerifyEmailPage'
 import VerifyPage from '@/pages/VerifyPage'
 import WorkflowsPage from '@/pages/WorkflowsPage'
@@ -143,6 +146,7 @@ export default function App() {
           <Route path="members/:memberId/permissions" element={<MemberPermissionsPage />} />
 
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/verification" element={<BusinessVerificationPage />} />
           <Route path="settings/roles" element={<RolesPage />} />
           <Route path="settings/roles/:roleId" element={<RoleDetailPage />} />
           <Route path="settings/permissions" element={<PermissionsPage />} />
@@ -163,6 +167,8 @@ export default function App() {
           <Route path="organizations/:organizationId" element={<AdminOrganizationDetailPage />} />
           <Route path="extended-access" element={<AdminExtendedAccessPage />} />
           <Route path="extended-access/:projectId" element={<AdminExtendedAccessReviewPage />} />
+          <Route path="business-verifications" element={<AdminBusinessVerificationsPage />} />
+          <Route path="business-verifications/:id" element={<AdminBusinessVerificationReviewPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="users/:userId" element={<AdminUserDetailPage />} />
           <Route path="audit-logs" element={<AdminAuditLogsPage />} />

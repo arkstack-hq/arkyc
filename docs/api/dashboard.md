@@ -49,13 +49,16 @@ maintain stops delivering, and when they are invited to an organization.
 
 **Base:** `/api/v1/dashboard/organizations`
 
-| Method   | Path                             | Permission             | Description                                                                                    |
-| -------- | -------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------- |
-| `GET`    | `/organizations`                 | none                   | List the caller's organizations (paginated).                                                   |
-| `POST`   | `/organizations`                 | none                   | Create an organization; seeds roles; caller = owner.                                           |
-| `GET`    | `/organizations/:organizationId` | `organizations.view`   | Show the organization.                                                                         |
-| `PATCH`  | `/organizations/:organizationId` | `organizations.update` | Update name / logo / settings.                                                                 |
-| `DELETE` | `/organizations/:organizationId` | `organizations.delete` | Permanently delete it with everything in it. Body `name` must match exactly (`422` otherwise). |
+| Method   | Path                                                          | Permission             | Description                                                                                                                                                   |
+| -------- | ------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/organizations`                                              | none                   | List the caller's organizations (paginated).                                                                                                                  |
+| `POST`   | `/organizations`                                              | none                   | Create an organization; seeds roles; caller = owner.                                                                                                          |
+| `GET`    | `/organizations/:organizationId`                              | `organizations.view`   | Show the organization.                                                                                                                                        |
+| `PATCH`  | `/organizations/:organizationId`                              | `organizations.update` | Update name / logo / settings.                                                                                                                                |
+| `DELETE` | `/organizations/:organizationId`                              | `organizations.delete` | Permanently delete it with everything in it. Body `name` must match exactly (`422` otherwise).                                                                |
+| `GET`    | `/organizations/:organizationId/verification`                 | `organizations.view`   | Business verification status, whether it can go live, and the latest submission.                                                                              |
+| `POST`   | `/organizations/:organizationId/verification`                 | `organizations.update` | Submit business verification (multipart; see [Business verification](/guide/business-verification)). `201`; `409` while one is under review or once verified. |
+| `GET`    | `/organizations/:organizationId/verification/documents/:kind` | `organizations.view`   | Stream an uploaded document (`incorporation` or `data_protection`).                                                                                           |
 
 Deleting an organization also deletes every project, session, captured file,
 member, role and audit log in it. The deletion is recorded in the platform audit
@@ -93,6 +96,10 @@ log, and runs on the maintenance queue.
 | `POST`   | `/projects/:projectId/members`                 | `members.update`  | Add an organization member to the project.                                                         |
 | `PATCH`  | `/projects/:projectId/members/:memberId`       | `members.update`  | Change a project member's role.                                                                    |
 | `DELETE` | `/projects/:projectId/members/:memberId`       | `members.remove`  | Remove a project member.                                                                           |
+
+A production project needs a [verified business](/guide/business-verification):
+until then, creating one returns `422` on `environment`, and new projects default
+to `development`. Branding starts with Arkyc's primary color.
 
 `thresholds` takes any of `documentQualityThreshold`, `ocrConfidenceThreshold`,
 `livenessThreshold`, `faceMatchThreshold`, `faceMatchRejectThreshold` and
@@ -165,21 +172,36 @@ See [Webhooks](/integrations/webhooks) for the payload and signature.
 `canAdmin('…')` permission. This surface sits **above** organizations; an
 organization role never grants admin access (no `resolveOrganization`).
 
-| Method   | Path                                      | Permission                 | Description                                              |
-| -------- | ----------------------------------------- | -------------------------- | -------------------------------------------------------- |
-| `GET`    | `/me`                                     | none                       | Caller's admin standing (empty for non-admins).          |
-| `GET`    | `/settings`                               | `admin.settings.view`      | Platform settings.                                       |
-| `PATCH`  | `/settings`                               | `admin.settings.update`    | Update platform settings.                                |
-| `GET`    | `/organizations`                          | `admin.organizations.view` | List organizations (paginated).                          |
-| `GET`    | `/organizations/:organizationId`          | `admin.organizations.view` | Organization detail + counts.                            |
-| `GET`    | `/organizations/:organizationId/projects` | `admin.organizations.view` | The organization's projects (paginated).                 |
-| `GET`    | `/users`                                  | `admin.users.view`         | List users (paginated).                                  |
-| `GET`    | `/users/:userId`                          | `admin.users.view`         | User detail.                                             |
-| `POST`   | `/users/:userId/admin`                    | `admin.users.manage`       | Grant platform admin.                                    |
-| `DELETE` | `/users/:userId/admin`                    | `admin.users.manage`       | Revoke platform admin (never the last admin).            |
-| `POST`   | `/users/:userId/status`                   | `admin.users.manage`       | Set account standing: `active`/`restricted`/`suspended`. |
-| `POST`   | `/users/:userId/password`                 | `admin.users.manage`       | Reset a user's password.                                 |
-| `GET`    | `/audit-logs`                             | `admin.audit.view`         | Platform audit log.                                      |
+| Method   | Path                                          | Permission                   | Description                                                        |
+| -------- | --------------------------------------------- | ---------------------------- | ------------------------------------------------------------------ |
+| `GET`    | `/me`                                         | none                         | Caller's admin standing (empty for non-admins).                    |
+| `GET`    | `/settings`                                   | `admin.settings.view`        | Platform settings.                                                 |
+| `PATCH`  | `/settings`                                   | `admin.settings.update`      | Update platform settings.                                          |
+| `GET`    | `/organizations`                              | `admin.organizations.view`   | List organizations (paginated).                                    |
+| `GET`    | `/organizations/:organizationId`              | `admin.organizations.view`   | Organization detail + counts.                                      |
+| `GET`    | `/organizations/:organizationId/projects`     | `admin.organizations.view`   | The organization's projects (paginated).                           |
+| `PATCH`  | `/organizations/:organizationId/verification` | `admin.organizations.manage` | Mark an organization verified or unverified directly (`verified`). |
+| `GET`    | `/users`                                      | `admin.users.view`           | List users (paginated).                                            |
+| `GET`    | `/users/:userId`                              | `admin.users.view`           | User detail.                                                       |
+| `POST`   | `/users/:userId/admin`                        | `admin.users.manage`         | Grant platform admin.                                              |
+| `DELETE` | `/users/:userId/admin`                        | `admin.users.manage`         | Revoke platform admin (never the last admin).                      |
+| `POST`   | `/users/:userId/status`                       | `admin.users.manage`         | Set account standing: `active`/`restricted`/`suspended`.           |
+| `POST`   | `/users/:userId/password`                     | `admin.users.manage`         | Reset a user's password.                                           |
+| `GET`    | `/audit-logs`                                 | `admin.audit.view`           | Platform audit log.                                                |
+
+### Business verification {#admin-business-verification}
+
+| Method  | Path                                          | Permission                   | Description                                              |
+| ------- | --------------------------------------------- | ---------------------------- | -------------------------------------------------------- |
+| `GET`   | `/business-verifications`                     | `admin.organizations.view`   | Submissions, newest first; filter by `status`.           |
+| `GET`   | `/business-verifications/count`               | `admin.organizations.view`   | Submissions awaiting review (for the nav badge).         |
+| `GET`   | `/business-verifications/:id`                 | `admin.organizations.view`   | One submission with its organization.                    |
+| `GET`   | `/business-verifications/:id/documents/:kind` | `admin.organizations.view`   | Stream an uploaded document.                             |
+| `PATCH` | `/business-verifications/:id/approve`         | `admin.organizations.manage` | Approve (optional `note`); the organization can go live. |
+| `PATCH` | `/business-verifications/:id/reject`          | `admin.organizations.manage` | Reject with a required `note` saying what to fix.        |
+
+The organization's managers are notified of the decision. `PATCH /settings` takes
+`compliance.business_verification_required` to switch the production gate off or on.
 
 ### Extended access {#admin-ai-access}
 

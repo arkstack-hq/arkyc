@@ -16,6 +16,7 @@ export type ApiErrorKey =
   | 'origin_not_allowed'
   | 'client_token_used'
   | 'handoff_disabled'
+  | 'organization_unverified'
   | 'missing_api_key'
   | 'invalid_api_key'
   | 'invalid_workflow'

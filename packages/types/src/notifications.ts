@@ -14,6 +14,8 @@ export const NOTIFICATION_TYPE = {
   invitationReceived: 'invitation.received',
   /** Watchlist screening matched a session in a project you review. */
   screeningHit: 'screening.hit',
+  /** A platform admin approved or rejected your organization's business verification. */
+  businessVerificationDecided: 'business_verification.decided',
 } as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE]

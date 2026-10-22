@@ -7,6 +7,7 @@
 export * from './common'
 export * from './user'
 export * from './organization'
+export * from './business'
 export * from './rbac'
 export * from './settings'
 export * from './realtime'

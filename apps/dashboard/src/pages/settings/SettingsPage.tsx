@@ -11,6 +11,8 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { DEFAULT_FACE_EMBEDDING_SETTINGS } from '@arkyc/types'
+import { Badge } from '@/components/ui/badge'
+import { VERIFICATION_STATUS } from '@/pages/settings/BusinessVerificationPage'
 
 export default function SettingsPage() {
   const organizationId = useOrganizationId()
@@ -86,6 +88,27 @@ export default function SettingsPage() {
             </Link>
           </CardContent>
         </Card>
+
+        {organization ? (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle>Business verification</CardTitle>
+                <Badge variant={VERIFICATION_STATUS[organization.verification_status ?? 'unverified'].variant}>
+                  {VERIFICATION_STATUS[organization.verification_status ?? 'unverified'].label}
+                </Badge>
+              </div>
+              <CardDescription>Prove your organization may handle personal data before going live.</CardDescription>
+            </CardHeader>
+            <CardFooter className="justify-end">
+              <Link to="verification">
+                <Button variant="outline">
+                  {organization.verification_status === 'verified' ? 'View verification' : 'Verify business'}
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
+        ) : null}
 
         <FaceEmbeddingsCard canUpdate={canUpdate} />
 
