@@ -4,6 +4,12 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Clone a project** from its settings page. Pick a name and environment, and the new project starts with the original's settings and branding (logo included). API keys, webhooks, members and sessions are not copied. Production still needs a verified business.
+
 ## [2.5.1] - 2026-10-22
 
 ### Changed

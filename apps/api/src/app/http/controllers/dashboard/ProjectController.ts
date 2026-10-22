@@ -94,6 +94,73 @@ export default class ProjectController extends BaseController {
   }
 
   /**
+   * Create a new project from an existing project's settings and branding. Keys,
+   * webhooks, members and sessions are not copied.
+   *
+   * @param   ctx  The HTTP context (`:projectId`, `req.organization`).
+   * @returns      The new project's ProjectResource (HTTP 201).
+   */
+  async clone({ req }: HttpContext) {
+    const data = await this.validate({
+      name: ['required', 'string', 'min:2'],
+      environment: ['required', 'in:production,staging,development'],
+    })
+    const organization = req.organization!
+    const source = await Project.where({ id: req.params.projectId, organizationId: organization.id }).firstOrFail()
+    const slug = Str.slug(data.name).toLowerCase()
+
+    if (data.environment === 'production' && !(await businessVerifications.canGoLive(organization))) {
+      throw ValidationException.withMessages({
+        environment: ['Verify your business in organization settings before creating a production project.'],
+      })
+    }
+
+    if (await Project.where({ organizationId: organization.id, slug }).first()) {
+      throw ValidationException.withMessages({ name: ['A project with this name already exists.'] })
+    }
+
+    const { logo_url: _logoUrl, logo_key: logoKey, ...branding } = source.branding ?? {}
+    const project = await Project.create({
+      organizationId: organization.id,
+      name: data.name,
+      slug,
+      environment: data.environment,
+      settings: source.settings ?? {},
+      branding,
+      status: 'active',
+    })
+
+    if (logoKey) {
+      const key = logoKey.replace(`/projects/${source.id}/`, `/projects/${project.id}/`)
+
+      try {
+        await Storage.disk().copy(logoKey, key, { visibility: 'public' })
+        project.branding = { ...branding, logo_key: key }
+        await project.save()
+      } catch {
+        // The clone keeps its other branding when the logo can't be copied.
+      }
+    }
+
+    await audit.recordForRequest(req, {
+      projectId: project.id,
+      action: 'project.cloned',
+      entityType: 'project',
+      entityId: project.id,
+      metadata: { source_id: source.id },
+    })
+
+    return new ProjectResource(project)
+      .additional({
+        status: 'success',
+        message: 'Project cloned',
+        code: 201,
+      })
+      .response()
+      .setStatusCode(201)
+  }
+
+  /**
    * Show a project scoped to the active organization.
    *
    * @param   ctx  The HTTP context (`:projectId`, `req.organization`).

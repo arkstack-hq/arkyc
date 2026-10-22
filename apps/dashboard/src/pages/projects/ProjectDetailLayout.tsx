@@ -5,7 +5,7 @@ import { cn, humanize } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Projects } from '@/lib/api'
 import { useOrganizationId } from '@/contexts/organization-context'
-import { useRequest } from 'alova/client'
+import { useWatcher } from 'alova/client'
 
 const TABS = [
   { to: '', label: 'Settings', end: true },
@@ -22,7 +22,7 @@ export default function ProjectDetailLayout() {
     data: project,
     loading,
     error,
-  } = useRequest(Projects.get(organizationId, projectId!), {
+  } = useWatcher(() => Projects.get(organizationId, projectId!), [organizationId, projectId], {
     immediate: !!projectId,
   })
 

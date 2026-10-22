@@ -1,4 +1,4 @@
-import type { Project } from '@arkyc/types'
+import type { Project, ProjectEnvironment } from '@arkyc/types'
 import { CACHE, type Paginated, alova, p, params, t, unwrap } from './client'
 import type { CreateProjectInput } from './types'
 
@@ -63,6 +63,14 @@ export class Projects {
     body.append('logo', file)
     return alova.Post(`${p(organizationId, projectId)}/logo`, body, {
       name: 'project:update',
+      transform: unwrap<Project>,
+    })
+  }
+
+  /** Create a project from this project's settings and branding. */
+  static clone(organizationId: string, projectId: string, input: { name: string; environment: ProjectEnvironment }) {
+    return alova.Post(`${p(organizationId, projectId)}/clone`, input, {
+      name: 'project:create',
       transform: unwrap<Project>,
     })
   }

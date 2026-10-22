@@ -6,7 +6,7 @@ import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds 
 import { DEFAULT_PRIMARY_COLOR, DEFAULT_VELOCITY_SETTINGS, DEFAULT_VERIFICATION_THRESHOLDS } from '@arkyc/types'
 import { Theme } from '@arkyc/widget'
 import { Projects, errorMessage } from '@/lib/api'
-import { useForm, useRequest } from 'alova/client'
+import { useForm, useRequest, useWatcher } from 'alova/client'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +16,7 @@ import { Select } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DeleteResourceCard } from '@/components/DeleteResourceCard'
+import { CloneProjectCard } from './CloneProjectCard'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PopoverPicker } from '@/components/SpeechBubble'
@@ -578,6 +579,16 @@ function ProjectSettingsForm({ project }: { project: Project }) {
         </div>
       </form>
 
+      {can('projects.create') ? (
+        <div className="mt-6">
+          <CloneProjectCard
+            organizationId={organizationId}
+            project={project}
+            onCloned={(clone) => navigate(`../${clone.id}`, { relative: 'path' })}
+          />
+        </div>
+      ) : null}
+
       {can('projects.delete') ? (
         <div className="mt-6">
           <DeleteResourceCard
@@ -602,12 +613,12 @@ export default function ProjectSettingsPage() {
     data: project,
     loading,
     error,
-  } = useRequest(Projects.get(organizationId, projectId!), {
+  } = useWatcher(() => Projects.get(organizationId, projectId!), [organizationId, projectId], {
     immediate: !!projectId,
   })
 
   if (loading || !project) return <Loading />
   if (error) return <ErrorState error={error} />
 
-  return <ProjectSettingsForm project={project} />
+  return <ProjectSettingsForm key={project.id} project={project} />
 }
