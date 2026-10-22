@@ -48,7 +48,7 @@ describe('cloning a project', () => {
   it('refuses production for an unverified organization and a duplicate name', async () => {
     const { as, org } = await owner()
     const source = (await as('post', org('/projects')).send({ name: 'Source' })).body.data
-    const clone = (body: object) => as('post', org(`/projects/${source.id}/clone`)).send(body)
+    const clone = (body: Record<string, string>) => as('post', org(`/projects/${source.id}/clone`)).send(body)
 
     expect((await clone({ name: 'Live', environment: 'production' })).body.errors).toHaveProperty('environment')
     expect((await clone({ name: 'Source', environment: 'development' })).body.errors).toHaveProperty('name')
