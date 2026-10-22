@@ -60,6 +60,7 @@ async function verify(identity: Identity = {}): Promise<string> {
   }
 
   const client = (path: string) => request(app).post(`/api/v1/client/${path}`).set('X-Client-Token', token)
+
   await request(app).get('/api/v1/client/session').set('X-Client-Token', token)
   await client('document/front').send({
     document_type: 'passport',
@@ -69,6 +70,7 @@ async function verify(identity: Identity = {}): Promise<string> {
     document_number: identity.document ?? `D${Math.random().toString().slice(2, 10)}`,
   })
   const liveness = new FormData()
+
   if (identity.selfie)
     liveness.append('selfie', new Blob([new Uint8Array(identity.selfie)], { type: 'image/png' }), 'selfie.png')
   await client('liveness').send(liveness)
@@ -81,6 +83,7 @@ const detail = async (id: string): Promise<Detail> => (await owner.get(org(`/ses
 
 async function workflow(steps: WorkflowStep[], options: Record<string, unknown> = {}): Promise<string> {
   const res = await owner.post(org('/workflows')).send({ name: `Risk ${Date.now()}`, steps, options })
+
   expect(res.status).toBe(201)
 
   return res.body.data.id
@@ -98,6 +101,7 @@ beforeAll(async () => {
   const registered = await request(app)
     .post('/api/v1/auth/register')
     .send({ firstname: 'Risk', lastname: 'Owner', email: `risk-${stamp}@test.dev`, password: 'secret123' })
+
   fx.owner = { id: registered.body.data.id, token: registered.body.token }
 
   fx.organizationId = (await owner.post('/dashboard/organizations').send({ name: `Risk Co ${stamp}` })).body.data.id
@@ -114,10 +118,12 @@ afterEach(() => vi.restoreAllMocks())
 describe('duplicate documents', () => {
   it('sends a reused document under a different user to review', async () => {
     const first = await verify({ reference: 'alice', document: 'P7654321' })
+
     expect((await detail(first)).status).toBe('approved')
 
     const second = await verify({ reference: 'mallory', document: 'P7654321' })
     const session = await detail(second)
+
     expect(session.status).toBe('requires_review')
     expect(session.decision_reason).toBe('DUPLICATE_DOCUMENT')
     expect(session.risk_signals.find((s) => s.key === 'duplicate_document')?.evidence.matched_session_ids).toEqual([
@@ -145,12 +151,15 @@ describe('screening', () => {
     const id = await verify({ reference: 'ivan', name: 'Ivan Sanctionov', workflowId })
 
     const session = await detail(id)
+
     expect(session.status).toBe('requires_review')
     expect(session.decision_reason).toBe('SANCTIONS_MATCH')
     const signal = session.risk_signals.find((s) => s.key === 'sanctions_match')!
+
     expect((signal.evidence.hits as ScreeningHit[])[0]).toMatchObject({ entity_id: 'mock-sanction-1' })
 
     const notices = await owner.get('/account/notifications?limit=100')
+
     expect(
       (notices.body.data as Array<{ type: string; meta: { session_id?: string } }>).some(
         (n) => n.type === NOTIFICATION_TYPE.screeningHit && n.meta.session_id === id,
@@ -161,6 +170,7 @@ describe('screening', () => {
       await VerificationSession.where({ id }).firstOrFail(),
       'verification.requires_review',
     )
+
     expect(payload.checks.screening?.hits[0]?.entity_id).toBe('mock-sanction-1')
     expect(payload.checks.risk?.signals).toContainEqual({ key: 'sanctions_match', severity: 'review', cleared: false })
   })
@@ -183,19 +193,23 @@ describe('screening', () => {
     const cleared = await owner
       .patch(org(`/sessions/${id}/risk-signals/${signal.id}/clear`))
       .send({ reason: 'Different date of birth' })
+
     expect(cleared.status).toBe(201)
     expect(cleared.body.data.clear_reason).toBe('Different date of birth')
 
     const log = await AuditLog.where({ entityId: id, action: 'risk_signal.cleared' }).first()
+
     expect(log).toBeTruthy()
   })
 
   it('reports new watchlist entries for monitored sessions', async () => {
     const workflowId = await workflow(screeningStage({ monitor: true }))
     const id = await verify({ reference: 'dora', name: 'Dora Clean', workflowId })
+
     expect((await detail(id)).status).toBe('approved')
 
     const monitor = await ScreeningMonitor.where({ sessionId: id }).firstOrFail()
+
     monitor.nextScreenAt = new Date(Date.now() - 1000)
     await monitor.save()
 
@@ -209,12 +223,14 @@ describe('screening', () => {
       birth_dates: [],
       countries: [],
     }
+
     vi.spyOn(screeningDriver, 'screen').mockResolvedValue({ hits: [listed] })
 
     await screeningMonitors.runDue()
     await screeningMonitors.runDue()
 
     const signals = (await detail(id)).risk_signals.filter((s) => s.source === 'monitoring')
+
     expect(signals).toHaveLength(1)
     expect(signals[0]!.key).toBe('sanctions_match')
   })
@@ -251,9 +267,11 @@ describe('device signals', () => {
     await verify({ reference: 'v1', ip: '8.8.4.4' })
     await verify({ reference: 'v2', ip: '8.8.4.4' })
     const third = await detail(await verify({ reference: 'v3', ip: '8.8.4.4' }))
+
     expect(third.decision_reason).toBe('VELOCITY_EXCEEDED')
 
     const hosted = await detail(await verify({ reference: 'h1', ip: '203.0.113.20' }))
+
     expect(hosted.decision_reason).toBe('HIGH_RISK_DEVICE')
     expect(hosted.risk_signals.find((s) => s.key === 'high_risk_network')?.evidence.hosting).toBe(true)
 
@@ -269,6 +287,7 @@ describe('face duplicates', () => {
 
     expect((await detail(await verify({ reference: 'face-b', selfie: SELFIE }))).status).toBe('approved')
     const third = await detail(await verify({ reference: 'face-c', selfie: SELFIE }))
+
     expect(third.decision_reason).toBe('DUPLICATE_FACE')
 
     await owner.patch(org()).send({ settings: { face_embeddings: { enabled: false } } })

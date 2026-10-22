@@ -52,6 +52,7 @@ export class ApiException extends RequestException {
 
   constructor(key: ApiErrorKey, message?: string) {
     const entry = API_ERRORS[key]
+
     super(message ?? entry.message, entry.status)
     this.name = 'ApiException'
     this.body = { error: key }

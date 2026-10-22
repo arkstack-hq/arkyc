@@ -35,6 +35,7 @@ export class SessionSweepJob extends Job {
     // Hold a lease just shy of the interval so the sole survivor re-acquires next
     // cycle while a duplicate chain due in the same window backs off and dies.
     const lease = await Cache.add(LEASE_KEY, '1', Math.max(5, interval - 10))
+
     if (!lease) return
 
     try {
@@ -45,6 +46,7 @@ export class SessionSweepJob extends Job {
         await retentionService.purgeExpiredMedia().catch(() => {})
         await faceEmbeddings.purgeExpired().catch(() => {})
       }
+
       if (await Cache.add(SCREENING_KEY, '1', HOUR_SECONDS)) {
         await screeningMonitors.runDue().catch(() => {})
       }

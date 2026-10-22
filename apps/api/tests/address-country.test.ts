@@ -31,6 +31,7 @@ describe('aggregate', () => {
       { method: 'geocode_lookup', passed: true, confidence: 0.9, resolved: { country: 'Nigeria', city: 'Kaduna' } },
       { method: 'device_location', passed: true, confidence: 0.8, resolved: { country: 'Nigeria', city: 'Kaduna' } },
     ])
+
     expect(ok.passed).toBe(true)
     expect(ok.consistent).toBe(true)
 
@@ -38,6 +39,7 @@ describe('aggregate', () => {
       { method: 'geocode_lookup', passed: true, confidence: 0.9, resolved: { country: 'Nigeria' } },
       { method: 'device_location', passed: true, confidence: 0.8, resolved: { country: 'Ghana' } },
     ])
+
     expect(inconsistent.consistent).toBe(false)
     expect(inconsistent.passed).toBe(false)
   })

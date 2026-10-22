@@ -42,6 +42,7 @@ export default class AuthenticatedUserController extends BaseController {
     if (await TwoFactorService.isEnabled(user.id)) {
       const method = await TwoFactorService.getMethod(user.id)
       const ticket = await auth.createTemporaryToken(user, '2fa', '10m')
+
       await TwoFactorService.sendLoginChallenge(user)
 
       return new EmptyResource({})

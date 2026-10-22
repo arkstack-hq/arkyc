@@ -18,6 +18,7 @@ const expressApp = interopDefault(express)()
 
 // How many proxy hops (or which subnets) to trust for `req.ip`; network risk signals depend on it.
 const trustProxy = env('TRUST_PROXY')
+
 if (trustProxy) {
   expressApp.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' || trustProxy)
 }

@@ -21,6 +21,7 @@ vi.mock('@app/services/providers', async (original) => ({
 // Boot the app with one request: that installs the `config` global the job's
 // queue field reads.
 const { app } = await import('../src/core/bootstrap')
+
 await (await import('parasito')).default(app).get('/api/health')
 const { OcrJob } = await import('../src/app/jobs/OcrJob')
 

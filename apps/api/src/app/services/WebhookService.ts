@@ -36,6 +36,7 @@ import { decryptSecret, encryptSecret } from 'src/support/secret-cipher'
 function ocrParseStage(raw: unknown): 'mrz' | 'custom' | 'generic' | undefined {
   if (raw && typeof raw === 'object' && 'stage' in raw) {
     const stage = (raw as { stage?: unknown }).stage
+
     if (stage === 'mrz' || stage === 'custom' || stage === 'generic') return stage
   }
 
@@ -78,6 +79,7 @@ export class WebhookService {
   /** Emit the event(s) for a status change to all subscribed, active endpoints. */
   async onStatusChange(session: VerificationSession, status: VerificationStatus): Promise<void> {
     const event = STATUS_EVENT[status]
+
     if (!event) return
 
     await this.dispatch(session, event)
@@ -98,9 +100,11 @@ export class WebhookService {
     const endpoints = toArray(
       await WebhookEndpoint.where({ projectId: session.projectId, status: 'active' }).get(),
     ).filter((endpoint) => endpoint.events.includes(event))
+
     if (endpoints.length === 0) return
 
     const payload = await this.buildPayload(session, event)
+
     for (const endpoint of endpoints) {
       const delivery = await WebhookDelivery.create({
         organizationId: session.organizationId,
@@ -112,6 +116,7 @@ export class WebhookService {
         attempts: 0,
         nextRetryAt: null,
       })
+
       try {
         await WebhookJob.dispatch(delivery.id)
       } catch {
@@ -130,9 +135,11 @@ export class WebhookService {
    */
   async deliver(deliveryId: string): Promise<void> {
     const delivery = await WebhookDelivery.where({ id: deliveryId }).first()
+
     if (!delivery || delivery.status === 'delivered') return
 
     const endpoint = await WebhookEndpoint.where({ id: delivery.webhookEndpointId }).first()
+
     if (!endpoint || endpoint.status !== 'active') return
 
     const body = JSON.stringify(delivery.payload)
@@ -154,6 +161,7 @@ export class WebhookService {
         signal: AbortSignal.timeout(DELIVERY_TIMEOUT_MS),
       })
       const text = await res.text().catch(() => '')
+
       delivery.responseStatus = res.status
       delivery.responseBody = text.slice(0, 2000)
 
@@ -218,7 +226,9 @@ export class WebhookService {
     input: { url?: string | null; events?: WebhookEventName[] | null; status?: WebhookEndpointStatus | null },
   ): Promise<WebhookEndpoint> {
     if (input.url) endpoint.url = input.url
+
     if (input.events) endpoint.events = input.events
+
     if (input.status) endpoint.status = input.status
     await endpoint.save()
 
@@ -266,6 +276,7 @@ export class WebhookService {
       attempts: 0,
       nextRetryAt: null,
     })
+
     // On an async queue this just enqueues; on a `sync` queue it runs the delivery
     // inline and rethrows if the endpoint is unreachable. Swallow that here (as
     // `dispatch` does) so a dead/slow test target doesn't 500 the request — the
@@ -306,6 +317,7 @@ export class WebhookService {
 
     const capture = await DocumentCapture.where({ sessionId: session.id }).first()
     const ocr = await OcrResult.where({ sessionId: session.id }).first()
+
     if (capture || ocr) {
       checks.document = {
         quality_score: capture?.qualityScore ?? 0,
@@ -316,12 +328,15 @@ export class WebhookService {
     }
 
     const liveness = await LivenessCheck.where({ sessionId: session.id }).first()
+
     if (liveness) checks.liveness = { passed: liveness.passed, score: liveness.score }
 
     const faceMatch = await FaceMatchCheck.where({ sessionId: session.id }).first()
+
     if (faceMatch) checks.face_match = { passed: faceMatch.passed, similarity_score: faceMatch.similarityScore }
 
     const address = await AddressVerification.where({ sessionId: session.id }).first()
+
     if (address) {
       checks.address = {
         passed: address.passed,
@@ -333,6 +348,7 @@ export class WebhookService {
     const signals = toArray(
       await SessionRiskSignal.where({ sessionId: session.id }).orderBy({ createdAt: 'asc' }).limit(100).get(),
     )
+
     if (signals.length || session.riskScore != null) {
       checks.risk = {
         score: session.riskScore ?? null,
@@ -341,6 +357,7 @@ export class WebhookService {
     }
 
     const hits = screeningHits(signals.filter((signal) => !signal.clearedAt).map((signal) => signal.toSignal()))
+
     if (workflowScreeningConfig(session.workflow) || hits.length) {
       checks.screening = { hits }
     }

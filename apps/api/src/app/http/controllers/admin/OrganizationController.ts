@@ -35,6 +35,7 @@ export default class OrganizationController extends BaseController {
    */
   async show({ req }: HttpContext) {
     const organization = await Organization.where({ id: param(req.params.organizationId) }).first()
+
     RequestException.assertFound(organization, 'Organization not found', 404)
 
     const organizationId = organization!.id
@@ -73,6 +74,7 @@ export default class OrganizationController extends BaseController {
   /** Paginated projects for an organization, each with its extended-access status. */
   async projects({ req }: HttpContext) {
     const organizationId = param(req.params.organizationId)
+
     RequestException.assertFound(organizationId, 'Organization not found', 404)
 
     const projects = await Project.where({ organizationId })

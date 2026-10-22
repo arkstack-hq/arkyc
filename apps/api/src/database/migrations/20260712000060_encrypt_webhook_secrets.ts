@@ -13,6 +13,7 @@ import { toArray } from 'src/support/collection'
 export default class EncryptWebhookSecretsMigration extends Migration {
   public async up(_schema: SchemaBuilder): Promise<void> {
     const endpoints = toArray(await WebhookEndpoint.all())
+
     for (const endpoint of endpoints) {
       if (isEncryptedSecret(endpoint.secretHash)) continue
       endpoint.secretHash = encryptSecret(endpoint.secretHash)

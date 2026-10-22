@@ -27,6 +27,7 @@ function unitInterval(raw: unknown, fallback: number, message: string): number {
   if (raw == null || raw === '') return fallback
 
   const value = Number(raw)
+
   if (!Number.isFinite(value) || value < 0 || value > 1) {
     throw ValidationException.withMessages({ steps: [message] })
   }
@@ -64,8 +65,10 @@ function normalizeAddressConfig(raw: unknown): AddressStepConfig {
   const config: AddressStepConfig = { methods, on_fail: onFail === 'reject' ? 'reject' : 'review' }
 
   const thresholdRaw = (raw as { auto_approve_threshold?: unknown })?.auto_approve_threshold
+
   if (thresholdRaw != null && thresholdRaw !== '') {
     const threshold = Number(thresholdRaw)
+
     if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
       throw ValidationException.withMessages({
         steps: ['The address auto-verify threshold must be between 0 and 1.'],
@@ -96,18 +99,22 @@ export function normalizeWorkflowSteps(raw: unknown): WorkflowStep[] {
 
   for (const entry of raw) {
     const key = (entry as { key?: unknown })?.key as WorkflowStepKey
+
     if (!KEY_SET.has(key)) {
       throw ValidationException.withMessages({ steps: [`Unknown stage "${String(key)}".`] })
     }
     const enabled = (entry as { enabled?: unknown })?.enabled
+
     if (typeof enabled !== 'boolean') {
       throw ValidationException.withMessages({ steps: [`Stage "${key}" needs an "enabled" boolean.`] })
     }
+
     if (!enabledByKey.has(key)) order.push(key) // first occurrence sets position
     enabledByKey.set(key, enabled) // last occurrence wins
     if (key === 'address' && enabled) {
       configByKey.set(key, normalizeAddressConfig((entry as { config?: unknown })?.config))
     }
+
     if (key === 'screening' && enabled) {
       configByKey.set(key, normalizeScreeningConfig((entry as { config?: unknown })?.config))
     }
@@ -115,11 +122,14 @@ export function normalizeWorkflowSteps(raw: unknown): WorkflowStep[] {
 
   const steps: WorkflowStep[] = order.map((key) => {
     const step: WorkflowStep = { key, enabled: enabledByKey.get(key)! }
+
     if (key === 'address' && step.enabled) step.config = configByKey.get(key) ?? DEFAULT_ADDRESS_CONFIG
+
     if (key === 'screening' && step.enabled) step.config = configByKey.get(key) ?? DEFAULT_SCREENING_CONFIG
 
     return step
   })
+
   for (const key of AVAILABLE_WORKFLOW_STEP_KEYS) {
     if (!enabledByKey.has(key)) steps.push({ key, enabled: false })
   }
@@ -138,6 +148,7 @@ export function normalizeWorkflowOptions(raw: unknown): WorkflowOptions {
 
   if (input.min_age != null && input.min_age !== '') {
     const minAge = Number(input.min_age)
+
     if (!Number.isInteger(minAge) || minAge < 1 || minAge > 120) {
       throw ValidationException.withMessages({ options: ['The minimum age must be a whole number from 1 to 120.'] })
     }
@@ -145,6 +156,7 @@ export function normalizeWorkflowOptions(raw: unknown): WorkflowOptions {
   }
 
   const policy = normalizeRiskPolicy(input.risk_policy)
+
   if (Object.keys(policy).length) options.risk_policy = policy
 
   return options
@@ -155,10 +167,12 @@ function normalizeRiskPolicy(raw: unknown): RiskPolicyConfig {
   if (!raw || typeof raw !== 'object') return {}
 
   const policy: RiskPolicyConfig = {}
+
   for (const [key, value] of Object.entries(raw)) {
     if (!SIGNAL_SET.has(key as RiskSignalKey)) {
       throw ValidationException.withMessages({ options: [`Unknown risk signal "${key}".`] })
     }
+
     if (!POLICIES.has(value as RiskSignalPolicy)) {
       throw ValidationException.withMessages({ options: [`Risk signal "${key}" needs ignore, review or reject.`] })
     }

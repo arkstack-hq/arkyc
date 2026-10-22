@@ -36,6 +36,7 @@ const P = [
  */
 export function verhoeffValid(digits: string): boolean {
   let check = 0
+
   ;[...digits].reverse().forEach((digit, i) => {
     check = D[check]![P[i % 8]![Number(digit)]!]!
   })
@@ -72,6 +73,7 @@ export const inAadhaarParser: DocumentParser = {
     if (dobIndex >= 0) {
       fields.dateOfBirth = readDate(lines[dobIndex]!, 'birth')
       const name = lines[dobIndex - 1]
+
       if (name && !/government|india|aadhaar/i.test(name)) fields.fullName = readName(name)
     }
 
@@ -101,6 +103,7 @@ export const inPanParser: DocumentParser = {
   documentTypes: ['id_card'],
   parse: ({ text, lines: given }) => {
     const pan = text.match(/\b[A-Z]{3}[ABCFGHLJPT][A-Z]\d{4}[A-Z]\b/)?.[0]
+
     if (!pan) return null
 
     const labelled = readLabelledFields(text, given)
@@ -117,6 +120,7 @@ export const inPanParser: DocumentParser = {
       const name = lines
         .slice(header + 1)
         .find((line) => /^[A-Z][A-Z .'-]+$/.test(line) && !/INDIA|DEPARTMENT|GOVT/.test(line))
+
       if (name) fields.fullName = readName(name)
     }
 

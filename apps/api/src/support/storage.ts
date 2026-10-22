@@ -44,6 +44,7 @@ export async function readObject(key: string | null | undefined): Promise<Uint8A
  */
 export async function resolveObjectUrl(key: string): Promise<string> {
   const disk = Storage.disk()
+
   if (disk.getDriverName() === 'local') return await disk.getUrl(key)
 
   const ttl = await settings
@@ -67,6 +68,7 @@ export async function resolveObjectUrl(key: string): Promise<string> {
  */
 export async function resolveBranding(branding: ProjectBranding | null | undefined): Promise<ProjectBranding> {
   const { logo_key: logoKey, ...rest } = branding ?? {}
+
   if (!logoKey) return rest
 
   return { ...rest, logo_url: await resolveObjectUrl(logoKey) }

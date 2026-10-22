@@ -17,9 +17,11 @@ export class FaceDuplicateDetector implements RiskDetector {
 
     const organization = await Organization.where({ id: session.organizationId }).first()
     const settings = { ...DEFAULT_FACE_EMBEDDING_SETTINGS, ...(organization?.settings?.face_embeddings ?? {}) }
+
     if (!settings.enabled) return []
 
     const embedding = await faceMatchDriver.embed(selfie)
+
     if (!embedding) return []
 
     const neighbours = session.userReference

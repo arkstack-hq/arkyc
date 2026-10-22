@@ -57,9 +57,11 @@ export class ClientTokenService {
     client: ClaimingClient = { ip: null, userAgent: null },
   ): Promise<ClaimedClientToken> {
     const token = await SessionClientToken.where({ tokenHash: Token.hash(rawToken) }).first()
+
     if (!token || token.kind === 'device') throw new ApiException('invalid_client_token')
 
     const session = await this.activeSession(token)
+
     await this.assertProjectOrigin(session, origin)
 
     const claimed = await SessionClientToken.query()
@@ -71,6 +73,7 @@ export class ClientTokenService {
         ipAddress: client.ip,
         userAgent: client.userAgent?.slice(0, 512) ?? null,
       })
+
     if (claimed === 0) throw new ApiException('client_token_used')
 
     return {
@@ -89,6 +92,7 @@ export class ClientTokenService {
    */
   async authenticate(rawToken: string, origin: string | null): Promise<VerificationSession> {
     const token = await SessionClientToken.where({ tokenHash: Token.hash(rawToken) }).first()
+
     if (!token || token.kind !== 'device') throw new ApiException('invalid_client_token')
 
     const session = await this.activeSession(token)
@@ -133,7 +137,9 @@ export class ClientTokenService {
     if (new Date(token.expiresAt).getTime() <= Date.now()) throw new ApiException('session_expired')
 
     const session = await VerificationSession.where({ id: token.sessionId }).first()
+
     if (!session) throw new ApiException('invalid_client_token')
+
     if (new Date(session.expiresAt).getTime() <= Date.now()) throw new ApiException('session_expired')
 
     return session
@@ -149,6 +155,7 @@ export class ClientTokenService {
     if (!origin) return
 
     const project = await Project.where({ id: session.projectId }).first()
+
     if (!isOriginAllowed(project?.settings?.allowed_origins, origin)) throw new ApiException('origin_not_allowed')
   }
 }

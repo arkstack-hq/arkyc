@@ -36,9 +36,11 @@ const fx = {
 /** Create an isolated organization with system roles, members, an API key, and a session. */
 beforeAll(async () => {
   const s = Date.now()
+
   await PermissionSync.permissions(permissionStore)
 
   const organization = await Organization.create({ name: 'Test Co', slug: `test-${s}`, settings: {} })
+
   fx.organizationId = organization.id
   await PermissionSync.roles(organization.id, permissionStore)
 
@@ -61,6 +63,7 @@ beforeAll(async () => {
     email: fx.reviewerEmail,
     password,
   })
+
   // A user with no prior token, reserved for exercising the login endpoint once.
   await User.create({ firstName: 'Login', lastName: 'Test', email: fx.loginEmail, password })
 
@@ -90,6 +93,7 @@ beforeAll(async () => {
   })
 
   const key = ApiKeyAuth.generate('live')
+
   fx.apiKeySecret = key.secret
   await ApiKey.create({
     organizationId: organization.id,
@@ -106,6 +110,7 @@ beforeAll(async () => {
     expiresAt: new Date(Date.now() + 900 * 1000),
     metadata: {},
   })
+
   fx.sessionId = session.id
   fx.clientToken = await clientTokens.issue(session, 'launch')
 
@@ -136,6 +141,7 @@ describe('dashboard auth (Arkstack built-in)', () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send({ firstname: 'New', lastname: 'Test', email, password: PASSWORD })
+
     expect(res.status).toBe(201)
     expect(res.body.data.email).toBe(email)
     expect(res.body.token).toBeTruthy()
@@ -146,20 +152,24 @@ describe('dashboard auth (Arkstack built-in)', () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send({ firstname: 'Dup', lastname: 'Test', email: fx.ownerEmail, password: PASSWORD })
+
     expect(res.status).toBe(422)
   })
 
   it('logs in with valid credentials and rejects invalid ones', async () => {
     const ok = await request(app).post('/api/v1/auth/login').send({ email: fx.loginEmail, password: PASSWORD })
+
     expect(ok.status).toBe(200)
     expect(ok.body.token).toBeTruthy()
 
     const bad = await request(app).post('/api/v1/auth/login').send({ email: fx.loginEmail, password: 'wrong' })
+
     expect(bad.status).toBe(422)
   })
 
   it('returns the current user with a token, 401 without', async () => {
     const me = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${fx.ownerToken}`)
+
     expect(me.status).toBe(200)
     expect(me.body.data.email).toBe(fx.ownerEmail)
 
@@ -172,6 +182,7 @@ describe('organization scope + permissions', () => {
     const res = await request(app)
       .get(`/api/v1/dashboard/organizations/${fx.organizationId}`)
       .set('Authorization', `Bearer ${fx.ownerToken}`)
+
     expect(res.status).toBe(200)
     expect(res.body.data.id).toBe(fx.organizationId)
   })
@@ -180,6 +191,7 @@ describe('organization scope + permissions', () => {
     const res = await request(app)
       .get(`/api/v1/dashboard/organizations/${fx.organizationId}`)
       .set('Authorization', `Bearer ${fx.reviewerToken}`)
+
     expect(res.status).toBe(403)
     expect(res.body.message).toContain('Permission denied')
   })
@@ -193,6 +205,7 @@ describe('organization scope + permissions', () => {
     const res = await request(app)
       .get(`/api/v1/dashboard/organizations/${fx.organizationId}`)
       .set('Authorization', `Bearer ${reg.body.token}`)
+
     expect(res.status).toBe(403)
   })
 })
@@ -200,13 +213,16 @@ describe('organization scope + permissions', () => {
 describe('public API-key surface', () => {
   it('authenticates a valid key and rejects a bad one', async () => {
     const ok = await request(app).get('/api/v1/ping/project').set('Authorization', `Bearer ${fx.apiKeySecret}`)
+
     expect(ok.status).toBe(200)
     expect(ok.body.data.organization_id).toBe(fx.organizationId)
 
     const bad = await request(app).get('/api/v1/ping/project').set('Authorization', 'Bearer sk_live_bogus').expect(401)
+
     expect(bad.body.error).toBe('invalid_api_key')
 
     const missing = await request(app).get('/api/v1/ping/project').expect(401)
+
     expect(missing.body.error).toBe('missing_api_key')
   })
 })
@@ -215,19 +231,23 @@ describe('client-token surface', () => {
   it('resolves a session from a valid token and rejects a bad one', async () => {
     // The launch token only buys a device token; it never authorizes a session call itself.
     const launch = await request(app).get('/api/v1/client/session').set('X-Client-Token', fx.clientToken)
+
     expect(launch.status).toBe(401)
     expect(launch.body.error).toBe('invalid_client_token')
 
     const device = await claimDeviceToken(fx.clientToken)
     const ok = await request(app).get('/api/v1/client/session').set('X-Client-Token', device)
+
     expect(ok.status).toBe(201)
     expect(ok.body.data.id).toBe(fx.sessionId)
 
     // Errors we control carry a stable `error` key (clients branch on it, not the message).
     const bad = await request(app).get('/api/v1/client/session').set('X-Client-Token', 'nope').expect(401)
+
     expect(bad.body.error).toBe('invalid_client_token')
 
     const missing = await request(app).get('/api/v1/client/session').expect(401)
+
     expect(missing.body.error).toBe('missing_client_token')
   })
 })
@@ -267,6 +287,7 @@ describe('two-factor authentication', () => {
 
   beforeAll(async () => {
     const s = Date.now()
+
     totp.email = `totp-${s}@test.dev`
     mail.email = `mfa-mail-${s}@test.dev`
     totp.token = await register(totp.email)
@@ -275,6 +296,7 @@ describe('two-factor authentication', () => {
 
   it('reports 2FA disabled for a fresh account', async () => {
     const res = await request(app).get('/api/v1/auth/2fa').set('Authorization', `Bearer ${totp.token}`)
+
     expect(res.status).toBe(200)
     expect(res.body.data.enabled).toBe(false)
     expect(res.body.data.method).toBeNull()
@@ -285,6 +307,7 @@ describe('two-factor authentication', () => {
       .post('/api/v1/auth/2fa/setup')
       .set('Authorization', `Bearer ${totp.token}`)
       .send({ method: 'authenticator' })
+
     expect(setup.status).toBe(201)
     expect(setup.body.two_factor.secret).toBeTruthy()
     expect(setup.body.two_factor.otpauth_url).toContain('otpauth://')
@@ -297,30 +320,36 @@ describe('two-factor authentication', () => {
       .post('/api/v1/auth/2fa/confirm')
       .set('Authorization', `Bearer ${totp.token}`)
       .send({ method: 'authenticator', code })
+
     expect(confirm.status).toBe(201)
     expect(confirm.body.two_factor.recovery_codes.length).toBeGreaterThan(0)
     totp.recoveryCodes = confirm.body.two_factor.recovery_codes
 
     const status = await request(app).get('/api/v1/auth/2fa').set('Authorization', `Bearer ${totp.token}`)
+
     expect(status.body.data.enabled).toBe(true)
     expect(status.body.data.method).toBe('authenticator')
   })
 
   it('challenges login for a TOTP user and issues a token only after a valid code', async () => {
     const login = await request(app).post('/api/v1/auth/login').send({ email: totp.email, password: PASSWORD })
+
     expect(login.status).toBe(200)
     expect(login.body.token).toBeFalsy()
     expect(login.body.two_factor.required).toBe(true)
     expect(login.body.two_factor.method).toBe('authenticator')
     const ticket = login.body.two_factor.ticket
+
     expect(ticket).toBeTruthy()
 
     const bad = await request(app).post('/api/v1/auth/login/2fa').send({ ticket, code: '000000' })
+
     expect(bad.status).toBe(422)
 
     const user = await User.where({ email: totp.email }).firstOrFail()
     const code = TwoFactor.getTotp(user, totp.secret).generate()
     const ok = await request(app).post('/api/v1/auth/login/2fa').send({ ticket, code })
+
     expect(ok.status).toBe(200)
     expect(ok.body.token).toBeTruthy()
   })
@@ -337,6 +366,7 @@ describe('two-factor authentication', () => {
     const ok = await request(app)
       .post('/api/v1/auth/login/2fa')
       .send({ ticket: login.body.two_factor.ticket, code: recovery })
+
     expect(ok.status).toBe(200)
     expect(ok.body.token).toBeTruthy()
 
@@ -344,6 +374,7 @@ describe('two-factor authentication', () => {
     const reuse = await request(app)
       .post('/api/v1/auth/login/2fa')
       .send({ ticket: login2.body.two_factor.ticket, code: recovery })
+
     expect(reuse.status).toBe(422)
   })
 
@@ -352,6 +383,7 @@ describe('two-factor authentication', () => {
       .post('/api/v1/auth/2fa/setup')
       .set('Authorization', `Bearer ${mail.token}`)
       .send({ method: 'email' })
+
     expect(setup.status).toBe(201)
     expect(setup.body.two_factor.method).toBe('email')
 
@@ -360,17 +392,21 @@ describe('two-factor authentication', () => {
       .post('/api/v1/auth/2fa/confirm')
       .set('Authorization', `Bearer ${mail.token}`)
       .send({ method: 'email', code: setupCode })
+
     expect(confirm.status).toBe(201)
 
     const login = await request(app).post('/api/v1/auth/login').send({ email: mail.email, password: PASSWORD })
+
     expect(login.body.two_factor.method).toBe('email')
     const ticket = login.body.two_factor.ticket
 
     const resend = await request(app).post('/api/v1/auth/login/2fa/resend').send({ ticket })
+
     expect(resend.status).toBe(200)
 
     const loginCode = Hash.otp(6, `${mail.email}:2fa:login`, 600).generate()
     const ok = await request(app).post('/api/v1/auth/login/2fa').send({ ticket, code: loginCode })
+
     expect(ok.status).toBe(200)
     expect(ok.body.token).toBeTruthy()
     // Re-capture the active session token; the completed login may rotate it.
@@ -379,6 +415,7 @@ describe('two-factor authentication', () => {
 
   it('rejects a stale or invalid challenge ticket', async () => {
     const res = await request(app).post('/api/v1/auth/login/2fa').send({ ticket: 'not-a-real-ticket', code: '123456' })
+
     expect(res.status).toBe(422)
   })
 
@@ -387,15 +424,18 @@ describe('two-factor authentication', () => {
       .delete('/api/v1/auth/2fa')
       .set('Authorization', `Bearer ${mail.token}`)
       .send({ password: 'wrong-password' })
+
     expect(wrong.status).toBe(422)
 
     const ok = await request(app)
       .delete('/api/v1/auth/2fa')
       .set('Authorization', `Bearer ${mail.token}`)
       .send({ password: PASSWORD })
+
     expect(ok.status).toBe(200)
 
     const status = await request(app).get('/api/v1/auth/2fa').set('Authorization', `Bearer ${mail.token}`)
+
     expect(status.body.data.enabled).toBe(false)
   })
 })
@@ -405,6 +445,7 @@ describe('organization me (effective permissions)', () => {
     const res = await request(app)
       .get(`/api/v1/dashboard/organizations/${fx.organizationId}/me`)
       .set('Authorization', `Bearer ${fx.ownerToken}`)
+
     expect(res.status).toBe(200)
     expect(res.body.data.effective_permissions).toContain('organizations.view')
   })
@@ -413,6 +454,7 @@ describe('organization me (effective permissions)', () => {
     const res = await request(app)
       .get(`/api/v1/dashboard/organizations/${fx.organizationId}/me`)
       .set('Authorization', `Bearer ${fx.reviewerToken}`)
+
     expect(res.status).toBe(200)
     expect(res.body.data.effective_permissions).toContain('reviews.view')
     expect(res.body.data.effective_permissions).not.toContain('organizations.view')

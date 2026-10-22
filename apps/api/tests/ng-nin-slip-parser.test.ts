@@ -93,6 +93,7 @@ Kindly ensure each lime this ID is presented, that you verify the |`
 
   it('is tried when no country was selected, and declined for another named country', () => {
     const registry = createDocumentParserRegistry()
+
     for (const parser of documentParsers) registry.register(parser)
 
     expect(registry.parse({ text: NOISY_720, documentType: 'id_card' }).raw).toMatchObject({ parser: 'ng-nin-slip' })

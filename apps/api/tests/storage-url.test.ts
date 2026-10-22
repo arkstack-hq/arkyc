@@ -17,6 +17,7 @@ describe('resolveObjectUrl', () => {
 
   it('signs objects on a remote disk with the asset TTL', async () => {
     const disk = fakeDisk('s3')
+
     vi.spyOn(Storage, 'disk').mockReturnValue(disk)
 
     expect(await resolveObjectUrl('a/logo')).toBe('https://signed.test/a/logo?X-Amz-Signature=abc')
@@ -25,6 +26,7 @@ describe('resolveObjectUrl', () => {
 
   it('serves the plain URL on the local disk', async () => {
     const disk = fakeDisk('local')
+
     vi.spyOn(Storage, 'disk').mockReturnValue(disk)
 
     expect(await resolveObjectUrl('a/logo')).toBe('https://plain.test/a/logo')

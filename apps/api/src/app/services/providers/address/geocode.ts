@@ -28,16 +28,19 @@ export async function orsForward(config: AddressConfig, text: string, country?: 
   if (!config.orsApiKey) throw new Error('Address geocode_lookup requires ADDRESS_ORS_API_KEY')
 
   const url = new URL(config.orsUrl ?? ORS_URL)
+
   url.searchParams.set('api_key', config.orsApiKey)
   url.searchParams.set('text', text)
   if (country) url.searchParams.set('boundary.country', country)
   url.searchParams.set('size', '1')
 
   const res = await fetch(url, { headers: { accept: 'application/json' } })
+
   if (!res.ok) throw new Error(`openrouteservice geocode failed (${res.status})`)
 
   const data = (await res.json()) as { features?: OrsFeature[] }
   const feature = data.features?.[0]
+
   if (!feature) return null
 
   const p = feature.properties ?? {}
@@ -68,6 +71,7 @@ export async function nominatimReverse(
   lon: number,
 ): Promise<{ address: PostalAddress; displayName?: string; raw: unknown } | null> {
   const url = new URL(`${config.nominatimUrl ?? NOMINATIM_URL}/reverse`)
+
   url.searchParams.set('format', 'jsonv2')
   url.searchParams.set('lat', String(lat))
   url.searchParams.set('lon', String(lon))
@@ -79,10 +83,12 @@ export async function nominatimReverse(
       accept: 'application/json',
     },
   })
+
   if (!res.ok) throw new Error(`Nominatim reverse geocode failed (${res.status})`)
 
   const data = (await res.json()) as { address?: Record<string, string>; display_name?: string }
   const a = data.address
+
   if (!a) return null
 
   const address: PostalAddress = {

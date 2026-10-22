@@ -21,6 +21,7 @@ export class Fingerprints {
    */
   static document(fields: OcrFields, country: string | null, documentType: DocumentType | null): string | null {
     const number = fields.documentNumber?.toUpperCase().replace(/[^A-Z0-9]/g, '')
+
     if (!number) return null
 
     const issuer = toAlpha2(country) ?? toAlpha2(fields.nationality) ?? ''
@@ -45,6 +46,7 @@ export class Fingerprints {
       .split(/[^a-z]+/)
       .filter(Boolean)
       .sort()
+
     if (!tokens.length) return null
 
     return Fingerprints.hash(`identity:${tokens.join(' ')}:${dateOfBirth.slice(0, 10)}`)
@@ -57,6 +59,7 @@ export class Fingerprints {
   private static key(): Buffer {
     if (!Fingerprints.cachedKey) {
       const appKey = env('APP_KEY')
+
       if (!appKey) throw new Error('APP_KEY must be set to fingerprint documents')
 
       Fingerprints.cachedKey = createHmac('sha256', appKey).update('arkyc:fingerprints:v1').digest()

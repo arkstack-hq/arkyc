@@ -43,6 +43,7 @@ const toCount = (value: unknown): number => Number(value) || 0
  */
 export function tally(rows: Iterable<KeyCountRow> | null | undefined, keys: readonly string[]): Record<string, number> {
   const out: Record<string, number> = {}
+
   for (const key of keys) out[key] = 0
   for (const row of toArray(rows)) {
     if (row && row.key in out) out[row.key] = toCount(row.count)
@@ -61,10 +62,13 @@ export function buildTrend(rows: DayCountRow[]): { date: string; count: number }
   const counts = new Map(rows.map((row) => [row.day, toCount(row.count)]))
   const days: { date: string; count: number }[] = []
   const today = new Date()
+
   for (let i = TREND_DAYS - 1; i >= 0; i -= 1) {
     const date = new Date(today)
+
     date.setDate(date.getDate() - i)
     const key = date.toISOString().slice(0, 10)
+
     days.push({ date: key, count: counts.get(key) ?? 0 })
   }
 

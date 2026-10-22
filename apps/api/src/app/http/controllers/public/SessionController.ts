@@ -64,6 +64,7 @@ export default class SessionController extends BaseController {
       id: String(req.params.id),
       projectId: req.projectContext!.project_id,
     }).firstOrFail()
+
     await sessionService.refresh(session)
     const assets = await buildSessionAssets(session)
     const extracted = await buildExtractedData(session)
@@ -85,6 +86,7 @@ export default class SessionController extends BaseController {
       id: String(req.params.id),
       projectId: req.projectContext!.project_id,
     }).firstOrFail()
+
     await sessionService.cancel(session)
 
     return new VerificationSessionResource(session).additional({

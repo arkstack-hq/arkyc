@@ -100,6 +100,7 @@ export class BusinessVerificationService {
     await verification.save()
 
     const organization = await Organization.where({ id: verification.organizationId }).firstOrFail()
+
     organization.verificationStatus = decision === 'approved' ? 'verified' : 'rejected'
     organization.verifiedAt = decision === 'approved' ? new Date() : null
     await organization.save()
@@ -138,9 +139,11 @@ export class BusinessVerificationService {
    */
   async assertCanVerify(projectId: string): Promise<void> {
     const project = await Project.where({ id: projectId }).with('organization').firstOrFail()
+
     if (project.environment !== 'production') return
 
     const organization = project.getAttribute('organization') as Organization | null
+
     if (organization && !(await this.canGoLive(organization))) throw new ApiException('organization_unverified')
   }
 
@@ -153,6 +156,7 @@ export class BusinessVerificationService {
 
     const ext = file.mimetype === 'application/pdf' ? 'pdf' : file.mimetype === 'image/png' ? 'png' : 'jpg'
     const key = `organizations/${verification.organizationId}/verification/${verification.id}/${kind}.${ext}`
+
     await Storage.disk().put(key, file, { visibility: 'private', contentType: file.mimetype })
 
     return key

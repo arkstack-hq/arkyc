@@ -115,6 +115,7 @@ export default class MemberController extends BaseController {
     })
 
     const role = await Role.where({ id: data.role_id, organizationId: req.organization!.id }).first()
+
     RequestException.assertFound(role, 'role_id is not a role of this organization', 422)
 
     const { token, tokenHash } = Token.createPair()
@@ -203,6 +204,7 @@ export default class MemberController extends BaseController {
     const data = await this.validate({ role_id: ['required', 'string'] })
 
     const role = await Role.where({ id: data.role_id, organizationId: req.organization!.id }).first()
+
     RequestException.assertFound(role, 'role_id is not a role of this organization', 422)
 
     member.roleId = role.id
@@ -241,6 +243,7 @@ export default class MemberController extends BaseController {
     // `exists` already 422s on an unknown permission; fetch it for its id.
     // Platform-admin permissions belong to the `/admin` scope, never an organization member.
     const perm = await Permission.where({ name: data.permission, admin: false }).first()
+
     RequestException.assertFound(perm, 'Unknown permission', 422)
 
     await UserPermission.query().firstOrCreate(

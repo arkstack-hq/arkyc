@@ -26,6 +26,7 @@ export default class NewPasswordController extends BaseController {
     const pr = await PasswordReset.create({ email: user.email, phone: null, token })
 
     const msg = config('messages.password_reset.email')
+
     await sendMail(user.email, msg.template, msg.subject, {
       code: token,
       name: user.name,
@@ -98,6 +99,7 @@ export default class NewPasswordController extends BaseController {
     }
 
     const user = await User.where({ email: pr.email! }).firstOrFail()
+
     user.password = await Hash.make(data.password)
     await user.save()
     await pr.delete()

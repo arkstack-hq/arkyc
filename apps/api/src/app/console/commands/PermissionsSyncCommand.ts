@@ -36,6 +36,7 @@ export class PermissionsSyncCommand extends Command {
     }
 
     const organizations = toArray(await Organization.all())
+
     for (const organization of organizations) {
       await PermissionSync.roles(organization.id, permissionStore)
     }

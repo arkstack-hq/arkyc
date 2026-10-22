@@ -45,6 +45,7 @@ beforeAll(async () => {
 
   receiver = http.createServer((req, res) => {
     const chunks: Buffer[] = []
+
     req.on('data', (chunk) => chunks.push(chunk as Buffer))
     req.on('end', () => {
       deliveries.push({
@@ -61,12 +62,14 @@ beforeAll(async () => {
   const reg = await request(app)
     .post('/api/v1/auth/register')
     .send({ firstname: 'E2E Owner', lastname: 'Test', email: `e2e-${s}@test.dev`, password: 'secret123' })
+
   fx.token = reg.body.token
 
   fx.organizationId = (await dashboard('/organizations').send({ name: `E2E Co ${s}` })).body.data.id
   fx.projectId = (await dashboard(`/organizations/${fx.organizationId}/projects`).send({ name: 'E2E' })).body.data.id
 
   const project = `/organizations/${fx.organizationId}/projects/${fx.projectId}`
+
   fx.apiKeySecret = (await dashboard(`${project}/api-keys`).send({ name: 'E2E key' })).body.secret
   fx.webhookSecret = (
     await dashboard(`${project}/webhooks`).send({
@@ -88,11 +91,13 @@ describe('verification happy path', () => {
 
     // 1. The integrator creates a session over HTTP with the SDK.
     const created = await arkyc.sessions.create({ userReference: 'e2e-user' })
+
     expect(created.session.status).toBe('pending')
     expect(created.clientToken).toEqual(expect.any(String))
 
     // 2. The widget claims its device token and verifies (low document quality → review).
     const claim = await request(app).post('/api/v1/client/claim').set('X-Client-Token', created.clientToken).send({})
+
     expect(claim.status).toBe(201)
     const device = claim.body.data.token
 
@@ -104,6 +109,7 @@ describe('verification happy path', () => {
 
     // 3. The automated decision sends it to manual review.
     const pending = await arkyc.sessions.retrieve(created.session.id)
+
     expect(pending.status).toBe('requires_review')
 
     // 4. A reviewer approves it from the dashboard.
@@ -112,10 +118,12 @@ describe('verification happy path', () => {
         reason: 'Looks good',
       },
     )
+
     expect(approved.status).toBe(200)
 
     // 5. Signed webhooks reached the integrator, in order.
     const events = deliveries.map((delivery) => JSON.parse(delivery.body) as WebhookEvent)
+
     expect(events.map((event) => event.event)).toEqual(['verification.requires_review', 'verification.approved'])
     expect(events.every((event) => event.session_id === created.session.id)).toBe(true)
     for (const delivery of deliveries) {
@@ -131,6 +139,7 @@ describe('verification happy path', () => {
 
     // 6. The SDK sees the final decision.
     const final = await arkyc.sessions.retrieve(created.session.id)
+
     expect(final.status).toBe('approved')
     expect(final.final_decision).toBe('approved')
   })

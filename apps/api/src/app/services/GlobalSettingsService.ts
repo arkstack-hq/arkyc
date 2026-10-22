@@ -31,6 +31,7 @@ export class GlobalSettingsService {
     const next = this.merge(await this.current(), patch)
 
     const row = await GlobalSetting.query().first()
+
     if (row) {
       row.settings = next
       await row.save()

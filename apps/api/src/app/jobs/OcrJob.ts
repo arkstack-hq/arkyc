@@ -23,6 +23,7 @@ const missingCore = (fields: OcrFields): boolean =>
 /** `primary`'s fields, with the gaps filled from `fallback`. */
 const fillGaps = (primary: OcrFields, fallback: OcrFields): OcrFields => {
   const filled: OcrFields = { ...primary }
+
   for (const [key, value] of Object.entries(fallback) as [keyof OcrFields, string][]) {
     if (value && !filled[key]) (filled as Record<string, string>)[key] = value
   }
@@ -59,10 +60,13 @@ export class OcrJob extends Job {
 
   async handle(): Promise<void> {
     const session = await VerificationSession.where({ id: this.sessionId }).first()
+
     if (!session) return
+
     if (await OcrResult.where({ sessionId: session.id }).first()) return
 
     const capture = await DocumentCapture.where({ sessionId: session.id }).first()
+
     if (!capture) return
 
     const image = await readObject(capture.frontImagePath)
@@ -85,6 +89,7 @@ export class OcrJob extends Job {
       },
     }
     const ocr = await this.extract(resolveOcrDriver(aiEnabled), request, session.id)
+
     await logOcrExtraction({
       sessionId: session.id,
       documentType: capture.documentType,
@@ -106,6 +111,7 @@ export class OcrJob extends Job {
     // Persist the extracted portrait (the front image stands in for the mock)
     // for the downstream face-match step.
     const portraitPath = sessionObjectKey(session, 'documents/portrait.jpg')
+
     await Storage.disk().put(portraitPath, image, { visibility: 'private' })
     await DocumentPortrait.create({
       organizationId: session.organizationId,
@@ -137,6 +143,7 @@ export class OcrJob extends Job {
 
     let first: OcrResultData | null = null
     let reason: string
+
     try {
       first = await primary.extract(request)
       if (readAnything(first.fields))
@@ -168,6 +175,7 @@ export class OcrJob extends Job {
     sessionId: string,
   ): Promise<OcrResultData> {
     let fallback: OcrResultData
+
     try {
       fallback = await fallbackOcrDriver.extract(request)
     } catch (error) {
@@ -178,6 +186,7 @@ export class OcrJob extends Job {
 
     const fields = fillGaps(first.fields, fallback.fields)
     const added = (Object.keys(fields) as (keyof OcrFields)[]).filter((key) => !first.fields[key])
+
     if (!added.length) return first
 
     Logger.warn(

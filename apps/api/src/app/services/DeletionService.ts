@@ -19,6 +19,7 @@ export class DeletionService {
    */
   async deleteProject(projectId: string): Promise<void> {
     const project = await Project.where({ id: projectId }).first()
+
     if (!project) return
 
     await VerificationSession.query()
@@ -29,6 +30,7 @@ export class DeletionService {
       })
 
     const logoKey = project.branding?.logo_key
+
     if (logoKey)
       await Storage.disk()
         .delete(logoKey)
@@ -44,6 +46,7 @@ export class DeletionService {
    */
   async deleteOrganization(organizationId: string): Promise<void> {
     const organization = await Organization.where({ id: organizationId }).first()
+
     if (!organization) return
 
     await Project.query()

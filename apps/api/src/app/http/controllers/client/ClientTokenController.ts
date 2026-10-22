@@ -16,6 +16,7 @@ export default class ClientTokenController extends BaseController {
    */
   async claim({ req }: HttpContext) {
     const token = readClientToken(req)
+
     if (!token) throw new ApiException('missing_client_token')
 
     const claimed = await clientTokens.claim(token, readOrigin(req), {
@@ -43,6 +44,7 @@ export default class ClientTokenController extends BaseController {
   async handoff({ req }: HttpContext) {
     const session = req.verificationSession!
     const project = await Project.where({ id: session.projectId }).first()
+
     if (!project?.settings?.handoff?.enabled) throw new ApiException('handoff_disabled')
 
     const token = await clientTokens.issue(session, 'handoff')

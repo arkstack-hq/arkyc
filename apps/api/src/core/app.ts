@@ -12,6 +12,7 @@ import { reportError } from 'src/support/observability'
  */
 const reportUnexpectedErrors: ErrorRequestHandler = (err, req, _res, next) => {
   const status = Number((err as { statusCode?: number; status?: number })?.statusCode ?? 500)
+
   if (!Number.isFinite(status) || status >= 500) {
     reportError(err, { method: req.method, path: req.originalUrl })
   }

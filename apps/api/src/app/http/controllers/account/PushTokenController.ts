@@ -40,6 +40,7 @@ export default class PushTokenController extends BaseController {
     }
 
     let pushToken: UserPushToken
+
     if (existing) {
       Object.assign(existing, attributes)
       await existing.save()

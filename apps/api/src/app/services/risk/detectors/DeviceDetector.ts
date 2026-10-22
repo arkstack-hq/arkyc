@@ -22,15 +22,18 @@ export class DeviceDetector implements RiskDetector {
       .whereNotNull('ipAddress')
       .latest('createdAt')
       .first()
+
     if (!device?.ipAddress || isPrivateAddress(device.ipAddress)) return []
 
     const ip = device.ipAddress
     const signals: RiskSignal[] = []
 
     const velocity = await this.velocity(session, ip)
+
     if (velocity) signals.push(velocity)
 
     const network = await this.lookup(ip, session.id)
+
     if (network && (network.vpn || network.tor || network.proxy || network.hosting)) {
       signals.push({
         key: 'high_risk_network',
@@ -49,6 +52,7 @@ export class DeviceDetector implements RiskDetector {
     }
 
     const nationality = toAlpha2(ocr?.fields.nationality)
+
     if (network?.country && nationality && network.country !== nationality) {
       signals.push({
         key: 'ip_country_mismatch',
@@ -80,6 +84,7 @@ export class DeviceDetector implements RiskDetector {
       .count()
 
     const sessions = others + 1
+
     if (sessions <= limits.max_sessions) return null
 
     return {

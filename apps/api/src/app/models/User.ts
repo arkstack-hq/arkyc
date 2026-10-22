@@ -98,6 +98,7 @@ export class User extends BaseUser {
 
   setNameAttribute(name: string): void {
     const [firstName, lastName] = name.split(' ')
+
     this.firstName = firstName
     this.lastName = lastName
   }

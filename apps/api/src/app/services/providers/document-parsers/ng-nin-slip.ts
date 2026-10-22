@@ -19,6 +19,7 @@ export const ngNinSlipParser: DocumentParser = countryOrUnknown(['NG', 'NGA'], {
   parse: ({ text, lines: given }) => {
     // OCR often garbles the slip's labels, so the NIN's 4-3-4 grouping also marks it.
     const grouped = /(?<![\d/.-])\d{4} \d{3} \d{4}(?![\d/.-])/.test(text)
+
     if (!grouped && !/\bNIN\b|NIMC|Nigeria|National\s+Identification\s+Num/i.test(text)) return null
 
     const lines = textLines(text, given)
@@ -26,6 +27,7 @@ export const ngNinSlipParser: DocumentParser = countryOrUnknown(['NG', 'NGA'], {
 
     // The NIN: 11 digits, usually grouped 4-3-4. Never part of a date.
     const nin = text.match(/(?<![\d/.-])(\d{4})\s?(\d{3})\s?(\d{4})(?![\d/.-])/)
+
     if (nin) fields.documentNumber = `${nin[1]}${nin[2]}${nin[3]}`
 
     // Dates print as "03 Mar 1988". The date of birth sits next to the sex; the
@@ -57,6 +59,7 @@ export const ngNinSlipParser: DocumentParser = countryOrUnknown(['NG', 'NGA'], {
         .reverse()
         .find((line) => !/NAME|NOM/i.test(line))
         ?.match(/^([A-Z][A-Z'-]+)$/)?.[1]
+
       if (surname) fields.lastName = readName(surname)
     }
 

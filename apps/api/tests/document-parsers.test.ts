@@ -195,6 +195,7 @@ CHIDI EZE
 Date of Birth
 03/03/1988`,
     })
+
     expect(labelled?.fields).toEqual({ documentNumber: 'ABCPE1234F', fullName: 'Ngozi Eze', dateOfBirth: '1988-03-03' })
 
     const older = inPanParser.parse({
@@ -205,12 +206,14 @@ CHIDI EZE
 Permanent Account Number
 ABCPE1234F`,
     })
+
     expect(older?.fields).toEqual({ documentNumber: 'ABCPE1234F', fullName: 'Ngozi Eze', dateOfBirth: '1988-03-03' })
   })
 })
 
 describe('parser registry order', () => {
   const registry = createDocumentParserRegistry()
+
   for (const parser of documentParsers) registry.register(parser)
 
   it('prefers the layout parser, and falls back to labels for unknown layouts', () => {
@@ -219,6 +222,7 @@ describe('parser registry order', () => {
       country: 'GB',
       documentType: 'drivers_license',
     })
+
     expect(licence.raw).toMatchObject({ parser: 'eu-driving-licence' })
 
     const kenyan = registry.parse({
@@ -226,6 +230,7 @@ describe('parser registry order', () => {
       country: 'KE',
       documentType: 'id_card',
     })
+
     expect(kenyan.raw).toMatchObject({ parser: 'labelled-fields' })
     expect(kenyan.fields).toMatchObject({ fullName: 'Ngozi Amaka Eze', documentNumber: '12345678' })
   })
@@ -275,6 +280,7 @@ A) BATCH. A10106/081006/08 | SERIAL NO.. 12345678`
 
   it('wins over the NIN slip and labelled parsers in the registry', () => {
     const registry = createDocumentParserRegistry()
+
     for (const parser of documentParsers) registry.register(parser)
 
     expect(registry.parse({ text: NOISY, country: 'NG', documentType: 'id_card' }).raw).toMatchObject({

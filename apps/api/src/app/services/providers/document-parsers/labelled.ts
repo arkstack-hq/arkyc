@@ -55,13 +55,16 @@ interface Found {
 /** Every label on a line, left to right. */
 function labelsIn(line: string): Found[] {
   const found: Found[] = []
+
   for (let at = 0; at < line.length; at++) {
     if (at > 0 && !/[\s/|:,;]/.test(line[at - 1]!)) continue
     for (const [field, pattern] of LABELS) {
       pattern.lastIndex = at
       const match = pattern.exec(line)
+
       if (match) {
         const previous = found[found.length - 1]
+
         // A bilingual label ("SURNAME/NOM", "GIVEN NAMES/PRÉNOMS") is one label.
         if (previous?.field === field && /^[\s/]*$/.test(line.slice(previous.end, at))) {
           previous.end = at + match[0].length
@@ -88,6 +91,7 @@ function afterLabel(value: string): string {
 /** A document number from a value: a 4-4-4-style group, or the first token with a digit. */
 function readNumber(value: string): string | undefined {
   const grouped = value.match(/^[A-Z0-9]{3,5}(?:\s[A-Z0-9]{3,5}){1,5}\b/i)?.[0]
+
   if (grouped && /\d/.test(grouped)) return grouped.replace(/\s/g, '').toUpperCase()
 
   const token = value.match(/[A-Z0-9-]*\d[A-Z0-9-]*/i)?.[0]
@@ -97,7 +101,9 @@ function readNumber(value: string): string | undefined {
 
 function readValue(field: LabelledField, value: string): string | undefined {
   const kind = DATE_KINDS[field]
+
   if (kind) return readDate(value, kind)
+
   if (field === 'documentNumber') return readNumber(value)
 
   // A name value must not itself be (or start with) another label.
@@ -125,14 +131,17 @@ export function readLabelledFields(text: string, given?: string[]): OcrFields {
   lines.forEach((line, index) => {
     if (OTHER_PERSON.test(line)) return
     const labels = labelsIn(line)
+
     if (!labels.length) return
     const next = lines[index + 1] ?? ''
 
     // A header row of several labels ("Date of Birth  Sex  Issue Date") with the
     // values on the next line: hand out that line's dates in label order.
     const inline = labels.map((label, i) => afterLabel(line.slice(label.end, labels[i + 1]?.start ?? line.length)))
+
     if (labels.length > 1 && inline.every((value) => !/\d/.test(value))) {
       const dates = [...next.matchAll(new RegExp(DATE_PATTERN, 'g'))].map((match) => match[0])
+
       labels
         .filter((label) => DATE_KINDS[label.field])
         .forEach((label, i) => set(label.field, dates[i] ? readValue(label.field, dates[i]!) : undefined))
@@ -162,6 +171,7 @@ export const labelledFieldParser: DocumentParser = {
   parse: ({ text, lines }) => {
     const fields = readLabelledFields(text, lines)
     const read = Object.values(fields).filter(Boolean).length
+
     if (read < 2) return null
 
     return {

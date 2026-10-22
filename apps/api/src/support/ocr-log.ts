@@ -32,6 +32,7 @@ export async function logOcrExtraction(entry: OcrLogEntry): Promise<void> {
   if (!debugEnabled()) return
   const line = JSON.stringify({ timestamp: new Date().toISOString(), ...entry }) + '\n'
   const dir = path.join(Arkstack.rootDir(), 'storage', 'logs')
+
   try {
     await mkdir(dir, { recursive: true })
     await appendFile(path.join(dir, 'ocr.log'), line, 'utf8')

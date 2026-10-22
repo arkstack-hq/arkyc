@@ -6,6 +6,7 @@ export class RequestIdMiddleware {
   handler(req: Request, res: Response, next: NextFunction): void {
     const incoming = req.headers['x-request-id']
     const id = (Array.isArray(incoming) ? incoming[0] : incoming) || randomUUID()
+
     req.requestId = id
     res.setHeader('X-Request-Id', id)
     next()

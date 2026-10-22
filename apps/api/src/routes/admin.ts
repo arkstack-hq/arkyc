@@ -45,6 +45,7 @@ Router.group('/v1/admin', () => {
   // Business verification review.
   const viewOrgs = [auth, canAdmin('admin.organizations.view')]
   const manageOrgs = [auth, canAdmin('admin.organizations.manage')]
+
   Router.get('/business-verifications', [AdminBusinessVerificationController, 'index'], viewOrgs)
   Router.get('/business-verifications/count', [AdminBusinessVerificationController, 'count'], viewOrgs)
   Router.get('/business-verifications/:id', [AdminBusinessVerificationController, 'show'], viewOrgs)

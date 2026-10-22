@@ -100,6 +100,7 @@ export class ArkormPermissionStore
   async upsertPermission(def: PermissionDefinition): Promise<void> {
     const admin = def.admin ?? false
     const existing = await Permission.where({ name: def.name }).first()
+
     if (existing) {
       existing.description = def.description
       existing.group = def.group
@@ -118,6 +119,7 @@ export class ArkormPermissionStore
 
   async upsertSystemRole(organizationId: string, role: DefaultRoleDefinition): Promise<string> {
     const existing = await Role.where({ organizationId, slug: role.slug }).first()
+
     if (existing) {
       existing.name = role.name
       existing.description = role.description
@@ -139,6 +141,7 @@ export class ArkormPermissionStore
 
   async upsertAdminRole(role: AdminRoleDefinition): Promise<string> {
     const existing = await Role.where({ slug: role.slug, admin: true }).first()
+
     if (existing) {
       existing.name = role.name
       existing.description = role.description
@@ -167,6 +170,7 @@ export class ArkormPermissionStore
 
     for (const name of permissions) {
       const permissionId = idByName.get(name)
+
       if (permissionId && !have.has(permissionId)) {
         await RolePermission.create({ roleId, permissionId })
       }

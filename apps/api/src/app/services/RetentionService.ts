@@ -34,6 +34,7 @@ export class RetentionService {
 
     for (const org of orgs) {
       const days = org.settings?.retention_days
+
       if (!days || days <= 0) continue
 
       const cutoff = new Date(Date.now() - days * DAY_MS)

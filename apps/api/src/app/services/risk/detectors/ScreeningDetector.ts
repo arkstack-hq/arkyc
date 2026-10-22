@@ -31,6 +31,7 @@ export class ScreeningDetector implements RiskDetector {
   async detect({ session, workflow, ocr }: RiskContext): Promise<RiskSignal[]> {
     const config = workflowScreeningConfig(workflow)
     const subject = ScreeningDetector.subject(ocr?.fields)
+
     if (!config || !subject) return []
 
     try {
@@ -60,6 +61,7 @@ export class ScreeningDetector implements RiskDetector {
    */
   static subject(fields: OcrFields | undefined): ScreeningSubject | null {
     const name = extractedName(fields)
+
     if (!name) return null
 
     return {
@@ -78,8 +80,10 @@ export class ScreeningDetector implements RiskDetector {
    */
   static signals(hits: ScreeningHit[]): RiskSignal[] {
     const byKey = new Map<RiskSignalKey, ScreeningHit[]>()
+
     for (const hit of hits) {
       const key = CATEGORY_SIGNAL[hit.category]
+
       byKey.set(key, [...(byKey.get(key) ?? []), hit])
     }
 

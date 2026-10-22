@@ -66,6 +66,7 @@ export class TwoFactorService {
    */
   private static async recoveryHashes(userId: User['id']): Promise<string[]> {
     const raw = (await this.record(userId))?.recoveryCodeHashes as string[] | string | null | undefined
+
     if (!raw) return []
 
     return Array.isArray(raw) ? raw : (JSON.parse(raw) as string[])
@@ -140,6 +141,7 @@ export class TwoFactorService {
   static sendEmailCode(user: User, purpose: 'setup' | 'login'): void {
     const code = Hash.otp(6, this.emailKey(user, purpose), EMAIL_CODE_TTL).generate()
     const msg = config(`messages.two_factor.email.${purpose}`)
+
     sendMail(user.email, msg.template, msg.subject, {
       code,
       name: user.name,
@@ -156,6 +158,7 @@ export class TwoFactorService {
    */
   static async setupAuthenticator(user: User): Promise<{ secret: string; otpauthUrl: string }> {
     const setup = TwoFactor.createSetup(user)
+
     await TwoFactor.setSecret(user.id, setup.secret)
     await this.setMethod(user.id, 'authenticator')
 
@@ -202,6 +205,7 @@ export class TwoFactorService {
   static async enable(user: User, method: TwoFactorMethod): Promise<string[]> {
     const recoveryCodes = TwoFactor.generateBackupCodes()
     const hashes = await TwoFactor.hashBackupCodes(recoveryCodes)
+
     await UserTwoFactor.query().updateOrInsert(
       { userId: user.id },
       { method, enabledAt: new Date(), recoveryCodeHashes: JSON.stringify(hashes) },
@@ -239,8 +243,10 @@ export class TwoFactorService {
    */
   static async verifyChallenge(user: User, code: string): Promise<boolean> {
     const method = await this.getMethod(user.id)
+
     if (method === 'authenticator') {
       const secret = await TwoFactor.getSecret(user.id)
+
       if (secret && TwoFactor.verifyCode(user, secret, code)) return true
     } else if (method === 'email') {
       if (this.verifyEmailCode(user, code, 'login')) return true
@@ -258,6 +264,7 @@ export class TwoFactorService {
    */
   private static async consumeRecoveryCode(userId: User['id'], code: string): Promise<boolean> {
     const hashes = await this.recoveryHashes(userId)
+
     for (let i = 0; i < hashes.length; i++) {
       if (await Hash.verify(code, hashes[i])) {
         hashes.splice(i, 1)

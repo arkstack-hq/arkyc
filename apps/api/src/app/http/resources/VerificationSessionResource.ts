@@ -28,15 +28,18 @@ export default class VerificationSessionResource extends Resource {
    */
   private personName(): string | null {
     const rel = this.resource.getAttribute('ocrResults') as Iterable<{ getAttribute(k: string): unknown }> | undefined
+
     if (!rel) return null
     for (const ocr of Array.from(rel).reverse()) {
       const fields = ocr.getAttribute('fields') as
         | { firstName?: string; lastName?: string; fullName?: string }
         | null
         | undefined
+
       if (!fields) continue
       const name =
         (fields.fullName ?? '').trim() || [fields.firstName, fields.lastName].filter(Boolean).join(' ').trim()
+
       if (name) return name
     }
 

@@ -12,6 +12,7 @@ export default class CreateUserPushTokensTableMigration extends Migration {
     const [existing] = (
       await DB.raw<{ name: string | null }>("select to_regclass('user_push_tokens')::text as name")
     ).all()
+
     if (existing?.name) return
 
     schema.createTable('user_push_tokens', (table) => {

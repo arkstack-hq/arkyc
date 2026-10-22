@@ -24,12 +24,14 @@ export default class SessionAssetController extends BaseController {
     }
 
     const session = await VerificationSession.where({ id }).first()
+
     if (!session) {
       return res.status(404).json({ status: 'error', message: 'Session not found', code: 404 })
     }
 
     const key = await assetObjectKey(session, kind as AssetKind)
     const bytes = await readObject(key)
+
     if (!bytes.length) {
       return res.status(404).json({ status: 'error', message: 'Asset not found', code: 404 })
     }

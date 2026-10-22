@@ -189,6 +189,7 @@ export default class ClientSessionController extends BaseController {
     })
 
     const claimed = this.claimedAddress(data)
+
     await sessionService.submitAddress(req.verificationSession!, {
       claimed,
       poaImage: data.poa as FileLike | undefined,

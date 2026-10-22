@@ -40,6 +40,7 @@ export default class RoleController extends BaseController {
     })
 
     const slug = (data.slug || Str.slug(data.name)).toLowerCase()
+
     RequestException.abortIf(
       await Role.where({ organizationId: req.organization!.id, slug }).first(),
       'A role with this slug already exists',
@@ -53,6 +54,7 @@ export default class RoleController extends BaseController {
       description: data.description ?? null,
       isSystem: false,
     })
+
     if (data.permissions) await setRolePermissions(role.id, data.permissions)
 
     await audit.recordForRequest(req, {
@@ -109,7 +111,9 @@ export default class RoleController extends BaseController {
       id: req.params.roleId,
       organizationId: req.organization!.id,
     }).firstOrFail()
+
     if (data.name) role.name = data.name
+
     if (data.description !== undefined) role.description = data.description
     await role.save()
     if (data.permissions) await setRolePermissions(role.id, data.permissions)

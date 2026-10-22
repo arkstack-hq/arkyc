@@ -64,6 +64,7 @@ export default class WebhookEndpointController extends BaseController {
       id: req.params.webhookId,
       projectId: project.id,
     }).firstOrFail()
+
     await webhookService.updateEndpoint(endpoint, {
       url: data.url,
       events: data.events as WebhookEventName[] | null,
@@ -91,6 +92,7 @@ export default class WebhookEndpointController extends BaseController {
       id: req.params.webhookId,
       projectId: project.id,
     }).firstOrFail()
+
     await endpoint.delete()
 
     await audit.recordForRequest(req, {
@@ -114,6 +116,7 @@ export default class WebhookEndpointController extends BaseController {
       id: req.params.webhookId,
       projectId: project.id,
     }).firstOrFail()
+
     await webhookService.sendTest(endpoint)
 
     return new WebhookEndpointResource(endpoint).additional({

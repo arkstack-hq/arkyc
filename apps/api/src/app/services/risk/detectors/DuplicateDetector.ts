@@ -23,10 +23,12 @@ export class DuplicateDetector implements RiskDetector {
     ]
 
     const signals: RiskSignal[] = []
+
     for (const [kind, hash] of hashes) {
       if (!hash) continue
 
       const matches = session.userReference ? await this.matches(session, kind, hash) : []
+
       if (matches.length) {
         signals.push({
           key: kind === 'document' ? 'duplicate_document' : 'duplicate_identity',

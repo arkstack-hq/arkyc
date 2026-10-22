@@ -22,6 +22,7 @@ export class WebhookNotifications {
     const fresh = await Cache.add(`notifications:webhook-failing:${endpoint.id}`, '1', THROTTLE_SECONDS).catch(
       () => true,
     )
+
     if (!fresh) return
 
     const [organization, project] = await Promise.all([

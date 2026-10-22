@@ -27,6 +27,7 @@ export class BiometricsBenchmarkCommand extends Command {
   async handle() {
     const file = resolve(String(this.argument('pairs')))
     const pairs = await this.pairs(file)
+
     if (!pairs.length) {
       Logger.error('No pairs found.')
 
@@ -42,14 +43,18 @@ export class BiometricsBenchmarkCommand extends Command {
       const [documentPortrait, selfie] = await Promise.all([readFile(pair.a), readFile(pair.b)])
       const started = performance.now()
       const result = await faceMatchDriver.compare({ documentPortrait, selfie })
+
       timings.push(performance.now() - started)
 
       if (pair.same) same += 1
+
       if (pair.same && !result.passed) falseRejects += 1
+
       if (!pair.same && result.passed) falseAccepts += 1
     }
 
     const different = pairs.length - same
+
     Logger.success(`Face match (${faceMatchDriver.name}) on ${pairs.length} pairs:`)
     Logger.success(`  accuracy ${percent(1 - (falseAccepts + falseRejects) / pairs.length)}`)
     Logger.success(`  false accepts ${falseAccepts}/${different} (${percent(falseAccepts / (different || 1))})`)
@@ -58,9 +63,11 @@ export class BiometricsBenchmarkCommand extends Command {
 
     if (this.option('liveness')) {
       const liveness: number[] = []
+
       for (const path of new Set(pairs.flatMap((pair) => [pair.a, pair.b]))) {
         const selfie = await readFile(path)
         const started = performance.now()
+
         await livenessDriver.check({ selfie })
         liveness.push(performance.now() - started)
       }

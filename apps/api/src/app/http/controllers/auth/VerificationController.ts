@@ -52,6 +52,7 @@ export default class VerificationController extends BaseController {
     const user = req.user!
 
     const delta = Hash.otp(6, user.email, 60 * 15).validate({ token: form.code })
+
     if (delta === null) {
       throw ValidationException.withMessages({ code: ['Invalid or expired verification code.'] })
     }
@@ -60,6 +61,7 @@ export default class VerificationController extends BaseController {
     await user.save()
 
     const msg = config('messages.verification_complete.email')
+
     sendMail(user.email, msg.template, msg.subject, {
       name: user.name,
       app_name: config('app.name'),

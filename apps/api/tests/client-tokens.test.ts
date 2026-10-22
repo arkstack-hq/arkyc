@@ -34,6 +34,7 @@ async function openSession(): Promise<{ id: string; launch: string }> {
 
 async function setProjectSettings(settings: Record<string, unknown>): Promise<void> {
   const project = await Project.where({ id: fx.projectId }).firstOrFail()
+
   project.settings = { ...(project.settings ?? {}), ...settings } as never
   await project.save()
 }
@@ -43,15 +44,19 @@ beforeAll(async () => {
   const reg = await request(app)
     .post('/api/v1/auth/register')
     .send({ firstname: 'CT Owner', lastname: 'Test', email: `ct-${s}@test.dev`, password: 'secret123' })
+
   fx.token = reg.body.token
 
   const organization = await authed('/organizations').send({ name: `CT Co ${s}` })
+
   fx.organizationId = organization.body.data.id
 
   const project = await authed(`/organizations/${fx.organizationId}/projects`).send({ name: 'CT' })
+
   fx.projectId = project.body.data.id
 
   const key = await authed(`/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`).send({ name: 'CT' })
+
   fx.apiKeySecret = key.body.secret
 })
 
@@ -64,15 +69,18 @@ describe('launch tokens', () => {
     const { id, launch } = await openSession()
 
     const claimed = await claim(launch)
+
     expect(claimed.status).toBe(201)
     expect(claimed.body.data.token).toEqual(expect.any(String))
     expect(claimed.body.data.token).not.toBe(launch)
 
     const session = await getSession(claimed.body.data.token)
+
     expect(session.status).toBe(201)
     expect(session.body.data.id).toBe(id)
 
     const again = await claim(launch)
+
     expect(again.status).toBe(409)
     expect(again.body.error).toBe('client_token_used')
   })
@@ -81,6 +89,7 @@ describe('launch tokens', () => {
     const { launch } = await openSession()
 
     const res = await getSession(launch)
+
     expect(res.status).toBe(401)
     expect(res.body.error).toBe('invalid_client_token')
   })
@@ -96,10 +105,12 @@ describe('launch tokens', () => {
   it('reject claims after the session expires', async () => {
     const { id, launch } = await openSession()
     const session = await VerificationSession.where({ id }).firstOrFail()
+
     session.expiresAt = new Date(Date.now() - 1000)
     await session.save()
 
     const res = await claim(launch)
+
     expect(res.status).toBe(401)
     expect(res.body.error).toBe('session_expired')
   })
@@ -109,6 +120,7 @@ describe('launch tokens', () => {
     const device = await claimDeviceToken(launch)
 
     const res = await claim(device)
+
     expect(res.status).toBe(401)
     expect(res.body.error).toBe('invalid_client_token')
   })
@@ -123,6 +135,7 @@ describe('device tokens', () => {
     expect((await getSession(device, 'HTTPS://SHOP.EXAMPLE.COM/')).status).toBe(201)
 
     const elsewhere = await getSession(device, 'https://evil.example.com')
+
     expect(elsewhere.status).toBe(403)
     expect(elsewhere.body.error).toBe('origin_not_allowed')
   })
@@ -132,6 +145,7 @@ describe('device tokens', () => {
     const { launch } = await openSession()
 
     const blocked = await claim(launch, 'https://evil.example.com')
+
     expect(blocked.status).toBe(403)
     expect(blocked.body.error).toBe('origin_not_allowed')
 
@@ -146,6 +160,7 @@ describe('handoff tokens', () => {
     const device = await claimDeviceToken((await openSession()).launch)
 
     const res = await handoff(device)
+
     expect(res.status).toBe(403)
     expect(res.body.error).toBe('handoff_disabled')
   })
@@ -156,10 +171,12 @@ describe('handoff tokens', () => {
     const desktop = await claimDeviceToken(launch, 'https://shop.example.com')
 
     const minted = await handoff(desktop)
+
     expect(minted.status).toBe(201)
 
     // The phone opens the hosted page on another origin.
     const phone = await claimDeviceToken(minted.body.data.token, 'https://verify.arkyc.test')
+
     expect(phone).not.toBe(desktop)
     expect((await getSession(phone, 'https://verify.arkyc.test')).body.data.id).toBe(id)
     expect((await getSession(desktop, 'https://shop.example.com')).body.data.id).toBe(id)

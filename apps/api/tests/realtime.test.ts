@@ -56,24 +56,29 @@ beforeAll(async () => {
   const reg = await request(app)
     .post('/api/v1/auth/register')
     .send({ firstname: 'RT Owner', lastname: 'Test', email: `rt-${s}@test.dev`, password: 'secret123' })
+
   fx.token = reg.body.token
   fx.ownerId = reg.body.data.id
 
   const outsider = await request(app)
     .post('/api/v1/auth/register')
     .send({ firstname: 'RT Outsider', lastname: 'Test', email: `rt-out-${s}@test.dev`, password: 'secret123' })
+
   fx.outsiderToken = outsider.body.token
   fx.outsiderId = outsider.body.data.id
 
   const organization = await authed('post', '/organizations').send({ name: `RT Co ${s}` })
+
   fx.organizationId = organization.body.data.id
 
   const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'RT Prod' })
+
   fx.projectId = project.body.data.id
 
   const key = await authed('post', `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`).send({
     name: 'RT key',
   })
+
   fx.apiKeySecret = key.body.secret
 })
 
@@ -87,10 +92,12 @@ describe('realtime broadcasts', () => {
     const id = await reviewableSession()
 
     const transitions = MemoryRealtimeDriver.broadcasts().filter((e) => e.event === REALTIME_EVENT.sessionTransition)
+
     expect(transitions.length).toBeGreaterThan(0)
 
     // The final transition into requires_review fans out to all three channels.
     const last = transitions.at(-1)!
+
     expect(last.channel).toEqual([
       realtimeChannels.organization(fx.organizationId),
       realtimeChannels.project(fx.organizationId, fx.projectId),
@@ -101,14 +108,17 @@ describe('realtime broadcasts', () => {
 
   it('broadcasts a review action on approve', async () => {
     const id = await reviewableSession()
+
     MemoryRealtimeDriver.clear()
 
     const approve = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/approve`).send({})
+
     expect(approve.status).toBe(200)
 
     const review = MemoryRealtimeDriver.broadcasts().find(
       (e) => e.event === REALTIME_EVENT.reviewAction && (e.payload as { action: string }).action === 'review.approved',
     )
+
     expect(review).toBeTruthy()
     expect((review!.payload as { session_id: string }).session_id).toBe(id)
     expect(review!.channel).toContain(realtimeChannels.organization(fx.organizationId))
@@ -121,6 +131,7 @@ describe('realtime broadcasts', () => {
 describe('dashboard channel auth', () => {
   it('reports the active transport via /config', async () => {
     const res = await request(app).get('/api/v1/realtime/config').set('Authorization', `Bearer ${fx.token}`)
+
     expect(res.status).toBe(200)
     expect(res.body.data.transport).toBe('memory')
     expect(res.body.data.channelPrefix).toBe('private-user.')
@@ -130,6 +141,7 @@ describe('dashboard channel auth', () => {
     const channel = realtimeChannels.organization(fx.organizationId)
 
     const member = await channelAuth(fx.token, channel)
+
     expect(member.status).toBe(200)
     expect(typeof member.body.auth).toBe('string')
 
@@ -168,6 +180,7 @@ describe('widget channel auth', () => {
     const { id, token } = await openSession()
 
     const res = await client('get', 'session', token)
+
     expect(res.body.data.realtime).toMatchObject({ transport: 'memory', channel: realtimeChannels.session(id) })
   })
 

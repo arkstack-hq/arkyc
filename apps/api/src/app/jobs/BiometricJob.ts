@@ -23,8 +23,10 @@ import { riskSignals } from '@app/services/risk/RiskSignalService'
  */
 async function timed<T>(sessionId: string, step: string, run: () => Promise<T>): Promise<T> {
   const startedAt = Date.now()
+
   Logger.info(`BiometricJob ${sessionId} ${step} started`, false, true)
   const result = await run()
+
   Logger.info(`BiometricJob ${sessionId} ${step} done in ${Date.now() - startedAt}ms`, false, true)
 
   return result
@@ -55,6 +57,7 @@ export class BiometricJob extends Job {
 
   async handle(): Promise<void> {
     const session = await VerificationSession.where({ id: this.sessionId }).first()
+
     if (!session || session.status !== 'processing') return
 
     // The workflow decides which stages run. Face match additionally needs a
@@ -76,8 +79,11 @@ export class BiometricJob extends Job {
     // Stages that run must have landed their results before deciding. OCR is
     // async, so an early run throws to retry with backoff.
     if (runsDocument && !capture) throw new Error('Document capture is not ready yet')
+
     if (runsOcr && !ocr) throw new Error('OCR result is not ready yet')
+
     if (runsLiveness && !liveness) throw new Error('Liveness result is not ready yet')
+
     if (runsAddress && !address) throw new Error('Address verification is not ready yet')
 
     const selfie = liveness?.selfieImagePath ? await readObject(liveness.selfieImagePath) : null
@@ -86,10 +92,12 @@ export class BiometricJob extends Job {
     // A retried job reuses the face match it already recorded rather than re-running
     // the model and inserting a duplicate check.
     const recorded = runsFaceMatch ? await FaceMatchCheck.where({ sessionId: session.id }).first() : null
+
     if (recorded) {
       faceMatch = { passed: recorded.passed, similarityScore: recorded.similarityScore }
     } else if (runsFaceMatch) {
       const portrait = await DocumentPortrait.where({ sessionId: session.id }).first()
+
       if (!portrait) throw new Error('Document portrait is not ready yet')
 
       const result = await timed(session.id, 'face match', async () =>
@@ -99,6 +107,7 @@ export class BiometricJob extends Job {
           hints: { similarityScore: this.hints.faceSimilarity, passed: this.hints.faceMatchPassed },
         }),
       )
+
       await FaceMatchCheck.create({
         organizationId: session.organizationId,
         projectId: session.projectId,

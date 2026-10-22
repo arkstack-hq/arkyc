@@ -13,6 +13,7 @@ export class ScreeningMonitorCommand extends Command {
 
   async handle() {
     const screened = await screeningMonitors.runDue()
+
     Logger.success(`Screening monitor complete: re-screened ${screened} identity(ies).`, true)
   }
 }

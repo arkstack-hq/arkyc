@@ -64,7 +64,9 @@ export default class WorkflowController extends BaseController {
     })
 
     if (data.name != null) workflow.name = data.name
+
     if (data.steps != null) workflow.steps = normalizeWorkflowSteps(data.steps)
+
     if (data.options != null) workflow.options = normalizeWorkflowOptions(data.options)
     await workflow.save()
 
@@ -80,6 +82,7 @@ export default class WorkflowController extends BaseController {
   /** Delete a workflow. In-flight sessions keep their snapshotted config. */
   async destroy({ req }: HttpContext) {
     const workflow = await this.scoped(req)
+
     await workflow.delete()
 
     await audit.recordForRequest(req, {

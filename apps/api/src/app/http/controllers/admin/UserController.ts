@@ -24,6 +24,7 @@ export default class UserController extends BaseController {
     let query = User.query().with('adminPermissions')
 
     const search = param(req.query.search)
+
     if (search) {
       query = query.whereRaw(
         'LOWER("firstname") LIKE ? OR LOWER("lastname") LIKE ? OR LOWER("email") LIKE ?',
@@ -45,6 +46,7 @@ export default class UserController extends BaseController {
     const user = await User.where({ id: param(req.params.userId) })
       .with('adminPermissions')
       .first()
+
     RequestException.assertFound(user, 'User not found', 404)
 
     return new AdminUserResource(user).additional({ status: 'success', message: 'OK', code: 200 })
@@ -53,13 +55,16 @@ export default class UserController extends BaseController {
   /** Set a user's account standing: `active`, `restricted`, or `suspended`. */
   async setStatus({ req }: HttpContext) {
     const userId = param(req.params.userId)
+
     RequestException.assertFound(userId, 'User not found', 404)
 
     const data = await this.validate({ status: ['required', 'in:active,restricted,suspended'] })
+
     // Don't let an admin lock or restrict themselves out of the platform.
     RequestException.abortIf(userId === req.user?.id, 'You cannot change your own account status', 422)
 
     const user = await User.where({ id: userId }).first()
+
     RequestException.assertFound(user, 'User not found', 404)
 
     user.status = data.status
@@ -78,11 +83,13 @@ export default class UserController extends BaseController {
   /** Set a new password for a user (admin reset). */
   async resetPassword({ req }: HttpContext) {
     const userId = param(req.params.userId)
+
     RequestException.assertFound(userId, 'User not found', 404)
 
     const data = await this.validate({ password: ['required', 'string', 'min:8'] })
 
     const user = await User.where({ id: userId }).first()
+
     RequestException.assertFound(user, 'User not found', 404)
 
     user.password = await Hash.make(data.password)
@@ -100,6 +107,7 @@ export default class UserController extends BaseController {
   /** Grant a user the platform-owner admin role ("sync ownership"). Idempotent. */
   async grantAdmin({ req }: HttpContext) {
     const user = await User.where({ id: param(req.params.userId) }).first()
+
     RequestException.assertFound(user, 'User not found', 404)
 
     await PermissionSync.adminPermissions(permissionStore)
@@ -109,6 +117,7 @@ export default class UserController extends BaseController {
       slug: AdminRoles.bySlug('platform-owner').slug,
       admin: true,
     }).first()
+
     RequestException.assertFound(role, 'platform-owner admin role missing', 500)
 
     await AdminPermission.query().firstOrCreate({ userId: user.id, roleId: role.id }, { permissionId: null })
@@ -129,11 +138,13 @@ export default class UserController extends BaseController {
   /** Revoke every platform-admin grant from a user. */
   async revokeAdmin({ req }: HttpContext) {
     const userId = param(req.params.userId)
+
     RequestException.assertFound(userId, 'User not found', 404)
 
     // Never leave the platform without an admin: if this user is currently the
     // only admin, the grant can't be revoked (covers self-revocation too).
     const adminIds = new Set(toArray(await AdminPermission.all()).map((g) => g.userId))
+
     RequestException.abortIf(adminIds.has(userId) && adminIds.size <= 1, 'Cannot revoke the last platform admin', 422)
 
     await AdminPermission.where({ userId }).delete()

@@ -8,6 +8,7 @@ import run from '@rollup/plugin-run'
 
 const env = nodeEnv()
 const dist = path.relative(Arkstack.rootDir(), outputDir())
+
 export default defineConfig([
   {
     unbundle: true,
@@ -49,8 +50,10 @@ export default defineConfig([
       e.hook('build:done', async (e) => {
         for (let i = 0; i < e.chunks.length; i++) {
           const chunk = e.chunks[i]
+
           if (chunk && chunk.fileName.endsWith('.js')) {
             let code = readFileSync(path.join(chunk.outDir, chunk.fileName), 'utf-8')
+
             // Remap module specifiers from source (`src/…`, `.ts`) to their built
             // location (`${dist}/…`, `.js`). Scoped to import/export/require
             // specifiers so unrelated string data and comments are never rewritten.

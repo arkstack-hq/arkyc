@@ -100,6 +100,7 @@ export class ScreeningMonitorService {
 
     if (fresh.length) {
       const signals = RiskSignals.applyPolicy(ScreeningDetector.signals(fresh), session.workflow?.options.risk_policy)
+
       for (const signal of signals) {
         await SessionRiskSignal.create({
           organizationId: session.organizationId,
