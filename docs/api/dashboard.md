@@ -172,22 +172,23 @@ See [Webhooks](/integrations/webhooks) for the payload and signature.
 `canAdmin('…')` permission. This surface sits **above** organizations; an
 organization role never grants admin access (no `resolveOrganization`).
 
-| Method   | Path                                          | Permission                   | Description                                                        |
-| -------- | --------------------------------------------- | ---------------------------- | ------------------------------------------------------------------ |
-| `GET`    | `/me`                                         | none                         | Caller's admin standing (empty for non-admins).                    |
-| `GET`    | `/settings`                                   | `admin.settings.view`        | Platform settings.                                                 |
-| `PATCH`  | `/settings`                                   | `admin.settings.update`      | Update platform settings.                                          |
-| `GET`    | `/organizations`                              | `admin.organizations.view`   | List organizations (paginated).                                    |
-| `GET`    | `/organizations/:organizationId`              | `admin.organizations.view`   | Organization detail + counts.                                      |
-| `GET`    | `/organizations/:organizationId/projects`     | `admin.organizations.view`   | The organization's projects (paginated).                           |
-| `PATCH`  | `/organizations/:organizationId/verification` | `admin.organizations.manage` | Mark an organization verified or unverified directly (`verified`). |
-| `GET`    | `/users`                                      | `admin.users.view`           | List users (paginated).                                            |
-| `GET`    | `/users/:userId`                              | `admin.users.view`           | User detail.                                                       |
-| `POST`   | `/users/:userId/admin`                        | `admin.users.manage`         | Grant platform admin.                                              |
-| `DELETE` | `/users/:userId/admin`                        | `admin.users.manage`         | Revoke platform admin (never the last admin).                      |
-| `POST`   | `/users/:userId/status`                       | `admin.users.manage`         | Set account standing: `active`/`restricted`/`suspended`.           |
-| `POST`   | `/users/:userId/password`                     | `admin.users.manage`         | Reset a user's password.                                           |
-| `GET`    | `/audit-logs`                                 | `admin.audit.view`           | Platform audit log.                                                |
+| Method   | Path                                                 | Permission                   | Description                                                                                  |
+| -------- | ---------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `GET`    | `/me`                                                | none                         | Caller's admin standing (empty for non-admins).                                              |
+| `GET`    | `/settings`                                          | `admin.settings.view`        | Platform settings.                                                                           |
+| `PATCH`  | `/settings`                                          | `admin.settings.update`      | Update platform settings.                                                                    |
+| `GET`    | `/organizations`                                     | `admin.organizations.view`   | List organizations (paginated).                                                              |
+| `GET`    | `/organizations/:organizationId`                     | `admin.organizations.view`   | Organization detail: verification, counts, session outcomes, 30-day trend, top risk signals. |
+| `GET`    | `/organizations/:organizationId/projects`            | `admin.organizations.view`   | The organization's projects (paginated).                                                     |
+| `GET`    | `/organizations/:organizationId/projects/:projectId` | `admin.organizations.view`   | One project in depth: configuration, counts, outcomes, access and recent sessions.           |
+| `PATCH`  | `/organizations/:organizationId/verification`        | `admin.organizations.manage` | Mark an organization verified or unverified directly (`verified`).                           |
+| `GET`    | `/users`                                             | `admin.users.view`           | List users (paginated).                                                                      |
+| `GET`    | `/users/:userId`                                     | `admin.users.view`           | User detail.                                                                                 |
+| `POST`   | `/users/:userId/admin`                               | `admin.users.manage`         | Grant platform admin.                                                                        |
+| `DELETE` | `/users/:userId/admin`                               | `admin.users.manage`         | Revoke platform admin (never the last admin).                                                |
+| `POST`   | `/users/:userId/status`                              | `admin.users.manage`         | Set account standing: `active`/`restricted`/`suspended`.                                     |
+| `POST`   | `/users/:userId/password`                            | `admin.users.manage`         | Reset a user's password.                                                                     |
+| `GET`    | `/audit-logs`                                        | `admin.audit.view`           | Platform audit log.                                                                          |
 
 ### Business verification {#admin-business-verification}
 

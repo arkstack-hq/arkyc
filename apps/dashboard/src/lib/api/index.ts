@@ -26,6 +26,8 @@ export type {
   AccessGrantStatus,
   PiiRequest,
   AdminOrganizationDetail,
+  AdminProjectDetail,
+  ScopedSessionStats,
   AdminProject,
 } from './extended-access'
 export { Auth } from './auth'

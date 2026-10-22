@@ -7,6 +7,7 @@ import AdminBusinessVerificationsPage from '@/pages/admin/AdminBusinessVerificat
 import AdminBusinessVerificationReviewPage from '@/pages/admin/AdminBusinessVerificationReviewPage'
 import { AdminLayout } from '@/components/AdminLayout'
 import AdminOrganizationDetailPage from '@/pages/admin/AdminOrganizationDetailPage'
+import AdminProjectDetailPage from '@/pages/admin/AdminProjectDetailPage'
 import AdminOrganizationsPage from '@/pages/admin/AdminOrganizationsPage'
 import AdminOverviewPage from '@/pages/admin/AdminOverviewPage'
 import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
@@ -165,6 +166,7 @@ export default function App() {
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="organizations" element={<AdminOrganizationsPage />} />
           <Route path="organizations/:organizationId" element={<AdminOrganizationDetailPage />} />
+          <Route path="organizations/:organizationId/projects/:projectId" element={<AdminProjectDetailPage />} />
           <Route path="extended-access" element={<AdminExtendedAccessPage />} />
           <Route path="extended-access/:projectId" element={<AdminExtendedAccessReviewPage />} />
           <Route path="business-verifications" element={<AdminBusinessVerificationsPage />} />

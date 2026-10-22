@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useRequest } from 'alova/client'
-import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
+import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
+import { SessionTrendChart } from '@/components/SessionTrendChart'
 import {
   Boxes,
   Building2,
@@ -20,13 +21,8 @@ import { ErrorState, Loading, PageHeader } from '@/components/States'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatCard } from '@/components/ui/stat-card'
 
-const fmtDay = (iso: string) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-
 export default function AdminOverviewPage() {
   const { data: stats, loading, error } = useRequest(Admin.stats(), { immediate: true })
-
-  const trend = useMemo(() => (stats?.trend ?? []).map((d) => ({ label: fmtDay(d.date), count: d.count })), [stats])
 
   const breakdown = useMemo(() => {
     if (!stats) return []
@@ -91,44 +87,7 @@ export default function AdminOverviewPage() {
             <CardTitle>Sessions over time</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trend} margin={{ top: 8, right: 8, bottom: 0, left: -24 }}>
-                  <defs>
-                    <linearGradient id="admin-sessions" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="label"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-                    interval="preserveStartEnd"
-                    minTickGap={24}
-                  />
-                  <Tooltip
-                    cursor={{ stroke: 'var(--border)' }}
-                    contentStyle={{
-                      background: 'var(--popover)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 8,
-                      fontSize: 12,
-                      color: 'var(--popover-foreground)',
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="count"
-                    name="Sessions"
-                    stroke="var(--chart-1)"
-                    strokeWidth={2}
-                    fill="url(#admin-sessions)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <SessionTrendChart trend={stats.trend} />
           </CardContent>
         </Card>
 

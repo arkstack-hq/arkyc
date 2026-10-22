@@ -140,3 +140,22 @@ describe('submitting and reviewing', () => {
     expect((await (fx.owner('get', '/admin/business-verifications') as any)).status).toBe(403)
   })
 })
+
+describe('admin organization and project views', () => {
+  it('reports verification, counts and session outcomes', async () => {
+    const detail = await (fx.admin('get', `/admin/organizations/${fx.organizationId}`) as any)
+    expect(detail.status).toBe(200)
+    expect(detail.body.data.verification_status).toBe('verified')
+    expect(detail.body.data.counts.production_projects).toBeGreaterThanOrEqual(1)
+    expect(detail.body.data.stats.trend).toHaveLength(30)
+    expect(detail.body.data.stats.total).toBeGreaterThanOrEqual(1)
+
+    const projects = await (fx.admin('get', `/admin/organizations/${fx.organizationId}/projects`) as any)
+    const projectId = projects.body.data[0].id
+    const project = await (fx.admin('get', `/admin/organizations/${fx.organizationId}/projects/${projectId}`) as any)
+    expect(project.status).toBe(200)
+    expect(project.body.data.organization.id).toBe(fx.organizationId)
+    expect(project.body.data.thresholds.faceMatchThreshold).toBeTypeOf('number')
+    expect(project.body.data.extended_access.pii.status).toBe('none')
+  })
+})

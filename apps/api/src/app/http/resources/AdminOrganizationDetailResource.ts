@@ -12,7 +12,11 @@ export default class AdminOrganizationDetailResource extends Resource {
       slug: this.slug,
       logo_url: this.logoUrl ?? null,
       created_at: this.createdAt,
+      verification_status: this.verificationStatus ?? 'unverified',
+      verified_at: this.verifiedAt ?? null,
+      last_session_at: this.lastSessionAt ?? null,
       counts: this.counts,
+      stats: this.stats,
     }
   }
 }
