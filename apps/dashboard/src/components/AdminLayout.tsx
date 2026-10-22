@@ -100,14 +100,15 @@ export function AdminLayout() {
     initialData: 0,
   })
 
-  if (loading) return <Loading />
-  if (!isAdmin) return <Navigate to="/" replace />
-
-  const items = NAV.filter((item) => can(item.perm))
   const pendingVerifications = useAttentionCount(
     () => BusinessVerifications.adminPendingCount(),
     can('admin.organizations.view'),
   )
+
+  if (loading) return <Loading />
+  if (!isAdmin) return <Navigate to="/" replace />
+
+  const items = NAV.filter((item) => can(item.perm))
   const badges: Partial<Record<string, number>> = {
     'extended-access': pendingAccess,
     'business-verifications': pendingVerifications,

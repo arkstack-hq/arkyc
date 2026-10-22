@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 const createRealtime = vi.hoisted(() => vi.fn((config: unknown) => ({ config })))
 vi.mock('@arkstack/realtime', () => ({ createRealtime }))
 
-import { createRealtimeClient } from './client'
+import { createRealtimeClient, importSdk } from './client'
 
 const base = { event: 'notification', channelPrefix: 'private-user.' }
 
@@ -53,6 +53,15 @@ describe('createRealtimeClient', () => {
       { apiBase: '/api', token: 't' },
     )
 
-    expect(createRealtime).toHaveBeenLastCalledWith({ ...base, transport: 'polling', polling: { interval: 3000 } })
+    expect(createRealtime).toHaveBeenLastCalledWith(
+      expect.objectContaining({ ...base, transport: 'polling', polling: { interval: 3000 }, importModule: importSdk }),
+    )
+  })
+})
+
+describe('importSdk', () => {
+  it('loads bundled transport SDKs and refuses unknown ones', async () => {
+    await expect(importSdk('pusher-js')).resolves.toBeTruthy()
+    await expect(importSdk('left-pad')).rejects.toThrow(/Unknown realtime SDK/)
   })
 })

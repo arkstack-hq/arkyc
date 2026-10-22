@@ -1,4 +1,24 @@
-import { createRealtime, type RealtimeClient, type RealtimeConfig } from '@arkstack/realtime'
+import { createRealtime, type ModuleImporter, type RealtimeClient, type RealtimeConfig } from '@arkstack/realtime'
+
+/**
+ * The transport SDKs as literal imports, so Vite bundles them (as lazy chunks).
+ * The library's default importer is non-literal and can't resolve a bare package
+ * name in the browser.
+ */
+const SDKS: Record<string, () => Promise<unknown>> = {
+  'pusher-js': () => import('pusher-js'),
+  'firebase/app': () => import('firebase/app'),
+  'firebase/auth': () => import('firebase/auth'),
+  'firebase/database': () => import('firebase/database'),
+  'firebase/messaging': () => import('firebase/messaging'),
+}
+
+export const importSdk: ModuleImporter = async (specifier) => {
+  const load = SDKS[specifier]
+  if (!load) throw new Error(`Unknown realtime SDK: ${specifier}`)
+
+  return await load()
+}
 
 /** What `GET /v1/realtime/config` returns: the API's public realtime settings. */
 export type RealtimeServerConfig = Omit<RealtimeConfig, 'transport' | 'event' | 'channelPrefix'> & {
@@ -28,6 +48,7 @@ export function createRealtimeClient(config: RealtimeServerConfig, options: Clie
 
   return createRealtime({
     ...config,
+    importModule: importSdk,
     pusher: config.pusher && {
       ...config.pusher,
       authEndpoint,
