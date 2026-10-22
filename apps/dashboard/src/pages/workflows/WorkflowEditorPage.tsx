@@ -18,6 +18,7 @@ import {
   AVAILABLE_WORKFLOW_STEP_KEYS,
   DEFAULT_ADDRESS_CONFIG,
   DEFAULT_SCREENING_CONFIG,
+  DEFAULT_VERIFICATION_THRESHOLDS,
   DEFAULT_WORKFLOW_CONFIG,
   type AddressMethod,
   type AddressStepConfig,
@@ -447,7 +448,7 @@ function AddressSettings({
       <SettingRow
         htmlFor="address-threshold"
         title="Auto-verify at score"
-        description="Below this, a passed address goes to review. Blank uses the project threshold."
+        description={`A score from 0 to 1, such as 0.6 or 0.85. A passed address scoring below it goes to review. Leave blank to use the project's address threshold (${DEFAULT_VERIFICATION_THRESHOLDS.addressThreshold} unless changed).`}
       >
         <input
           id="address-threshold"
@@ -456,7 +457,7 @@ function AddressSettings({
           max={1}
           step={0.05}
           value={config.auto_approve_threshold ?? ''}
-          placeholder="Project"
+          placeholder={String(DEFAULT_VERIFICATION_THRESHOLDS.addressThreshold)}
           onChange={(e) =>
             onChange({
               ...config,
