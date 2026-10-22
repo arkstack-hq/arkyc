@@ -14,9 +14,9 @@ Comments should be simple guides to what a utility (variable, function, class, b
 
 - Do not commit untill there is an explicit instruction to do so.
 - Run `pnpm check` before every commit. Commit incrementally and keep each commit gate-green.
-- Never add AI attribution or `Co-Authored-By` trailers.
+- No credits of any kind in commit messages, pull request descriptions or release notes: no AI attribution, no `Co-Authored-By` trailers, no "Generated with" footers.
 - Do not `git push` unless asked.
-- Do not fold unrelated feature implementations into a single commit.
+- Work on a new branch, never directly on `main`, and give each feature its own commit. Do not fold unrelated feature implementations into a single commit.
 - Stage only files relevant to the requested change.
 - Never run `tsc -b`; it emits JavaScript into `src/`. Use `pnpm typecheck` or `pnpm check`.
 - Prefer existing domain abstractions over parallel implementations. If a policy already has one authority, extend that authority rather than duplicating it in a controller, resource, or job.
