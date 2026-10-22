@@ -92,4 +92,13 @@ export class Sessions {
       name: 'session:note',
     })
   }
+
+  /** How many sessions in the organization are waiting for review (drives the nav badge). */
+  static reviewCount(organizationId: string) {
+    return alova.Get(`${t(organizationId)}/reviews/count`, {
+      name: 'sessions:review_count',
+      hitSource: SESSION_MUTATIONS,
+      transform: (envelope: { data?: { count: number } }) => envelope.data?.count ?? 0,
+    })
+  }
 }

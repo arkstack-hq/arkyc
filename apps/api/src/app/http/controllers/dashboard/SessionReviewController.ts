@@ -5,6 +5,7 @@ import { BaseController } from '@controllers/BaseController'
 import { VerificationSession } from '@app/models/VerificationSession'
 import VerificationSessionResource from '@app/http/resources/VerificationSessionResource'
 import SessionCollection from '@app/http/resources/SessionCollection'
+import CountResource from '@app/http/resources/CountResource'
 import { audit } from '@app/services/AuditLogger'
 import { type RetryKind, reviewService } from '@app/services/ReviewService'
 import { readObject } from 'src/support/storage'
@@ -38,14 +39,31 @@ export default class SessionReviewController extends BaseController {
     const status = param(req.query.status)
     const decisionReason = param(req.query.decision_reason)
     const projectId = param(req.query.project_id)
+
     if (status) query = query.where({ status })
+
     if (decisionReason) query = query.where({ decisionReason })
+
     if (projectId) query = query.where({ projectId })
 
     // Eager-load OCR so the list can show the extracted person name under the reference.
     const sessions = await query.with('ocrResults').latest('createdAt').paginate(perPage(req.query))
 
     return new SessionCollection(sessions).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
+  }
+
+  /** How many of the organization's sessions are waiting for review (drives the nav badge). */
+  async reviewCount({ req }: HttpContext) {
+    const count = await VerificationSession.where({
+      organizationId: req.organization!.id,
+      status: 'requires_review',
+    }).count()
+
+    return new CountResource({ count }).additional({
       status: 'success',
       message: 'OK',
       code: 200,
@@ -70,11 +88,17 @@ export default class SessionReviewController extends BaseController {
     ])
 
     const media: string[] = []
+
     if (document?.frontImagePath) media.push('document_front')
+
     if (document?.backImagePath) media.push('document_back')
+
     if (portrait?.portraitImagePath) media.push('portrait')
+
     if (liveness?.selfieImagePath) media.push('selfie')
+
     if (liveness?.videoPath) media.push('video')
+
     if (address?.documentImagePath) media.push('proof_of_address')
 
     return res.json({
@@ -148,7 +172,11 @@ export default class SessionReviewController extends BaseController {
     }
 
     return new GenericResource(this.riskSignal(signal))
-      .additional({ status: 'success', message: 'Risk signal cleared', code: 201 })
+      .additional({
+        status: 'success',
+        message: 'Risk signal cleared',
+        code: 201,
+      })
       .response()
       .setStatusCode(201)
   }
@@ -178,11 +206,13 @@ export default class SessionReviewController extends BaseController {
   async media({ req, res }: HttpContext) {
     const kind = param(req.params.kind) ?? ''
     const contentType = MEDIA_CONTENT_TYPE[kind]
+
     if (!contentType) return res.status(404).json({ status: 'error', message: 'Unknown media kind', code: 404 })
 
     const session = await this.scoped(req)
     const key = await this.mediaKey(session, kind)
     const bytes = await readObject(key)
+
     if (!bytes.length) return res.status(404).json({ status: 'error', message: 'Media not found', code: 404 })
 
     return res
@@ -216,6 +246,7 @@ export default class SessionReviewController extends BaseController {
   async approve({ req }: HttpContext) {
     const data = await this.validate({ reason: ['nullable', 'string'] })
     const session = await this.scoped(req)
+
     await reviewService.approve(session, audit.actorFromRequest(req), data.reason ?? undefined)
 
     return this.session(session, 'Session approved')
@@ -225,6 +256,7 @@ export default class SessionReviewController extends BaseController {
   async reject({ req }: HttpContext) {
     const data = await this.validate({ reason: ['nullable', 'string'] })
     const session = await this.scoped(req)
+
     await reviewService.reject(session, audit.actorFromRequest(req), data.reason ?? undefined)
 
     return this.session(session, 'Session rejected')
@@ -237,6 +269,7 @@ export default class SessionReviewController extends BaseController {
       reason: ['nullable', 'string'],
     })
     const session = await this.scoped(req)
+
     await reviewService.requestRetry(
       session,
       audit.actorFromRequest(req),
@@ -251,6 +284,7 @@ export default class SessionReviewController extends BaseController {
   async assign({ req }: HttpContext) {
     const data = await this.validate({ user_id: ['required', 'string'] })
     const session = await this.scoped(req)
+
     await reviewService.assign(session, audit.actorFromRequest(req), data.user_id)
 
     return this.session(session, 'Session assigned')
@@ -260,6 +294,7 @@ export default class SessionReviewController extends BaseController {
   async markSuspicious({ req }: HttpContext) {
     const data = await this.validate({ reason: ['nullable', 'string'] })
     const session = await this.scoped(req)
+
     await reviewService.markSuspicious(session, audit.actorFromRequest(req), data.reason ?? undefined)
 
     return this.session(session, 'Session flagged as suspicious')
@@ -269,6 +304,7 @@ export default class SessionReviewController extends BaseController {
   async note({ req }: HttpContext) {
     const data = await this.validate({ note: ['required', 'string'] })
     const session = await this.scoped(req)
+
     await reviewService.addNote(session, audit.actorFromRequest(req), data.note)
 
     return this.session(session, 'Note added')

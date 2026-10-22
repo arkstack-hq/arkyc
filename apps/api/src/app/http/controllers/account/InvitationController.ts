@@ -1,10 +1,12 @@
-import { HttpContext } from 'clear-router/types/express'
 import { RequestException, perPage } from '@arkstack/common'
+
 import { BaseController } from '@controllers/BaseController'
-import { invitations } from '@app/services/InvitationService'
-import type { User } from '@app/models/User'
-import PendingInvitationCollection from '@app/http/resources/PendingInvitationCollection'
+import CountResource from '@app/http/resources/CountResource'
 import EmptyResource from '@app/http/resources/EmptyResource'
+import { HttpContext } from 'clear-router/types/express'
+import PendingInvitationCollection from '@app/http/resources/PendingInvitationCollection'
+import type { User } from '@app/models/User'
+import { invitations } from '@app/services/InvitationService'
 
 /** Invitations addressed to the signed-in user, accepted without the link token. */
 export default class InvitationController extends BaseController {
@@ -24,6 +26,24 @@ export default class InvitationController extends BaseController {
       .paginate(perPage(req.query))
 
     return new PendingInvitationCollection(pending).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
+  }
+
+  /**
+   * How many pending invitations the user has (drives the nav badge). Zero until
+   * the email is verified, since invitations can't be accepted before then.
+   *
+   * @param ctx
+   * @returns
+   */
+  async count({ req }: HttpContext) {
+    const user = req.user! as User
+    const count = user.emailVerifiedAt ? await invitations.pendingFor(user).count() : 0
+
+    return new CountResource({ count }).additional({
       status: 'success',
       message: 'OK',
       code: 200,

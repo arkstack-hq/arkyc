@@ -3,7 +3,9 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { ArrowLeft, Bell, KeyRound, MailOpen } from 'lucide-react'
 import { RealtimeProvider } from '@/contexts/realtime-context'
 import { NotificationBell } from '@/components/NotificationBell'
-import { DocsLink, ThemeToggle, UserMenu } from '@/components/Layout'
+import { DocsLink, NavCount, ThemeToggle, UserMenu } from '@/components/Layout'
+import { Invitations } from '@/lib/api/invitations'
+import { useAttentionCount } from '@/hooks/useAttentionCount'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -38,6 +40,7 @@ export function AccountLayout() {
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const current = NAV.find((item) => location.pathname.startsWith(item.to))
+  const badges: Partial<Record<string, number>> = { '/invitations': useAttentionCount(() => Invitations.count()) }
 
   return (
     <RealtimeProvider>
@@ -66,6 +69,7 @@ export function AccountLayout() {
                       <Link to={item.to}>
                         <item.icon />
                         <span className="truncate group-data-[state=collapsed]/sidebar:hidden">{item.label}</span>
+                        <NavCount count={badges[item.to] ?? 0} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -36,6 +36,7 @@ The signed-in user's own notifications, devices, invitations and realtime access
 | `POST`   | `/v1/account/push-tokens`              | Register this device's push token (`token`, `platform`, `device_name`).            |
 | `DELETE` | `/v1/account/push-tokens`              | Unregister this device.                                                            |
 | `GET`    | `/v1/account/invitations`              | Pending invitations for the user's email (verified email required; paginated).     |
+| `GET`    | `/v1/account/invitations/count`        | How many pending invitations the user has (zero until the email is verified).      |
 | `PATCH`  | `/v1/account/invitations/:id/accept`   | Accept a pending invitation without the link token (verified email required).      |
 | `POST`   | `/v1/realtime/auth`                    | Authorize a private realtime channel (organization, project, session or own user). |
 | `GET`    | `/v1/realtime/config`                  | The realtime transport and its public connection settings.                         |
@@ -130,6 +131,7 @@ See [Webhooks](/integrations/webhooks) for the payload and signature.
 | Method  | Path                                         | Permission              | Description                                                                         |
 | ------- | -------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------- |
 | `GET`   | `/sessions`                                  | `sessions.view`         | List sessions; filter by `status`, `decision_reason`, `project_id`.                 |
+| `GET`   | `/reviews/count`                             | `reviews.view`          | How many sessions await review (for the nav badge).                                 |
 | `GET`   | `/sessions/:id`                              | `sessions.view`         | Session detail, including its `risk_signals`.                                       |
 | `POST`  | `/sessions/:id/approve`                      | `reviews.approve`       | Approve; optional `reason`.                                                         |
 | `POST`  | `/sessions/:id/reject`                       | `reviews.reject`        | Reject; optional `reason`.                                                          |

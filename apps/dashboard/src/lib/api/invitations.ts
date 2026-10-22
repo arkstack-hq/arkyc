@@ -25,4 +25,13 @@ export class Invitations {
   static accept(id: string) {
     return alova.Patch<unknown>(`/v1/account/invitations/${id}/accept`, {}, { name: 'invitation:accept' })
   }
+
+  /** How many pending invitations the user has (drives the nav badge). */
+  static count() {
+    return alova.Get('/v1/account/invitations/count', {
+      name: 'invitations:count',
+      hitSource: ['invitation:accept'],
+      transform: (envelope: { data?: { count: number } }) => envelope.data?.count ?? 0,
+    })
+  }
 }
