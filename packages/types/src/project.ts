@@ -52,6 +52,9 @@ export const DEFAULT_VERIFICATION_THRESHOLDS: VerificationThresholds = {
   addressThreshold: 0.6,
 }
 
+/** Arkyc's brand color: a project's primary color until it sets its own. */
+export const DEFAULT_PRIMARY_COLOR = 'rgb(184, 134, 11)'
+
 /** Visual branding applied to the widget for a project. */
 export interface ProjectBranding {
   logo_url?: string | null

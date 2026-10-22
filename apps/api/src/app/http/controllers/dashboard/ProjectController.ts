@@ -3,7 +3,7 @@ import { RequestException, perPage } from '@arkstack/common'
 import { BaseController } from '@controllers/BaseController'
 import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
-import type { ProjectBranding } from '@arkyc/types'
+import { DEFAULT_PRIMARY_COLOR, type ProjectBranding } from '@arkyc/types'
 import ProjectCollection from '@app/http/resources/ProjectCollection'
 import ProjectResource from '@app/http/resources/ProjectResource'
 import { type FileLike, Storage } from '@arkstack/filesystem'
@@ -58,7 +58,7 @@ export default class ProjectController extends BaseController {
       slug,
       environment: data.environment ?? 'production',
       settings: data.settings ?? {},
-      branding: data.branding ?? {},
+      branding: { primary_color: DEFAULT_PRIMARY_COLOR, ...((data.branding as ProjectBranding | null) ?? {}) },
       status: 'active',
     })
 

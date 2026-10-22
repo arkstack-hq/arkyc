@@ -3,7 +3,7 @@ import { ErrorState, Loading } from '@/components/States'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
-import { DEFAULT_VELOCITY_SETTINGS, DEFAULT_VERIFICATION_THRESHOLDS } from '@arkyc/types'
+import { DEFAULT_PRIMARY_COLOR, DEFAULT_VELOCITY_SETTINGS, DEFAULT_VERIFICATION_THRESHOLDS } from '@arkyc/types'
 import { Theme } from '@arkyc/widget'
 import { Projects, errorMessage } from '@/lib/api'
 import { useForm, useRequest } from 'alova/client'
@@ -117,7 +117,7 @@ function formFromProject(project: Project): FormState {
     name: project.name ?? '',
     brandName: project.branding?.name ?? '',
     showBranding: project.branding?.show_branding !== false,
-    primaryColor: project.branding?.primary_color ?? 'rgb(255, 255, 255)',
+    primaryColor: project.branding?.primary_color ?? DEFAULT_PRIMARY_COLOR,
     theme: project.branding?.theme ?? 'light',
     borderRadius: project.branding?.border_radius != null ? String(project.branding.border_radius) : '',
     documentQualityThreshold: String(thresholds.documentQualityThreshold),
