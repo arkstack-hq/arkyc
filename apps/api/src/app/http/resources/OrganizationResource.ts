@@ -10,6 +10,7 @@ export default class OrganizationResource extends Resource {
       settings: this.settings ?? {},
       verification_status: this.verificationStatus ?? 'unverified',
       verified_at: this.verifiedAt ?? null,
+      deletion_requested_at: this.deletionRequestedAt ?? null,
       created_at: this.createdAt,
     }
   }

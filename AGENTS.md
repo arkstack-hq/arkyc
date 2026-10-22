@@ -108,7 +108,7 @@ Comments should be simple guides to what a utility (variable, function, class, b
 
 - `BusinessVerificationService` is the one authority for the production gate: `canGoLive` for project creation and `assertCanVerify` inside session creation. Don't re-check organization verification elsewhere.
 - Tests that create a `production` project directly must give its organization `verificationStatus: 'verified'`; API-created projects in unverified organizations default to `development`.
-- Delete projects and organizations through `DeletionService` (via `DeletionJob`): it purges stored media in bounded batches before the row delete cascades. Never delete those rows directly.
+- Delete projects and organizations by setting `deletionRequestedAt` and dispatching `DeletionJob`, which runs `DeletionService`: it removes the stored files by key prefix (`organizations/{org}/projects/{project}/`, `organizations/{org}/`) before the row delete cascades. Never delete those rows directly, and keep every stored key under its owner's prefix.
 
 ## Realtime, notifications and push
 

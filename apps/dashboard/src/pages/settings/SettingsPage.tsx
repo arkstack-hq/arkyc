@@ -117,6 +117,7 @@ export default function SettingsPage() {
             <DeleteResourceCard
               kind="organization"
               name={organization.name}
+              queuedAt={organization.deletion_requested_at}
               consequences="All its projects, sessions, captured media, members, roles and audit logs are deleted with it."
               remove={(name) => Organizations.remove(organizationId, { name })}
               onDeleted={() => navigate('/')}

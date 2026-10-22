@@ -116,6 +116,8 @@ export interface Project extends Entity, OrganizationScoped {
   branding: ProjectBranding
   status: ProjectStatus
   has_ai_grant?: boolean
+  /** Set while the project is queued for deletion. */
+  deletion_requested_at?: IsoDateTime | null
 }
 
 /** Links a user to a project with a role (narrower tha organization membership). */

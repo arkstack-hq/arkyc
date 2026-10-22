@@ -16,12 +16,15 @@ import { Spinner } from '@/components/ui/spinner'
 export function DeleteResourceCard({
   kind,
   name,
+  queuedAt,
   consequences,
   remove,
   onDeleted,
 }: {
   kind: 'project' | 'organization'
   name: string
+  /** When the resource was queued for deletion, if it has been. */
+  queuedAt?: string | null
   /** What else disappears with it. */
   consequences: string
   remove: (typed: string) => Method
@@ -29,25 +32,30 @@ export function DeleteResourceCard({
 }) {
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState('')
+  const [queued, setQueued] = useState(false)
   const { send, loading, error, onSuccess } = useRequest(() => remove(typed.trim()), { immediate: false })
   onSuccess(() => {
     setOpen(false)
+    setQueued(true)
     onDeleted()
   })
 
   const matches = typed.trim() === name
+  const pending = queued || Boolean(queuedAt)
 
   return (
     <Card className="border-destructive/40">
       <CardHeader>
         <CardTitle className="text-destructive">Danger zone</CardTitle>
         <CardDescription>
-          Deleting this {kind} is permanent. {consequences}
+          {pending
+            ? `This ${kind} is queued for deletion and will be removed shortly. ${consequences}`
+            : `Deleting this ${kind} is permanent. ${consequences}`}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Button type="button" variant="destructive" onClick={() => setOpen(true)}>
-          Delete {kind}
+        <Button type="button" variant="destructive" disabled={pending} onClick={() => setOpen(true)}>
+          {pending ? 'Deletion queued' : `Delete ${kind}`}
         </Button>
       </CardContent>
 

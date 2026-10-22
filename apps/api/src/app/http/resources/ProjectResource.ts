@@ -13,6 +13,7 @@ export default class ProjectResource extends Resource {
       branding: await resolveBranding(this.branding),
       status: this.status,
       has_ai_grant: this.hasAiGrant,
+      deletion_requested_at: this.deletionRequestedAt ?? null,
       created_at: this.createdAt,
     }
   }

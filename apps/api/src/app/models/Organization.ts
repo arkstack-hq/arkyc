@@ -24,6 +24,7 @@ export class Organization extends Model {
   declare settings: OrganizationSettings | null
   declare verificationStatus: BusinessVerificationStatus
   declare verifiedAt: Date | null
+  declare deletionRequestedAt: Date | null
   declare createdAt: Date
   declare updatedAt: Date
 
@@ -31,6 +32,7 @@ export class Organization extends Model {
     logoUrl: 'logo_url',
     verificationStatus: 'verification_status',
     verifiedAt: 'verified_at',
+    deletionRequestedAt: 'deletion_requested_at',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }

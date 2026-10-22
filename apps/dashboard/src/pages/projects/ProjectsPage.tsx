@@ -106,9 +106,14 @@ export default function ProjectsPage() {
                         <p className="text-xs text-muted-foreground">{humanize(project.environment)}</p>
                       </div>
                     </div>
-                    <Badge variant={statusVariant(project.status)}>
-                      {humanize(project.status)} {project.has_ai_grant ? <Sparkles size={12} className="ml-1" /> : null}
-                    </Badge>
+                    {project.deletion_requested_at ? (
+                      <Badge variant="destructive">Deleting</Badge>
+                    ) : (
+                      <Badge variant={statusVariant(project.status)}>
+                        {humanize(project.status)}{' '}
+                        {project.has_ai_grant ? <Sparkles size={12} className="ml-1" /> : null}
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1">

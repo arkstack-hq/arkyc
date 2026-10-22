@@ -20,6 +20,8 @@ export interface Organization extends Entity {
   /** Whether the organization has proven it may handle personal data in production. */
   verification_status: BusinessVerificationStatus
   verified_at: IsoDateTime | null
+  /** Set while the organization is queued for deletion. */
+  deletion_requested_at?: IsoDateTime | null
 }
 
 /** Organization-level configuration (free-form, with known optional keys). */

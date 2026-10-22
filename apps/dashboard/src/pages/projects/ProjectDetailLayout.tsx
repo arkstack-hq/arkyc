@@ -36,7 +36,14 @@ export default function ProjectDetailLayout() {
       </Link>
       <PageHeader
         title={project?.name ?? 'Project'}
-        actions={project ? <Badge variant="secondary">{humanize(project.environment)}</Badge> : null}
+        actions={
+          project ? (
+            <div className="flex gap-2">
+              {project.deletion_requested_at ? <Badge variant="destructive">Queued for deletion</Badge> : null}
+              <Badge variant="secondary">{humanize(project.environment)}</Badge>
+            </div>
+          ) : null
+        }
       />
 
       <nav className="mb-6 flex gap-1 border-b border-border">

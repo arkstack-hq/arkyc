@@ -163,6 +163,10 @@ export default class OrganizationController extends BaseController {
     const data = await this.validate({ name: ['required', 'string'] })
     const organization = req.organization!
 
+    if (organization.deletionRequestedAt) {
+      throw new RequestException('This organization is already queued for deletion.', 409)
+    }
+
     if (String(data.name).trim() !== organization.name) {
       throw ValidationException.withMessages({
         name: ['Type the organization name exactly to confirm.'],
@@ -177,11 +181,16 @@ export default class OrganizationController extends BaseController {
       metadata: { name: organization.name, slug: organization.slug },
     })
 
+    organization.deletionRequestedAt = new Date()
+    await organization.save()
     await DeletionJob.dispatch('organization', organization.id)
 
-    return new GenericResource({ id: organization.id }).additional({
+    return new GenericResource({
+      id: organization.id,
+      deletion_requested_at: organization.deletionRequestedAt,
+    }).additional({
       status: 'success',
-      message: 'Organization deleted',
+      message: 'Organization queued for deletion',
       code: 200,
     })
   }

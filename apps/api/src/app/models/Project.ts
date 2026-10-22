@@ -22,11 +22,13 @@ export class Project extends Model {
   declare settings: ProjectSettings | null
   declare branding: ProjectBranding | null
   declare status: ProjectStatus
+  declare deletionRequestedAt: Date | null
   declare createdAt: Date
   declare updatedAt: Date
 
   protected static override columns = {
     organizationId: 'organization_id',
+    deletionRequestedAt: 'deletion_requested_at',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   }

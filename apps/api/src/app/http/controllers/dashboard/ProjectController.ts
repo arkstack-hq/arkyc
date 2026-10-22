@@ -234,6 +234,8 @@ export default class ProjectController extends BaseController {
       organizationId: req.organization!.id,
     }).firstOrFail()
 
+    if (project.deletionRequestedAt) throw new RequestException('This project is already queued for deletion.', 409)
+
     if (String(data.name).trim() !== project.name) {
       throw ValidationException.withMessages({ name: ['Type the project name exactly to confirm.'] })
     }
@@ -244,11 +246,13 @@ export default class ProjectController extends BaseController {
       entityId: project.id,
       metadata: { name: project.name },
     })
+    project.deletionRequestedAt = new Date()
+    await project.save()
     await DeletionJob.dispatch('project', project.id)
 
-    return new GenericResource({ id: project.id }).additional({
+    return new GenericResource({ id: project.id, deletion_requested_at: project.deletionRequestedAt }).additional({
       status: 'success',
-      message: 'Project deleted',
+      message: 'Project queued for deletion',
       code: 200,
     })
   }

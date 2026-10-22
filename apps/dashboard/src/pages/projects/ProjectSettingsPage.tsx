@@ -583,6 +583,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           <DeleteResourceCard
             kind="project"
             name={project.name}
+            queuedAt={project.deletion_requested_at}
             consequences="Its sessions, captured media, API keys, webhooks and settings are deleted with it."
             remove={(name) => Projects.remove(organizationId, project.id, { name })}
             onDeleted={() => navigate('..', { relative: 'path' })}
