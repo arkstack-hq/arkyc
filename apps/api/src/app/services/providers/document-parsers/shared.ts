@@ -32,6 +32,7 @@ export type DateKind = 'birth' | 'issue' | 'expiry'
  */
 function fullYear(year: number, kind: DateKind): number {
   if (year >= 100) return year
+
   if (kind === 'expiry') return 2000 + year
 
   return 2000 + year > new Date().getFullYear() ? 1900 + year : 2000 + year
@@ -58,9 +59,11 @@ export const DATE_PATTERN =
  */
 export function readDate(text: string, kind: DateKind): IsoDate | undefined {
   const match = text.match(DATE_PATTERN)
+
   if (!match) return undefined
 
   if (match[1]) return iso(fullYear(Number(match[3]), kind), Number(match[2]), Number(match[1]))
+
   if (match[4]) {
     const month = MONTHS[match[5]!.slice(0, 3).toLowerCase()]
 

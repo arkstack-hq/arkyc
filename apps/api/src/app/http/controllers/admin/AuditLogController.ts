@@ -17,7 +17,9 @@ export default class AuditLogController extends BaseController {
 
     const action = param(req.query.action)
     const entityType = param(req.query.entity_type)
+
     if (action) query = query.where({ action })
+
     if (entityType) query = query.where({ entityType })
 
     const logs = await query.latest('createdAt').paginate(perPage(req.query))

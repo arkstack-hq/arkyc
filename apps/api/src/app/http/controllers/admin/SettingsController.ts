@@ -1,12 +1,12 @@
-import { HttpContext } from 'clear-router/types/express'
 import { BaseController } from '@controllers/BaseController'
-import EnvironmentResource from '@app/http/resources/EnvironmentResource'
-import GlobalSettingsResource from '@app/http/resources/GlobalSettingsResource'
-import { settings } from '@app/services/GlobalSettingsService'
 import type { DeepPartial } from '@app/services/GlobalSettingsService'
+import EnvironmentResource from '@app/http/resources/EnvironmentResource'
+import type { GlobalSettings } from '@arkyc/types'
+import GlobalSettingsResource from '@app/http/resources/GlobalSettingsResource'
+import { HttpContext } from 'clear-router/types/express'
 import { buildEnvironmentSnapshot } from '@app/services/EnvironmentSnapshot'
 import { platformAudit } from '@app/services/PlatformAuditLogger'
-import type { GlobalSettings } from '@arkyc/types'
+import { settings } from '@app/services/GlobalSettingsService'
 
 /**
  * Platform-wide settings. Guarded by `canAdmin('admin.settings.*')` — entirely
@@ -48,18 +48,33 @@ export default class SettingsController extends BaseController {
       'platform.signups_enabled': ['nullable', 'boolean'],
       'capture.model': ['nullable', 'in:passive,active,both'],
       'assets.url_ttl_seconds': ['nullable', 'integer', 'min:60', 'max:86400'],
+      'compliance.business_verification_required': ['nullable', 'boolean'],
     })
 
     const body = (this.body ?? {}) as DeepPartial<GlobalSettings>
     const patch: DeepPartial<GlobalSettings> = {}
 
     const platform: DeepPartial<GlobalSettings['platform']> = {}
+
     if (typeof body.platform?.name === 'string') platform.name = body.platform.name
+
     if (body.platform?.support_email !== undefined) platform.support_email = body.platform.support_email
+
     if (typeof body.platform?.signups_enabled === 'boolean') platform.signups_enabled = body.platform.signups_enabled
+
     if (Object.keys(platform).length) patch.platform = platform
 
-    if (body.capture?.model) patch.capture = { model: body.capture.model }
+    if (body.capture?.model)
+      patch.capture = {
+        model: body.capture.model,
+      }
+
+    if (typeof body.compliance?.business_verification_required === 'boolean') {
+      patch.compliance = {
+        business_verification_required: body.compliance.business_verification_required,
+      }
+    }
+
     if (body.assets?.url_ttl_seconds !== undefined)
       patch.assets = { url_ttl_seconds: Math.trunc(Number(body.assets.url_ttl_seconds)) }
 

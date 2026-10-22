@@ -8,6 +8,8 @@ export default class OrganizationResource extends Resource {
       slug: this.slug,
       logo_url: this.logoUrl ?? null,
       settings: this.settings ?? {},
+      verification_status: this.verificationStatus ?? 'unverified',
+      verified_at: this.verifiedAt ?? null,
       created_at: this.createdAt,
     }
   }

@@ -33,6 +33,7 @@ const clientApi = (method: 'get' | 'post', path: string, token: string) =>
 /** Open a fresh session and return its id + one-time client token. */
 async function openSession(): Promise<{ id: string; token: string }> {
   const res = await publicApi('post', 'sessions').send({ user_reference: 'user-123' })
+
   expect(res.status).toBe(201)
 
   return { id: res.body.data.id, token: await claimDeviceToken(res.body.client_token) }
@@ -41,6 +42,7 @@ async function openSession(): Promise<{ id: string; token: string }> {
 /** Walk a session through document + liveness, returning the started token/id. */
 async function toLiveness(signals: Record<string, unknown> = {}): Promise<{ id: string; token: string }> {
   const { id, token } = await openSession()
+
   await clientApi('get', 'session', token)
   await clientApi('post', 'document/front', token).send({ document_type: 'passport', ...signals })
   await clientApi('post', 'liveness', token).send(signals)
@@ -50,7 +52,13 @@ async function toLiveness(signals: Record<string, unknown> = {}): Promise<{ id: 
 
 beforeAll(async () => {
   const s = Date.now()
-  const organization = await Organization.create({ name: 'Sess Co', slug: `sess-${s}`, settings: {} })
+  const organization = await Organization.create({
+    name: 'Sess Co',
+    slug: `sess-${s}`,
+    settings: {},
+    verificationStatus: 'verified',
+  })
+
   fx.organizationId = organization.id
   const project = await Project.create({
     organizationId: organization.id,
@@ -64,9 +72,11 @@ beforeAll(async () => {
     branding: { primary_color: '#112233', name: 'Sess Co', logo_key: 'organizations/o/projects/p/branding/logo' },
     status: 'active',
   })
+
   fx.projectId = project.id
 
   const key = ApiKeyAuth.generate('live')
+
   fx.apiKeySecret = key.secret
   await ApiKey.create({
     organizationId: organization.id,
@@ -86,8 +96,10 @@ beforeAll(async () => {
     branding: {},
     status: 'active',
   })
+
   active.projectId = activeProject.id
   const activeKey = ApiKeyAuth.generate('live')
+
   active.apiKeySecret = activeKey.secret
   await ApiKey.create({
     organizationId: organization.id,
@@ -105,6 +117,7 @@ afterAll(async () => {
 describe('verification session lifecycle', () => {
   it('creates a session with a one-time client token', async () => {
     const res = await publicApi('post', 'sessions').send({ user_reference: 'abc' })
+
     expect(res.status).toBe(201)
     expect(res.body.data.status).toBe('pending')
     expect(res.body.data.project_id).toBe(fx.projectId)
@@ -116,6 +129,7 @@ describe('verification session lifecycle', () => {
       user_reference: 'abc',
       workflow_id: '00000000-0000-0000-0000-000000000000',
     })
+
     expect(res.status).toBe(422)
     expect(res.body.error).toBe('invalid_workflow')
   })
@@ -123,11 +137,13 @@ describe('verification session lifecycle', () => {
   it('walks a clean session to approved via the workers', async () => {
     const { id, token } = await toLiveness()
     const complete = await clientApi('post', 'complete', token).send({})
+
     expect(complete.status).toBe(202)
     // Decision is async — completing only moves the session to `processing`.
     expect(complete.body.data.status).toBe('processing')
 
     const show = await publicApi('get', `sessions/${id}`)
+
     expect(show.body.data.status).toBe('approved')
     expect(show.body.data.final_decision).toBe('approved')
     expect(show.body.data.decision_reason).toBe('AUTO_APPROVED')
@@ -137,10 +153,12 @@ describe('verification session lifecycle', () => {
 
   it('exposes extracted PII on the API-key retrieve only after a granted pii entitlement', async () => {
     const { id, token } = await toLiveness()
+
     await clientApi('post', 'complete', token).send({})
 
     // Without a PII entitlement the extracted data is withheld (fail-closed).
     const before = await publicApi('get', `sessions/${id}`)
+
     expect(before.body.data.status).toBe('approved')
     expect(before.body.data.extracted).toBeNull()
 
@@ -151,8 +169,10 @@ describe('verification session lifecycle', () => {
       status: 'granted',
       details: { categories: ['identity'], timing: 'after' },
     })
+
     try {
       const after = await publicApi('get', `sessions/${id}`)
+
       expect(after.body.data.extracted?.identity?.first_name).toBe('Ada')
       expect(after.body.data.extracted.identity.last_name).toBe('Lovelace')
     } finally {
@@ -162,6 +182,7 @@ describe('verification session lifecycle', () => {
 
   it('advances status through each step', async () => {
     const { token } = await openSession()
+
     expect((await clientApi('get', 'session', token)).body.data.status).toBe('started')
     expect((await clientApi('post', 'document/front', token).send({})).body.data.status).toBe('document_submitted')
     expect((await clientApi('post', 'liveness', token).send({})).body.data.status).toBe('liveness_submitted')
@@ -172,9 +193,11 @@ describe('verification session lifecycle', () => {
 
   it('rejects an expired document', async () => {
     const { id, token } = await toLiveness({ expired: true })
+
     await clientApi('post', 'complete', token).send({})
 
     const show = await publicApi('get', `sessions/${id}`)
+
     expect(show.body.data.status).toBe('rejected')
     expect(show.body.data.final_decision).toBe('rejected')
     expect(show.body.data.decision_reason).toBe('DOCUMENT_EXPIRED')
@@ -182,9 +205,11 @@ describe('verification session lifecycle', () => {
 
   it('routes low document quality to manual review', async () => {
     const { id, token } = await toLiveness({ quality_score: 0.4 })
+
     await clientApi('post', 'complete', token).send({})
 
     const show = await publicApi('get', `sessions/${id}`)
+
     expect(show.body.data.status).toBe('requires_review')
     expect(show.body.data.auto_decision).toBe('requires_review')
     expect(show.body.data.final_decision).toBeNull()
@@ -194,9 +219,11 @@ describe('verification session lifecycle', () => {
   it('cancels a session and blocks further mutation', async () => {
     const { id, token } = await openSession()
     const cancel = await publicApi('post', `sessions/${id}/cancel`)
+
     expect(cancel.body.data.status).toBe('cancelled')
 
     const blocked = await clientApi('post', 'document/front', token).send({})
+
     expect(blocked.status).toBe(409)
   })
 
@@ -207,30 +234,36 @@ describe('verification session lifecycle', () => {
   it('lazily expires a session past its TTL', async () => {
     const { id } = await openSession()
     const row = await VerificationSession.where({ id }).firstOrFail()
+
     row.expiresAt = new Date(Date.now() - 1000)
     await row.save()
 
     const show = await publicApi('get', `sessions/${id}`)
+
     expect(show.body.data.status).toBe('expired')
   })
 
   it('sweeps past-TTL sessions to expired without a reader touching them', async () => {
     const { id } = await openSession()
     const row = await VerificationSession.where({ id }).firstOrFail()
+
     row.expiresAt = new Date(Date.now() - 1000)
     await row.save()
 
     const expired = await sessionService.sweepExpired()
+
     expect(expired).toBeGreaterThanOrEqual(1)
 
     // Reflected in the DB directly (no lazy read triggered the transition).
     const swept = await VerificationSession.where({ id }).firstOrFail()
+
     expect(swept.status).toBe('expired')
   })
 
   it('enforces per-project allowed origins on client requests (opt-in)', async () => {
     const project = await Project.where({ id: fx.projectId }).firstOrFail()
     const prevSettings = project.settings
+
     project.settings = { ...(project.settings ?? {}), allowed_origins: ['https://allowed.example'] }
     await project.save()
 
@@ -239,12 +272,15 @@ describe('verification session lifecycle', () => {
 
       // No Origin header → nothing to enforce → not blocked.
       const noOrigin = await clientApi('get', 'session', token)
+
       expect(noOrigin.status).not.toBe(403)
       // Matching Origin → not blocked.
       const matched = await clientApi('get', 'session', token).set('Origin', 'https://allowed.example')
+
       expect(matched.status).not.toBe(403)
       // Disallowed Origin → 403 with the stable error key.
       const blocked = await clientApi('get', 'session', token).set('Origin', 'https://evil.example')
+
       expect(blocked.status).toBe(403)
       expect(blocked.body.error).toBe('origin_not_allowed')
     } finally {
@@ -255,34 +291,42 @@ describe('verification session lifecycle', () => {
 
   it('purges captured media once a session passes the org retention window (media only)', async () => {
     const { id, token } = await openSession()
+
     await clientApi('get', 'session', token)
 
     // Upload a real document so a DocumentCapture row + stored object exist.
     const bytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46])
     const form = new FormData()
+
     form.append('image', new Blob([bytes], { type: 'image/jpeg' }), 'front.jpg')
     await clientApi('post', 'document/front', token).send(form)
     const key = `organizations/${fx.organizationId}/projects/${fx.projectId}/sessions/${id}/documents/front.jpg`
+
     expect(await Storage.disk().exists(key)).toBe(true)
 
     // Set a retention window and age the session past it.
     const org = await Organization.where({ id: fx.organizationId }).firstOrFail()
     const prevSettings = org.settings
+
     org.settings = { ...(org.settings ?? {}), retention_days: 1 }
     await org.save()
     const aged = await VerificationSession.where({ id }).firstOrFail()
+
     aged.createdAt = new Date(Date.now() - 3 * 86_400_000)
     await aged.save()
 
     try {
       const purged = await retentionService.purgeExpiredMedia()
+
       expect(purged).toBeGreaterThanOrEqual(1)
 
       // Media gone from storage + the path nulled; the session row survives.
       expect(await Storage.disk().exists(key)).toBe(false)
       const capture = await DocumentCapture.where({ sessionId: id }).firstOrFail()
+
       expect(capture.frontImagePath).toBeNull()
       const swept = await VerificationSession.where({ id }).firstOrFail()
+
       expect(swept.mediaPurgedAt).not.toBeNull()
 
       // Idempotent: a second run skips the already-purged session.
@@ -291,6 +335,7 @@ describe('verification session lifecycle', () => {
         .whereNull('mediaPurgedAt')
         .where('id', id)
         .first()
+
       expect(secondRun).toBeNull()
     } finally {
       org.settings = prevSettings
@@ -300,38 +345,46 @@ describe('verification session lifecycle', () => {
 
   it('stores a multipart-uploaded document via Arkstack Storage', async () => {
     const { id, token } = await openSession()
+
     await clientApi('get', 'session', token)
 
     const bytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46]) // JPEG header
     const form = new FormData()
+
     form.append('image', new Blob([bytes], { type: 'image/jpeg' }), 'front.jpg')
     await clientApi('post', 'document/front', token).send(form)
 
     const key = `organizations/${fx.organizationId}/projects/${fx.projectId}/sessions/${id}/documents/front.jpg`
+
     expect(await Storage.disk().exists(key)).toBe(true)
     expect(Buffer.from(await Storage.disk().getBytes(key)).equals(bytes)).toBe(true)
   })
 
   it('rejects an invalid document_type', async () => {
     const { token } = await openSession()
+
     await clientApi('get', 'session', token)
     const res = await clientApi('post', 'document/front', token).send({
       document_type: 'nonsense',
     })
+
     expect(res.status).toBe(422)
   })
 
   it('enforces the liveness retry limit', async () => {
     const { token } = await toLiveness() // attempt 1
+
     expect((await clientApi('post', 'liveness', token).send({})).status).toBe(201) // 2
     expect((await clientApi('post', 'liveness', token).send({})).status).toBe(201) // 3
     const blocked = await clientApi('post', 'liveness', token).send({}) // 4 → over limit
+
     expect(blocked.status).toBe(429)
   })
 
   it('a passive project issues no liveness challenges', async () => {
     const { token } = await openSession()
     const boot = await clientApi('get', 'session', token)
+
     expect(boot.body.data.capture_model).toBe('passive')
     expect(boot.body.data.liveness_challenges).toEqual([])
   })
@@ -339,6 +392,7 @@ describe('verification session lifecycle', () => {
   it('exposes the project cross-device handoff config in the bootstrap', async () => {
     const { token } = await openSession()
     const boot = await clientApi('get', 'session', token)
+
     expect(boot.body.data.handoff).toMatchObject({ enabled: true, allow_desktop: false })
     // The handoff destination is a first-party hosted page (no integrator setup).
     expect(boot.body.data.handoff.url).toMatch(/\/verify$/)
@@ -347,6 +401,7 @@ describe('verification session lifecycle', () => {
   it('exposes realtime connection info scoped to the session', async () => {
     const { id, token } = await openSession()
     const boot = await clientApi('get', 'session', token)
+
     // Transport is `memory` in tests; the widget learns its own session channel.
     expect(boot.body.data.realtime).toMatchObject({ transport: 'memory', channel: realtimeChannels.session(id) })
   })
@@ -354,6 +409,7 @@ describe('verification session lifecycle', () => {
   it('exposes the project branding so the widget themes itself', async () => {
     const { token } = await openSession()
     const boot = await clientApi('get', 'session', token)
+
     expect(boot.body.data.branding).toMatchObject({ primary_color: '#112233', name: 'Sess Co' })
     // An uploaded logo's storage key resolves to a loadable URL and stays internal.
     expect(boot.body.data.branding.logo_url).toMatch(/organizations\/o\/projects\/p\/branding\/logo/)
@@ -367,6 +423,7 @@ describe('verification session lifecycle', () => {
       socket_id: '123.456',
       channel_name: realtimeChannels.session('someone-else'),
     })
+
     expect(foreign.status).toBe(403)
 
     // A organization channel is never client-signable, even one's own organization.
@@ -374,6 +431,7 @@ describe('verification session lifecycle', () => {
       socket_id: '123.456',
       channel_name: realtimeChannels.organization('x'),
     })
+
     expect(organization.status).toBe(403)
 
     // The session's own channel passes scope and is signed.
@@ -381,6 +439,7 @@ describe('verification session lifecycle', () => {
       socket_id: '123.456',
       channel_name: realtimeChannels.session(id),
     })
+
     expect(own.status).toBe(200)
     expect(own.body.auth).toBeTruthy()
   })
@@ -389,6 +448,7 @@ describe('verification session lifecycle', () => {
 describe('active liveness (Phase 17)', () => {
   const openActive = async (): Promise<{ id: string; token: string }> => {
     const res = await activeApi('post', 'sessions').send({})
+
     expect(res.status).toBe(201)
 
     return { id: res.body.data.id, token: await claimDeviceToken(res.body.client_token) }
@@ -397,6 +457,7 @@ describe('active liveness (Phase 17)', () => {
   it('issues a randomized challenge sequence in the bootstrap', async () => {
     const { token } = await openActive()
     const boot = await clientApi('get', 'session', token)
+
     expect(boot.body.data.capture_model).toBe('active')
     expect(Array.isArray(boot.body.data.liveness_challenges)).toBe(true)
     expect(boot.body.data.liveness_challenges).toHaveLength(3)
@@ -405,6 +466,7 @@ describe('active liveness (Phase 17)', () => {
   it('defaults handoff to disabled when the project has not opted in', async () => {
     const { token } = await openActive()
     const boot = await clientApi('get', 'session', token)
+
     expect(boot.body.data.handoff).toMatchObject({ enabled: false, allow_desktop: true })
   })
 
@@ -418,15 +480,18 @@ describe('active liveness (Phase 17)', () => {
       mode: 'active',
       challenges: JSON.stringify(challenges),
     })
+
     expect(live.status).toBe(201)
     await clientApi('post', 'complete', token).send({})
 
     const show = await activeApi('get', `sessions/${id}`)
+
     expect(show.body.data.status).toBe('approved')
   })
 
   it('fails when the performed sequence does not match (replay)', async () => {
     const { id, token } = await openActive()
+
     await clientApi('get', 'session', token)
     await clientApi('post', 'document/front', token).send({ document_type: 'passport' })
 
@@ -434,10 +499,12 @@ describe('active liveness (Phase 17)', () => {
       mode: 'active',
       challenges: JSON.stringify(['blink', 'blink', 'blink']),
     })
+
     expect(live.status).toBe(201)
     await clientApi('post', 'complete', token).send({})
 
     const show = await activeApi('get', `sessions/${id}`)
+
     expect(show.body.data.status).toBe('rejected')
     expect(show.body.data.decision_reason).toMatch(/LIVENESS/)
   })

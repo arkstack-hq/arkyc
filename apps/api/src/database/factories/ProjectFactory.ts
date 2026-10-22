@@ -42,6 +42,7 @@ export class ProjectFactory extends ModelFactory<Project> {
       const organization = project.getAttribute('organization')!
 
       const key = ApiKeyAuth.generate(project.environment === 'production' ? 'live' : 'test')
+
       await ApiKey.create({
         organizationId: organization.id,
         projectId: project.id,

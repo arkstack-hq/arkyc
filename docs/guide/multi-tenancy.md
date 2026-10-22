@@ -20,6 +20,12 @@ Organization ──< Project ──< VerificationSession ──< captures / chec
   Slug is unique **within** the organization.
 - **VerificationSession**: scoped to both `organization_id` and `project_id`.
 
+## Verification
+
+Every organization is treated as a business. It can build and test in
+development and staging straight away, but runs production projects only once
+[verified](./business-verification).
+
 ## Members
 
 Membership is two-layered:

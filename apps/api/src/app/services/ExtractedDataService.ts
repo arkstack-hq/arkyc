@@ -19,10 +19,12 @@ import { piiAccess } from 'src/support/access'
  */
 export async function buildExtractedData(session: VerificationSession): Promise<ExtractedData | null> {
   const access = await piiAccess({ organizationId: session.organizationId, projectId: session.projectId })
+
   if (!access) return null
 
   const categories = access.details?.categories ?? []
   const timing = access.details?.timing ?? 'after'
+
   // `after` withholds the data until the session is actually decided.
   if (timing === 'after' && session.finalDecision == null) return null
 
@@ -30,11 +32,13 @@ export async function buildExtractedData(session: VerificationSession): Promise<
 
   if (categories.includes('identity')) {
     const ocr = await OcrResult.where({ sessionId: session.id }).first()
+
     if (ocr?.fields) data.identity = toIdentity(ocr.fields)
   }
 
   if (categories.includes('address')) {
     const address = await AddressVerification.where({ sessionId: session.id }).first()
+
     if (address) data.address = toAddress(address.claimedAddress, address.latitude, address.longitude)
   }
 

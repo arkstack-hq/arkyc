@@ -15,6 +15,7 @@ import { VerificationSession } from '@app/models/VerificationSession'
  */
 const isMember = async (subject: unknown, organizationId: string): Promise<boolean> => {
   const userId = (subject as { id?: string } | null)?.id
+
   if (!userId || subject instanceof VerificationSession) return false
 
   return !!(await OrganizationMember.where({ userId, organizationId }).first())

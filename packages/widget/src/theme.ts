@@ -1,4 +1,4 @@
-import type { ProjectBranding } from '@arkyc/types'
+import { DEFAULT_PRIMARY_COLOR, type ProjectBranding } from '@arkyc/types'
 import type { RgbData } from './types'
 import themeCss from 'virtual:arkyc-theme-css'
 
@@ -42,7 +42,7 @@ export class Theme {
   constructor(branding?: ProjectBranding | null) {
     this.mode = branding?.theme === 'dark' ? 'dark' : 'light'
     const palette = this.mode === 'dark' ? DARK : LIGHT
-    this.primaryColor = branding?.primary_color ?? '#b8860b'
+    this.primaryColor = branding?.primary_color ?? DEFAULT_PRIMARY_COLOR
     this.borderRadius = branding?.border_radius ?? 12
     this.logoUrl = branding?.logo_url ?? null
     this.name = branding?.name ?? null

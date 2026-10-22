@@ -3,7 +3,7 @@ import { ErrorState, Loading } from '@/components/States'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import type { Project, ProjectBranding, ProjectSettings, VerificationThresholds } from '@arkyc/types'
-import { DEFAULT_VELOCITY_SETTINGS, DEFAULT_VERIFICATION_THRESHOLDS } from '@arkyc/types'
+import { DEFAULT_PRIMARY_COLOR, DEFAULT_VELOCITY_SETTINGS, DEFAULT_VERIFICATION_THRESHOLDS } from '@arkyc/types'
 import { Theme } from '@arkyc/widget'
 import { Projects, errorMessage } from '@/lib/api'
 import { useForm, useRequest } from 'alova/client'
@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { DeleteResourceCard } from '@/components/DeleteResourceCard'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PopoverPicker } from '@/components/SpeechBubble'
@@ -117,7 +118,7 @@ function formFromProject(project: Project): FormState {
     name: project.name ?? '',
     brandName: project.branding?.name ?? '',
     showBranding: project.branding?.show_branding !== false,
-    primaryColor: project.branding?.primary_color ?? 'rgb(255, 255, 255)',
+    primaryColor: project.branding?.primary_color ?? DEFAULT_PRIMARY_COLOR,
     theme: project.branding?.theme ?? 'light',
     borderRadius: project.branding?.border_radius != null ? String(project.branding.border_radius) : '',
     documentQualityThreshold: String(thresholds.documentQualityThreshold),
@@ -207,6 +208,7 @@ function ProjectSettingsForm({ project }: { project: Project }) {
   }
 
   const canEdit = can('projects.update')
+  const navigate = useNavigate()
 
   onSuccess(() => {
     setSaved(true)
@@ -575,6 +577,18 @@ function ProjectSettingsForm({ project }: { project: Project }) {
           {error && !error.errors ? <FieldError>{errorMessage(error, 'Failed to save.')}</FieldError> : null}
         </div>
       </form>
+
+      {can('projects.delete') ? (
+        <div className="mt-6">
+          <DeleteResourceCard
+            kind="project"
+            name={project.name}
+            consequences="Its sessions, captured media, API keys, webhooks and settings are deleted with it."
+            remove={(name) => Projects.remove(organizationId, project.id, { name })}
+            onDeleted={() => navigate('..', { relative: 'path' })}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

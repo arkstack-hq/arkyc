@@ -14,9 +14,9 @@ Comments should be simple guides to what a utility (variable, function, class, b
 
 - Do not commit untill there is an explicit instruction to do so.
 - Run `pnpm check` before every commit. Commit incrementally and keep each commit gate-green.
-- Never add AI attribution or `Co-Authored-By` trailers.
+- No credits of any kind in commit messages, pull request descriptions or release notes: no AI attribution, no `Co-Authored-By` trailers, no "Generated with" footers.
 - Do not `git push` unless asked.
-- Do not fold unrelated feature implementations into a single commit.
+- Work on a new branch, never directly on `main`, and give each feature its own commit. Do not fold unrelated feature implementations into a single commit.
 - Stage only files relevant to the requested change.
 - Never run `tsc -b`; it emits JavaScript into `src/`. Use `pnpm typecheck` or `pnpm check`.
 - Prefer existing domain abstractions over parallel implementations. If a policy already has one authority, extend that authority rather than duplicating it in a controller, resource, or job.
@@ -103,6 +103,12 @@ Comments should be simple guides to what a utility (variable, function, class, b
 - Duplicate matching compares sessions with different, non-null `user_reference`s only, and uses `Fingerprints` (HMAC keyed from `APP_KEY`). Never store or compare raw document numbers.
 - Device signals skip private and loopback IPs, which is what every request looks like behind a proxy without `TRUST_PROXY`.
 - Tests pin `SCREENING_DRIVER` and `NETWORK_DRIVER` to `mock` in `vitest.config.ts`; the mock OCR's identity is fixed unless a test sends `full_name`, `date_of_birth` or `document_number` hints, so give each session a distinct identity when duplicates would interfere.
+
+## Business verification and deletion (apps/api)
+
+- `BusinessVerificationService` is the one authority for the production gate: `canGoLive` for project creation and `assertCanVerify` inside session creation. Don't re-check organization verification elsewhere.
+- Tests that create a `production` project directly must give its organization `verificationStatus: 'verified'`; API-created projects in unverified organizations default to `development`.
+- Delete projects and organizations through `DeletionService` (via `DeletionJob`): it purges stored media in bounded batches before the row delete cascades. Never delete those rows directly.
 
 ## Realtime, notifications and push
 

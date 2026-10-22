@@ -26,7 +26,7 @@ permissions:
 # Secrets: CLOUDFLARE_API_TOKEN (Workers Scripts: Edit; plus Zone DNS: Edit once
 # custom domains are on) and CLOUDFLARE_ACCOUNT_ID. Build-time URLs can be
 # overridden with repository/environment variables (API_ORIGIN, DASHBOARD_URL,
-# DOCS_URL); the defaults are the production hosts.
+# DOCS_URL, WEBSITE_URL); the defaults are the production hosts.
 
 jobs:
   deploy:
@@ -44,6 +44,7 @@ jobs:
       API_ORIGIN: ${{ vars.API_ORIGIN || 'https://api.arkyc.toneflix.net' }}
       DASHBOARD_URL: ${{ vars.DASHBOARD_URL || 'https://app.arkyc.toneflix.net' }}
       DOCS_URL: ${{ vars.DOCS_URL || 'https://docs.arkyc.toneflix.net' }}
+      WEBSITE_URL: ${{ vars.WEBSITE_URL || 'https://arkyc.toneflix.net' }}
     steps:
       - uses: actions/checkout@v6
 
@@ -72,6 +73,7 @@ jobs:
           VITE_PROD_API_URL: ${{ env.API_ORIGIN }}
           VITE_DASHBOARD_URL: ${{ env.DASHBOARD_URL }}
           VITE_DOCS_URL: ${{ env.DOCS_URL }}
+          VITE_WEBSITE_URL: ${{ env.WEBSITE_URL }}
         run: pnpm --filter @arkyc/${{ matrix.app }} build
 
       - name: Deploy to Cloudflare Workers

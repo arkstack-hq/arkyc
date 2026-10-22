@@ -9,7 +9,14 @@ export class Organizations {
     return alova.Get('/v1/dashboard/organizations', {
       name: 'organizations:list',
       cacheFor: CACHE,
-      hitSource: ['organization:create', 'organization:update', 'invitation:accept'],
+      hitSource: [
+        'organization:create',
+        'organization:update',
+        'organization:delete',
+        'invitation:accept',
+        'business_verification:submit',
+        'business_verification:decide',
+      ],
       transform: unwrap<Organization[]>,
     })
   }
@@ -48,5 +55,10 @@ export class Organizations {
       hitSource: ['member:assignRole', 'member:addPermission', 'member:removePermission', 'role:update'],
       transform: unwrap<MemberPermissions>,
     })
+  }
+
+  /** Permanently delete an organization and everything in it. `name` must match the organization's. */
+  static remove(organizationId: string, input: { name: string }) {
+    return alova.Delete(t(organizationId), input, { name: 'organization:delete' })
   }
 }

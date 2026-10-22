@@ -1,4 +1,5 @@
 import { RequestException } from '@arkstack/common'
+import { businessVerifications } from '@app/services/BusinessVerificationService'
 import { ApiException } from 'src/support/apiErrors'
 import { SessionRules, StatusMachine } from '@arkyc/core'
 import { clientTokens } from './ClientTokenService'
@@ -67,6 +68,8 @@ export class VerificationSessionService {
     scope: ProjectScope,
     input: { userReference?: string | null; metadata?: Metadata | null; workflowId?: string | null },
   ): Promise<{ session: VerificationSession; clientToken: string }> {
+    await businessVerifications.assertCanVerify(scope.project_id)
+
     // Resolve and snapshot the workflow now so editing/deleting it never
     // disturbs this session. A null workflow runs the default pipeline.
     const workflow = await this.resolveWorkflow(scope.organization_id, input.workflowId ?? null)
@@ -103,6 +106,7 @@ export class VerificationSessionService {
   private async resolveWorkflow(organizationId: string, workflowId: string | null): Promise<WorkflowConfig | null> {
     if (!workflowId) return null
     const workflow = await Workflow.where({ id: workflowId, organizationId }).first()
+
     if (!workflow) throw new ApiException('invalid_workflow')
 
     return { steps: workflow.steps, options: workflow.options }
@@ -117,6 +121,7 @@ export class VerificationSessionService {
   private async resolveCaptureModel(projectId: string): Promise<CaptureModel> {
     const project = await Project.where({ id: projectId }).first()
     const override = project?.settings?.capture_model
+
     if (override) return override
 
     return (await settings.current()).capture.model
@@ -178,10 +183,13 @@ export class VerificationSessionService {
       }))
 
     const imagePath = sessionObjectKey(session, `documents/${side}.jpg`)
+
     await Storage.disk().put(imagePath, input.image ?? EMPTY_IMAGE, { visibility: 'private' })
 
     if (input.country !== undefined) capture.country = input.country
+
     if (input.documentType !== undefined) capture.documentType = input.documentType
+
     if (side === 'front') capture.frontImagePath = imagePath
     else capture.backImagePath = imagePath
 
@@ -200,6 +208,7 @@ export class VerificationSessionService {
     // (capture-only) — then the image is stored but no fields are extracted.
     const twoSided = capture.documentType != null && capture.documentType !== 'passport'
     const ocrReady = side === 'back' || (side === 'front' && !twoSided)
+
     if (ocrReady && workflowRunsOcr(session.workflow)) {
       await OcrJob.dispatch(session.id, {
         ocrConfidence: input.signals?.ocrConfidence,
@@ -234,6 +243,7 @@ export class VerificationSessionService {
     // Liveness normally follows the document, but a workflow can run it first
     // (or with document disabled) — in which case it may lead from `started`.
     const livenessLeads = this.livenessLeads(session)
+
     RequestException.abortIf(
       !livenessLeads && (session.status === 'pending' || session.status === 'started'),
       'Submit a document before the liveness check',
@@ -241,6 +251,7 @@ export class VerificationSessionService {
     )
 
     const attempts = await LivenessCheck.where({ sessionId: session.id }).count()
+
     RequestException.abortIf(
       attempts >= MAX_LIVENESS_ATTEMPTS,
       `Maximum of ${MAX_LIVENESS_ATTEMPTS} liveness attempts reached`,
@@ -250,12 +261,14 @@ export class VerificationSessionService {
     // Only store a selfie when one was actually captured (passive selfie step, or
     // an active-liveness frame). Otherwise leave it null — no phantom placeholder.
     let selfiePath: string | null = null
+
     if (input.selfie) {
       selfiePath = sessionObjectKey(session, 'liveness/selfie.jpg')
       await Storage.disk().put(selfiePath, input.selfie, { visibility: 'private' })
     }
 
     let videoPath: string | null = null
+
     if (input.video) {
       videoPath = sessionObjectKey(session, 'liveness/video.webm')
       await Storage.disk().put(videoPath, input.video, { visibility: 'private' })
@@ -302,9 +315,11 @@ export class VerificationSessionService {
    */
   private livenessLeads(session: VerificationSession): boolean {
     const workflow = session.workflow
+
     if (!workflow) return false
 
     const documentIndex = workflow.steps.findIndex((step) => step.key === 'document' && step.enabled)
+
     if (documentIndex < 0) return true // document disabled — liveness leads
 
     const livenessIndex = workflow.steps.findIndex((step) => step.key === 'liveness' && step.enabled)
@@ -336,9 +351,11 @@ export class VerificationSessionService {
     await this.ensureMutable(session)
 
     const config = workflowAddressConfig(session.workflow)
+
     RequestException.abortIf(!config, 'Address verification is not enabled for this session', 409)
 
     let poaPath: string | null = null
+
     if (input.poaImage) {
       poaPath = sessionObjectKey(session, 'address/proof.jpg')
       await Storage.disk().put(poaPath, input.poaImage, { visibility: 'private' })
@@ -394,14 +411,19 @@ export class VerificationSessionService {
     // Only require the stages the workflow actually runs.
     if (workflowEnables(session.workflow, 'document')) {
       const capture = await DocumentCapture.where({ sessionId: session.id }).first()
+
       RequestException.assertFound(capture, 'No document has been submitted', 409)
     }
+
     if (workflowEnables(session.workflow, 'address')) {
       const address = await AddressVerification.where({ sessionId: session.id }).first()
+
       RequestException.assertFound(address, 'Address verification has not been submitted', 409)
     }
+
     if (workflowEnables(session.workflow, 'liveness')) {
       const liveness = await LivenessCheck.where({ sessionId: session.id }).first()
+
       RequestException.assertFound(liveness, 'No liveness check has been submitted', 409)
     }
 
@@ -462,6 +484,7 @@ export class VerificationSessionService {
     )
 
     let expired = 0
+
     for (const session of due) {
       // Re-check against the machine: a concurrent read may have already expired it.
       if (!SessionRules.shouldExpire(session.status, session.expiresAt, new Date())) continue

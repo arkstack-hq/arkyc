@@ -34,6 +34,7 @@ export function reportError(error: unknown, context?: Record<string, unknown>): 
   if (!reporter) return
   try {
     const result = reporter(err, context)
+
     if (result instanceof Promise) result.catch(() => {})
   } catch {
     // A broken reporter must not cascade.

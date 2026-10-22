@@ -37,20 +37,24 @@ beforeAll(async () => {
       email: `rev-${s}@test.dev`,
       password: 'secret123',
     })
+
   fx.token = reg.body.token
   fx.ownerId = reg.body.data.id
 
   const organization = await authed('post', '/organizations').send({ name: `Rev Co ${s}` })
+
   fx.organizationId = organization.body.data.id
 
   const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({
     name: 'Rev Prod',
   })
+
   fx.projectId = project.body.data.id
 
   const key = await authed('post', `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`).send({
     name: 'Rev key',
   })
+
   fx.apiKeySecret = key.body.secret
 })
 
@@ -63,8 +67,10 @@ describe('review queue + actions', () => {
     const id = await reviewableSession()
 
     const list = await authed('get', `/organizations/${fx.organizationId}/sessions?status=requires_review`)
+
     expect(list.status).toBe(200)
     const found = list.body.data.find((row: { id: string }) => row.id === id)
+
     expect(found.auto_decision).toBe('requires_review')
   })
 
@@ -72,6 +78,7 @@ describe('review queue + actions', () => {
     const id = await reviewableSession()
 
     const detail = await authed('get', `/organizations/${fx.organizationId}/sessions/${id}`)
+
     expect(detail.status).toBe(200)
     expect(detail.body.data).toHaveProperty('ocr')
     expect(detail.body.data).toHaveProperty('liveness')
@@ -79,9 +86,11 @@ describe('review queue + actions', () => {
     expect(detail.body.data.media).toContain('document_front')
 
     const media = await authed('get', `/organizations/${fx.organizationId}/sessions/${id}/media/document_front`)
+
     expect(media.status).toBe(200)
 
     const missing = await authed('get', `/organizations/${fx.organizationId}/sessions/${id}/media/bogus`)
+
     expect(missing.status).toBe(404)
   })
 
@@ -91,12 +100,14 @@ describe('review queue + actions', () => {
     const approve = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/approve`).send({
       reason: 'looks ok',
     })
+
     expect(approve.status).toBe(200)
     expect(approve.body.data.status).toBe('approved')
     expect(approve.body.data.final_decision).toBe('approved')
     expect(approve.body.data.decision_reason).toBe('MANUAL_APPROVAL')
 
     const logs = await authed('get', `/organizations/${fx.organizationId}/audit-logs?action=review.approved`)
+
     expect(logs.status).toBe(200)
     expect(logs.body.data.some((l: { entity_id: string }) => l.entity_id === id)).toBe(true)
   })
@@ -105,6 +116,7 @@ describe('review queue + actions', () => {
     const id = await reviewableSession()
 
     const reject = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/reject`).send({})
+
     expect(reject.body.data.status).toBe('rejected')
     expect(reject.body.data.decision_reason).toBe('MANUAL_REJECTION')
   })
@@ -115,16 +127,19 @@ describe('review queue + actions', () => {
     const retry = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/request-retry`).send({
       kind: 'document',
     })
+
     expect(retry.body.data.status).toBe('started')
   })
 
   it('lets a manager override an already-finalized decision', async () => {
     const id = await reviewableSession()
+
     await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/approve`).send({})
     // Full override: a finalized (approved) session can be re-decided to rejected.
     const override = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/reject`).send({
       reason: 'override',
     })
+
     expect(override.status).toBe(200)
     expect(override.body.data.final_decision).toBe('rejected')
   })
@@ -135,10 +150,12 @@ describe('review queue + actions', () => {
     const res = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/assign`).send({
       user_id: fx.ownerId,
     })
+
     expect(res.status).toBe(200)
     expect(res.body.data.assigned_to).toBe(fx.ownerId)
 
     const logs = await authed('get', `/organizations/${fx.organizationId}/audit-logs?action=review.assigned`)
+
     expect(logs.body.data.some((l: { entity_id: string }) => l.entity_id === id)).toBe(true)
   })
 
@@ -148,15 +165,18 @@ describe('review queue + actions', () => {
     const res = await authed('post', `/organizations/${fx.organizationId}/sessions/${id}/suspicious`).send({
       reason: 'face mismatch',
     })
+
     expect(res.status).toBe(200)
 
     const logs = await authed('get', `/organizations/${fx.organizationId}/audit-logs?action=review.suspicious`)
+
     expect(logs.body.data.some((l: { entity_id: string }) => l.entity_id === id)).toBe(true)
   })
 
   it('captures the session lifecycle in the audit log', async () => {
     for (const action of ['session.created', 'session.auto_decided']) {
       const logs = await authed('get', `/organizations/${fx.organizationId}/audit-logs?action=${action}`)
+
       expect(logs.body.data.length).toBeGreaterThan(0)
     }
   })
@@ -164,6 +184,7 @@ describe('review queue + actions', () => {
   it('captures dashboard CRUD in the audit log (retro-fill)', async () => {
     for (const action of ['organization.created', 'project.created', 'api_key.created']) {
       const logs = await authed('get', `/organizations/${fx.organizationId}/audit-logs?action=${action}`)
+
       expect(logs.body.data.length).toBeGreaterThan(0)
     }
   })

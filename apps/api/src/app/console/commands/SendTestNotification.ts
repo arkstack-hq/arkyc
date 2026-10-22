@@ -57,15 +57,18 @@ export class SendTestNotification extends Command {
           await Notification.sms()
             .recipient(user?.phone ?? userId)
             .send('Test notification message from Arkyc')
+
         if (service === 'mail')
           await Notification.mail()
             .recipient(user?.email ?? userId)
             .view('email/template')
             .send('Test notification message from Arkyc', 'Test Mail')
+
         if (service === 'db')
           await Notification.db()
             .recipient(user ?? userId)
             .send('Test notification message from Arkyc', 'Test DB Notification')
+
         if (service === 'realtime') {
           if (!user) throw new Error(`User ${userId} was not found`)
 
@@ -99,6 +102,7 @@ export class SendTestNotification extends Command {
     const actionText = actionLink
       ? (await this.ask('Enter an action button label (optional):')) || undefined
       : undefined
+
     try {
       await UserNotificationCenter.create(user, {
         type: 'generic',

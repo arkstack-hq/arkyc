@@ -125,10 +125,21 @@ const API_BASE = env('VITE_API_URL', '') + '/api'
  * it can't carry binary. Revoke the returned URL when done.
  */
 export async function fetchSessionMedia(organizationId: string, sessionId: string, kind: string): Promise<string> {
+  return await fetchProtectedBlob(`${t(organizationId)}/sessions/${sessionId}/media/${kind}`)
+}
+
+/**
+ * Load an authenticated file (session media, verification documents) as an object
+ * URL. Revoke it with `URL.revokeObjectURL` when done.
+ *
+ * @param path API path, e.g. `/v1/admin/...`
+ * @returns
+ */
+export async function fetchProtectedBlob(path: string): Promise<string> {
   const token = await SecureStorage.get<string>(AUTH_TOKEN_KEY)
-  const res = await fetch(`${API_BASE}${t(organizationId)}/sessions/${sessionId}/media/${kind}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
-  if (!res.ok) throw new Error(`Failed to load media (${res.status})`)
+  if (!res.ok) throw new Error(`Failed to load file (${res.status})`)
   return URL.createObjectURL(await res.blob())
 }

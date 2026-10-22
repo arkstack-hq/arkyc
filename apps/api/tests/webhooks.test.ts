@@ -32,6 +32,7 @@ async function completeSession(): Promise<string> {
   const open = await request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send({})
   const id = open.body.data.id
   const token = await claimDeviceToken(open.body.client_token)
+
   await client('get', 'session', token)
   await client('post', 'document/front', token).send({})
   await client('post', 'liveness', token).send({})
@@ -43,6 +44,7 @@ async function completeSession(): Promise<string> {
 beforeAll(async () => {
   server = http.createServer((req, res) => {
     const chunks: Buffer[] = []
+
     req.on('data', (c) => chunks.push(c as Buffer))
     req.on('end', () => {
       received.push({
@@ -65,17 +67,21 @@ beforeAll(async () => {
       email: `wh-${s}@test.dev`,
       password: 'secret123',
     })
+
   fx.token = reg.body.token
 
   const organization = await authed('post', '/organizations').send({ name: `Wh Co ${s}` })
+
   fx.organizationId = organization.body.data.id
   const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({
     name: 'Wh Prod',
   })
+
   fx.projectId = project.body.data.id
   const key = await authed('post', `/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`).send({
     name: 'Wh key',
   })
+
   fx.apiKeySecret = key.body.secret
 })
 
@@ -92,16 +98,19 @@ describe('webhook endpoints', () => {
       url: receiverUrl,
       events: ['verification.approved'],
     })
+
     expect(res.status).toBe(201)
     expect(res.body.secret).toMatch(/^whsec_/)
     expect(res.body.data.secret).toBeUndefined()
     expect(res.body.data.secret_hash).toBeUndefined()
 
     const list = await authed('get', webhooks())
+
     expect(list.body.data[0].secret_hash).toBeUndefined()
 
     // At rest the secret is encrypted, not the plaintext — but decrypts back to it.
     const stored = await WebhookEndpoint.where({ id: res.body.data.id }).firstOrFail()
+
     expect(stored.secretHash).not.toBe(res.body.secret)
     expect(isEncryptedSecret(stored.secretHash)).toBe(true)
     expect(decryptSecret(stored.secretHash)).toBe(res.body.secret)
@@ -112,6 +121,7 @@ describe('webhook endpoints', () => {
       url: receiverUrl,
       events: ['not.an.event'],
     })
+
     expect(res.status).toBe(422)
   })
 
@@ -137,11 +147,13 @@ describe('webhook endpoints', () => {
           timestamp: d.timestamp,
         }),
     )
+
     expect(hit).toBeTruthy()
     expect(JSON.parse(hit!.body).event).toBe('verification.approved')
 
     const endpointId = create.body.data.id
     const deliveries = await WebhookDelivery.where({ webhookEndpointId: endpointId }).get()
+
     expect(Array.from(deliveries).some((d) => d.status === 'delivered')).toBe(true)
   })
 
@@ -155,6 +167,7 @@ describe('webhook endpoints', () => {
     await completeSession()
 
     const deliveries = Array.from(await WebhookDelivery.where({ webhookEndpointId: endpointId }).get())
+
     expect(deliveries.length).toBeGreaterThan(0)
     expect(deliveries.every((d) => d.status === 'failed')).toBe(true)
     expect(deliveries[0].attempts).toBeGreaterThanOrEqual(1)
@@ -166,6 +179,7 @@ describe('webhook endpoints', () => {
     const before = received.length
 
     const res = await authed('post', webhooks(`/${endpointId}/test`)).send({})
+
     expect(res.status).toBe(200)
     expect(res.body.code).toBe(202)
     expect(received.length).toBeGreaterThan(before)
@@ -182,9 +196,11 @@ describe('webhook endpoints', () => {
     const endpointId = create.body.data.id
 
     const res = await authed('post', webhooks(`/${endpointId}/test`)).send({})
+
     expect(res.status).toBe(200)
 
     const deliveries = Array.from(await WebhookDelivery.where({ webhookEndpointId: endpointId }).get())
+
     expect(deliveries.some((d) => d.status === 'failed')).toBe(true)
   })
 })
@@ -202,6 +218,7 @@ describe('webhook endpoints via the Public Project API (secret key)', () => {
     expect(res.body.data.secret_hash).toBeUndefined()
 
     const stored = await WebhookEndpoint.where({ id: res.body.data.id }).firstOrFail()
+
     expect(decryptSecret(stored.secretHash)).toBe(res.body.secret)
   })
 
@@ -209,11 +226,13 @@ describe('webhook endpoints via the Public Project API (secret key)', () => {
     const created = await api('post', '').send({ url: receiverUrl, events: ['verification.started'] })
 
     const list = await api('get', '')
+
     expect(list.status).toBe(200)
     expect(list.body.data.map((e: { id: string }) => e.id)).toContain(created.body.data.id)
     expect(list.body.data.every((e: { project_id: string }) => e.project_id === fx.projectId)).toBe(true)
 
     const show = await api('get', `/${created.body.data.id}`)
+
     expect(show.status).toBe(200)
     expect(show.body.data.id).toBe(created.body.data.id)
   })
@@ -230,6 +249,7 @@ describe('webhook endpoints via the Public Project API (secret key)', () => {
     expect(res.body.secret).toBeUndefined()
 
     const after = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
+
     expect(decryptSecret(after.secretHash)).toBe(decryptSecret(before.secretHash))
   })
 
@@ -259,6 +279,7 @@ describe('webhook endpoints via the Public Project API (secret key)', () => {
     expect((await request(app).get('/api/v1/webhooks')).status).toBe(401)
 
     const created = await api('post', '').send({ url: receiverUrl, events: ['verification.approved'] })
+
     expect((await api('delete', `/${created.body.data.id}`)).status).toBe(404)
     expect(await WebhookEndpoint.where({ id: created.body.data.id }).first()).not.toBeNull()
   })
@@ -276,6 +297,7 @@ describe('webhook endpoints via the Public Project API (secret key)', () => {
       expect(JSON.stringify(res.body)).not.toContain(secret)
 
       const stored = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
+
       expect(decryptSecret(stored.secretHash)).toBe(secret)
     })
 
@@ -302,6 +324,7 @@ describe('webhook endpoints via the Public Project API (secret key)', () => {
 
       expect(res.status).toBe(404)
       const stored = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
+
       expect(stored.url).toBe(receiverUrl)
     })
 

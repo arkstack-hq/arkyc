@@ -71,6 +71,7 @@ export default class ExtendedAccessController extends BaseController {
         { projectId: project.id, capability },
         { organizationId: project.organizationId, status: 'pending' },
       )
+
       if (grant.status === 'granted') continue
 
       grant.status = 'pending'

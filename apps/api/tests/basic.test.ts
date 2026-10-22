@@ -12,6 +12,7 @@ import request from 'parasito'
  * If you created your app with `create arkstack`, this can safely be removed.
  */
 const rwd = path.join(process.cwd(), '/templates/express')
+
 if (existsSync(rwd)) Arkstack.setRootDir(rwd)
 
 describe('starter template', () => {

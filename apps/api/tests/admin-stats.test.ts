@@ -21,34 +21,41 @@ beforeAll(async () => {
   const stamp = Date.now()
 
   const adm = await register(stamp, 'as-admin')
+
   fx.adminToken = adm.body.token
   fx.adminId = adm.body.data.id
   await PermissionSync.adminPermissions(permissionStore)
   await PermissionSync.adminRoles(permissionStore)
   const role = await Role.where({ slug: AdminRoles.bySlug('platform-owner').slug, admin: true }).first()
+
   await AdminPermission.create({ userId: fx.adminId, roleId: role!.id })
 
   const usr = await register(stamp, 'as-user')
+
   fx.userToken = usr.body.token
   fx.userId = usr.body.data.id
 })
 
 afterAll(async () => {
   if (fx.adminId) await User.destroy(fx.adminId)
+
   if (fx.userId) await User.destroy(fx.userId)
 })
 
 describe('admin platform stats', () => {
   it('forbids a non-admin', async () => {
     const res = await stats(fx.userToken)
+
     expect(res.status).toBe(403)
   })
 
   it('returns comprehensive platform statistics', async () => {
     const res = await stats(fx.adminToken)
+
     expect(res.status).toBe(200)
 
     const data = res.body.data
+
     // Headline totals are all present and numeric.
     for (const key of ['organizations', 'users', 'projects', 'sessions', 'api_keys', 'webhooks', 'reviews', 'admins']) {
       expect(typeof data.totals[key]).toBe('number')

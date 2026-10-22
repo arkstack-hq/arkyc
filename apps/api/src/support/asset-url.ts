@@ -11,6 +11,7 @@ export const MAX_ASSET_TTL_SECONDS = 60 * 60 * 24
 /** Clamp a configured TTL into the allowed range, falling back to the default. */
 export function clampAssetTtl(seconds: unknown): number {
   const n = Number(seconds)
+
   if (!Number.isFinite(n)) return DEFAULT_ASSET_TTL_SECONDS
 
   return Math.min(MAX_ASSET_TTL_SECONDS, Math.max(MIN_ASSET_TTL_SECONDS, Math.trunc(n)))
@@ -70,6 +71,7 @@ export function verifyAssetSignature(sessionId: string, kind: string, expiresRaw
   if (!isAssetKind(kind)) return false
 
   const expires = Number(expiresRaw)
+
   if (!Number.isInteger(expires) || expires < Math.floor(Date.now() / 1000)) return false
 
   const expected = Buffer.from(sign(sessionId, kind, expires), 'hex')

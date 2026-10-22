@@ -82,6 +82,7 @@ export class ReviewService {
       reviewerId: actor.actorId as string,
       note,
     })
+
     await this.emit(session, actor, 'review.note', { note })
 
     return row
@@ -169,6 +170,7 @@ export class ReviewService {
       action,
       actor_id: actor.actorId,
     }
+
     await broadcastSafely(sessionChannels(session), REALTIME_EVENT.reviewAction, payload)
   }
 }

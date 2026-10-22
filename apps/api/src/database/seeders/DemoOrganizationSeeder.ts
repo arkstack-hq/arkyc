@@ -24,6 +24,7 @@ export class DemoOrganizationSeeder extends Seeder {
     const permissionId = new Map<AnyPermissionKey, string>(permissions.map((p) => [p.name, p.id]))
 
     const roleBySlug = new Map<string, Role>()
+
     for (const def of DefaultRoles.ALL) {
       const role = await Role.create({
         organizationId: organization.id,
@@ -32,10 +33,12 @@ export class DemoOrganizationSeeder extends Seeder {
         description: def.description,
         isSystem: true,
       })
+
       roleBySlug.set(def.slug, role)
 
       for (const permKey of def.permissions) {
         const id = permissionId.get(permKey)
+
         if (id) {
           await RolePermission.create({ roleId: role.id, permissionId: id })
         }

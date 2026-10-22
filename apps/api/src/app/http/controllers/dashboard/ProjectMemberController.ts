@@ -54,6 +54,7 @@ export default class ProjectMemberController extends BaseController {
       projectId: project.id,
       userId: data.user_id,
     }).first()
+
     RequestException.abortIf(existing, 'User is already a member of this project', 409)
 
     const member = await ProjectMember.create({
@@ -126,6 +127,7 @@ export default class ProjectMemberController extends BaseController {
       id: req.params.memberId,
       projectId: project.id,
     }).firstOrFail()
+
     await member.delete()
 
     await audit.recordForRequest(req, {
@@ -150,12 +152,14 @@ export default class ProjectMemberController extends BaseController {
   /** A project member must already be an active member of the organization. */
   private async assertOrganizationMember(organizationId: string, userId: string): Promise<void> {
     const member = await OrganizationMember.where({ organizationId, userId, status: 'active' }).first()
+
     RequestException.assertFound(member, 'user_id is not an active member of this organization', 422)
   }
 
   /** A role assigned to a project member must belong to the organization. */
   private async assertOrganizationRole(organizationId: string, roleId: string): Promise<void> {
     const role = await Role.where({ id: roleId, organizationId }).first()
+
     RequestException.assertFound(role, 'role_id is not a role of this organization', 422)
   }
 }

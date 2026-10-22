@@ -19,11 +19,14 @@ beforeAll(async () => {
   const reg = await request(app)
     .post('/api/v1/auth/register')
     .send({ firstname: 'Thr', lastname: 'Test', email: `thr-${s}@test.dev`, password: 'secret123' })
+
   fx.token = reg.body.token
 
   const organization = await authed('post', '/organizations').send({ name: `Thr Co ${s}` })
+
   fx.organizationId = organization.body.data.id
   const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'Thr Prod' })
+
   fx.projectId = project.body.data.id
 })
 
@@ -47,6 +50,7 @@ describe('project verification thresholds', () => {
 
   it('saves a liveness reject floor, but not above the liveness threshold', async () => {
     const res = await update({ livenessRejectThreshold: 0.3 })
+
     expect(res.status, res.text).toBe(200)
     expect(await stored()).toMatchObject({ livenessRejectThreshold: 0.3 })
 
@@ -65,6 +69,7 @@ describe('project verification thresholds', () => {
 
     expect(res.status, res.text).toBe(200)
     const thresholds = await stored()
+
     expect(thresholds).not.toHaveProperty('faceMatchRejectThreshold')
     expect(thresholds).not.toHaveProperty('notAThreshold')
     expect(thresholds).toMatchObject({ livenessThreshold: 0.9 })

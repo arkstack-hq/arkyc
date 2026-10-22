@@ -1,4 +1,12 @@
-import type { AccessCapability, AccessGrantDetails, AccessGrantStatus } from '@arkyc/types'
+import type {
+  AccessCapability,
+  AccessGrantDetails,
+  AccessGrantStatus,
+  BusinessVerificationStatus,
+  ProjectEnvironment,
+  RiskSignalKey,
+  VerificationThresholds,
+} from '@arkyc/types'
 import { CACHE, type Paginated, alova, p, params, unwrap } from './client'
 
 export type { AccessCapability, AccessGrantStatus } from '@arkyc/types'
@@ -37,14 +45,60 @@ export interface PiiRequest {
   justification: string
 }
 
-/** Admin organization detail: core fields + headline counts (projects fetched separately). */
+/** Session outcomes for one organization or project. */
+export interface ScopedSessionStats {
+  total: number
+  by_status: Record<string, number>
+  approval_rate: number
+  requires_review: number
+  last_7_days: number
+  last_30_days: number
+  trend: { date: string; count: number }[]
+  top_risk_signals: { key: RiskSignalKey; count: number }[]
+}
+
+/** Admin organization detail: core fields, verification, counts and session stats. */
 export interface AdminOrganizationDetail {
   id: string
   name: string
   slug: string
   logo_url: string | null
   created_at: string
-  counts: { projects: number; members: number; sessions: number }
+  verification_status: BusinessVerificationStatus
+  verified_at: string | null
+  last_session_at: string | null
+  counts: {
+    projects: number
+    production_projects: number
+    members: number
+    api_keys: number
+    webhooks: number
+    sessions: number
+  }
+  stats: ScopedSessionStats
+}
+
+/** One project in depth, for platform admins. */
+export interface AdminProjectDetail {
+  id: string
+  name: string
+  slug: string
+  environment: ProjectEnvironment
+  status: string
+  created_at: string
+  organization: { id: string; name: string; slug: string; verification_status: BusinessVerificationStatus }
+  thresholds: VerificationThresholds
+  counts: { api_keys: number; webhooks: number; members: number }
+  stats: ScopedSessionStats
+  extended_access: Record<AccessCapability, { status: AccessGrantStatus; reviewed_at: string | null }>
+  recent_sessions: {
+    id: string
+    user_reference: string | null
+    status: string
+    decision_reason: string | null
+    risk_score: number | null
+    created_at: string
+  }[]
 }
 
 /** Per-capability status summary on an admin project row. */
@@ -154,7 +208,18 @@ export class ExtendedAccess {
     return alova.Get(`/v1/admin/organizations/${organizationId}`, {
       name: 'admin:organization:detail',
       cacheFor: CACHE,
+      hitSource: ['business_verification:decide'],
       transform: unwrap<AdminOrganizationDetail>,
+    })
+  }
+
+  /** One project in depth (admin). */
+  static projectDetail(organizationId: string, projectId: string) {
+    return alova.Get(`/v1/admin/organizations/${organizationId}/projects/${projectId}`, {
+      name: 'admin:project:detail',
+      cacheFor: CACHE,
+      hitSource: ['extended_access:admin:grant', 'extended_access:admin:revoke'],
+      transform: unwrap<AdminProjectDetail>,
     })
   }
 

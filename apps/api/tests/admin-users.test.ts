@@ -29,14 +29,17 @@ beforeAll(async () => {
   stamp = Date.now()
 
   const adm = await register(stamp, 'au-admin')
+
   fx.adminToken = adm.body.token
   fx.adminId = adm.body.data.id
   await PermissionSync.adminPermissions(permissionStore)
   await PermissionSync.adminRoles(permissionStore)
   const role = await Role.where({ slug: AdminRoles.bySlug('platform-owner').slug, admin: true }).first()
+
   await AdminPermission.create({ userId: fx.adminId, roleId: role!.id })
 
   const target = await register(stamp, 'au-target')
+
   fx.targetToken = target.body.token
   fx.targetId = target.body.data.id
   // Target owns an org so we can exercise the restricted (read-only) gate.
@@ -44,28 +47,34 @@ beforeAll(async () => {
     .post('/api/v1/dashboard/organizations')
     .set('Authorization', `Bearer ${fx.targetToken}`)
     .send({ name: `AU Co ${stamp}` })
+
   fx.orgId = org.body.data.id
 })
 
 afterAll(async () => {
   if (fx.orgId) await Organization.destroy(fx.orgId)
+
   if (fx.adminId) await User.destroy(fx.adminId)
+
   if (fx.targetId) await User.destroy(fx.targetId)
 })
 
 describe('account status', () => {
   it('rejects an unknown status (422)', async () => {
     const res = await admin('post', `/users/${fx.targetId}/status`).send({ status: 'banished' })
+
     expect(res.status).toBe(422)
   })
 
   it("forbids changing one's own status (422)", async () => {
     const res = await admin('post', `/users/${fx.adminId}/status`).send({ status: 'suspended' })
+
     expect(res.status).toBe(422)
   })
 
   it('restricts a user to read-only — views pass, mutations are denied', async () => {
     const set = await admin('post', `/users/${fx.targetId}/status`).send({ status: 'restricted' })
+
     expect(set.status).toBe(200)
     expect(set.body.data.status).toBe('restricted')
 
@@ -73,20 +82,24 @@ describe('account status', () => {
     const view = await request(app)
       .get(`/api/v1/dashboard/organizations/${fx.orgId}/projects`)
       .set('Authorization', auth)
+
     expect(view.status).toBe(200)
 
     const mutate = await request(app)
       .post(`/api/v1/dashboard/organizations/${fx.orgId}/projects`)
       .set('Authorization', auth)
       .send({ name: 'Blocked' })
+
     expect(mutate.status).toBe(403)
   })
 
   it('suspends a user — login is blocked', async () => {
     const set = await admin('post', `/users/${fx.targetId}/status`).send({ status: 'suspended' })
+
     expect(set.status).toBe(200)
 
     const res = await login(email(stamp, 'au-target'), 'secret123')
+
     expect(res.status).toBe(403)
   })
 
@@ -94,15 +107,18 @@ describe('account status', () => {
     await admin('post', `/users/${fx.targetId}/status`).send({ status: 'active' })
 
     const reset = await admin('post', `/users/${fx.targetId}/password`).send({ password: 'brandnew123' })
+
     expect(reset.status).toBe(200)
 
     const res = await login(email(stamp, 'au-target'), 'brandnew123')
+
     expect(res.status).toBe(200)
     expect(res.body.token).toBeTruthy()
   })
 
   it('exposes status on the admin user detail', async () => {
     const res = await admin('get', `/users/${fx.targetId}`)
+
     expect(res.status).toBe(200)
     expect(res.body.data.status).toBe('active')
     expect(res.body.data.email).toContain('au-target')

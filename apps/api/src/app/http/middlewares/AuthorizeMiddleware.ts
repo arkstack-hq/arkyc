@@ -18,16 +18,19 @@ export class AuthorizeMiddleware {
   async handler(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
       const user = req.authUser
+
       RequestException.assertFound(user, 'Unauthenticated', 401)
 
       // Account-standing gate: a suspended user is fully blocked; a restricted
       // user is read-only, so only `*.view` permissions are allowed through.
       const status = (user as { status?: string }).status
+
       if (status === 'suspended') {
         next(new RequestException('Your account has been suspended.', 403))
 
         return
       }
+
       if (status === 'restricted' && !this.permission.endsWith('.view')) {
         next(new RequestException('Your account is restricted to read-only access.', 403))
 
@@ -35,6 +38,7 @@ export class AuthorizeMiddleware {
       }
 
       const organizationId = req.organization?.id ?? param(req.params.organizationId)
+
       RequestException.assertFound(organizationId, 'Missing organization scope', 400)
       const projectId = param(req.params.projectId) ?? null
 
@@ -69,6 +73,7 @@ export class AdminAuthorizeMiddleware {
   async handler(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
       const user = req.authUser
+
       RequestException.assertFound(user, 'Unauthenticated', 401)
 
       await Permissions.authorizeAdmin({ userId: user.id }, this.permission, permissionStore)

@@ -19,10 +19,12 @@ beforeAll(async () => {
       email: `dash-${s}@test.dev`,
       password: 'secret123',
     })
+
   ctx.token = reg.body.token
   ctx.userId = reg.body.data.id
 
   const t = await authed('post', '/organizations').send({ name: `Dash Co ${s}` })
+
   ctx.organizationId = t.body.data.id
 })
 
@@ -37,15 +39,18 @@ describe('organizations', () => {
 
   it('lists the organizations the user belongs to', async () => {
     const res = await authed('get', '/organizations')
+
     expect(res.status).toBe(200)
     expect(res.body.data.map((t: { id: string }) => t.id)).toContain(ctx.organizationId)
   })
 
   it('shows and updates the organization', async () => {
     const show = await authed('get', `/organizations/${ctx.organizationId}`)
+
     expect(show.body.data.id).toBe(ctx.organizationId)
 
     const upd = await authed('patch', `/organizations/${ctx.organizationId}`).send({ name: 'Renamed Co' })
+
     expect(upd.body.data.name).toBe('Renamed Co')
   })
 })
@@ -53,6 +58,7 @@ describe('organizations', () => {
 describe('roles & permissions', () => {
   it('serves the permission catalogue (39)', async () => {
     const res = await authed('get', `/organizations/${ctx.organizationId}/permissions`)
+
     expect(res.status).toBe(200)
     expect(res.body.data).toHaveLength(39)
   })
@@ -60,6 +66,7 @@ describe('roles & permissions', () => {
   it('seeds the five system roles', async () => {
     const res = await authed('get', `/organizations/${ctx.organizationId}/roles`)
     const slugs = res.body.data.map((r: { slug: string }) => r.slug)
+
     expect(slugs).toEqual(expect.arrayContaining(['owner', 'admin', 'reviewer', 'developer', 'readonly']))
   })
 
@@ -68,6 +75,7 @@ describe('roles & permissions', () => {
       name: 'Auditor',
       permissions: ['sessions.view', 'audit_logs.view'],
     })
+
     expect(res.status).toBe(201)
     expect(res.body.permissions).toEqual(expect.arrayContaining(['sessions.view', 'audit_logs.view']))
   })
@@ -78,11 +86,14 @@ describe('projects & api keys', () => {
 
   it('creates and lists a project', async () => {
     const res = await authed('post', `/organizations/${ctx.organizationId}/projects`).send({ name: 'Web App' })
+
     expect(res.status).toBe(201)
-    expect(res.body.data.environment).toBe('production')
+    // Unverified organizations start in development until their business is verified.
+    expect(res.body.data.environment).toBe('development')
     projectId = res.body.data.id
 
     const list = await authed('get', `/organizations/${ctx.organizationId}/projects`)
+
     expect(list.body.data.map((p: { id: string }) => p.id)).toContain(projectId)
   })
 
@@ -90,6 +101,7 @@ describe('projects & api keys', () => {
     const res = await authed('patch', `/organizations/${ctx.organizationId}/projects/${projectId}`).send({
       thresholds: { livenessThreshold: 0.9 },
     })
+
     expect(res.body.data.settings.thresholds.livenessThreshold).toBe(0.9)
   })
 
@@ -97,11 +109,13 @@ describe('projects & api keys', () => {
     const create = await authed('post', `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys`).send({
       name: 'Default key',
     })
+
     expect(create.status).toBe(201)
-    expect(create.body.secret).toMatch(/^sk_live_/)
+    expect(create.body.secret).toMatch(/^sk_test_/)
     const keyId = create.body.data.id
 
     const list = await authed('get', `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys`)
+
     expect(list.body.data.some((k: { id: string }) => k.id === keyId)).toBe(true)
     // The list never exposes the secret hash.
     expect(JSON.stringify(list.body)).not.toContain('keyHash')
@@ -110,6 +124,7 @@ describe('projects & api keys', () => {
       'delete',
       `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys/${keyId}`,
     )
+
     expect(revoke.status).toBe(200)
     expect(revoke.body.data.revoked_at).toBeTruthy()
   })
@@ -118,8 +133,10 @@ describe('projects & api keys', () => {
 describe('members & permissions', () => {
   it('lists members with eager-loaded user + role', async () => {
     const res = await authed('get', `/organizations/${ctx.organizationId}/members`)
+
     expect(res.status).toBe(200)
     const owner = res.body.data.find((m: { user_id: string }) => m.user_id === ctx.userId)
+
     expect(owner.user.email).toContain('dash-')
     expect(owner.role.slug).toBe('owner')
   })
@@ -128,6 +145,7 @@ describe('members & permissions', () => {
     const list = await authed('get', `/organizations/${ctx.organizationId}/members`)
     const memberId = list.body.data[0].id
     const res = await authed('get', `/organizations/${ctx.organizationId}/members/${memberId}`)
+
     expect(res.status).toBe(200)
     expect(res.body.data.id).toBe(memberId)
     expect(res.body.data.user.email).toBeTruthy()
@@ -141,6 +159,7 @@ describe('members & permissions', () => {
       email: `invitee-${Date.now()}@test.dev`,
       role_id: reviewer.id,
     })
+
     expect(res.status).toBe(201)
     expect(res.body.token).toBeTruthy()
   })
@@ -150,6 +169,7 @@ describe('members & permissions', () => {
     const memberId = members.body.data[0].id
 
     const before = await authed('get', `/organizations/${ctx.organizationId}/members/${memberId}/permissions`)
+
     expect(before.body.data.effective_permissions).toContain('organizations.view')
     expect(before.body.data.direct_permissions).not.toContain('billing.update')
 
@@ -157,9 +177,11 @@ describe('members & permissions', () => {
     const grant = await authed('post', `/organizations/${ctx.organizationId}/members/${memberId}/permissions`).send({
       permission: 'sessions.export',
     })
+
     expect(grant.status).toBe(200)
 
     const after = await authed('get', `/organizations/${ctx.organizationId}/members/${memberId}/permissions`)
+
     expect(after.body.data.direct_permissions).toContain('sessions.export')
   })
 
@@ -170,6 +192,7 @@ describe('members & permissions', () => {
     const res = await authed('post', `/organizations/${ctx.organizationId}/members/${memberId}/permissions`).send({
       permission: 'not.a.real.permission',
     })
+
     expect(res.status).toBe(422)
   })
 
@@ -180,6 +203,7 @@ describe('members & permissions', () => {
     const res = await authed('patch', `/organizations/${ctx.organizationId}/members/${memberId}`).send({
       role_id: '00000000-0000-0000-0000-000000000000',
     })
+
     expect(res.status).toBe(422)
   })
 })

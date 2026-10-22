@@ -13,6 +13,7 @@ function wholeNumber(raw: unknown, fallback: number, min: number, max: number, m
   if (raw == null || raw === '') return fallback
 
   const value = Number(raw)
+
   if (!Number.isInteger(value) || value < min || value > max) {
     throw ValidationException.withMessages({ settings: [message] })
   }
@@ -109,6 +110,7 @@ export function mergeThresholds(
     }
 
     const score = Number(value)
+
     if (!Number.isFinite(score) || score < 0 || score > 1) {
       throw ValidationException.withMessages({ thresholds: [`${key} must be a number from 0 to 1.`] })
     }
@@ -117,6 +119,7 @@ export function mergeThresholds(
 
   const floor = merged.faceMatchRejectThreshold
   const faceMatch = merged.faceMatchThreshold ?? DEFAULT_VERIFICATION_THRESHOLDS.faceMatchThreshold
+
   if (typeof floor === 'number' && floor > faceMatch) {
     throw ValidationException.withMessages({
       thresholds: [`faceMatchRejectThreshold (${floor}) must not be above faceMatchThreshold (${faceMatch}).`],

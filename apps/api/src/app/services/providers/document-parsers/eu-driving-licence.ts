@@ -75,10 +75,13 @@ function fieldOf(marker: string): Field | null {
 function cleanName(value: string): string | undefined {
   const words = value.split('|')[0]!.trim().split(/\s+/)
   const upper = words[0] === words[0]?.toUpperCase()
+
   while (words.length > 1) {
     const last = words[words.length - 1]!
     const letters = last.replace(/[^\p{L}]/gu, '')
+
     if (letters.length > 2 && /^[\p{L}'-]+$/u.test(last)) break
+
     if (letters.length === 2 && upper && last === last.toUpperCase() && /^\p{L}+$/u.test(last)) break
     words.pop()
   }
@@ -99,13 +102,17 @@ export const euDrivingLicenceParser: DocumentParser = {
   parse: ({ text }) => {
     // Each value runs from its marker to the next marker or the end of the line.
     const values = new Map<Field, string>()
+
     for (const line of text.split(/\r?\n/)) {
       const marks = [...line.matchAll(MARKER)]
+
       marks.forEach((mark, i) => {
         const field = fieldOf(mark[1]!)
+
         if (!field || values.has(field)) return
         const end = marks[i + 1]?.index ?? line.length
         const value = line.slice(mark.index! + mark[0].length, end).trim()
+
         if (value) values.set(field, value)
       })
     }
@@ -116,6 +123,7 @@ export const euDrivingLicenceParser: DocumentParser = {
     const given = values.get('2')
 
     if (surname) fields.lastName = cleanName(surname)
+
     if (given) fields.firstName = cleanName(given)
 
     fields.dateOfBirth = readDate(values.get('3') ?? '', 'birth')

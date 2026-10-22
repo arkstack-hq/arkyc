@@ -25,6 +25,11 @@ export interface GlobalSettings {
     model: CaptureModel
   }
   /** Signed session-asset links (captured document/selfie images). */
+  /** Rules organizations must meet before going live. */
+  compliance: {
+    /** Production projects need a verified business. Development and staging stay open. */
+    business_verification_required: boolean
+  }
   assets: {
     /**
      * How long a signed asset URL stays valid, in seconds. The link embeds its
@@ -49,6 +54,9 @@ export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
   },
   capture: {
     model: 'passive',
+  },
+  compliance: {
+    business_verification_required: true,
   },
   assets: {
     url_ttl_seconds: 1800,

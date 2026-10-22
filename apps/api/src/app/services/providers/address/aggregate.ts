@@ -28,6 +28,7 @@ export function countryName(value: string): string {
  */
 export function countryMatches(resolved: string | undefined, hint: string | undefined): boolean {
   if (!hint) return true
+
   if (!resolved) return false
   const r = norm(resolved)
   const h = norm(hint)
@@ -42,12 +43,15 @@ export function countryMatches(resolved: string | undefined, hint: string | unde
  */
 export function addressesConsistent(results: AddressMethodResult[]): boolean {
   const resolved = results.map((r) => r.resolved).filter((a): a is PostalAddress => !!a)
+
   if (resolved.length < 2) return true
 
   const countries = new Set(resolved.map((r) => norm(r.country)).filter(Boolean))
+
   if (countries.size > 1) return false
 
   const cities = resolved.map((r) => norm(r.city)).filter(Boolean)
+
   if (cities.length >= 2 && new Set(cities).size > 1) return false
 
   return true

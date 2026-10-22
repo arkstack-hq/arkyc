@@ -76,6 +76,7 @@ export default defineConfig({
             { text: 'Workflows', link: '/guide/workflows' },
             { text: 'Verification lifecycle', link: '/guide/verification-lifecycle' },
             { text: 'Multi-tenancy', link: '/guide/multi-tenancy' },
+            { text: 'Business verification', link: '/guide/business-verification' },
             { text: 'RBAC & permissions', link: '/guide/rbac' },
             { text: 'Provider drivers', link: '/guide/providers' },
             { text: 'Fraud signals & screening', link: '/guide/fraud-signals' },

@@ -17,6 +17,7 @@ export async function transitionTo(
   opts: { force?: boolean } = {},
 ): Promise<void> {
   const previous = session.status
+
   // `force` is for human overrides (a manager re-deciding a session): it bypasses
   // the automated state machine so any status — including a finalized one — can be
   // overridden. Webhooks + realtime still fire so integrators see the change.
@@ -31,6 +32,7 @@ export async function transitionTo(
     status: to,
     previous_status: previous,
   }
+
   await broadcastSafely(sessionChannels(session), REALTIME_EVENT.sessionTransition, payload)
 
   if (to === 'requires_review' && previous !== to) await sessionNotifications.needsReview(session)

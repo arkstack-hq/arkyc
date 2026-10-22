@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Bell,
+  BookOpen,
   Boxes,
   ChevronsUpDown,
   ClipboardCheck,
@@ -24,6 +25,10 @@ import { RealtimeProvider } from '@/contexts/realtime-context'
 import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
 import { isDark, toggleTheme } from '@/lib/theme'
+import { links } from '@/lib/links'
+import { Sessions } from '@/lib/api'
+import { useAttentionCount } from '@/hooks/useAttentionCount'
+import { Badge } from '@/components/ui/badge'
 import { Loading } from '@/components/States'
 import { NotificationBell } from '@/components/NotificationBell'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -151,6 +156,14 @@ function OrganizationSidebar({ can }: { can: (perm: PermissionKey) => boolean })
   const navigate = useNavigate()
   const location = useLocation()
   const seg = activeSegment(location.pathname)
+  const badges: Partial<Record<string, number>> = {
+    reviews: useAttentionCount(() => Sessions.reviewCount(organization!.id), !!organization && can('reviews.view')),
+    // An unverified or rejected business needs someone who can update settings to act.
+    settings:
+      can('organizations.update') && ['unverified', 'rejected'].includes(organization?.verification_status ?? '')
+        ? 1
+        : 0,
+  }
 
   return (
     <Sidebar>
@@ -198,6 +211,7 @@ function OrganizationSidebar({ can }: { can: (perm: PermissionKey) => boolean })
                     <Link to={item.to}>
                       <item.icon />
                       <span className="truncate group-data-[state=collapsed]/sidebar:hidden">{item.label}</span>
+                      <NavCount count={badges[item.to] ?? 0} />
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -208,9 +222,26 @@ function OrganizationSidebar({ can }: { can: (perm: PermissionKey) => boolean })
       </SidebarContent>
 
       <SidebarFooter>
+        <DocsLink />
         <UserMenu />
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+/** Opens the integration docs in a new tab. */
+export function DocsLink() {
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild tooltip="Documentation">
+          <a href={links.docs} target="_blank" rel="noreferrer">
+            <BookOpen />
+            <span className="truncate group-data-[state=collapsed]/sidebar:hidden">Documentation</span>
+          </a>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
   )
 }
 
@@ -347,5 +378,16 @@ export function ThemeToggle() {
     >
       {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </button>
+  )
+}
+
+/** A sidebar link's count of items waiting for the user; hidden at zero. */
+export function NavCount({ count }: { count: number }) {
+  if (count <= 0) return null
+
+  return (
+    <Badge variant="warning" className="ml-auto group-data-[state=collapsed]/sidebar:hidden">
+      {count > 99 ? '99+' : count}
+    </Badge>
   )
 }

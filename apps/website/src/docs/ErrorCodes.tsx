@@ -8,6 +8,11 @@ const ERRORS = [
   ['session_expired', '401', 'The session (and its client token) has expired.'],
   ['client_token_used', '409', 'The single-use launch or handoff token was already claimed.'],
   ['handoff_disabled', '403', 'Cross-device handoff is off for the project.'],
+  [
+    'organization_unverified',
+    '403',
+    "A production project's organization hasn't completed business verification. Development and staging projects work meanwhile.",
+  ],
   ['missing_api_key', '401', 'No secret key on a Public Project API request.'],
   ['invalid_api_key', '401', 'The secret key is unknown, revoked, or expired.'],
   ['invalid_workflow', '422', 'workflow_id is unknown for this organization.'],

@@ -34,6 +34,7 @@ export class RetentionService {
 
     for (const org of orgs) {
       const days = org.settings?.retention_days
+
       if (!days || days <= 0) continue
 
       const cutoff = new Date(Date.now() - days * DAY_MS)
@@ -61,7 +62,7 @@ export class RetentionService {
   }
 
   /** Delete a single session's stored media, null the paths, and stamp the marker. */
-  private async purgeSessionMedia(session: VerificationSession): Promise<void> {
+  async purgeSessionMedia(session: VerificationSession): Promise<void> {
     const disk = Storage.disk()
 
     for (const capture of toArray(await DocumentCapture.where({ sessionId: session.id }).get())) {

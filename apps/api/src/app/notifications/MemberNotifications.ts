@@ -25,6 +25,7 @@ export class MemberNotifications {
         .first()
         .catch(() => null),
     ])
+
     if (!invitee) return
 
     const organizationName = organization?.name ?? 'an organization'

@@ -18,6 +18,7 @@ export class BiometricsSetupCommand extends Command {
     for (const name of Object.keys(LOCAL_MODELS) as LocalModelName[]) {
       const spec = LOCAL_MODELS[name]
       const downloaded = await store.ensure(name)
+
       Logger.success(`${spec.file} (${spec.license}) ${downloaded ? 'downloaded' : 'already present'}.`)
     }
 

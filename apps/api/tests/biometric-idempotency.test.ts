@@ -19,6 +19,7 @@ const client = (method: 'get' | 'post', path: string, token: string) =>
 async function completeSession(): Promise<string> {
   const open = await request(app).post('/api/v1/sessions').set('Authorization', `Bearer ${fx.apiKeySecret}`).send({})
   const token = await claimDeviceToken(open.body.client_token)
+
   await client('get', 'session', token)
   await client('post', 'document/front', token).send({})
   await client('post', 'liveness', token).send({})
@@ -32,9 +33,11 @@ beforeAll(async () => {
   const reg = await request(app)
     .post('/api/v1/auth/register')
     .send({ firstname: 'Bio', lastname: 'Test', email: `bio-${s}@test.dev`, password: 'secret123' })
+
   fx.token = reg.body.token
 
   const organization = await authed('post', '/organizations').send({ name: `Bio Co ${s}` })
+
   fx.organizationId = organization.body.data.id
   const project = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'Bio Prod' })
   const key = await authed(
@@ -43,6 +46,7 @@ beforeAll(async () => {
   ).send({
     name: 'Bio key',
   })
+
   fx.apiKeySecret = key.body.secret
 })
 
@@ -54,11 +58,13 @@ describe('BiometricJob on retry', () => {
   it('reuses the recorded face match instead of re-running it and duplicating the check', async () => {
     const id = await completeSession()
     const countChecks = async () => Number(await FaceMatchCheck.where({ sessionId: id }).count())
+
     expect(await countChecks()).toBe(1)
 
     // A retry of a job that died after recording the face match (the session is
     // still `processing`) must not record it again.
     const session = await VerificationSession.where({ id }).firstOrFail()
+
     session.status = 'processing'
     session.autoDecision = null
     session.finalDecision = null
@@ -68,6 +74,7 @@ describe('BiometricJob on retry', () => {
 
     expect(await countChecks()).toBe(1)
     const decided = await VerificationSession.where({ id }).firstOrFail()
+
     expect(decided.status).not.toBe('processing')
   })
 })

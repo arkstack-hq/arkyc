@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { Theme } from '../src/theme'
+import { DEFAULT_PRIMARY_COLOR } from '@arkyc/types'
 
 describe('Theme', () => {
   it('applies sensible light-mode defaults', () => {
     const theme = new Theme()
     expect(theme.mode).toBe('light')
-    expect(theme.primaryColor).toBe('#b8860b')
+    expect(theme.primaryColor).toBe(DEFAULT_PRIMARY_COLOR)
     expect(theme.borderRadius).toBe(12)
     expect(theme.logoUrl).toBeNull()
     expect(theme.background).toBe('#ffffff')

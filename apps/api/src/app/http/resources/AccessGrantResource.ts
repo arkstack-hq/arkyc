@@ -5,6 +5,7 @@ type Related = { getAttribute(key: string): unknown } | null | undefined
 const ref = (model: Related, fields: string[]): Record<string, unknown> | null => {
   if (!model || typeof model.getAttribute !== 'function') return null
   const out: Record<string, unknown> = {}
+
   for (const f of fields) out[f] = model.getAttribute(f)
 
   return out

@@ -61,6 +61,7 @@ export interface AdminSettingsPatch {
   platform?: Partial<GlobalSettings['platform']>
   capture?: Partial<GlobalSettings['capture']>
   assets?: Partial<GlobalSettings['assets']>
+  compliance?: Partial<GlobalSettings['compliance']>
 }
 
 /** Account standing. */

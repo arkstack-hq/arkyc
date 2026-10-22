@@ -10,8 +10,10 @@ export default class AdminProjectResource extends Resource {
     const grants = rel ? Array.from(rel) : []
 
     const extendedAccess: Record<string, { status: string; requested_at: unknown; reviewed_at: unknown }> = {}
+
     for (const capability of ACCESS_CAPABILITY_KEYS) {
       const grant = grants.find((g) => g.getAttribute('capability') === capability)
+
       extendedAccess[capability] = {
         status: (grant?.getAttribute('status') as string) ?? 'none',
         requested_at: grant?.getAttribute('requestedAt') ?? null,

@@ -10,6 +10,7 @@ const scoped = (perm: PermissionKey) => [auth, resolveOrganization, can(perm)]
 // Dashboard review queue + reviewer actions, and the audit-log read API.
 Router.group('/v1/dashboard/organizations/:organizationId', () => {
   Router.get('/sessions', [SessionReviewController, 'index'], scoped('sessions.view'))
+  Router.get('/reviews/count', [SessionReviewController, 'reviewCount'], scoped('reviews.view'))
   Router.get('/sessions/:id', [SessionReviewController, 'show'], scoped('sessions.view'))
   Router.get('/sessions/:id/media/:kind', [SessionReviewController, 'media'], scoped('sessions.view'))
   Router.post('/sessions/:id/approve', [SessionReviewController, 'approve'], scoped('reviews.approve'))

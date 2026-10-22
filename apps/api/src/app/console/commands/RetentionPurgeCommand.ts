@@ -17,6 +17,7 @@ export class RetentionPurgeCommand extends Command {
   async handle() {
     const purged = await retentionService.purgeExpiredMedia()
     const embeddings = await faceEmbeddings.purgeExpired()
+
     Logger.success(
       `Retention purge complete — cleared media for ${purged} session(s) and ${embeddings} face embedding(s).`,
       true,

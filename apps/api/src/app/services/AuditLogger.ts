@@ -61,6 +61,7 @@ export class AuditLogger {
     },
   ): Promise<void> {
     const actor = this.actorFromRequest(req)
+
     await this.record({
       organizationId: req.organization!.id,
       projectId: entry.projectId ?? null,

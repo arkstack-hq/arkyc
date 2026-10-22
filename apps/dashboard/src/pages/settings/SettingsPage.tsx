@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { DeleteResourceCard } from '@/components/DeleteResourceCard'
 import { useForm } from 'alova/client'
 import { Organizations, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
@@ -10,6 +11,8 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { DEFAULT_FACE_EMBEDDING_SETTINGS } from '@arkyc/types'
+import { Badge } from '@/components/ui/badge'
+import { VERIFICATION_STATUS } from '@/pages/settings/BusinessVerificationPage'
 
 export default function SettingsPage() {
   const organizationId = useOrganizationId()
@@ -25,6 +28,7 @@ export default function SettingsPage() {
   onSuccess(() => setSaved(true))
 
   const canUpdate = can('settings.update')
+  const navigate = useNavigate()
 
   return (
     <div className="p-6 lg:p-8">
@@ -85,7 +89,40 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {organization ? (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle>Business verification</CardTitle>
+                <Badge variant={VERIFICATION_STATUS[organization.verification_status ?? 'unverified'].variant}>
+                  {VERIFICATION_STATUS[organization.verification_status ?? 'unverified'].label}
+                </Badge>
+              </div>
+              <CardDescription>Prove your organization may handle personal data before going live.</CardDescription>
+            </CardHeader>
+            <CardFooter className="justify-end">
+              <Link to="verification">
+                <Button variant="outline">
+                  {organization.verification_status === 'verified' ? 'View verification' : 'Verify business'}
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
+        ) : null}
+
         <FaceEmbeddingsCard canUpdate={canUpdate} />
+
+        {organization && can('organizations.delete') ? (
+          <div className="md:col-span-2">
+            <DeleteResourceCard
+              kind="organization"
+              name={organization.name}
+              consequences="All its projects, sessions, captured media, members, roles and audit logs are deleted with it."
+              remove={(name) => Organizations.remove(organizationId, { name })}
+              onDeleted={() => navigate('/')}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   )

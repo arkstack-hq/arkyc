@@ -36,6 +36,7 @@ export class SessionSweepCommand extends Command {
     }
 
     const expired = await sessionService.sweepExpired()
+
     Logger.success(`Session sweep complete — expired ${expired} session(s).`, true)
   }
 }

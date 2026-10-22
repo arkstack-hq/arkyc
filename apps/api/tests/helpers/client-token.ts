@@ -11,9 +11,11 @@ import { app } from '../../src/core/bootstrap'
  */
 export async function claimDeviceToken(launchToken: string, origin?: string): Promise<string> {
   let req = request(app).post('/api/v1/client/claim').set('X-Client-Token', launchToken)
+
   if (origin) req = req.set('Origin', origin)
 
   const res = await req.send({})
+
   if (res.status !== 201) throw new Error(`claim failed (${res.status}): ${JSON.stringify(res.body)}`)
 
   return res.body.data.token

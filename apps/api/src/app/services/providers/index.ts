@@ -65,6 +65,7 @@ const workersAi = ocrAiProvider === 'workers-ai'
 function buildOcrDriver(driver: OcrDriverName): OcrDriver {
   if (driver === 'tesseract') {
     const registry = createDocumentParserRegistry()
+
     for (const parser of documentParsers) registry.register(parser)
 
     return new TesseractOcrDriver({ language: ocrLanguage, registry })

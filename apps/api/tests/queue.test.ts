@@ -14,6 +14,7 @@ void app
 describe('queue (sync connection)', () => {
   it('runs a dispatched job inline', async () => {
     let ran = 0
+
     class PingJob extends Job {
       override queue = 'test'
       async handle(): Promise<void> {
@@ -28,6 +29,7 @@ describe('queue (sync connection)', () => {
 
   it('runs jobs in dispatch order', async () => {
     const order: number[] = []
+
     class OrderJob extends Job {
       override queue = 'test'
       constructor(public n: number) {

@@ -41,6 +41,15 @@ export default defineConfig(
       semi: ['error', 'never'],
       quotes: ['error', 'single', { avoidEscape: true }],
       'no-unused-vars': 'off',
+      'padding-line-between-statements': [
+        'error',
+        { blankLine: 'always', prev: 'function', next: 'function' },
+        { blankLine: 'always', prev: 'function', next: 'block' },
+        { blankLine: 'always', prev: 'block', next: 'function' },
+        { blankLine: 'always', prev: 'if', next: 'if' },
+        { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
+        { blankLine: 'any', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
+      ],
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {

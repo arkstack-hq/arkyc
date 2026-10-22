@@ -17,8 +17,10 @@ function readVin(lines: string[]): string | undefined {
     .find((line) => /^[A-Za-z'-]{2,}\s*:\s*[0-9A-Z]{4}\s/.test(line) && !/^(VIN|CODE|DELIM)\b/i.test(line))
     ?.replace(/^[^:]*:/, '')
   const front = lines.map((line) => line.match(/\bVIN\b[\s:|]*(.*)$/i)?.[1]).find(Boolean)
+
   for (const value of [back, front]) {
     const match = value?.replace(/\|/g, ' ').toUpperCase().match(VIN)
+
     if (!match) continue
 
     const vin = match.slice(1).join('')
@@ -48,12 +50,14 @@ export const ngVoterCardParser: DocumentParser = countryOrUnknown(['NG', 'NGA'],
     const fields: OcrFields = { documentNumber: readVin(lines) }
 
     const holder = lines.map((line) => line.match(/^([A-Z][A-Z'-]+),\s*([A-Z][A-Z' -]+)$/)).find(Boolean)
+
     if (holder) {
       fields.lastName = readName(holder[1]!)
       fields.firstName = readName(holder[2]!)
     }
 
     const birth = lines.findIndex((line) => /DATE\s*OF\s*BIRTH/i.test(line))
+
     if (birth >= 0) fields.dateOfBirth = readDate(lines[birth]!, 'birth') ?? readDate(lines[birth + 1] ?? '', 'birth')
     // Registration is when the card's details were captured: the closest it has to an issue date.
     fields.issueDate = readDate(lines.find((line) => /DATE\s*OF\s*REG/i.test(line)) ?? '', 'issue')

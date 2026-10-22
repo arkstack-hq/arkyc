@@ -23,6 +23,7 @@ export class LiveAddressVerifier implements AddressVerifier {
 
   async verify(request: AddressRequest): Promise<AddressResultData> {
     const results: AddressMethodResult[] = []
+
     for (const method of request.methods) {
       try {
         results.push(await this.runMethod(method, request))
@@ -45,9 +46,11 @@ export class LiveAddressVerifier implements AddressVerifier {
 
     if (method === 'geocode_lookup') {
       const text = formatAddress(request.claimed)
+
       if (!text) return { method, passed: false, confidence: 0, note: 'No claimed address to look up' }
 
       const hit = await orsForward(this.config, text, countryHint)
+
       if (!hit) return { method, passed: false, confidence: 0, note: 'Address not found' }
 
       const countryOk = countryMatches(hit.address.country, countryHint)
@@ -67,6 +70,7 @@ export class LiveAddressVerifier implements AddressVerifier {
       if (!request.coords) return { method, passed: false, confidence: 0, note: 'No device location captured' }
 
       const hit = await nominatimReverse(this.config, request.coords.latitude, request.coords.longitude)
+
       if (!hit) return { method, passed: false, confidence: 0, note: 'Could not resolve device location' }
 
       const countryOk = countryMatches(hit.address.country, countryHint)

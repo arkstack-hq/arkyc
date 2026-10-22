@@ -13,6 +13,7 @@ export default class AdminController extends BaseController {
    */
   async me({ req }: HttpContext) {
     const user = req.user
+
     RequestException.assertFound(user, 'Unauthenticated', 401)
 
     const permissions = await Permissions.resolveAdmin({ userId: user.id }, permissionStore)

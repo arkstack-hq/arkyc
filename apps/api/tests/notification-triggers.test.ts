@@ -85,6 +85,7 @@ beforeAll(async () => {
   await new Promise<void>((resolve) => failingReceiver.listen(0, '127.0.0.1', resolve))
 
   const s = Date.now()
+
   fx.owner = await register('owner', s)
   fx.reviewer = await register('reviewer', s)
   fx.developer = await register('developer', s)
@@ -92,6 +93,7 @@ beforeAll(async () => {
 
   fx.organizationName = `Trg Co ${s}`
   const organization = await as(fx.owner).post('/dashboard/organizations').send({ name: fx.organizationName })
+
   fx.organizationId = organization.body.data.id
   fx.projectId = (await as(fx.owner).post(org('/projects')).send({ name: 'Trg' })).body.data.id
   fx.apiKeySecret = (
@@ -104,6 +106,7 @@ beforeAll(async () => {
   const endpoint = await as(fx.owner)
     .post(org(`/projects/${fx.projectId}/webhooks`))
     .send({ url: `http://127.0.0.1:${port}/hook`, events: ['verification.approved'] })
+
   fx.endpointId = endpoint.body.data.id
 
   await join(fx.reviewer, 'reviewer')
@@ -118,6 +121,7 @@ afterAll(async () => {
 describe('review decided', () => {
   it('tells the assignee when someone else decides their session', async () => {
     const id = await reviewableSession()
+
     await as(fx.owner)
       .post(org(`/sessions/${id}/assign`))
       .send({ user_id: fx.reviewer.id })
@@ -133,12 +137,14 @@ describe('review decided', () => {
     const decided = (await notificationsOf(fx.reviewer, NOTIFICATION_TYPE.reviewDecided)).filter(
       (n) => n.meta?.session_id === id,
     )
+
     expect(decided).toHaveLength(1)
     expect(decided[0]?.meta?.decision).toBe('approved')
   })
 
   it('stays quiet when the assignee decides it themselves', async () => {
     const id = await reviewableSession()
+
     await as(fx.owner)
       .post(org(`/sessions/${id}/assign`))
       .send({ user_id: fx.reviewer.id })
@@ -146,11 +152,13 @@ describe('review decided', () => {
     const rejected = await as(fx.reviewer)
       .post(org(`/sessions/${id}/reject`))
       .send({})
+
     expect(rejected.status).toBe(200)
 
     const decided = (await notificationsOf(fx.reviewer, NOTIFICATION_TYPE.reviewDecided)).filter(
       (n) => n.meta?.session_id === id,
     )
+
     expect(decided).toHaveLength(0)
   })
 })
@@ -181,6 +189,7 @@ describe('webhook failing', () => {
     await Cache.forget(`notifications:webhook-failing:${fx.endpointId}`)
 
     const delivery = await lastAttempt()
+
     await expect(webhookService.deliver(delivery.id)).rejects.toThrow()
 
     expect(await failing(fx.owner)).toHaveLength(1)
@@ -197,6 +206,7 @@ describe('webhook failing', () => {
     const before = (await failing(fx.developer)).length
 
     const delivery = await lastAttempt('00000000-0000-0000-0000-000000000000')
+
     await expect(webhookService.deliver(delivery.id)).rejects.toThrow()
 
     expect(await failing(fx.developer)).toHaveLength(before)
@@ -211,11 +221,13 @@ describe('invitations', () => {
 
   it('notifies an existing user they were invited', async () => {
     const res = await invite(fx.invitee.email)
+
     expect(res.status).toBe(201)
 
     const received = (await notificationsOf(fx.invitee, NOTIFICATION_TYPE.invitationReceived)).filter(
       (n) => n.meta?.invitation_id === res.body.data.id,
     )
+
     expect(received).toHaveLength(1)
   })
 
@@ -229,21 +241,26 @@ describe('invitations', () => {
 
   it('lists and accepts pending invitations once the email is verified', async () => {
     const user = await User.where({ id: fx.invitee.id }).firstOrFail()
+
     user.emailVerifiedAt = new Date()
     await user.save()
 
     const listed = await as(fx.invitee).get('/account/invitations')
+
     expect(listed.status).toBe(200)
     const pending = (
       listed.body.data as Array<{ id: string; organization: { name: string }; role: { name: string } }>
     )[0]!
+
     expect(pending.organization.name).toBe(fx.organizationName)
     expect(pending.role.name).toBe('Reviewer')
 
     const accepted = await as(fx.invitee).patch(`/account/invitations/${pending.id}/accept`).send({})
+
     expect(accepted.status).toBe(201)
 
     const member = await OrganizationMember.where({ userId: fx.invitee.id, organizationId: fx.organizationId }).first()
+
     expect(member).toBeTruthy()
     expect((await OrganizationInvitation.where({ id: pending.id }).firstOrFail()).acceptedAt).toBeTruthy()
     expect((await as(fx.invitee).get('/account/invitations')).body.data).toHaveLength(0)

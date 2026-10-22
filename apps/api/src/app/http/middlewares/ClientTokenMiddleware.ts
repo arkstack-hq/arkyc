@@ -12,6 +12,7 @@ import { clientTokens } from '@app/services/ClientTokenService'
 export function readClientToken(req: Request): string | null {
   const auth = req.headers.authorization
   const bearer = Array.isArray(auth) ? auth[0] : auth
+
   if (bearer?.startsWith('Bearer ')) return bearer.substring(7)
   const header = req.headers['x-client-token']
   const value = Array.isArray(header) ? header[0] : header
@@ -40,6 +41,7 @@ export class ClientTokenMiddleware {
   async handler(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
       const token = readClientToken(req)
+
       if (!token) throw new ApiException('missing_client_token')
 
       req.verificationSession = await clientTokens.authenticate(token, readOrigin(req))

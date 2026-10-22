@@ -41,6 +41,7 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
         },
         capture: { model: formData.captureModel },
         assets: { url_ttl_seconds: formData.assetTtl },
+        compliance: { business_verification_required: formData.verificationRequired },
       }),
     {
       initialForm: {
@@ -49,6 +50,7 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
         signupsEnabled: settings.platform.signups_enabled,
         captureModel: settings.capture.model,
         assetTtl: settings.assets.url_ttl_seconds,
+        verificationRequired: settings.compliance?.business_verification_required ?? true,
       },
     },
   )
@@ -136,6 +138,33 @@ function SettingsForm({ settings }: { settings: GlobalSettings }) {
               </Select>
               <FieldError errors={error?.list?.['capture.model']} />
             </Field>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Compliance</CardTitle>
+            <CardDescription>What organizations must prove before verifying identities in production.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={form.verificationRequired}
+                onChange={(e) => {
+                  updateForm({ verificationRequired: e.target.checked })
+                  dirtyReset()
+                }}
+              />
+              <span>
+                <span className="font-medium">Require business verification for production</span>
+                <span className="block text-xs text-muted-foreground">
+                  Unverified organizations can't create production projects or start live sessions. Development and
+                  staging stay open.
+                </span>
+              </span>
+            </label>
           </CardContent>
         </Card>
 

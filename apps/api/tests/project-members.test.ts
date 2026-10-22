@@ -21,18 +21,22 @@ beforeAll(async () => {
       email: `pm-${s}@test.dev`,
       password: 'secret123',
     })
+
   ctx.token = reg.body.token
   ctx.ownerId = reg.body.data.id
 
   const organization = await authed('post', '/organizations').send({ name: `PM Co ${s}` })
+
   ctx.organizationId = organization.body.data.id
 
   const project = await authed('post', `/organizations/${ctx.organizationId}/projects`).send({
     name: 'PM Prod',
   })
+
   ctx.projectId = project.body.data.id
 
   const roles = await authed('get', `/organizations/${ctx.organizationId}/roles`)
+
   ctx.roleId = roles.body.data.find((r: { slug: string }) => r.slug === 'developer').id
 })
 
@@ -43,12 +47,14 @@ afterAll(async () => {
 describe('project members', () => {
   it('starts with no project members', async () => {
     const res = await authed('get', members())
+
     expect(res.status).toBe(200)
     expect(res.body.data).toEqual([])
   })
 
   it('adds an existing organization member to the project', async () => {
     const res = await authed('post', members()).send({ user_id: ctx.ownerId, role_id: ctx.roleId })
+
     expect(res.status).toBe(201)
     expect(res.body.data.user_id).toBe(ctx.ownerId)
     expect(res.body.data.role_id).toBe(ctx.roleId)
@@ -56,6 +62,7 @@ describe('project members', () => {
 
   it('lists members with user + role eager-loaded', async () => {
     const res = await authed('get', members())
+
     expect(res.body.data).toHaveLength(1)
     expect(res.body.data[0].user.id).toBe(ctx.ownerId)
     expect(res.body.data[0].role.slug).toBe('developer')
@@ -63,6 +70,7 @@ describe('project members', () => {
 
   it('rejects a duplicate membership', async () => {
     const res = await authed('post', members()).send({ user_id: ctx.ownerId, role_id: ctx.roleId })
+
     expect(res.status).toBe(409)
   })
 
@@ -71,6 +79,7 @@ describe('project members', () => {
       user_id: '00000000-0000-0000-0000-000000000000',
       role_id: ctx.roleId,
     })
+
     expect(res.status).toBe(422)
   })
 
@@ -81,10 +90,12 @@ describe('project members', () => {
     const roles = await authed('get', `/organizations/${ctx.organizationId}/roles`)
     const reviewer = roles.body.data.find((r: { slug: string }) => r.slug === 'reviewer')
     const upd = await authed('patch', members(`/${memberId}`)).send({ role_id: reviewer.id })
+
     expect(upd.status).toBe(200)
     expect(upd.body.data.role_id).toBe(reviewer.id)
 
     const del = await authed('delete', members(`/${memberId}`))
+
     expect(del.status).toBe(200)
     expect((await authed('get', members())).body.data).toEqual([])
   })

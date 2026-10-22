@@ -538,6 +538,11 @@ _AML screening_
 - [x] Review UI: show hits side by side with the extracted identity; reviewers can clear a false positive (audited, with a reason).
 - [x] A screening hit notifies the project's reviewers through `NotificationEvent`.
 
+_Business verification_
+
+- [x] Every organization is a business that proves it may handle personal data (registration details, data protection officer, privacy policy, certificate of incorporation) before running production projects; development and staging stay open.
+- [x] Platform-admin review queue with approve/reject notes, direct verification, decision notifications, and a platform switch for the gate.
+
 _Self-hostable biometrics_
 
 - [x] A `local` face-match driver running an open face recognition model on ONNX Runtime in the worker, returning similarity (and embeddings for the stretch item above).

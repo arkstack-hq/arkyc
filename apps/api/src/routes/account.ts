@@ -16,6 +16,7 @@ Router.group('/v1/account', () => {
   Router.patch('/notification-preferences', [NotificationPreferenceController, 'update'], [auth])
 
   Router.get('/invitations', [InvitationController, 'index'], [auth])
+  Router.get('/invitations/count', [InvitationController, 'count'], [auth])
   Router.patch('/invitations/:id/accept', [InvitationController, 'accept'], [auth])
 
   Router.post('/push-tokens', [PushTokenController, 'create'], [auth])

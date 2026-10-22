@@ -74,6 +74,7 @@ const notificationsOf = async (account: Account, query = '') =>
 
 beforeAll(async () => {
   const s = Date.now()
+
   fx.owner = await register('owner', s)
   fx.reviewer = await register('reviewer', s)
   fx.developer = await register('developer', s)
@@ -82,17 +83,20 @@ beforeAll(async () => {
   const organization = await as(fx.owner)
     .post('/dashboard/organizations')
     .send({ name: `Notify Co ${s}` })
+
   fx.organizationId = organization.body.data.id
   fx.organizationSlug = organization.body.data.slug
 
   const project = await as(fx.owner)
     .post(`/dashboard/organizations/${fx.organizationId}/projects`)
     .send({ name: 'Notify' })
+
   fx.projectId = project.body.data.id
 
   const key = await as(fx.owner)
     .post(`/dashboard/organizations/${fx.organizationId}/projects/${fx.projectId}/api-keys`)
     .send({ name: 'Notify key' })
+
   fx.apiKeySecret = key.body.secret
 
   await join(fx.reviewer, 'reviewer')
@@ -115,6 +119,7 @@ describe('session needs review', () => {
 
     for (const body of [forOwner, forReviewer]) {
       const match = body.data.find((n: { meta: { session_id: string } }) => n.meta?.session_id === id)
+
       expect(match).toMatchObject({
         type: NOTIFICATION_TYPE.sessionNeedsReview,
         title: 'Session needs review',
@@ -130,6 +135,7 @@ describe('session needs review', () => {
     const live = MemoryRealtimeDriver.broadcasts().find(
       (b) => b.channel === realtimeChannels.user(fx.reviewer.id) && b.event === 'notification',
     )
+
     expect(live?.payload).toMatchObject({ type: NOTIFICATION_TYPE.sessionNeedsReview, tag: `session:${id}` })
   })
 })
@@ -141,12 +147,14 @@ describe('review assigned', () => {
     const res = await as(fx.owner)
       .post(`/dashboard/organizations/${fx.organizationId}/sessions/${id}/assign`)
       .send({ user_id: fx.reviewer.id })
+
     expect(res.status).toBe(200)
 
     const assigned = (await notificationsOf(fx.reviewer)).data.filter(
       (n: { type: string; meta: { session_id: string } }) =>
         n.type === NOTIFICATION_TYPE.reviewAssigned && n.meta?.session_id === id,
     )
+
     expect(assigned).toHaveLength(1)
   })
 
@@ -161,6 +169,7 @@ describe('review assigned', () => {
       (n: { type: string; meta: { session_id: string } }) =>
         n.type === NOTIFICATION_TYPE.reviewAssigned && n.meta?.session_id === id,
     )
+
     expect(assigned).toHaveLength(0)
   })
 })
@@ -168,18 +177,22 @@ describe('review assigned', () => {
 describe('notifications API', () => {
   it('counts, filters and marks notifications read', async () => {
     const before = await notificationsOf(fx.reviewer)
+
     expect(before.unread_count).toBeGreaterThan(0)
 
     const [first] = before.data
     const read = await as(fx.reviewer).patch(`/account/notifications/${first.id}/read`)
+
     expect(read.status).toBe(201)
     expect(read.body.data.read_at).toBeTruthy()
 
     const unread = await notificationsOf(fx.reviewer, '?unread=1')
+
     expect(unread.data.some((n: { id: string }) => n.id === first.id)).toBe(false)
     expect(unread.unread_count).toBe(before.unread_count - 1)
 
     const all = await as(fx.reviewer).patch('/account/notifications/read')
+
     expect(all.status).toBe(201)
     expect((await notificationsOf(fx.reviewer)).unread_count).toBe(0)
   })
@@ -202,9 +215,11 @@ describe('notifications API', () => {
 describe('notification preferences', () => {
   it('defaults to push on and can turn it off', async () => {
     const shown = await as(fx.developer).get('/account/notification-preferences')
+
     expect(shown.body.data).toEqual({ push: true })
 
     const updated = await as(fx.developer).patch('/account/notification-preferences').send({ push: false })
+
     expect(updated.status).toBe(200)
     expect(updated.body.data).toEqual({ push: false })
 
@@ -221,16 +236,19 @@ describe('push tokens', () => {
     const first = await as(fx.outsider)
       .post('/account/push-tokens')
       .send({ token: `device-a-${Date.now()}`, platform: 'web' })
+
     expect(first.status).toBe(201)
     expect(first.body.data).not.toHaveProperty('token')
 
     const again = await as(fx.outsider)
       .post('/account/push-tokens')
       .send({ token: 'device-b', platform: 'android', device_name: 'Pixel' })
+
     expect(again.body.data.id).toBe(first.body.data.id)
 
     const session = await PersonalAccessToken.query().where({ token: fx.outsider.token }).firstOrFail()
     const rows = (await UserPushToken.query().where({ userId: fx.outsider.id }).get()).all()
+
     expect(rows).toHaveLength(1)
     expect([rows[0].token, rows[0].platform, rows[0].deviceName, rows[0].personalAccessTokenId]).toEqual([
       'device-b',
@@ -262,6 +280,7 @@ describe('push delivery', () => {
 
   const addDevice = async (account: Account, token: string) => {
     const session = await PersonalAccessToken.query().where({ token: account.token }).firstOrFail()
+
     await UserPushToken.query().where({ personalAccessTokenId: session.id }).delete()
     await UserPushToken.create({
       userId: account.id,
@@ -277,6 +296,7 @@ describe('push delivery', () => {
 
   it('pushes to active devices and drops tokens the transport rejects', async () => {
     const dead = `dead-${Date.now()}`
+
     await addDevice(fx.reviewer, dead)
     const push = vi
       .spyOn(Broadcast, 'push')
@@ -313,6 +333,7 @@ describe('push delivery', () => {
 
     expect(devicePushes(push)).toHaveLength(1)
     const titles = (await notificationsOf(fx.reviewer)).data.map((n: { title: string }) => n.title)
+
     expect(titles).toContain('Survives')
   })
 })

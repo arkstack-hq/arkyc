@@ -24,8 +24,10 @@ export default class ExtendedAccessController extends BaseController {
     let query = AccessGrant.query().with(['project', 'organization', 'requester', 'reviewer'])
 
     const status = param(req.query.status)
+
     if (status) query = query.where({ status })
     const capability = param(req.query.capability)
+
     if (capability) query = query.where({ capability })
 
     const grants = await query.latest('updatedAt').paginate(perPage(req.query))
@@ -45,6 +47,7 @@ export default class ExtendedAccessController extends BaseController {
   async project({ req }: HttpContext) {
     const projectId = param(req.params.projectId)
     const project = await Project.where({ id: projectId }).with('organization').first()
+
     RequestException.assertFound(project, 'Project not found', 404)
 
     const grants = await AccessGrant.where({ projectId: project!.id })
@@ -95,6 +98,7 @@ export default class ExtendedAccessController extends BaseController {
     })
 
     const project = await Project.where({ id: data.project_id }).first()
+
     RequestException.assertFound(project, 'Project not found', 404)
 
     const capability = data.capability as AccessCapability
@@ -102,6 +106,7 @@ export default class ExtendedAccessController extends BaseController {
       { projectId: project!.id, capability },
       { organizationId: project!.organizationId, status },
     )
+
     grant.status = status
     grant.organizationId = project!.organizationId
     grant.reviewedBy = req.user?.id ?? null

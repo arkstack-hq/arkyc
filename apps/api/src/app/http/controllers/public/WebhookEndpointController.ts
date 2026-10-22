@@ -48,6 +48,7 @@ export default class WebhookEndpointController extends BaseController {
       { organizationId: context.organization_id, projectId: context.project_id },
       { url: data.url, events: data.events as WebhookEventName[] },
     )
+
     await this.audit(req, 'webhook.created', endpoint)
 
     return new WebhookEndpointResource(endpoint)
@@ -89,6 +90,7 @@ export default class WebhookEndpointController extends BaseController {
   async updateBySecret({ req }: HttpContext) {
     const data = await this.validate(updateEndpointBySecretRules)
     const endpoint = await webhookService.findEndpointBySecret(req.projectContext!.project_id, data.secret)
+
     if (!endpoint) throw new RequestException('No webhook endpoint in this project has that signing secret', 404)
 
     await webhookService.updateEndpoint(endpoint, {

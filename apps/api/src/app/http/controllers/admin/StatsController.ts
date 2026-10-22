@@ -10,40 +10,16 @@ import { ApiKey } from '@app/models/ApiKey'
 import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
 import { Review } from '@app/models/Review'
 import { AdminPermission } from '@app/models/AdminPermission'
-
-/** Every verification status, so the breakdown always has a full, zero-filled shape. */
-const SESSION_STATUSES = [
-  'pending',
-  'started',
-  'document_submitted',
-  'liveness_submitted',
-  'processing',
-  'requires_review',
-  'approved',
-  'rejected',
-  'expired',
-  'cancelled',
-] as const
+import {
+  type DayCountRow,
+  type KeyCountRow,
+  SESSION_STATUSES,
+  TREND_DAYS,
+  buildTrend,
+  tally,
+} from 'src/support/session-stats'
 
 const GRANT_STATUSES = ['pending', 'granted', 'revoked'] as const
-
-/** Days of session history in the trend series. */
-const TREND_DAYS = 30
-
-// `DB.raw<TRow>` requires `TRow extends Record<string, unknown>`, hence the index signatures.
-interface KeyCountRow {
-  key: string
-  count: number
-  [column: string]: unknown
-}
-
-interface DayCountRow {
-  day: string
-  count: number
-  [column: string]: unknown
-}
-
-const toCount = (value: unknown): number => Number(value) || 0
 
 /**
  * Platform-wide statistics for the admin overview — the same shape of headline
@@ -134,30 +110,4 @@ export default class StatsController extends BaseController {
 
     return new AdminStatsResource(stats).additional({ status: 'success', message: 'OK', code: 200 })
   }
-}
-
-/** Fold grouped `{ key, count }` rows into a zero-filled map over `keys`. */
-function tally(rows: Iterable<KeyCountRow> | null | undefined, keys: readonly string[]): Record<string, number> {
-  const out: Record<string, number> = {}
-  for (const key of keys) out[key] = 0
-  for (const row of toArray(rows)) {
-    if (row && row.key in out) out[row.key] = toCount(row.count)
-  }
-
-  return out
-}
-
-/** A continuous `TREND_DAYS`-long daily series ending today, zero-filling gaps. */
-function buildTrend(rows: DayCountRow[]): { date: string; count: number }[] {
-  const counts = new Map(rows.map((row) => [row.day, toCount(row.count)]))
-  const days: { date: string; count: number }[] = []
-  const today = new Date()
-  for (let i = TREND_DAYS - 1; i >= 0; i -= 1) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    const key = date.toISOString().slice(0, 10)
-    days.push({ date: key, count: counts.get(key) ?? 0 })
-  }
-
-  return days
 }

@@ -23,6 +23,7 @@ export class AdminGrantCommand extends Command {
     const email = String(this.argument('email')).trim()
 
     const user = await User.query().whereRaw('LOWER(email) = ?', [email.toLowerCase()]).first()
+
     if (!user) {
       this.error(`No user found with email ${email}.`)
 
@@ -35,6 +36,7 @@ export class AdminGrantCommand extends Command {
 
     const slug = AdminRoles.bySlug('platform-owner').slug
     const role = await Role.where({ slug, admin: true }).first()
+
     if (!role) {
       this.error('The platform-owner admin role was not found after sync.')
 
@@ -42,6 +44,7 @@ export class AdminGrantCommand extends Command {
     }
 
     const existing = await AdminPermission.where({ userId: user.id, roleId: role.id }).first()
+
     if (existing) {
       Logger.info(`${user.email} already holds the platform-owner role.`, true)
 

@@ -17,6 +17,7 @@ export function isOriginAllowed(
   origin: string | undefined | null,
 ): boolean {
   if (!allowed || allowed.length === 0) return true
+
   if (!origin) return true
 
   const candidate = normalizeOrigin(origin)

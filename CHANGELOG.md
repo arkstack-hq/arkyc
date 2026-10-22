@@ -4,6 +4,33 @@ All notable changes to Arkyc are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-10-22
+
+### Added
+
+- **Business verification.** Every organization proves it is a business that may handle personal data before verifying identities in production: legal and registration details, a data protection officer, a privacy policy and a certificate of incorporation. Platform admins review submissions in a new queue, approve or reject with a note, and can mark an organization verified directly. Managers are notified of the decision.
+- **Delete projects and organizations** from their settings pages, confirmed by typing the exact name. Everything in them goes too: sessions, captured media, API keys, webhooks, members and audit logs. Organization deletions are kept in the platform audit log.
+- **Sidebar counters** for things waiting on you: sessions awaiting review, your pending invitations, an organization that still needs verifying, and, for platform admins, pending extended access requests and business verifications.
+- **Admin organization page** shows verification, session outcomes, approval rate, a 30-day trend, top risk signals and usage. A new **admin project page** shows one project's configuration, thresholds, access, outcomes and recent sessions.
+- A **Documentation** link in the dashboard sidebar (`VITE_WEBSITE_URL`).
+
+### Changed
+
+- **Production needs a verified business.** Unverified organizations can't create production projects (new projects default to `development`), and live sessions on their existing production projects return `403` `organization_unverified`. Development and staging are unaffected. Platform admins can switch the gate off under Admin → Settings → Compliance.
+- New projects start with Arkyc's primary color.
+- Extended access greys out capabilities already granted or awaiting review, and hides the request form once nothing is left to request.
+- The workflow address auto-verify hint shows the accepted range and the project default.
+
+### Fixed
+
+- **Reviewers can see the uploaded proof of address.** It is now session media
+  (`proof_of_address`) on the review page and a signed asset on the session.
+
+### Upgrading
+
+- Before deploying to an instance with production projects, verify those organizations (or mark them verified from the admin organization page), or switch the compliance gate off, otherwise their live sessions are refused.
+- Run `ark migrate` for the verification columns and table.
+
 ## [2.4.0] - 2026-10-21
 
 ### Added

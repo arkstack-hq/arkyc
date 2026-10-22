@@ -6,6 +6,7 @@ import { RolePermission } from '@app/models/RolePermission'
 /** Permission names granted to a role (plucked — no full models, no table scan). */
 export async function rolePermissionNames(roleId: string): Promise<string[]> {
   const ids = toArray(await RolePermission.where({ roleId }).pluck('permissionId'))
+
   if (ids.length === 0) return []
 
   return toArray(await Permission.query().whereIn('id', ids).pluck('name'))

@@ -14,16 +14,19 @@ export class ResolveOrganizationMiddleware {
   async handler(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
       const user = req.authUser
+
       RequestException.assertFound(user, 'Unauthenticated', 401)
 
       const organizationId = param(req.params.organizationId)
       const organization = organizationId ? await Organization.where({ id: organizationId }).first() : null
+
       RequestException.assertFound(organization, 'Organization not found', 404)
 
       const member = await OrganizationMember.where({
         userId: user.id,
         organizationId: organization.id,
       }).first()
+
       RequestException.assertFound(member, 'You are not a member of this organization', 403)
       RequestException.abortIf(member.status !== 'active', 'You are not a member of this organization', 403)
 

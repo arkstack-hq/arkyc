@@ -4,9 +4,9 @@ import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle } fr
 import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/States'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group'
-import { Projects, errorMessage } from '@/lib/api'
+import { BusinessVerifications, Projects, errorMessage } from '@/lib/api'
 import { formatDateTime, humanize } from '@/lib/utils'
-import { useForm, usePagination } from 'alova/client'
+import { useForm, usePagination, useRequest } from 'alova/client'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +30,9 @@ function statusVariant(status: string): 'success' | 'warning' | 'muted' {
 export default function ProjectsPage() {
   const organizationId = useOrganizationId()
   const { can } = useOrganization()
+  // Production needs a verified business; the API refuses it otherwise.
+  const { data: verification } = useRequest(BusinessVerifications.state(organizationId))
+  const canGoLive = verification?.can_go_live ?? false
 
   const {
     data: projects,
@@ -64,7 +67,7 @@ export default function ProjectsPage() {
         name: formData.name.trim(),
         environment: formData.environment,
       }),
-    { initialForm: { name: '', environment: 'production' as ProjectEnvironment } },
+    { initialForm: { name: '', environment: 'development' as ProjectEnvironment } },
   )
 
   onSuccess(() => {
@@ -161,11 +164,21 @@ export default function ProjectsPage() {
                 onChange={(e) => updateForm({ environment: e.target.value as ProjectEnvironment })}
               >
                 {ENVIRONMENTS.map((env) => (
-                  <option key={env} value={env}>
+                  <option key={env} value={env} disabled={env === 'production' && !canGoLive}>
                     {humanize(env)}
+                    {env === 'production' && !canGoLive ? ' (verify your business first)' : ''}
                   </option>
                 ))}
               </Select>
+              {!canGoLive ? (
+                <p className="text-xs text-muted-foreground">
+                  Production projects need a verified business.{' '}
+                  <Link to="../settings/verification" relative="path" className="text-primary hover:underline">
+                    Verify your business
+                  </Link>
+                </p>
+              ) : null}
+              <FieldError errors={createError?.list?.environment} />
             </div>
             {createError && !createError.errors ? (
               <FieldError>{errorMessage(createError, 'Failed to create project.')}</FieldError>

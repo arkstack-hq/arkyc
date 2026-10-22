@@ -26,6 +26,8 @@ export type {
   AccessGrantStatus,
   PiiRequest,
   AdminOrganizationDetail,
+  AdminProjectDetail,
+  ScopedSessionStats,
   AdminProject,
 } from './extended-access'
 export { Auth } from './auth'
@@ -70,3 +72,5 @@ export type {
   RoleWithPermissions,
   SessionListQuery,
 } from './types'
+export { BusinessVerifications } from './business-verification'
+export type { AdminBusinessVerification, VerificationState } from './business-verification'
