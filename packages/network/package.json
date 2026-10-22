@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/network",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "Driver-based IP intelligence for network risk signals",
   "license": "MIT",
   "keywords": [
