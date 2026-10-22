@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DocsLink } from '@/components/Layout'
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -169,6 +170,7 @@ function AdminSidebar({ items, badges }: { items: AdminNavItem[]; badges?: Parti
             <span className="truncate group-data-[state=collapsed]/sidebar:hidden">Back to dashboard</span>
           </Link>
         </SidebarMenuButton>
+        <DocsLink />
         <AdminUserMenu />
       </SidebarFooter>
     </Sidebar>

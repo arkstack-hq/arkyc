@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { ArrowLeft, Bell, KeyRound, MailOpen } from 'lucide-react'
 import { RealtimeProvider } from '@/contexts/realtime-context'
 import { NotificationBell } from '@/components/NotificationBell'
-import { ThemeToggle, UserMenu } from '@/components/Layout'
+import { DocsLink, ThemeToggle, UserMenu } from '@/components/Layout'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -75,6 +75,7 @@ export function AccountLayout() {
           </SidebarContent>
 
           <SidebarFooter>
+            <DocsLink />
             <UserMenu />
           </SidebarFooter>
         </Sidebar>

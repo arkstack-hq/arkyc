@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Bell,
+  BookOpen,
   Boxes,
   ChevronsUpDown,
   ClipboardCheck,
@@ -24,6 +25,7 @@ import { RealtimeProvider } from '@/contexts/realtime-context'
 import { useAdmin } from '@/contexts/admin-context'
 import { useAuth } from '@/contexts/auth-context'
 import { isDark, toggleTheme } from '@/lib/theme'
+import { links } from '@/lib/links'
 import { Loading } from '@/components/States'
 import { NotificationBell } from '@/components/NotificationBell'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -208,9 +210,26 @@ function OrganizationSidebar({ can }: { can: (perm: PermissionKey) => boolean })
       </SidebarContent>
 
       <SidebarFooter>
+        <DocsLink />
         <UserMenu />
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+/** Opens the integration docs in a new tab. */
+export function DocsLink() {
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild tooltip="Documentation">
+          <a href={links.docs} target="_blank" rel="noreferrer">
+            <BookOpen />
+            <span className="truncate group-data-[state=collapsed]/sidebar:hidden">Documentation</span>
+          </a>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
   )
 }
 

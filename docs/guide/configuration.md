@@ -133,11 +133,12 @@ container on `1025` works well. `MAIL_TEST_ADDRESS` is the Arkstack mailer's tes
 
 ## Dashboard (`apps/dashboard/.env`)
 
-| Variable                                                      | Example                 | Purpose                              |
-| ------------------------------------------------------------- | ----------------------- | ------------------------------------ |
-| `VITE_API_ENV`                                                | `development`           | Selects which API URL below is used. |
-| `VITE_DEV_API_URL`                                            | `http://localhost:3100` | API base in development.             |
-| `VITE_STAGING_API_URL` / `VITE_PROD_API_URL` / `VITE_API_URL` | none                    | API base for other environments.     |
+| Variable                                                      | Example                      | Purpose                                                               |
+| ------------------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------- |
+| `VITE_API_ENV`                                                | `development`                | Selects which API URL below is used.                                  |
+| `VITE_DEV_API_URL`                                            | `http://localhost:3100`      | API base in development.                                              |
+| `VITE_STAGING_API_URL` / `VITE_PROD_API_URL` / `VITE_API_URL` | none                         | API base for other environments.                                      |
+| `VITE_WEBSITE_URL`                                            | `https://arkyc.toneflix.net` | Public website; the dashboard's Documentation link opens its `/docs`. |
 
 ## Playground (`apps/playground/.env`)
 
