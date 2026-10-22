@@ -71,6 +71,12 @@ export default function ProjectExtendedAccessPage() {
     toast.success('Request sent')
   })
 
+  // Granted capabilities, and ones already awaiting review, can't be requested again.
+  const statusOf = (capability: AccessCapability) =>
+    grants.find((grant) => grant.capability === capability)?.status ?? 'none'
+  const locked = (capability: AccessCapability) => ['granted', 'pending'].includes(statusOf(capability))
+  const anyRequestable = !locked('ai') || !locked('pii')
+
   const piiIncomplete = pii && (categories.length === 0 || justification.trim() === '')
   const canSubmit = canRequest && (ai || pii) && !piiIncomplete && !submitting
 
@@ -111,30 +117,28 @@ export default function ProjectExtendedAccessPage() {
         </CardContent>
       </Card>
 
-      {canRequest ? (
+      {canRequest && anyRequestable ? (
         <Card>
           <CardHeader>
             <CardTitle>Request access</CardTitle>
             <CardDescription>Choose the capabilities you need. PII access requires extra detail.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={ai} onChange={(e) => setAi(e.target.checked)} className="mt-1" />
-              <span>
-                <strong>{ACCESS_CAPABILITIES.ai.label}</strong>
-                <span className="block text-muted-foreground">Higher-accuracy document reads via a vision model.</span>
-              </span>
-            </label>
+            <CapabilityOption
+              label={ACCESS_CAPABILITIES.ai.label}
+              description="Higher-accuracy document reads via a vision model."
+              status={statusOf('ai')}
+              checked={ai}
+              onChange={setAi}
+            />
 
-            <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={pii} onChange={(e) => setPii(e.target.checked)} className="mt-1" />
-              <span>
-                <strong>{ACCESS_CAPABILITIES.pii.label}</strong>
-                <span className="block text-muted-foreground">
-                  Read the extracted identity/address data back from a session.
-                </span>
-              </span>
-            </label>
+            <CapabilityOption
+              label={ACCESS_CAPABILITIES.pii.label}
+              description="Read the extracted identity/address data back from a session."
+              status={statusOf('pii')}
+              checked={pii}
+              onChange={setPii}
+            />
 
             {pii ? (
               <div className="ml-6 flex flex-col gap-4 border-l border-border pl-4">
@@ -184,5 +188,43 @@ export default function ProjectExtendedAccessPage() {
         </Card>
       ) : null}
     </div>
+  )
+}
+
+/** A requestable capability; greyed out and disabled once granted or awaiting review. */
+function CapabilityOption({
+  label,
+  description,
+  status,
+  checked,
+  onChange,
+}: {
+  label: string
+  description: string
+  status: AccessGrantStatus
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  const locked = status === 'granted' || status === 'pending'
+
+  return (
+    <label className={`flex items-start gap-2 text-sm ${locked ? 'cursor-not-allowed opacity-50' : ''}`}>
+      <input
+        type="checkbox"
+        checked={locked ? false : checked}
+        disabled={locked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-1"
+      />
+      <span>
+        <strong>{label}</strong>
+        {locked ? (
+          <span className="ml-2 text-xs text-muted-foreground">
+            {status === 'granted' ? 'Granted' : 'Awaiting review'}
+          </span>
+        ) : null}
+        <span className="block text-muted-foreground">{description}</span>
+      </span>
+    </label>
   )
 }
