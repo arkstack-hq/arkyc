@@ -327,9 +327,9 @@ export class WidgetView {
       this.brandEl,
       branded
         ? [
-          this.theme.logoUrl && this.dom.h('img', { class: 'arkyc-logo', src: logoSrc(this.theme.logoUrl) }),
-          this.theme.name && this.dom.h('span', { class: 'arkyc-brand-name', text: this.theme.name }),
-        ]
+            this.theme.logoUrl && this.dom.h('img', { class: 'arkyc-logo', src: logoSrc(this.theme.logoUrl) }),
+            this.theme.name && this.dom.h('span', { class: 'arkyc-brand-name', text: this.theme.name }),
+          ]
         : this.dom.h('p', { class: 'arkyc-title', text: 'Verify your identity' }),
     )
   }
