@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/widget",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "description": "Embeddable, framework-agnostic Arkyc identity-verification widget",
   "license": "MIT",
   "keywords": [
@@ -46,7 +46,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@arkstack/realtime": "^0.19.4",
+    "@arkstack/realtime": "^0.20.2",
     "@arkyc/types": "workspace:^",
     "qrcode-generator": "^1.4.4"
   },

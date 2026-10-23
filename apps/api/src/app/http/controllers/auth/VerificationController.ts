@@ -20,7 +20,7 @@ export default class VerificationController extends BaseController {
     const user = req.user!
 
     // Stateless time-based OTP keyed by the user's email (no storage needed).
-    const code = Hash.otp(6, user.email, 60 * 15).generate()
+    const code = Hash.otp(6, `${user.email}:email-verification`, 60 * 15).generate()
     const msg = config('messages.verification.email')
 
     sendMail(user.email, msg.template, msg.subject, {
@@ -51,7 +51,7 @@ export default class VerificationController extends BaseController {
     const form = await this.validate({ code: ['required', 'string', 'size:6'] })
     const user = req.user!
 
-    const delta = Hash.otp(6, user.email, 60 * 15).validate({ token: form.code })
+    const delta = Hash.otp(6, `${user.email}:email-verification`, 60 * 15).validate({ token: form.code })
 
     if (delta === null) {
       throw ValidationException.withMessages({ code: ['Invalid or expired verification code.'] })

@@ -5,11 +5,13 @@ import EmptyResource from '@app/http/resources/EmptyResource'
 import { Hash } from '@arkstack/common'
 import { HttpContext } from 'clear-router/types/express'
 import { PasswordReset } from '@app/models/PasswordReset'
+import { PersonalAccessToken } from '@app/models/PersonalAccessToken'
 import { User } from '@app/models/User'
 import { auth } from 'src/core/auth-instance'
 import { sendMail } from '@app/support/mail'
 
 const RESET_TTL_SECONDS = 60 * 15
+const resetKey = (identity: string) => `${identity}:password-reset`
 
 /** Forgotten-password flow: request a reset code, verify it, set a new password. */
 export default class NewPasswordController extends BaseController {
@@ -22,8 +24,15 @@ export default class NewPasswordController extends BaseController {
     const data = await this.validate({ email: ['required', 'email', 'exists:users,email'] })
     const user = await User.where({ email: data.email }).firstOrFail()
 
-    const token = Hash.otp(6, user.email, RESET_TTL_SECONDS).generate()
-    const pr = await PasswordReset.create({ email: user.email, phone: null, token })
+    const token = Hash.otp(6, resetKey(user.email), RESET_TTL_SECONDS).generate()
+
+    await PasswordReset.where({ email: user.email }).delete()
+    const pr = await PasswordReset.create({
+      email: user.email,
+      phone: null,
+      token,
+      attempts: 0,
+    })
 
     const msg = config('messages.password_reset.email')
 
@@ -49,20 +58,16 @@ export default class NewPasswordController extends BaseController {
    *
    * @returns An EmptyResource confirming validity (HTTP 202).
    */
-  async show() {
-    const { token } = await Validator.make(this.params, {
-      token: ['required', 'string'],
-    }).validate()
+  async show({ req }: HttpContext) {
+    const data = await Validator.make(
+      { ...this.params, email: req.query.email },
+      {
+        token: ['required', 'string'],
+        email: ['nullable', 'email'],
+      },
+    ).validate()
 
-    const pr = await PasswordReset.fromToken(token).catch(() => null)
-    const delta = pr ? Hash.otp(6, pr.email ?? pr.phone!, RESET_TTL_SECONDS).validate({ token: pr.token }) : null
-
-    if (delta === null) {
-      if (pr) await pr.delete()
-      throw ValidationException.withMessages({
-        token: ['Invalid or expired password reset token.'],
-      })
-    }
+    await this.redeem(data.token, String(data.email))
 
     return new EmptyResource({})
       .additional({
@@ -84,25 +89,18 @@ export default class NewPasswordController extends BaseController {
       { ...this.params, ...this.body },
       {
         token: ['required', 'string'],
+        email: ['nullable', 'email'],
         password: ['required', 'string', 'min:8'],
       },
     ).validate()
 
-    const pr = await PasswordReset.fromToken(data.token).catch(() => null)
-    const delta = pr ? Hash.otp(6, pr.email ?? pr.phone!, RESET_TTL_SECONDS).validate({ token: pr.token }) : null
-
-    if (delta === null || pr === null) {
-      if (pr) await pr.delete()
-      throw ValidationException.withMessages({
-        token: ['Invalid or expired password reset token.'],
-      })
-    }
-
+    const pr = await this.redeem(data.token, data.email)
     const user = await User.where({ email: pr.email! }).firstOrFail()
 
     user.password = await Hash.make(data.password)
     await user.save()
-    await pr.delete()
+    await PasswordReset.where({ email: pr.email! }).delete()
+    await PersonalAccessToken.where({ userId: user.id }).delete()
 
     return new EmptyResource({})
       .additional({
@@ -145,5 +143,29 @@ export default class NewPasswordController extends BaseController {
       message: 'Your password has been changed.',
       code: 200,
     })
+  }
+
+  /** The reset matching the submitted code and email, or a validation error. */
+  private async redeem(token: string, email?: string | null): Promise<PasswordReset> {
+    const submitted = PasswordReset.parse(token, email)
+
+    if (!submitted.email) {
+      throw ValidationException.withMessages({
+        email: ['Enter the email address the reset code was sent to.'],
+      })
+    }
+
+    const pr = await PasswordReset.redeem(submitted.email, submitted.code)
+    const valid =
+      pr !== null && Hash.otp(6, resetKey(pr.email!), RESET_TTL_SECONDS).validate({ token: pr.token }) !== null
+
+    if (!valid) {
+      if (pr) await pr.delete()
+      throw ValidationException.withMessages({
+        token: ['Invalid or expired password reset token.'],
+      })
+    }
+
+    return pr
   }
 }
