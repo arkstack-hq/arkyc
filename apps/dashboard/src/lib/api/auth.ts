@@ -93,13 +93,16 @@ export class Auth {
     return alova.Post('/v1/auth/forgot', input, { name: 'auth:forgot' })
   }
 
-  /** Check that a reset token is still valid (no auth). */
-  static verifyResetToken(token: string) {
-    return alova.Get(`/v1/auth/forgot/${encodeURIComponent(token)}`, { name: 'auth:forgot:verify' })
+  /** Check that a reset token is still valid (no auth). A typed code needs the email it was sent to. */
+  static verifyResetToken(token: string, email?: string) {
+    return alova.Get(`/v1/auth/forgot/${encodeURIComponent(token)}`, {
+      name: 'auth:forgot:verify',
+      params: email ? { email } : {},
+    })
   }
 
-  /** Consume a reset token and set a new password (no auth). */
-  static resetPassword(token: string, input: { password: string }) {
+  /** Consume a reset token and set a new password (no auth). A typed code needs the email it was sent to. */
+  static resetPassword(token: string, input: { password: string; email?: string }) {
     return alova.Put(`/v1/auth/forgot/${encodeURIComponent(token)}`, input, { name: 'auth:forgot:reset' })
   }
 

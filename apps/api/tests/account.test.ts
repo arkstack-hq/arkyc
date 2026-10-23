@@ -26,7 +26,7 @@ describe('email verification', () => {
     expect(send.status).toBe(201)
 
     // The code is a stateless time-based OTP keyed by the email — regenerate it.
-    const code = Hash.otp(6, email, 60 * 15).generate()
+    const code = Hash.otp(6, `${email}:email-verification`, 60 * 15).generate()
     const verify = await request(app)
       .put('/api/v1/auth/verify/email')
       .set('Authorization', `Bearer ${token}`)
@@ -72,11 +72,15 @@ describe('password reset', () => {
     const pr = await PasswordReset.where({ email }).firstOrFail()
     const code = pr.token
 
-    const check = await request(app).get(`/api/v1/auth/forgot/${code}`)
+    const withoutEmail = await request(app).put(`/api/v1/auth/forgot/${code}`).send({ password: 'newpass123' })
+
+    expect(withoutEmail.status).toBe(422)
+
+    const check = await request(app).get(`/api/v1/auth/forgot/${code}`).query({ email })
 
     expect(check.status).toBe(202)
 
-    const reset = await request(app).put(`/api/v1/auth/forgot/${code}`).send({ password: 'newpass123' })
+    const reset = await request(app).put(`/api/v1/auth/forgot/${code}`).send({ email, password: 'newpass123' })
 
     expect(reset.status).toBe(202)
 
@@ -91,7 +95,7 @@ describe('password reset', () => {
   })
 
   it('rejects an unknown reset token', async () => {
-    const res = await request(app).get('/api/v1/auth/forgot/123456')
+    const res = await request(app).get('/api/v1/auth/forgot/123456').query({ email: 'nobody@test.dev' })
 
     expect(res.status).toBe(422)
   })

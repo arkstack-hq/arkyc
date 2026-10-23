@@ -1,7 +1,7 @@
 import { Auth, errorMessage } from '@/lib/api'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { KeyRound, Loader2, Lock } from 'lucide-react'
+import { KeyRound, Loader2, Lock, Mail } from 'lucide-react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -18,7 +18,8 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate()
   const location = useLocation()
   // ForgotPasswordPage forwards the email so resend works without re-asking for it.
-  const email = (location.state as { email?: string } | null)?.email ?? ''
+  const forwardedEmail = (location.state as { email?: string } | null)?.email ?? ''
+  const [email, setEmail] = useState(forwardedEmail)
 
   const initialToken = params.get('token') ?? ''
   const [token, setToken] = useState(initialToken)
@@ -28,9 +29,10 @@ export default function ResetPasswordPage() {
   const [resent, setResent] = useState(false)
 
   // Step 1 — confirm the reset code is valid before revealing the password fields.
-  const { loading: verifying, send: verifyToken } = useRequest((tok: string) => Auth.verifyResetToken(tok), {
-    immediate: false,
-  })
+  const { loading: verifying, send: verifyToken } = useRequest(
+    (tok: string, addr: string) => Auth.verifyResetToken(tok, addr || undefined),
+    { immediate: false },
+  )
 
   const checkToken = useCallback(
     async (raw: string) => {
@@ -38,7 +40,7 @@ export default function ResetPasswordPage() {
       if (!value) return
       setTokenError(null)
       try {
-        await verifyToken(value)
+        await verifyToken(value, email.trim())
         setToken(value)
         setPhase('reset')
       } catch (err) {
@@ -46,7 +48,7 @@ export default function ResetPasswordPage() {
         setPhase('code')
       }
     },
-    [verifyToken],
+    [verifyToken, email],
   )
 
   // Auto-verify a code that arrived through the emailed link.
@@ -59,7 +61,7 @@ export default function ResetPasswordPage() {
 
   // Step 2 — set the new password (only reachable once the code is verified).
   const { form, updateForm, send, loading, error, update, onSuccess } = useForm(
-    (formData) => Auth.resetPassword(token, { password: formData.password }),
+    (formData) => Auth.resetPassword(token, { password: formData.password, email: email.trim() || undefined }),
     { initialForm: { password: '', confirm: '' } },
   )
   onSuccess(() => navigate('/login', { replace: true }))
@@ -146,6 +148,25 @@ export default function ResetPasswordPage() {
         }
       >
         <form onSubmit={onVerifySubmit} className="flex flex-col gap-4">
+          {forwardedEmail ? null : (
+            <Field>
+              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <Mail />
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </InputGroup>
+            </Field>
+          )}
+
           <Field>
             <FieldLabel htmlFor="token">Reset code</FieldLabel>
             <InputGroup>
