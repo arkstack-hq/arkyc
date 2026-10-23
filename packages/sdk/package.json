@@ -1,6 +1,6 @@
 {
   "name": "@arkyc/sdk",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "Arkyc TypeScript SDK (server + browser)",
   "license": "MIT",
   "keywords": [
