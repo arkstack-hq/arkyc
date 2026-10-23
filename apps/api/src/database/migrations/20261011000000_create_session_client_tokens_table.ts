@@ -1,7 +1,5 @@
 import { Migration, SchemaBuilder } from 'arkormx'
 
-import { DB } from '@arkstack/database'
-
 /**
  * Client tokens for a verification session: the single-use `launch` token handed
  * to the integrator, single-use `handoff` tokens carried by the cross-device QR,
