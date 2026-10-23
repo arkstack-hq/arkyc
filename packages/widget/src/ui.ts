@@ -127,6 +127,27 @@ const TERMINAL_NOTICE: Partial<Record<VerificationStatus, Notice>> = {
   cancelled: { cls: 'warn', icon: '⏳', title: 'Cancelled', copy: 'This verification was cancelled.' },
 }
 
+/**
+ * The logo URL with a stamp that changes every ten minutes, so a replaced logo
+ * shows up. Signed URLs are returned as-is: they are unique per request already,
+ * and any extra query parameter breaks their signature.
+ *
+ * @param url
+ * @returns
+ */
+function logoSrc(url: string): string {
+  if (/[?&]x-(amz|goog)-signature=/i.test(url)) return url
+
+  try {
+    const parsed = new URL(url, window.location.href)
+    parsed.searchParams.set('stamp', String(Math.floor(Date.now() / 600_000)))
+
+    return parsed.toString()
+  } catch {
+    return url
+  }
+}
+
 const SVG = (body: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`
 
@@ -300,17 +321,15 @@ export class WidgetView {
    */
   private fillBrand(): void {
     this.clear(this.brandEl)
-    const lastTenMins = Date.now() - Math.floor(Math.random() * (10 * 60 * 1000))
     const branded = this.theme.showBranding && (this.theme.logoUrl || this.theme.name)
 
     this.dom.append(
       this.brandEl,
       branded
         ? [
-            this.theme.logoUrl &&
-              this.dom.h('img', { class: 'arkyc-logo', src: `${this.theme.logoUrl}?stamp=${lastTenMins}` }),
-            this.theme.name && this.dom.h('span', { class: 'arkyc-brand-name', text: this.theme.name }),
-          ]
+          this.theme.logoUrl && this.dom.h('img', { class: 'arkyc-logo', src: logoSrc(this.theme.logoUrl) }),
+          this.theme.name && this.dom.h('span', { class: 'arkyc-brand-name', text: this.theme.name }),
+        ]
         : this.dom.h('p', { class: 'arkyc-title', text: 'Verify your identity' }),
     )
   }
