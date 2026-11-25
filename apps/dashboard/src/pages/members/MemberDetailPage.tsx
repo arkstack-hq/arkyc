@@ -5,6 +5,7 @@ import { Members, Roles, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
 
 import { Badge } from '@/components/ui/badge'
+import { useConfirm } from '@/components/Confirm'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
@@ -22,6 +23,7 @@ export default function MemberDetailPage() {
   const { memberId = '' } = useParams()
   const organizationId = useOrganizationId()
   const { can } = useOrganization()
+  const confirm = useConfirm()
 
   const {
     data: member,
@@ -71,6 +73,19 @@ export default function MemberDetailPage() {
   }
 
   const currentRoleId = roleId || member.role_id
+
+  const onAssignRole = async () => {
+    const nextRole = roles.find((role) => role.id === currentRoleId)
+    const ok = await confirm({
+      title: 'Change role?',
+      description: `${member.user?.name ?? member.user?.email ?? 'This member'} moves from ${member.role?.name ?? 'their current role'} to ${nextRole?.name ?? 'the selected role'} and gains or loses access immediately.`,
+      confirmLabel: 'Change role',
+      destructive: false,
+    })
+    if (!ok) return
+
+    await assignRole(currentRoleId)
+  }
 
   return (
     <div className="p-6 lg:p-8">
@@ -135,10 +150,7 @@ export default function MemberDetailPage() {
                       </option>
                     ))}
                   </Select>
-                  <Button
-                    onClick={() => void assignRole(currentRoleId)}
-                    disabled={assigning || currentRoleId === member.role_id}
-                  >
+                  <Button onClick={() => void onAssignRole()} disabled={assigning || currentRoleId === member.role_id}>
                     {assigning ? 'Saving…' : 'Save'}
                   </Button>
                 </div>
