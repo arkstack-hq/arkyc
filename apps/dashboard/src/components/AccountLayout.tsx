@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { ArrowLeft, Bell, KeyRound, MailOpen } from 'lucide-react'
+import { ArrowLeft, Bell, BellRing, KeyRound, MailOpen } from 'lucide-react'
 import { RealtimeProvider } from '@/contexts/realtime-context'
 import { NotificationBell } from '@/components/NotificationBell'
 import { DocsLink, NavCount, ThemeToggle, UserMenu } from '@/components/Layout'
 import { Invitations } from '@/lib/api/invitations'
+import { Notifications } from '@/lib/api/notifications'
 import { useAttentionCount } from '@/hooks/useAttentionCount'
 import {
   Breadcrumb,
@@ -30,8 +31,9 @@ import {
 } from '@/components/ui/sidebar'
 
 const NAV = [
+  { to: '/notifications', label: 'Notifications', icon: BellRing },
   { to: '/account/security', label: 'Security', icon: KeyRound },
-  { to: '/account/notifications', label: 'Notifications', icon: Bell },
+  { to: '/account/notifications', label: 'Notification settings', icon: Bell },
   { to: '/invitations', label: 'Invitations', icon: MailOpen },
 ]
 
@@ -40,7 +42,10 @@ export function AccountLayout() {
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const current = NAV.find((item) => location.pathname.startsWith(item.to))
-  const badges: Partial<Record<string, number>> = { '/invitations': useAttentionCount(() => Invitations.count()) }
+  const badges: Partial<Record<string, number>> = {
+    '/notifications': useAttentionCount(() => Notifications.unreadCount()),
+    '/invitations': useAttentionCount(() => Invitations.count()),
+  }
 
   return (
     <RealtimeProvider>

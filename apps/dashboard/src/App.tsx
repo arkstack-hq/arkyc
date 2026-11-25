@@ -40,6 +40,7 @@ import RoleDetailPage from '@/pages/settings/RoleDetailPage'
 import RolesPage from '@/pages/settings/RolesPage'
 import SecurityPage from '@/pages/SecurityPage'
 import NotificationSettingsPage from '@/pages/NotificationSettingsPage'
+import NotificationsPage from '@/pages/NotificationsPage'
 import InvitationsPage from '@/pages/InvitationsPage'
 import SessionDetailPage from '@/pages/sessions/SessionDetailPage'
 import SessionsPage from '@/pages/sessions/SessionsPage'
@@ -112,6 +113,7 @@ export default function App() {
         >
           <Route path="/account/security" element={<SecurityPage />} />
           <Route path="/account/notifications" element={<NotificationSettingsPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/invitations" element={<InvitationsPage />} />
         </Route>
 

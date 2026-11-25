@@ -283,7 +283,7 @@ export function UserMenu() {
           <KeyRound className="size-4" />
           Security
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => navigate('/account/notifications')}>
+        <DropdownMenuItem onSelect={() => navigate('/notifications')}>
           <Bell className="size-4" />
           Notifications
         </DropdownMenuItem>
