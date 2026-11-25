@@ -185,7 +185,7 @@ This roadmap breaks Arkyc into sequential, shippable phases. Each phase has a cl
 - [x] Member direct permissions: view role perms / direct perms / effective perms; assign role; add/remove direct perms.
 - [x] Projects CRUD with `environment`, `settings`, `branding`, project-level verification thresholds.
 - [x] Project members.
-- [x] API keys: create (return secret once), list, revoke; store `key_prefix` + `key_hash`; track `last_used_at`.
+- [x] API keys: create (return secret once), list, revoke, delete revoked keys; store `key_prefix` + `key_hash`; track `last_used_at`.
 - [x] All endpoints permission-gated and tenant-scoped; audit logs emitted on every mutation (wired in Phase 9).
 
 **Deliverables:** All `/v1/dashboard/...` tenant/project/member/role/key routes from the spec.

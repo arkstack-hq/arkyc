@@ -8,6 +8,9 @@ import { Loading, ErrorState, EmptyState } from '@/components/States'
 import { Pagination } from '@/components/Pagination'
 import { useConfirm } from '@/components/Confirm'
 import { KeyRound } from 'lucide-react'
+import { toast } from 'sonner'
+import type { ApiKey } from '@arkyc/types'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
@@ -68,21 +71,54 @@ export default function ProjectApiKeysPage() {
     send: revokeKey,
     loading: revoking,
     onSuccess: onRevokeSuccess,
+    onError: onRevokeError,
   } = useRequest((keyId: string) => ApiKeys.revoke(organizationId, projectId!, keyId), {
     immediate: false,
   })
 
-  const confirmRevoke = async (key: { id: string; name: string }) => {
+  const {
+    send: deleteKey,
+    loading: deleting,
+    onSuccess: onDeleteSuccess,
+    onError: onDeleteError,
+  } = useRequest((keyId: string) => ApiKeys.remove(organizationId, projectId!, keyId), {
+    immediate: false,
+  })
+
+  const confirmRevoke = async (key: ApiKey) => {
     const ok = await confirm({
       title: 'Revoke API key?',
       description: `Revoke “${key.name}”. Any integration using it will immediately stop working.`,
       confirmLabel: 'Revoke',
     })
-    if (ok) await revokeKey(key.id)
+    if (ok) await revokeKey(key.id).catch(() => undefined)
+  }
+
+  const confirmDelete = async (key: ApiKey) => {
+    const ok = await confirm({
+      title: 'Delete API key?',
+      description: `Permanently remove “${key.name}” from this project.`,
+      confirmLabel: 'Delete',
+    })
+    if (ok) await deleteKey(key.id).catch(() => undefined)
   }
 
   onRevokeSuccess(() => {
+    toast.success('API key revoked')
     void refreshKeys()
+  })
+
+  onRevokeError(({ error }) => {
+    toast.error(errorMessage(error, 'Failed to revoke key.'))
+  })
+
+  onDeleteSuccess(() => {
+    toast.success('API key deleted')
+    void refreshKeys()
+  })
+
+  onDeleteError(({ error }) => {
+    toast.error(errorMessage(error, 'Failed to delete key.'))
   })
 
   const closeDialog = () => {
@@ -123,6 +159,7 @@ export default function ProjectApiKeysPage() {
                   <TR>
                     <TH>Name</TH>
                     <TH>Prefix</TH>
+                    <TH>Status</TH>
                     <TH>Last used</TH>
                     <TH>Created</TH>
                     <TH />
@@ -133,10 +170,28 @@ export default function ProjectApiKeysPage() {
                     <TR key={key.id}>
                       <TD className="font-medium">{key.name}</TD>
                       <TD className="font-mono text-xs">{key.key_prefix}</TD>
+                      <TD>
+                        {key.revoked_at ? (
+                          <Badge variant="muted" title={formatDateTime(key.revoked_at)}>
+                            Revoked
+                          </Badge>
+                        ) : (
+                          <Badge variant="success">Active</Badge>
+                        )}
+                      </TD>
                       <TD>{formatDateTime(key.last_used_at)}</TD>
                       <TD>{formatDateTime(key.created_at)}</TD>
                       <TD className="text-right">
-                        {can('api_keys.revoke') ? (
+                        {!can('api_keys.revoke') ? null : key.revoked_at ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={deleting}
+                            onClick={() => void confirmDelete(key)}
+                          >
+                            Delete
+                          </Button>
+                        ) : (
                           <Button
                             variant="destructive"
                             size="sm"
@@ -145,7 +200,7 @@ export default function ProjectApiKeysPage() {
                           >
                             Revoke
                           </Button>
-                        ) : null}
+                        )}
                       </TD>
                     </TR>
                   ))}
