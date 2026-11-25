@@ -5,6 +5,7 @@ import type {
   ListWebhookEndpointsParams,
   UpdateWebhookEndpointParams,
   WebhookDelivery,
+  WebhookDeliveryDetail,
   WebhookEndpoint,
 } from './types'
 
@@ -115,6 +116,19 @@ export class WebhookEndpoints {
 
     return (await this.request('GET', `/v1/webhooks/${encodeURIComponent(id)}/deliveries${suffix}`))
       .data as WebhookDelivery[]
+  }
+
+  /**
+   * Fetch one delivery with the payload that was sent and the endpoint's response.
+   *
+   * @param id  The endpoint id.
+   * @param deliveryId
+   * @returns
+   */
+  async retrieveDelivery(id: string, deliveryId: string): Promise<WebhookDeliveryDetail> {
+    const path = `/v1/webhooks/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}`
+
+    return (await this.request('GET', path)).data as WebhookDeliveryDetail
   }
 
   /**

@@ -6,6 +6,7 @@ import type {
   VerificationStatus,
   WebhookDeliveryStatus,
   WebhookEndpointStatus,
+  WebhookEvent,
   WebhookEventName,
   WorkflowConfig,
 } from '@arkyc/types'
@@ -104,6 +105,11 @@ export interface WebhookDelivery {
   attempts: number
   created_at: string
   updated_at: string
+}
+
+/** A webhook delivery with the payload that was sent. */
+export interface WebhookDeliveryDetail extends WebhookDelivery {
+  payload: WebhookEvent
 }
 
 /** Filters and pagination for listing an endpoint's deliveries. */

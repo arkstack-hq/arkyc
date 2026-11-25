@@ -28,6 +28,7 @@ export type {
   UpdateWebhookEndpointParams,
   VerificationSession,
   WebhookDelivery,
+  WebhookDeliveryDetail,
   WebhookEndpoint,
 } from './types'
 
