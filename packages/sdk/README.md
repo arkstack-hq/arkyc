@@ -62,6 +62,9 @@ await arkyc.webhooks.endpoints.update(endpoint.id, { status: 'disabled' })
 // e.g. to repoint a dev endpoint at a fresh tunnel URL on boot.
 await arkyc.webhooks.endpoints.updateBySecret(secret, { url: 'https://new-tunnel.example.com/webhooks/arkyc' })
 
+// Replace the signing secret; the new one is returned only this once.
+const { secret: newSecret } = await arkyc.webhooks.endpoints.rotateSecret(endpoint.id)
+
 // Inspect and resend deliveries that used up their retries.
 const failed = await arkyc.webhooks.endpoints.deliveries(endpoint.id, { status: 'failed' })
 await arkyc.webhooks.endpoints.retrieveDelivery(endpoint.id, failed[0].id) // payload + response body

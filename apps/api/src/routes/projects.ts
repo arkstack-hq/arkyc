@@ -39,6 +39,11 @@ Router.group('/v1/dashboard/organizations/:organizationId/projects', () => {
   Router.post('/:projectId/webhooks', [WebhookEndpointController, 'create'], scoped('webhooks.create'))
   Router.patch('/:projectId/webhooks/:webhookId', [WebhookEndpointController, 'update'], scoped('webhooks.update'))
   Router.delete('/:projectId/webhooks/:webhookId', [WebhookEndpointController, 'destroy'], scoped('webhooks.delete'))
+  Router.patch(
+    '/:projectId/webhooks/:webhookId/secret',
+    [WebhookEndpointController, 'rotateSecret'],
+    scoped('webhooks.update'),
+  )
   Router.post(
     '/:projectId/webhooks/:webhookId/test',
     [WebhookEndpointController, 'test'],

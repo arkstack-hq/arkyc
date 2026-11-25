@@ -214,7 +214,7 @@ export class WebhookService {
     owner: { organizationId: string; projectId: string },
     input: { url: string; events: WebhookEventName[] },
   ): Promise<{ endpoint: WebhookEndpoint; secret: string }> {
-    const secret = `whsec_${randomBytes(24).toString('hex')}`
+    const secret = this.generateSecret()
     const endpoint = await WebhookEndpoint.create({
       organizationId: owner.organizationId,
       projectId: owner.projectId,
@@ -243,6 +243,19 @@ export class WebhookService {
     await endpoint.save()
 
     return endpoint
+  }
+
+  /**
+   * Replace an endpoint's signing secret. The old secret stops signing at once
+   * and the new one is returned in plaintext exactly once.
+   */
+  async rotateSecret(endpoint: WebhookEndpoint): Promise<string> {
+    const secret = this.generateSecret()
+
+    endpoint.secretHash = encryptSecret(secret)
+    await endpoint.save()
+
+    return secret
   }
 
   /**
@@ -416,6 +429,10 @@ export class WebhookService {
       assets: await buildSessionAssets(session),
       createdAt: new Date().toISOString(),
     })
+  }
+
+  private generateSecret(): string {
+    return `whsec_${randomBytes(24).toString('hex')}`
   }
 
   private async checks(session: VerificationSession): Promise<WebhookChecks> {

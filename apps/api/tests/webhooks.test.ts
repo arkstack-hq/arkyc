@@ -116,6 +116,32 @@ describe('webhook endpoints', () => {
     expect(decryptSecret(stored.secretHash)).toBe(res.body.secret)
   })
 
+  it('shows a masked hint of the secret and rotates it', async () => {
+    const created = await authed('post', webhooks()).send({ url: receiverUrl, events: ['verification.approved'] })
+    const secret = created.body.secret as string
+
+    expect(created.body.data.secret_hint).toBe(`whsec_${secret.slice(6, 10)}…${secret.slice(-4)}`)
+
+    const list = await authed('get', webhooks())
+    const listed = list.body.data.find((e: { id: string }) => e.id === created.body.data.id)
+
+    expect(listed.secret_hint).toBe(created.body.data.secret_hint)
+    expect(JSON.stringify(list.body)).not.toContain(secret)
+
+    const rotated = await authed('patch', webhooks(`/${created.body.data.id}/secret`))
+
+    expect(rotated.status).toBe(201)
+    expect(rotated.body.secret).toMatch(/^whsec_/)
+    expect(rotated.body.secret).not.toBe(secret)
+    expect(rotated.body.data.secret_hint).toBe(
+      `whsec_${rotated.body.secret.slice(6, 10)}…${rotated.body.secret.slice(-4)}`,
+    )
+
+    const stored = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
+
+    expect(decryptSecret(stored.secretHash)).toBe(rotated.body.secret)
+  })
+
   it('rejects an invalid event name', async () => {
     const res = await authed('post', webhooks()).send({
       url: receiverUrl,
@@ -251,6 +277,21 @@ describe('webhook endpoints via the Public Project API (secret key)', () => {
     const after = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
 
     expect(decryptSecret(after.secretHash)).toBe(decryptSecret(before.secretHash))
+  })
+
+  it('rotates the signing secret of the key’s project endpoints only', async () => {
+    const created = await api('post', '').send({ url: receiverUrl, events: ['verification.approved'] })
+
+    const res = await api('patch', `/${created.body.data.id}/secret`)
+
+    expect(res.status).toBe(201)
+    expect(res.body.secret).toMatch(/^whsec_/)
+    expect(res.body.secret).not.toBe(created.body.secret)
+
+    const stored = await WebhookEndpoint.where({ id: created.body.data.id }).firstOrFail()
+
+    expect(decryptSecret(stored.secretHash)).toBe(res.body.secret)
+    expect((await api('patch', '/00000000-0000-0000-0000-000000000000/secret')).status).toBe(404)
   })
 
   it('rejects an invalid url or event (422)', async () => {

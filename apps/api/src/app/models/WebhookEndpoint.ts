@@ -4,6 +4,7 @@ import type { WebhookEndpointStatus, WebhookEventName } from '@arkyc/types'
 import { Organization } from './Organization'
 import { Project } from './Project'
 import { WebhookDelivery } from './WebhookDelivery'
+import { decryptSecret } from 'src/support/secret-cipher'
 
 export class WebhookEndpoint extends Model {
   protected static override table = 'webhook_endpoints'
@@ -43,5 +44,13 @@ export class WebhookEndpoint extends Model {
 
   deliveries() {
     return this.hasMany(WebhookDelivery, 'webhookEndpointId')
+  }
+
+  /** The signing secret with its middle masked (`whsec_1a2b…9f0e`), safe to display. */
+  secretHint(): string {
+    const secret = decryptSecret(this.secretHash)
+    const body = secret.replace(/^whsec_/, '')
+
+    return `whsec_${body.slice(0, 4)}…${body.slice(-4)}`
   }
 }

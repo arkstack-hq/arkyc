@@ -68,8 +68,8 @@ export type WebhookEndpointStatus = 'active' | 'disabled'
 /** A configured webhook endpoint for a project. */
 export interface WebhookEndpoint extends Entity, ProjectScoped {
   url: string
-  /** Hash of the signing secret; the raw secret is shown once at creation. */
-  secret_hash: string
+  /** The signing secret with its middle masked; the full secret is shown only at creation and rotation. */
+  secret_hint: string
   events: WebhookEventName[]
   status: WebhookEndpointStatus
 }
