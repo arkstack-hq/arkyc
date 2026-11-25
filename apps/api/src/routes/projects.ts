@@ -45,6 +45,26 @@ Router.group('/v1/dashboard/organizations/:organizationId/projects', () => {
     // Limiter runs after auth so only authenticated requests count against it.
     [...scoped('webhooks.test'), webhookTestLimiter],
   )
+  Router.get(
+    '/:projectId/webhooks/:webhookId/deliveries',
+    [WebhookEndpointController, 'deliveries'],
+    scoped('webhooks.view'),
+  )
+  Router.get(
+    '/:projectId/webhooks/:webhookId/deliveries/:deliveryId',
+    [WebhookEndpointController, 'delivery'],
+    scoped('webhooks.view'),
+  )
+  Router.patch(
+    '/:projectId/webhooks/:webhookId/deliveries/resend',
+    [WebhookEndpointController, 'resendFailed'],
+    [...scoped('webhooks.update'), webhookTestLimiter],
+  )
+  Router.patch(
+    '/:projectId/webhooks/:webhookId/deliveries/:deliveryId/resend',
+    [WebhookEndpointController, 'resend'],
+    [...scoped('webhooks.update'), webhookTestLimiter],
+  )
 })
 
 export default () => {}

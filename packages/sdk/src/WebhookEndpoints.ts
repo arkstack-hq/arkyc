@@ -1,8 +1,11 @@
 import type {
   CreateWebhookEndpointParams,
   CreatedWebhookEndpoint,
+  ListWebhookDeliveriesParams,
   ListWebhookEndpointsParams,
   UpdateWebhookEndpointParams,
+  WebhookDelivery,
+  WebhookDeliveryDetail,
   WebhookEndpoint,
 } from './types'
 
@@ -93,5 +96,64 @@ export class WebhookEndpoints {
     })
 
     return body.data as WebhookEndpoint
+  }
+
+  /**
+   * List an endpoint's deliveries (one page), newest first. Pass `status:
+   * 'failed'` for the ones that can be resent.
+   *
+   * @param id
+   * @param params
+   * @returns
+   */
+  async deliveries(id: string, params: ListWebhookDeliveriesParams = {}): Promise<WebhookDelivery[]> {
+    const query = new URLSearchParams()
+    if (params.status) query.set('status', params.status)
+    if (params.page) query.set('page', String(params.page))
+    if (params.perPage) query.set('per_page', String(params.perPage))
+    const qs = query.toString()
+    const suffix = qs ? `?${qs}` : ''
+
+    return (await this.request('GET', `/v1/webhooks/${encodeURIComponent(id)}/deliveries${suffix}`))
+      .data as WebhookDelivery[]
+  }
+
+  /**
+   * Fetch one delivery with the payload that was sent and the endpoint's response.
+   *
+   * @param id  The endpoint id.
+   * @param deliveryId
+   * @returns
+   */
+  async retrieveDelivery(id: string, deliveryId: string): Promise<WebhookDeliveryDetail> {
+    const path = `/v1/webhooks/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}`
+
+    return (await this.request('GET', path)).data as WebhookDeliveryDetail
+  }
+
+  /**
+   * Resend one failed delivery. Rejects with a 409 `ArkycApiError` when it is
+   * not failed, and a 422 when the endpoint is disabled.
+   *
+   * @param id  The endpoint id.
+   * @param deliveryId
+   * @returns
+   */
+  async resend(id: string, deliveryId: string): Promise<WebhookDelivery> {
+    const path = `/v1/webhooks/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}/resend`
+
+    return (await this.request('PATCH', path)).data as WebhookDelivery
+  }
+
+  /**
+   * Resend every failed delivery of an endpoint in the background.
+   *
+   * @param id
+   * @returns How many failed deliveries were queued.
+   */
+  async resendFailed(id: string): Promise<number> {
+    const body = await this.request('PATCH', `/v1/webhooks/${encodeURIComponent(id)}/deliveries/resend`)
+
+    return Number(body.queued ?? 0)
   }
 }

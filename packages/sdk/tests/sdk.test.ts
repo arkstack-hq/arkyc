@@ -191,4 +191,32 @@ describe('webhook endpoints', () => {
     expect(init.method).toBe('PATCH')
     expect(JSON.parse(String(init.body))).toEqual({ secret: 'whsec_abc', url: 'https://tunnel.example.com/hook' })
   })
+
+  it('lists, retrieves and resends deliveries', async () => {
+    const delivery = { id: 'wd_1', status: 'failed' }
+    const listFetch = fakeFetch(200, { status: 'success', data: [delivery] })
+    const list = new Arkyc({ secretKey: 'sk_test', baseUrl: 'https://api.test', fetch: listFetch })
+
+    expect(await list.webhooks.endpoints.deliveries('we_1', { status: 'failed' })).toEqual([delivery])
+    expect(call(listFetch)[0]).toBe('https://api.test/api/v1/webhooks/we_1/deliveries?status=failed')
+
+    const showFetch = fakeFetch(200, { status: 'success', data: { ...delivery, payload: { session_id: 's_1' } } })
+    const show = new Arkyc({ secretKey: 'sk_test', baseUrl: 'https://api.test', fetch: showFetch })
+
+    expect((await show.webhooks.endpoints.retrieveDelivery('we_1', 'wd_1')).payload).toEqual({ session_id: 's_1' })
+    expect(call(showFetch)[0]).toBe('https://api.test/api/v1/webhooks/we_1/deliveries/wd_1')
+
+    const oneFetch = fakeFetch(201, { status: 'success', data: { ...delivery, status: 'delivered' } })
+    const one = new Arkyc({ secretKey: 'sk_test', baseUrl: 'https://api.test', fetch: oneFetch })
+
+    expect((await one.webhooks.endpoints.resend('we_1', 'wd_1')).status).toBe('delivered')
+    expect(call(oneFetch)[0]).toBe('https://api.test/api/v1/webhooks/we_1/deliveries/wd_1/resend')
+    expect(call(oneFetch)[1].method).toBe('PATCH')
+
+    const allFetch = fakeFetch(201, { status: 'success', data: ENDPOINT, queued: 3 })
+    const all = new Arkyc({ secretKey: 'sk_test', baseUrl: 'https://api.test', fetch: allFetch })
+
+    expect(await all.webhooks.endpoints.resendFailed('we_1')).toBe(3)
+    expect(call(allFetch)[0]).toBe('https://api.test/api/v1/webhooks/we_1/deliveries/resend')
+  })
 })

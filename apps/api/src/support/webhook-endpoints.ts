@@ -1,4 +1,4 @@
-import type { WebhookEventName } from '@arkyc/types'
+import type { WebhookDeliveryStatus, WebhookEventName } from '@arkyc/types'
 
 /** The webhook event names an endpoint subscription may include. */
 export const WEBHOOK_EVENT_NAMES: WebhookEventName[] = [
@@ -43,4 +43,13 @@ export const updateEndpointRules = {
 export const updateEndpointBySecretRules = {
   secret: ['required', 'string', 'max:255'],
   ...updateEndpointRules,
+}
+
+const DELIVERY_STATUSES: WebhookDeliveryStatus[] = ['pending', 'delivered', 'failed']
+
+/** The delivery status a list request filters by, or `null` for every status. */
+export function deliveryStatusFilter(value: unknown): WebhookDeliveryStatus | null {
+  const status = Array.isArray(value) ? value[0] : value
+
+  return DELIVERY_STATUSES.includes(status as WebhookDeliveryStatus) ? (status as WebhookDeliveryStatus) : null
 }

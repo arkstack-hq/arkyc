@@ -121,13 +121,17 @@ keys are ignored.
 
 **Base:** `/api/v1/dashboard/organizations/:organizationId/projects/:projectId/webhooks`
 
-| Method   | Path                        | Permission        | Description                                 |
-| -------- | --------------------------- | ----------------- | ------------------------------------------- |
-| `GET`    | `/webhooks`                 | `webhooks.view`   | List endpoints (secret never returned).     |
-| `POST`   | `/webhooks`                 | `webhooks.create` | Register an endpoint; secret returned once. |
-| `PATCH`  | `/webhooks/:webhookId`      | `webhooks.update` | Update url / events / status.               |
-| `DELETE` | `/webhooks/:webhookId`      | `webhooks.delete` | Delete an endpoint.                         |
-| `POST`   | `/webhooks/:webhookId/test` | `webhooks.test`   | Queue a sample delivery.                    |
+| Method   | Path                                                 | Permission        | Description                                      |
+| -------- | ---------------------------------------------------- | ----------------- | ------------------------------------------------ |
+| `GET`    | `/webhooks`                                          | `webhooks.view`   | List endpoints (secret never returned).          |
+| `POST`   | `/webhooks`                                          | `webhooks.create` | Register an endpoint; secret returned once.      |
+| `PATCH`  | `/webhooks/:webhookId`                               | `webhooks.update` | Update url / events / status.                    |
+| `DELETE` | `/webhooks/:webhookId`                               | `webhooks.delete` | Delete an endpoint.                              |
+| `POST`   | `/webhooks/:webhookId/test`                          | `webhooks.test`   | Queue a sample delivery.                         |
+| `GET`    | `/webhooks/:webhookId/deliveries`                    | `webhooks.view`   | List deliveries, newest first (`status` filter). |
+| `GET`    | `/webhooks/:webhookId/deliveries/:deliveryId`        | `webhooks.view`   | One delivery with its payload and response body. |
+| `PATCH`  | `/webhooks/:webhookId/deliveries/resend`             | `webhooks.update` | Resend every failed delivery in the background.  |
+| `PATCH`  | `/webhooks/:webhookId/deliveries/:deliveryId/resend` | `webhooks.update` | Resend one failed delivery.                      |
 
 See [Webhooks](/integrations/webhooks) for the payload and signature.
 

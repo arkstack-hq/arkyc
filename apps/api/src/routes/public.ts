@@ -27,7 +27,7 @@ Router.group('/v1/sessions', () => {
   Router.post('/:id/cancel', [SessionController, 'cancel'], [apiLimiter, apiKeyAuth])
 })
 
-// Webhook endpoints (no delete over the Public API).
+// Webhook endpoints and their deliveries (no delete over the Public API).
 Router.group('/v1/webhooks', () => {
   Router.get('/', [WebhookEndpointController, 'index'], [apiLimiter, apiKeyAuth])
   Router.post('/', [WebhookEndpointController, 'create'], [apiLimiter, apiKeyAuth])
@@ -35,6 +35,10 @@ Router.group('/v1/webhooks', () => {
   Router.patch('/', [WebhookEndpointController, 'updateBySecret'], [apiLimiter, apiKeyAuth])
   Router.get('/:id', [WebhookEndpointController, 'show'], [apiLimiter, apiKeyAuth])
   Router.patch('/:id', [WebhookEndpointController, 'update'], [apiLimiter, apiKeyAuth])
+  Router.get('/:id/deliveries', [WebhookEndpointController, 'deliveries'], [apiLimiter, apiKeyAuth])
+  Router.get('/:id/deliveries/:deliveryId', [WebhookEndpointController, 'delivery'], [apiLimiter, apiKeyAuth])
+  Router.patch('/:id/deliveries/resend', [WebhookEndpointController, 'resendFailed'], [apiLimiter, apiKeyAuth])
+  Router.patch('/:id/deliveries/:deliveryId/resend', [WebhookEndpointController, 'resend'], [apiLimiter, apiKeyAuth])
 })
 
 // Signed, time-limited session assets served inline as images (no API key — the

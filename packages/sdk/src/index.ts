@@ -23,9 +23,12 @@ export type {
   CreateWebhookEndpointParams,
   CreatedSession,
   CreatedWebhookEndpoint,
+  ListWebhookDeliveriesParams,
   ListWebhookEndpointsParams,
   UpdateWebhookEndpointParams,
   VerificationSession,
+  WebhookDelivery,
+  WebhookDeliveryDetail,
   WebhookEndpoint,
 } from './types'
 

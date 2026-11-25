@@ -2,6 +2,7 @@ import {
   workflowScreeningConfig,
   type VerificationStatus,
   type WebhookChecks,
+  type WebhookDeliveryStatus,
   type WebhookEndpointStatus,
   type WebhookEvent,
   type WebhookEventName,
@@ -19,7 +20,8 @@ import { SessionRules } from '@arkyc/core'
 import { VerificationSession } from '@app/models/VerificationSession'
 import { WebhookDelivery } from '@app/models/WebhookDelivery'
 import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
-import { WebhookJob } from '@app/jobs'
+import { WebhookJob, WebhookResendJob } from '@app/jobs'
+import { RequestException } from '@arkstack/common'
 import { WEBHOOK_MAX_ATTEMPTS } from '@app/jobs/WebhookJob'
 import { webhookNotifications } from '@app/notifications/WebhookNotifications'
 import { buildSessionAssets } from '@app/services/SessionAssetService'
@@ -55,6 +57,18 @@ const DELIVERY_TIMEOUT_MS = 10_000
 
 /** The session id carried by test deliveries. */
 const TEST_SESSION_ID = '00000000-0000-0000-0000-000000000000'
+
+/** Failed deliveries re-queued per batch when resending all of an endpoint's failures. */
+const RESEND_BATCH_SIZE = 100
+
+/** Columns reset when a failed delivery is re-queued, giving it a fresh attempt budget. */
+const RESEND_RESET = {
+  status: 'pending' as const,
+  attempts: 0,
+  responseStatus: null,
+  responseBody: null,
+  nextRetryAt: null,
+}
 
 /** Map a session status to the webhook event it emits (omitted = no event). */
 const STATUS_EVENT: Partial<Record<VerificationStatus, WebhookEventName>> = {
@@ -117,11 +131,7 @@ export class WebhookService {
         nextRetryAt: null,
       })
 
-      try {
-        await WebhookJob.dispatch(delivery.id)
-      } catch {
-        /* recorded on the delivery row; a worker retries it */
-      }
+      await this.enqueue(delivery.id)
     }
   }
 
@@ -277,17 +287,113 @@ export class WebhookService {
       nextRetryAt: null,
     })
 
-    // On an async queue this just enqueues; on a `sync` queue it runs the delivery
-    // inline and rethrows if the endpoint is unreachable. Swallow that here (as
-    // `dispatch` does) so a dead/slow test target doesn't 500 the request — the
-    // attempt's outcome is recorded on the delivery row either way.
-    try {
-      await WebhookJob.dispatch(delivery.id)
-    } catch {
-      /* recorded on the delivery row; async queues retry, sync does not */
-    }
+    await this.enqueue(delivery.id)
 
     return delivery
+  }
+
+  /**
+   * An endpoint's deliveries, newest first, optionally narrowed to one status.
+   *
+   * @param endpoint
+   * @param status
+   * @returns
+   */
+  deliveries(endpoint: WebhookEndpoint, status?: WebhookDeliveryStatus | null) {
+    return WebhookDelivery.query()
+      .where({ webhookEndpointId: endpoint.id })
+      .when(!!status, (query) => query.where({ status: status! }))
+      .orderBy({ createdAt: 'desc' })
+  }
+
+  /**
+   * Re-queue one failed delivery with a fresh attempt budget.
+   *
+   * @param endpoint
+   * @param delivery
+   * @returns
+   */
+  async resend(endpoint: WebhookEndpoint, delivery: WebhookDelivery): Promise<WebhookDelivery> {
+    this.assertResendable(endpoint)
+
+    if (!(await this.claimForResend(delivery.id))) {
+      throw new RequestException('Only failed deliveries can be resent', 409)
+    }
+
+    await this.enqueue(delivery.id)
+
+    return WebhookDelivery.where({ id: delivery.id }).firstOrFail()
+  }
+
+  /**
+   * Queue a background resend of every failed delivery of an endpoint and
+   * return how many were failed at the time.
+   *
+   * @param endpoint
+   * @returns
+   */
+  async resendFailed(endpoint: WebhookEndpoint): Promise<number> {
+    this.assertResendable(endpoint)
+
+    const failed = await WebhookDelivery.where({ webhookEndpointId: endpoint.id, status: 'failed' }).count()
+
+    if (failed === 0) return 0
+
+    try {
+      await WebhookResendJob.dispatch(endpoint.id)
+    } catch {
+      /* the failed rows stay failed and can be resent again */
+    }
+
+    return failed
+  }
+
+  /**
+   * Re-queue every failed delivery of an endpoint in bounded batches (run by
+   * `WebhookResendJob`).
+   *
+   * @param endpointId
+   * @returns
+   */
+  async requeueFailed(endpointId: string): Promise<void> {
+    const endpoint = await WebhookEndpoint.where({ id: endpointId }).first()
+
+    if (!endpoint || endpoint.status !== 'active') return
+
+    await WebhookDelivery.where({ webhookEndpointId: endpointId, status: 'failed' }).chunkById(
+      RESEND_BATCH_SIZE,
+      async (batch) => {
+        for (const delivery of batch.all()) {
+          if (await this.claimForResend(delivery.id)) await this.enqueue(delivery.id)
+        }
+      },
+    )
+  }
+
+  /** Reject resends to an endpoint that would not deliver them. */
+  private assertResendable(endpoint: WebhookEndpoint): void {
+    if (endpoint.status !== 'active') {
+      throw new RequestException('Enable the webhook endpoint before resending deliveries', 422)
+    }
+  }
+
+  /** Atomically move a failed delivery back to pending; `false` when it is not failed. */
+  private async claimForResend(deliveryId: string): Promise<boolean> {
+    const updated = await WebhookDelivery.where({ id: deliveryId, status: 'failed' }).updateFrom(RESEND_RESET)
+
+    return updated > 0
+  }
+
+  /**
+   * Enqueue a delivery. A `sync` queue runs it inline and rethrows on failure;
+   * the outcome is already recorded on the delivery row, so it is swallowed.
+   */
+  private async enqueue(deliveryId: string): Promise<void> {
+    try {
+      await WebhookJob.dispatch(deliveryId)
+    } catch {
+      /* recorded on the delivery row */
+    }
   }
 
   /**
