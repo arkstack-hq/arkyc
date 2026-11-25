@@ -118,6 +118,7 @@ Comments should be simple guides to what a utility (variable, function, class, b
 - Tests run with `REALTIME_TRANSPORT=memory`; assert on `MemoryRealtimeDriver.broadcasts()`.
 - Emit application notifications through `NotificationEvent`. Set recipients, actor, action/subject context, then call `.dispatchSafely()` only after the owning write succeeds.
 - Never notify the actor about their own action unless the domain explicitly requires it.
+- Anything a user puts into a platform-admin review queue notifies the admins holding the matching `admin.*.manage` permission through `AdminNotifications`, which also emails them (`NotificationEvent.viaEmail()`).
 - User realtime notifications use authenticated `private-user.<id>` channels only.
 - Push delivery is best-effort and must not fail the primary operation or notification job. Respect `notifications.push`, send to registered devices, and remove invalid tokens reported by the transport.
 

@@ -11,6 +11,7 @@ import { HttpContext } from 'clear-router/types/express'
 import { Project } from '@app/models/Project'
 import AccessGrantCollection from '@app/http/resources/AccessGrantCollection'
 import { ValidationException } from 'kanun'
+import { adminNotifications } from '@app/notifications/AdminNotifications'
 import { audit } from '@app/services/AuditLogger'
 import { toArray } from 'src/support/collection'
 
@@ -40,7 +41,8 @@ export default class ExtendedAccessController extends BaseController {
   /**
    * Request one or more capabilities for the project. Each requested capability
    * becomes a `pending` grant (a no-op once already `granted`). PII carries its
-   * required categories, timing, and justification.
+   * required categories, timing, and justification. Platform admins are notified
+   * of the pending capabilities.
    */
   async request({ req }: HttpContext) {
     const project = await this.project(req)
@@ -66,6 +68,8 @@ export default class ExtendedAccessController extends BaseController {
       }
     }
 
+    const requested: AccessCapability[] = []
+
     for (const capability of capabilities) {
       const grant = await AccessGrant.query().firstOrCreate(
         { projectId: project.id, capability },
@@ -88,7 +92,11 @@ export default class ExtendedAccessController extends BaseController {
         entityId: grant.id,
         metadata: { capability },
       })
+
+      requested.push(capability)
     }
+
+    await adminNotifications.extendedAccessRequested(project, requested, req.user?.id ?? null)
 
     return this.show({ req } as HttpContext)
   }

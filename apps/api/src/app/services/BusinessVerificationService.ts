@@ -4,6 +4,7 @@ import type { BusinessVerificationDetails, BusinessVerificationDocument } from '
 import { BusinessVerification } from '@app/models/BusinessVerification'
 import { Organization } from '@app/models/Organization'
 import { Project } from '@app/models/Project'
+import { adminNotifications } from '@app/notifications/AdminNotifications'
 import { organizationNotifications } from '@app/notifications/OrganizationNotifications'
 import { settings } from '@app/services/GlobalSettingsService'
 import { ApiException } from 'src/support/apiErrors'
@@ -25,7 +26,7 @@ export class BusinessVerificationService {
   }
 
   /**
-   * Record a submission with its documents and put the organization under review.
+   * Record a submission with its documents, put the organization under review and tell the reviewing admins.
    *
    * @param organization
    * @param submittedBy
@@ -73,6 +74,8 @@ export class BusinessVerificationService {
 
     organization.verificationStatus = 'pending'
     await organization.save()
+
+    await adminNotifications.businessVerificationSubmitted(organization, verification, submittedBy)
 
     return verification
   }

@@ -26,3 +26,18 @@ export async function sendMail(
       Logger.error('Mail delivery failed: ' + (error as Error).message, false)
     })
 }
+
+/**
+ * Escape text for interpolation into an email's HTML body.
+ *
+ * @param value
+ * @returns
+ */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}

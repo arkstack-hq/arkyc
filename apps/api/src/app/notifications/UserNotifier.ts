@@ -3,6 +3,7 @@ import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences, type No
 import type { User } from '@app/models/User'
 import { UserPushToken } from '@app/models/UserPushToken'
 import { reportError } from 'src/support/observability'
+import { escapeHtml, sendMail } from '@app/support/mail'
 import { toArray } from 'src/support/collection'
 
 /** What a notification says, independent of who receives it. */
@@ -15,6 +16,8 @@ export interface NotificationPayload {
   meta?: Record<string, unknown> | null
   /** Identifies what the notification is about, so a later one replaces it on clients. */
   tag?: string | null
+  /** Also email the recipient. */
+  email?: boolean
 }
 
 /** Most devices a single user is pushed to. */
@@ -22,7 +25,8 @@ const DEVICE_LIMIT = 50
 
 /**
  * Delivers a notification to one user: stores it, streams it on their private
- * channel, then pushes it to their devices when they allow push.
+ * channel, pushes it to their devices when they allow push, and emails it when
+ * the event asks for email.
  */
 export class UserNotifier {
   /**
@@ -48,6 +52,8 @@ export class UserNotifier {
     if (this.preferences(user).push) {
       await this.push(user, result.event, result.payload)
     }
+
+    if (payload.email && user.email) await this.mail(user, payload)
   }
 
   /**
@@ -58,6 +64,27 @@ export class UserNotifier {
    */
   preferences(user: User): NotificationPreferences {
     return { ...DEFAULT_NOTIFICATION_PREFERENCES, ...(user.notificationPreferences ?? {}) }
+  }
+
+  /**
+   * Email the notification, linking to its dashboard action when it has one.
+   *
+   * @param user
+   * @param payload
+   */
+  private async mail(user: User, payload: NotificationPayload): Promise<void> {
+    const msg = config('messages.notification.email')
+    const link = payload.actionLink
+      ? `${String(config('app.frontend_url', '')).replace(/\/$/, '')}${payload.actionLink}`
+      : null
+
+    await sendMail(user.email, link ? msg.template_with_action : msg.template, msg.subject, {
+      name: escapeHtml(user.firstName || user.name || ''),
+      title: payload.title,
+      description: escapeHtml(payload.description),
+      action_text: escapeHtml(payload.actionText || 'Open dashboard'),
+      action_link: link ? escapeHtml(link) : '',
+    })
   }
 
   /**
