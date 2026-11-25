@@ -34,7 +34,7 @@ export class SessionNotifications {
   }
 
   /**
-   * Tell the project's reviewers a session needs a manual decision.
+   * Tell and email the project's reviewers that a session needs a manual decision.
    *
    * @param session
    */
@@ -43,6 +43,7 @@ export class SessionNotifications {
 
     await NotificationEvent.make(NOTIFICATION_TYPE.sessionNeedsReview)
       .toAudience(() => NotificationAudience.sessionReviewers(session))
+      .viaEmail()
       .about({
         title: 'Session needs review',
         description: `${this.label(session)} in ${context.projectName} needs a manual decision.`,
