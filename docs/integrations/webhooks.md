@@ -161,5 +161,11 @@ single worker on `'--queue=webhook,*'`). With
 no such worker, deliveries (including dashboard test events) are queued but never
 sent. See [Self-hosting](/guide/self-hosting#queue-workers).
 
+A delivery that used up its retries stays `failed`. Resend it, or every failed
+delivery of an endpoint, from the endpoint's **Deliveries** log in the dashboard,
+over the [Public API](/api/public#deliveries-and-resending), or with the SDK's
+`webhooks.endpoints.resend` / `resendFailed`. A resent delivery carries its
+original payload and gets a fresh set of retries.
+
 > The signing secret is stored as-is to re-sign deliveries; encryption-at-rest is
 > a planned hardening item.

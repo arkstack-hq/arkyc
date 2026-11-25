@@ -3,12 +3,15 @@ import { perPage } from '@arkstack/common'
 import { BaseController } from '@controllers/BaseController'
 import type { WebhookEventName } from '@arkyc/types'
 import { Project } from '@app/models/Project'
+import { WebhookDelivery } from '@app/models/WebhookDelivery'
 import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
+import WebhookDeliveryResource from '@app/http/resources/WebhookDeliveryResource'
+import WebhookDeliveryCollection from '@app/http/resources/WebhookDeliveryCollection'
 import WebhookEndpointResource from '@app/http/resources/WebhookEndpointResource'
 import WebhookEndpointCollection from '@app/http/resources/WebhookEndpointCollection'
 import { audit } from '@app/services/AuditLogger'
 import { webhookService } from '@app/services/WebhookService'
-import { createEndpointRules, updateEndpointRules } from 'src/support/webhook-endpoints'
+import { createEndpointRules, deliveryStatusFilter, updateEndpointRules } from 'src/support/webhook-endpoints'
 
 /** Webhook endpoint management for a project. Gated by `webhooks.*`. */
 export default class WebhookEndpointController extends BaseController {
@@ -124,6 +127,72 @@ export default class WebhookEndpointController extends BaseController {
       message: 'Test delivery queued',
       code: 202,
     })
+  }
+
+  /** List an endpoint's deliveries, newest first. Filter with the `status` query param. */
+  async deliveries({ req }: HttpContext) {
+    const status = deliveryStatusFilter(req.query.status)
+    const endpoint = await this.scopedEndpoint(req)
+    const deliveries = await webhookService.deliveries(endpoint, status).paginate(perPage(req.query))
+
+    return new WebhookDeliveryCollection(deliveries).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
+  }
+
+  /** Re-queue one failed delivery. */
+  async resend({ req }: HttpContext) {
+    const deliveryId = String(req.params.deliveryId)
+    const endpoint = await this.scopedEndpoint(req)
+    const delivery = await WebhookDelivery.where({ id: deliveryId, webhookEndpointId: endpoint.id }).firstOrFail()
+
+    const resent = await webhookService.resend(endpoint, delivery)
+
+    await audit.recordForRequest(req, {
+      projectId: endpoint.projectId,
+      action: 'webhook.delivery_resent',
+      entityType: 'webhook_delivery',
+      entityId: delivery.id,
+    })
+
+    return new WebhookDeliveryResource(resent)
+      .additional({ status: 'success', message: 'Delivery resent', code: 201 })
+      .response()
+      .setStatusCode(201)
+  }
+
+  /** Re-queue every failed delivery of an endpoint in the background. */
+  async resendFailed({ req }: HttpContext) {
+    const endpoint = await this.scopedEndpoint(req)
+
+    const queued = await webhookService.resendFailed(endpoint)
+
+    await audit.recordForRequest(req, {
+      projectId: endpoint.projectId,
+      action: 'webhook.failed_deliveries_resent',
+      entityType: 'webhook_endpoint',
+      entityId: endpoint.id,
+    })
+
+    return new WebhookEndpointResource(endpoint)
+      .additional({
+        status: 'success',
+        message: queued ? `Resending ${queued} failed deliveries` : 'No failed deliveries to resend',
+        code: 201,
+        queued,
+      })
+      .response()
+      .setStatusCode(201)
+  }
+
+  /** Resolve the route's endpoint within its scoped project (404 otherwise). */
+  private async scopedEndpoint(req: HttpContext['req']) {
+    const webhookId = String(req.params.webhookId)
+    const project = await this.scopedProject(req)
+
+    return WebhookEndpoint.where({ id: webhookId, projectId: project.id }).firstOrFail()
   }
 
   /** Resolve the route's project, scoped to the active organization (404 otherwise). */

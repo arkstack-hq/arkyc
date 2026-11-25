@@ -42,8 +42,11 @@ export class WebhookNotifications {
       .about({
         title: 'Webhook deliveries failing',
         description: `${endpoint.url} in ${project?.name ?? 'your project'} failed a ${delivery.event} delivery after ${delivery.attempts} attempts (${status}).`,
-        actionText: 'Review webhooks',
-        actionLink: organization && project ? `/o/${organization.slug}/projects/${project.id}/webhooks` : null,
+        actionText: 'Review deliveries',
+        actionLink:
+          organization && project
+            ? `/o/${organization.slug}/projects/${project.id}/webhooks?deliveries=${endpoint.id}`
+            : null,
         meta: {
           endpoint_id: endpoint.id,
           delivery_id: delivery.id,

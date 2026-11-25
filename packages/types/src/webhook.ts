@@ -77,14 +77,14 @@ export interface WebhookEndpoint extends Entity, ProjectScoped {
 /** Delivery attempt state for a webhook. */
 export type WebhookDeliveryStatus = 'pending' | 'delivered' | 'failed'
 
-/** A record of a webhook delivery (and its retries). */
-export interface WebhookDelivery extends Entity, ProjectScoped {
+/** A webhook delivery and the outcome of its latest attempt (the payload is not returned). */
+export interface WebhookDelivery extends Entity {
+  project_id: Id
   webhook_endpoint_id: Id
   event: WebhookEventName
-  payload: WebhookEvent
+  session_id: Id | null
   status: WebhookDeliveryStatus
   response_status: number | null
   response_body: string | null
   attempts: number
-  next_retry_at: IsoDateTime | null
 }
