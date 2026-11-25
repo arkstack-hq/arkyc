@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import type { WebhookDelivery, WebhookDeliveryStatus, WebhookEndpoint } from '@arkyc/types'
 import { Webhooks, errorMessage } from '@/lib/api'
 import { useOrganization, useOrganizationId } from '@/contexts/organization-context'
+import { useConfirm } from '@/components/Confirm'
 import { formatDateTime, humanize } from '@/lib/utils'
 import { Loading, ErrorState, EmptyState } from '@/components/States'
 import { Pagination } from '@/components/Pagination'
@@ -66,6 +67,7 @@ export function WebhookDeliveriesDialog({
     },
   )
 
+  const confirm = useConfirm()
   const [resendingId, setResendingId] = useState<string | null>(null)
   const [inspecting, setInspecting] = useState<WebhookDelivery | null>(null)
 
@@ -96,6 +98,14 @@ export function WebhookDeliveriesDialog({
   }
 
   const resendAll = async () => {
+    const ok = await confirm({
+      title: 'Resend all failed deliveries?',
+      description: `Every failed delivery for this endpoint is sent to ${endpoint.url} again. Your handler may process those events twice if it is not idempotent.`,
+      confirmLabel: 'Resend all',
+      destructive: false,
+    })
+    if (!ok) return
+
     try {
       const queued = await resendFailed()
 
