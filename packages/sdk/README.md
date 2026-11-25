@@ -61,6 +61,11 @@ await arkyc.webhooks.endpoints.update(endpoint.id, { status: 'disabled' })
 // No id needed: find the endpoint by the signing secret you already store,
 // e.g. to repoint a dev endpoint at a fresh tunnel URL on boot.
 await arkyc.webhooks.endpoints.updateBySecret(secret, { url: 'https://new-tunnel.example.com/webhooks/arkyc' })
+
+// Resend deliveries that used up their retries.
+const failed = await arkyc.webhooks.endpoints.deliveries(endpoint.id, { status: 'failed' })
+await arkyc.webhooks.endpoints.resend(endpoint.id, failed[0].id)
+await arkyc.webhooks.endpoints.resendFailed(endpoint.id) // resolves to how many were queued
 ```
 
 ## Browser

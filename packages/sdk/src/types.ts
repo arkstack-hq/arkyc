@@ -4,6 +4,7 @@ import type {
   Metadata,
   VerificationDecision,
   VerificationStatus,
+  WebhookDeliveryStatus,
   WebhookEndpointStatus,
   WebhookEventName,
   WorkflowConfig,
@@ -88,6 +89,26 @@ export interface ListWebhookEndpointsParams {
   page?: number
   /** Endpoints per page (the API caps this at 50). */
   perPage?: number
+}
+
+/** A webhook delivery and the outcome of its latest attempt. */
+export interface WebhookDelivery {
+  id: string
+  project_id: string
+  webhook_endpoint_id: string
+  event: WebhookEventName
+  session_id: string | null
+  status: WebhookDeliveryStatus
+  response_status: number | null
+  response_body: string | null
+  attempts: number
+  created_at: string
+  updated_at: string
+}
+
+/** Filters and pagination for listing an endpoint's deliveries. */
+export interface ListWebhookDeliveriesParams extends ListWebhookEndpointsParams {
+  status?: WebhookDeliveryStatus
 }
 
 /** Configuration for the server SDK client. */
