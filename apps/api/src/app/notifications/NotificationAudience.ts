@@ -1,4 +1,4 @@
-import type { PermissionKey } from '@arkyc/types'
+import type { AdminPermissionKey, PermissionKey } from '@arkyc/types'
 import type { QueryBuilder } from 'arkormx'
 import { User } from '@app/models/User'
 import type { VerificationSession } from '@app/models/VerificationSession'
@@ -61,5 +61,27 @@ export class NotificationAudience {
             .whereHas('permission', (perm: RelationQuery) => perm.where({ name: permission })),
         )
       })
+  }
+
+  /**
+   * Platform admins holding `permission` through an admin role or a direct admin grant.
+   *
+   * @param permission
+   * @returns
+   */
+  static platformAdmins(permission: AdminPermissionKey): Query {
+    const named = (perm: RelationQuery) => perm.where({ name: permission })
+
+    return (User.query() as unknown as Query).whereHas('adminPermissions', (grant: RelationQuery) =>
+      grant.where((scope: RelationQuery) =>
+        scope
+          .whereHas('role', (role: RelationQuery) =>
+            role
+              .where({ admin: true })
+              .whereHas('rolePermissions', (rp: RelationQuery) => rp.whereHas('permission', named)),
+          )
+          .orWhereHas('permission', named),
+      ),
+    )
   }
 }
