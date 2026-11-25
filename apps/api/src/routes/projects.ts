@@ -50,6 +50,11 @@ Router.group('/v1/dashboard/organizations/:organizationId/projects', () => {
     [WebhookEndpointController, 'deliveries'],
     scoped('webhooks.view'),
   )
+  Router.get(
+    '/:projectId/webhooks/:webhookId/deliveries/:deliveryId',
+    [WebhookEndpointController, 'delivery'],
+    scoped('webhooks.view'),
+  )
   Router.patch(
     '/:projectId/webhooks/:webhookId/deliveries/resend',
     [WebhookEndpointController, 'resendFailed'],

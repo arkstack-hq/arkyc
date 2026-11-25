@@ -88,3 +88,8 @@ export interface WebhookDelivery extends Entity {
   response_body: string | null
   attempts: number
 }
+
+/** A webhook delivery with the payload that was sent. */
+export interface WebhookDeliveryDetail extends WebhookDelivery {
+  payload: WebhookEvent
+}

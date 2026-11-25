@@ -129,6 +129,7 @@ keys are ignored.
 | `DELETE` | `/webhooks/:webhookId`                               | `webhooks.delete` | Delete an endpoint.                              |
 | `POST`   | `/webhooks/:webhookId/test`                          | `webhooks.test`   | Queue a sample delivery.                         |
 | `GET`    | `/webhooks/:webhookId/deliveries`                    | `webhooks.view`   | List deliveries, newest first (`status` filter). |
+| `GET`    | `/webhooks/:webhookId/deliveries/:deliveryId`        | `webhooks.view`   | One delivery with its payload and response body. |
 | `PATCH`  | `/webhooks/:webhookId/deliveries/resend`             | `webhooks.update` | Resend every failed delivery in the background.  |
 | `PATCH`  | `/webhooks/:webhookId/deliveries/:deliveryId/resend` | `webhooks.update` | Resend one failed delivery.                      |
 

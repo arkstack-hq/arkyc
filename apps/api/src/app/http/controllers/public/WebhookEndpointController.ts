@@ -5,6 +5,7 @@ import { BaseController } from '@controllers/BaseController'
 import { WebhookDelivery } from '@app/models/WebhookDelivery'
 import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
 import WebhookDeliveryResource from '@app/http/resources/WebhookDeliveryResource'
+import WebhookDeliveryDetailResource from '@app/http/resources/WebhookDeliveryDetailResource'
 import WebhookDeliveryCollection from '@app/http/resources/WebhookDeliveryCollection'
 import WebhookEndpointResource from '@app/http/resources/WebhookEndpointResource'
 import WebhookEndpointCollection from '@app/http/resources/WebhookEndpointCollection'
@@ -122,6 +123,19 @@ export default class WebhookEndpointController extends BaseController {
     const deliveries = await webhookService.deliveries(endpoint, status).paginate(perPage(req.query))
 
     return new WebhookDeliveryCollection(deliveries).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
+  }
+
+  /** Fetch one delivery with the payload sent and the endpoint's response. */
+  async delivery({ req }: HttpContext) {
+    const deliveryId = String(req.params.deliveryId)
+    const endpoint = await this.scopedEndpoint(req)
+    const delivery = await WebhookDelivery.where({ id: deliveryId, webhookEndpointId: endpoint.id }).firstOrFail()
+
+    return new WebhookDeliveryDetailResource(delivery).additional({
       status: 'success',
       message: 'OK',
       code: 200,

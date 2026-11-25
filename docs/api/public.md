@@ -21,6 +21,7 @@ The key resolves the organization + project; a key can only touch its own projec
 | `PATCH` | `/v1/webhooks/:id`                               | Update an endpoint by id.                          |
 | `PATCH` | `/v1/webhooks`                                   | Update the endpoint whose signing secret matches.  |
 | `GET`   | `/v1/webhooks/:id/deliveries`                    | List an endpoint's deliveries.                     |
+| `GET`   | `/v1/webhooks/:id/deliveries/:deliveryId`        | Retrieve a delivery with its payload.              |
 | `PATCH` | `/v1/webhooks/:id/deliveries/resend`             | Resend every failed delivery.                      |
 | `PATCH` | `/v1/webhooks/:id/deliveries/:deliveryId/resend` | Resend one failed delivery.                        |
 
@@ -139,6 +140,13 @@ Lists the endpoint's deliveries, newest first, paginated. Each has `id`,
 `event`, `session_id`, `status` (`pending` | `delivered` | `failed`),
 `response_status`, `response_body`, `attempts`, `created_at` and `updated_at`;
 the payload itself is not returned. `status` is optional.
+
+```http
+GET /api/v1/webhooks/:id/deliveries/:deliveryId
+```
+
+Returns the same fields plus `payload`, the exact event body that was sent.
+`response_body` holds the first 2,000 characters of the endpoint's latest reply.
 
 ```http
 PATCH /api/v1/webhooks/:id/deliveries/:deliveryId/resend

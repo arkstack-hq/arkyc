@@ -375,6 +375,26 @@ describe('resending failed webhook deliveries', () => {
     expect(res.body.data[0].payload).toBeUndefined()
   })
 
+  it('shows one delivery with its payload and response body', async () => {
+    const { endpointId, ids } = await endpointWithFailures(1)
+
+    const dashboard = await authed('get', webhooks(`/${endpointId}/deliveries/${ids[0]}`))
+
+    expect(dashboard.status).toBe(200)
+    expect(dashboard.body.data).toMatchObject({
+      id: ids[0],
+      session_id: 'resend-0',
+      response_status: 400,
+      response_body: 'bad request',
+      payload: { event: 'verification.started', session_id: 'resend-0' },
+    })
+
+    const publicApi = await api('get', `/${endpointId}/deliveries/${ids[0]}`)
+
+    expect(publicApi.status).toBe(200)
+    expect(publicApi.body.data.payload.session_id).toBe('resend-0')
+  })
+
   it('resends one failed delivery from the dashboard, then refuses a second resend', async () => {
     const { endpointId, ids } = await endpointWithFailures(1)
     const before = received.length
@@ -429,7 +449,7 @@ describe('resending failed webhook deliveries', () => {
     expect(all.body.queued).toBe(2)
   })
 
-  it("can't resend another project's deliveries (404)", async () => {
+  it("can't read or resend another project's deliveries (404)", async () => {
     const { endpointId, ids } = await endpointWithFailures(1)
     const other = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'Wh Resend Other' })
     const otherKey = await authed(
@@ -437,6 +457,7 @@ describe('resending failed webhook deliveries', () => {
       `/organizations/${fx.organizationId}/projects/${other.body.data.id}/api-keys`,
     ).send({ name: 'Resend other key' })
 
+    expect((await api('get', `/${endpointId}/deliveries/${ids[0]}`, otherKey.body.secret)).status).toBe(404)
     expect((await api('patch', `/${endpointId}/deliveries/${ids[0]}/resend`, otherKey.body.secret)).status).toBe(404)
     expect((await api('patch', `/${endpointId}/deliveries/resend`, otherKey.body.secret)).status).toBe(404)
   })

@@ -8,7 +8,7 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **Resend failed webhooks.** Each webhook endpoint now has a delivery log in the dashboard, filterable by status, where you can resend one failed delivery or all of them at once. Apps can do the same over the Public API (`GET /v1/webhooks/:id/deliveries`, `PATCH /v1/webhooks/:id/deliveries/resend`, `PATCH /v1/webhooks/:id/deliveries/:deliveryId/resend`) or the SDK (`deliveries`, `resend`, `resendFailed`). The "Webhook deliveries failing" notification opens the failed deliveries directly.
+- **Inspect and resend webhooks.** Each webhook endpoint now has a delivery log in the dashboard, filterable by status. Open a delivery to see the payload sent and the endpoint's response body, or resend one failed delivery or all of them at once. Apps can do the same over the Public API (`GET /v1/webhooks/:id/deliveries`, `GET /v1/webhooks/:id/deliveries/:deliveryId`, `PATCH /v1/webhooks/:id/deliveries/resend`, `PATCH /v1/webhooks/:id/deliveries/:deliveryId/resend`) or the SDK (`deliveries`, `retrieveDelivery`, `resend`, `resendFailed`). The "Webhook deliveries failing" notification opens the failed deliveries directly.
 - **Clone a project** from its settings page. Pick a name and environment, and the new project starts with the original's settings and branding (logo included). API keys, webhooks, members and sessions are not copied. Production still needs a verified business.
 
 ## [2.5.1] - 2026-10-22
