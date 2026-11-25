@@ -105,8 +105,9 @@ describe('projects & api keys', () => {
     expect(res.body.data.settings.thresholds.livenessThreshold).toBe(0.9)
   })
 
-  it('mints an API key (secret shown once) and revokes it', async () => {
-    const create = await authed('post', `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys`).send({
+  it('mints an API key (secret shown once), revokes it, then deletes it', async () => {
+    const keys = `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys`
+    const create = await authed('post', keys).send({
       name: 'Default key',
     })
 
@@ -114,19 +115,28 @@ describe('projects & api keys', () => {
     expect(create.body.secret).toMatch(/^sk_test_/)
     const keyId = create.body.data.id
 
-    const list = await authed('get', `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys`)
+    const list = await authed('get', keys)
 
     expect(list.body.data.some((k: { id: string }) => k.id === keyId)).toBe(true)
     // The list never exposes the secret hash.
     expect(JSON.stringify(list.body)).not.toContain('keyHash')
 
-    const revoke = await authed(
-      'delete',
-      `/organizations/${ctx.organizationId}/projects/${projectId}/api-keys/${keyId}`,
-    )
+    const deleteActive = await authed('delete', `${keys}/${keyId}`)
 
-    expect(revoke.status).toBe(200)
+    expect(deleteActive.status).toBe(409)
+
+    const revoke = await authed('patch', `${keys}/${keyId}/revoke`)
+
+    expect(revoke.status).toBe(201)
     expect(revoke.body.data.revoked_at).toBeTruthy()
+
+    const remove = await authed('delete', `${keys}/${keyId}`)
+
+    expect(remove.status).toBe(200)
+
+    const after = await authed('get', keys)
+
+    expect(after.body.data.some((k: { id: string }) => k.id === keyId)).toBe(false)
   })
 })
 

@@ -1,6 +1,6 @@
 import { ApiKey } from '@app/models/ApiKey'
 import { ApiKey as ApiKeyAuth } from '@arkyc/auth'
-import { perPage } from '@arkstack/common'
+import { RequestException, perPage } from '@arkstack/common'
 import ApiKeyCollection from '@app/http/resources/ApiKeyCollection'
 import ApiKeyResource from '@app/http/resources/ApiKeyResource'
 import { BaseController } from '@controllers/BaseController'
@@ -20,7 +20,9 @@ export default class ApiKeyController extends BaseController {
       id: req.params.projectId,
       organizationId: req.organization!.id,
     }).firstOrFail()
-    const keys = await ApiKey.where({ projectId: project.id }).paginate(perPage(req.query))
+    const keys = await ApiKey.where({ projectId: project.id })
+      .orderBy({ createdAt: 'desc' })
+      .paginate(perPage(req.query))
 
     return new ApiKeyCollection(keys).additional({
       status: 'success',
@@ -71,35 +73,73 @@ export default class ApiKeyController extends BaseController {
   }
 
   /**
-   * Revoke an API key (sets `revoked_at`).
+   * Revoke an API key (sets `revoked_at`). Revoking an already revoked key keeps its original timestamp.
    *
    * @param   ctx  The HTTP context (`:projectId`, `:keyId`, `req.organization`).
-   * @returns      The revoked ApiKeyResource.
+   * @returns      The revoked ApiKeyResource (HTTP 201).
+   */
+  async revoke({ req }: HttpContext) {
+    const key = await this.scopedKey(req)
+
+    if (!key.revokedAt) {
+      key.revokedAt = new Date()
+      await key.save()
+
+      await audit.recordForRequest(req, {
+        projectId: key.projectId,
+        action: 'api_key.revoked',
+        entityType: 'api_key',
+        entityId: key.id,
+      })
+    }
+
+    return new ApiKeyResource(key)
+      .additional({
+        status: 'success',
+        message: 'API key revoked',
+        code: 201,
+      })
+      .response()
+      .setStatusCode(201)
+  }
+
+  /**
+   * Delete a revoked API key. Active keys must be revoked first.
+   *
+   * @param   ctx  The HTTP context (`:projectId`, `:keyId`, `req.organization`).
+   * @returns      The deleted ApiKeyResource.
    */
   async destroy({ req }: HttpContext) {
-    const project = await Project.where({
-      id: req.params.projectId,
-      organizationId: req.organization!.id,
-    }).firstOrFail()
-    const key = await ApiKey.where({
-      id: req.params.keyId,
-      projectId: project.id,
-    }).firstOrFail()
+    const key = await this.scopedKey(req)
 
-    key.revokedAt = new Date()
-    await key.save()
+    RequestException.abortIf(!key.revokedAt, 'Revoke this API key before deleting it', 409)
+
+    await key.delete()
 
     await audit.recordForRequest(req, {
-      projectId: project.id,
-      action: 'api_key.revoked',
+      projectId: key.projectId,
+      action: 'api_key.deleted',
       entityType: 'api_key',
       entityId: key.id,
     })
 
     return new ApiKeyResource(key).additional({
       status: 'success',
-      message: 'API key revoked',
+      message: 'API key deleted',
       code: 200,
     })
+  }
+
+  /** Find `:keyId` within `:projectId` of the request's organization, or 404. */
+  private async scopedKey(req: HttpContext['req']) {
+    const project = await Project.where({
+      id: req.params.projectId,
+      organizationId: req.organization!.id,
+    }).firstOrFail()
+
+    return ApiKey.where({
+      id: req.params.keyId,
+      projectId: project.id,
+    }).firstOrFail()
   }
 }

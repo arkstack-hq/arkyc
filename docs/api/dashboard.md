@@ -111,11 +111,12 @@ keys are ignored.
 
 **Base:** `/api/v1/dashboard/organizations/:organizationId/projects/:projectId/api-keys`
 
-| Method   | Path               | Permission        | Description                                 |
-| -------- | ------------------ | ----------------- | ------------------------------------------- |
-| `GET`    | `/api-keys`        | `api_keys.view`   | List keys (secret never returned).          |
-| `POST`   | `/api-keys`        | `api_keys.create` | Mint a key; plaintext secret returned once. |
-| `DELETE` | `/api-keys/:keyId` | `api_keys.revoke` | Revoke a key.                               |
+| Method   | Path                      | Permission        | Description                                      |
+| -------- | ------------------------- | ----------------- | ------------------------------------------------ |
+| `GET`    | `/api-keys`               | `api_keys.view`   | List keys, newest first (secret never returned). |
+| `POST`   | `/api-keys`               | `api_keys.create` | Mint a key; plaintext secret returned once.      |
+| `PATCH`  | `/api-keys/:keyId/revoke` | `api_keys.revoke` | Revoke a key (201).                              |
+| `DELETE` | `/api-keys/:keyId`        | `api_keys.revoke` | Delete a revoked key; active keys return 409.    |
 
 ## Webhooks
 

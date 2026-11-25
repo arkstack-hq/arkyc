@@ -11,7 +11,7 @@ export class ApiKeys {
     return alova.Get<Paginated<ApiKey>>(`${p(organizationId, projectId)}/api-keys`, {
       name: 'apiKeys:list',
       cacheFor: CACHE,
-      hitSource: ['apiKey:create', 'apiKey:revoke'],
+      hitSource: ['apiKey:create', 'apiKey:revoke', 'apiKey:delete'],
       params: params(query),
     })
   }
@@ -29,8 +29,15 @@ export class ApiKeys {
 
   /** Revoke an API key. */
   static revoke(organizationId: string, projectId: string, keyId: string) {
-    return alova.Delete<unknown>(`${p(organizationId, projectId)}/api-keys/${keyId}`, undefined, {
+    return alova.Patch<unknown>(`${p(organizationId, projectId)}/api-keys/${keyId}/revoke`, undefined, {
       name: 'apiKey:revoke',
+    })
+  }
+
+  /** Delete a revoked API key. */
+  static remove(organizationId: string, projectId: string, keyId: string) {
+    return alova.Delete<unknown>(`${p(organizationId, projectId)}/api-keys/${keyId}`, undefined, {
+      name: 'apiKey:delete',
     })
   }
 }

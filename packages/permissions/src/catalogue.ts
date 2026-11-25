@@ -45,7 +45,7 @@ export class Catalogue {
 
     { name: 'api_keys.view', group: 'api_keys', description: 'View API keys' },
     { name: 'api_keys.create', group: 'api_keys', description: 'Create API keys' },
-    { name: 'api_keys.revoke', group: 'api_keys', description: 'Revoke API keys' },
+    { name: 'api_keys.revoke', group: 'api_keys', description: 'Revoke and delete API keys' },
 
     { name: 'webhooks.view', group: 'webhooks', description: 'View webhook endpoints' },
     { name: 'webhooks.create', group: 'webhooks', description: 'Create webhook endpoints' },

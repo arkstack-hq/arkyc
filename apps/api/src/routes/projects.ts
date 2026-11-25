@@ -32,6 +32,7 @@ Router.group('/v1/dashboard/organizations/:organizationId/projects', () => {
   // API keys (project-scoped)
   Router.get('/:projectId/api-keys', [ApiKeyController, 'index'], scoped('api_keys.view'))
   Router.post('/:projectId/api-keys', [ApiKeyController, 'create'], scoped('api_keys.create'))
+  Router.patch('/:projectId/api-keys/:keyId/revoke', [ApiKeyController, 'revoke'], scoped('api_keys.revoke'))
   Router.delete('/:projectId/api-keys/:keyId', [ApiKeyController, 'destroy'], scoped('api_keys.revoke'))
 
   // Webhook endpoints (project-scoped)
