@@ -1,4 +1,4 @@
-import type { WebhookDelivery, WebhookDeliveryStatus, WebhookEndpoint } from '@arkyc/types'
+import type { WebhookDelivery, WebhookDeliveryDetail, WebhookDeliveryStatus, WebhookEndpoint } from '@arkyc/types'
 import { CACHE, type Envelope, type Paginated, alova, p, params, unwrap } from './client'
 import type { CreateWebhookInput } from './types'
 
@@ -65,6 +65,14 @@ export class Webhooks {
     return alova.Get<Paginated<WebhookDelivery>>(`${p(organizationId, projectId)}/webhooks/${webhookId}/deliveries`, {
       name: 'webhooks:deliveries',
       params: params(query),
+    })
+  }
+
+  /** One delivery with the payload sent and the endpoint's response. */
+  static delivery(organizationId: string, projectId: string, webhookId: string, deliveryId: string) {
+    return alova.Get(`${p(organizationId, projectId)}/webhooks/${webhookId}/deliveries/${deliveryId}`, {
+      name: 'webhooks:delivery',
+      transform: unwrap<WebhookDeliveryDetail>,
     })
   }
 
