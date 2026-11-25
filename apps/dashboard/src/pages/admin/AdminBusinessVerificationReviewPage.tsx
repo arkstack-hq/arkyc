@@ -4,6 +4,7 @@ import { useRequest } from 'alova/client'
 import { BusinessVerifications, errorMessage } from '@/lib/api'
 import { formatDateTime } from '@/lib/utils'
 import { useAdmin } from '@/contexts/admin-context'
+import { useConfirm } from '@/components/Confirm'
 import { ErrorState, Loading, PageHeader } from '@/components/States'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,7 @@ import { REVIEW_STATUS } from './AdminBusinessVerificationsPage'
 export default function AdminBusinessVerificationReviewPage() {
   const { id } = useParams()
   const { can } = useAdmin()
+  const confirm = useConfirm()
   const [note, setNote] = useState('')
 
   const {
@@ -39,6 +41,17 @@ export default function AdminBusinessVerificationReviewPage() {
     setNote('')
     void reload()
   })
+
+  const reject = async () => {
+    const ok = await confirm({
+      title: 'Reject business verification?',
+      description: 'The submission is marked rejected and the organization sees your note.',
+      confirmLabel: 'Reject',
+    })
+    if (!ok) return
+
+    await decision.send(false)
+  }
 
   if (error) return <ErrorState error={error} />
   if (loading || !verification) return <Loading />
@@ -92,7 +105,7 @@ export default function AdminBusinessVerificationReviewPage() {
                   <Button
                     variant="destructive"
                     disabled={decision.loading || !note.trim()}
-                    onClick={() => void decision.send(false)}
+                    onClick={() => void reject()}
                   >
                     Reject
                   </Button>

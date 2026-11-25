@@ -5,6 +5,7 @@ import { CheckCheck, Settings, Trash2 } from 'lucide-react'
 import type { UserNotification } from '@arkyc/types'
 import { Notifications } from '@/lib/api'
 import { useAuth } from '@/contexts/auth-context'
+import { useConfirm } from '@/components/Confirm'
 import { useRealtime, useRealtimeChannel } from '@/contexts/realtime-context'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -20,6 +21,7 @@ export default function NotificationsPage() {
   const { user } = useAuth()
   const realtime = useRealtime()
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [filter, setFilter] = useState<Filter>('all')
 
   const {
@@ -66,6 +68,17 @@ export default function NotificationsPage() {
   const act = async (action: Promise<unknown>) => {
     await action
     refresh()
+  }
+
+  const onDelete = async (notification: UserNotification) => {
+    const ok = await confirm({
+      title: 'Delete notification?',
+      description: `"${notification.title}" will be removed from your inbox permanently.`,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
+
+    await act(remove(notification.id))
   }
 
   return (
@@ -153,7 +166,7 @@ export default function NotificationsPage() {
                     size="icon-sm"
                     aria-label="Delete notification"
                     title="Delete"
-                    onClick={() => void act(remove(notification.id))}
+                    onClick={() => void onDelete(notification)}
                   >
                     <Trash2 />
                   </Button>
