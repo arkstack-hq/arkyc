@@ -89,6 +89,24 @@ const config = () => {
         },
       },
     },
+    notification: {
+      email: {
+        subject: '{title}',
+        template: ['Hello <b>{name}</b>,', '', '{description}', '', 'Thank you,', 'The {app_name} Team'].join(
+          '<br />\n',
+        ),
+        template_with_action: [
+          'Hello <b>{name}</b>,',
+          '',
+          '{description}',
+          '',
+          '<a href="{action_link}">{action_text}</a>',
+          '',
+          'Thank you,',
+          'The {app_name} Team',
+        ].join('<br />\n'),
+      },
+    },
   }
 }
 

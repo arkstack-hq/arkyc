@@ -16,6 +16,10 @@ export const NOTIFICATION_TYPE = {
   screeningHit: 'screening.hit',
   /** A platform admin approved or rejected your organization's business verification. */
   businessVerificationDecided: 'business_verification.decided',
+  /** An organization submitted its business verification for platform-admin review. */
+  businessVerificationSubmitted: 'business_verification.submitted',
+  /** A project requested extended access that platform admins must review. */
+  extendedAccessRequested: 'extended_access.requested',
 } as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE]

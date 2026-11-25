@@ -26,6 +26,7 @@ export class NotificationEvent {
   private recipientIds = new Set<string>()
   private audience: (() => Promise<UserQuery>) | null = null
   private actorId: string | null = null
+  private email = false
   private content: Omit<NotificationPayload, 'type'> = { title: '', description: '' }
 
   private constructor(private readonly type: NotificationType) {}
@@ -90,6 +91,17 @@ export class NotificationEvent {
   }
 
   /**
+   * Also email each recipient, for events that wait on them.
+   *
+   * @returns
+   */
+  viaEmail(): this {
+    this.email = true
+
+    return this
+  }
+
+  /**
    * Queue delivery to every recipient. Failures are reported, never thrown, so
    * notifying can't break the operation that triggered it.
    */
@@ -102,7 +114,7 @@ export class NotificationEvent {
   }
 
   private async dispatch(): Promise<void> {
-    const payload: NotificationPayload = { ...this.content, type: this.type }
+    const payload: NotificationPayload = { ...this.content, type: this.type, email: this.email }
     const direct = [...this.recipientIds].filter((id) => id !== this.actorId)
 
     for (let i = 0; i < direct.length; i += BATCH_SIZE) {
