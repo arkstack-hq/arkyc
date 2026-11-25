@@ -12,7 +12,7 @@ export class Webhooks {
     return alova.Get<Paginated<WebhookEndpoint>>(`${p(organizationId, projectId)}/webhooks`, {
       name: 'webhooks:list',
       cacheFor: CACHE,
-      hitSource: ['webhook:create', 'webhook:update', 'webhook:remove'],
+      hitSource: ['webhook:create', 'webhook:update', 'webhook:remove', 'webhook:rotate-secret'],
       params: params(query),
     })
   }
@@ -38,6 +38,17 @@ export class Webhooks {
     return alova.Patch(`${p(organizationId, projectId)}/webhooks/${webhookId}`, input, {
       name: 'webhook:update',
       transform: unwrap<WebhookEndpoint>,
+    })
+  }
+
+  /** Replace an endpoint's signing secret; the new secret is returned once, here only. */
+  static rotateSecret(organizationId: string, projectId: string, webhookId: string) {
+    return alova.Patch(`${p(organizationId, projectId)}/webhooks/${webhookId}/secret`, undefined, {
+      name: 'webhook:rotate-secret',
+      transform: (raw: Envelope<WebhookEndpoint> & { secret: string }) => ({
+        ...(raw.data as WebhookEndpoint),
+        secret: raw.secret as string,
+      }),
     })
   }
 

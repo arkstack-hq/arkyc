@@ -201,6 +201,30 @@ export default class WebhookEndpointController extends BaseController {
       .setStatusCode(201)
   }
 
+  /** Replace an endpoint's signing secret; the new secret is returned exactly once. */
+  async rotateSecret({ req }: HttpContext) {
+    const endpoint = await this.scopedEndpoint(req)
+
+    const secret = await webhookService.rotateSecret(endpoint)
+
+    await audit.recordForRequest(req, {
+      projectId: endpoint.projectId,
+      action: 'webhook.secret_rotated',
+      entityType: 'webhook_endpoint',
+      entityId: endpoint.id,
+    })
+
+    return new WebhookEndpointResource(endpoint)
+      .additional({
+        status: 'success',
+        message: 'Signing secret rotated — store the new secret now; it will not be shown again',
+        code: 201,
+        secret,
+      })
+      .response()
+      .setStatusCode(201)
+  }
+
   /** Resolve the route's endpoint within its scoped project (404 otherwise). */
   private async scopedEndpoint(req: HttpContext['req']) {
     const webhookId = String(req.params.webhookId)

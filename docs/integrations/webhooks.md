@@ -6,7 +6,11 @@ retries and a delivery log.
 ## Configure an endpoint
 
 In the dashboard: **Project → Webhooks → add endpoint**. Provide a URL and the
-events to subscribe to. The **signing secret** is shown once; store it. You can
+events to subscribe to. The **signing secret** is shown once; store it. The
+endpoint list then shows only a masked hint of it (`whsec_1a2b…9f0e`). To replace
+a secret, open the endpoint and choose **Rotate secret** (or call
+`webhooks.endpoints.rotateSecret(id)` from the SDK); the new secret is shown once
+and signs every delivery from then on. You can
 also send a test delivery, or use the
 [Dashboard API](/api/dashboard#webhooks).
 
@@ -169,5 +173,5 @@ over the [Public API](/api/public#deliveries-and-resending), or with the SDK's
 `webhooks.endpoints.resend` / `resendFailed`. A resent delivery carries its
 original payload and gets a fresh set of retries.
 
-> The signing secret is stored as-is to re-sign deliveries; encryption-at-rest is
-> a planned hardening item.
+> The signing secret is stored encrypted at rest and decrypted only to sign a
+> delivery.

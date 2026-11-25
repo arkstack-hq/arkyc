@@ -58,6 +58,8 @@ export interface WebhookEndpoint {
   id: string
   project_id: string
   url: string
+  /** The signing secret with its middle masked, e.g. `whsec_1a2b…9f0e`. */
+  secret_hint: string
   events: WebhookEventName[]
   status: WebhookEndpointStatus
   created_at: string

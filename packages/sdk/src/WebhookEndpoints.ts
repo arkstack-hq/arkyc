@@ -99,6 +99,19 @@ export class WebhookEndpoints {
   }
 
   /**
+   * Replace an endpoint's signing secret. Deliveries are signed with the new
+   * secret straight away, and it is returned only this once, so store it.
+   *
+   * @param id
+   * @returns
+   */
+  async rotateSecret(id: string): Promise<CreatedWebhookEndpoint> {
+    const body = await this.request('PATCH', `/v1/webhooks/${encodeURIComponent(id)}/secret`)
+
+    return { endpoint: body.data as WebhookEndpoint, secret: body.secret as string }
+  }
+
+  /**
    * List an endpoint's deliveries (one page), newest first. Pass `status:
    * 'failed'` for the ones that can be resent.
    *

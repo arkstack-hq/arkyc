@@ -76,6 +76,7 @@ export default function ProjectWebhooksPage() {
     if (linkedEndpointId) setSearchParams({}, { replace: true })
   }
   const [secret, setSecret] = useState<string | null>(null)
+  const [rotatedSecret, setRotatedSecret] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
   const {
@@ -146,6 +147,30 @@ export default function ProjectWebhooksPage() {
     void refreshWebhooks()
   })
 
+  const {
+    send: rotateSecret,
+    loading: rotating,
+    onSuccess: onRotateSuccess,
+  } = useRequest((webhookId: string) => Webhooks.rotateSecret(organizationId, projectId!, webhookId), {
+    immediate: false,
+  })
+
+  onRotateSuccess(({ data }) => {
+    setSelectedWebhook(null)
+    setRotatedSecret(data.secret)
+    void refreshWebhooks()
+  })
+
+  const confirmRotateSecret = async (webhookId: string) => {
+    const ok = await confirm({
+      title: 'Rotate signing secret?',
+      description:
+        'A new secret signs every delivery from now on. Deliveries will fail verification until your server uses the new secret.',
+      confirmLabel: 'Rotate',
+    })
+    if (ok) await rotateSecret(webhookId)
+  }
+
   const confirmDeleteWebhook = async (webhookId: string) => {
     const ok = await confirm({
       title: 'Delete webhook endpoint?',
@@ -162,6 +187,11 @@ export default function ProjectWebhooksPage() {
     setCopied(false)
   }
 
+  const closeRotatedDialog = () => {
+    setRotatedSecret(null)
+    setCopied(false)
+  }
+
   const openManagementDialog = (webhook: WebhookEndpoint) => {
     setSelectedWebhook(webhook)
     updateEditForm({ url: webhook.url, events: webhook.events, status: webhook.status })
@@ -169,7 +199,7 @@ export default function ProjectWebhooksPage() {
   }
 
   const closeManagementDialog = () => {
-    if (saving || deleting) return
+    if (saving || deleting || rotating) return
     setSelectedWebhook(null)
   }
 
@@ -190,10 +220,9 @@ export default function ProjectWebhooksPage() {
     })
   }
 
-  const copySecret = async () => {
-    if (!secret) return
+  const copySecret = async (value: string) => {
     try {
-      await navigator.clipboard.writeText(secret)
+      await navigator.clipboard.writeText(value)
       setCopied(true)
     } catch {
       setCopied(false)
@@ -220,6 +249,7 @@ export default function ProjectWebhooksPage() {
                 <THead>
                   <TR>
                     <TH>URL</TH>
+                    <TH>Signing secret</TH>
                     <TH>Status</TH>
                     <TH>Created</TH>
                     <TH />
@@ -238,6 +268,7 @@ export default function ProjectWebhooksPage() {
                           {webhook.url}
                         </button>
                       </TD>
+                      <TD className="font-mono text-xs">{webhook.secret_hint}</TD>
                       <TD>
                         <Badge variant={webhook.status === 'active' ? 'success' : 'muted'}>
                           {humanize(webhook.status)}
@@ -277,6 +308,24 @@ export default function ProjectWebhooksPage() {
               <DialogDescription>Edit where and when webhook events are delivered.</DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4">
+              <div className="flex items-end justify-between gap-2">
+                <div className="flex flex-col gap-1">
+                  <Label>Signing secret</Label>
+                  <code className="font-mono text-xs">{selectedWebhook.secret_hint}</code>
+                </div>
+                {can('webhooks.update') ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={rotating || saving}
+                    onClick={() => void confirmRotateSecret(selectedWebhook.id)}
+                  >
+                    {rotating ? <Spinner /> : null}
+                    Rotate secret
+                  </Button>
+                ) : null}
+              </div>
               <Field>
                 <FieldLabel htmlFor="edit-webhook-url">Endpoint URL</FieldLabel>
                 <InputGroup>
@@ -371,6 +420,30 @@ export default function ProjectWebhooksPage() {
         ) : null}
       </Dialog>
 
+      <Dialog open={!!rotatedSecret} onClose={closeRotatedDialog}>
+        {rotatedSecret ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Signing secret rotated</DialogTitle>
+              <DialogDescription>
+                Copy the new signing secret now — it will not be shown again. Update your server to verify with it.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="rounded-md border border-warning bg-warning/10 p-3">
+              <code className="block break-all font-mono text-sm">{rotatedSecret}</code>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => void copySecret(rotatedSecret)}>
+                {copied ? 'Copied' : 'Copy'}
+              </Button>
+              <Button type="button" onClick={closeRotatedDialog}>
+                Done
+              </Button>
+            </DialogFooter>
+          </>
+        ) : null}
+      </Dialog>
+
       <Dialog open={open} onClose={closeDialog}>
         {secret ? (
           <>
@@ -382,7 +455,7 @@ export default function ProjectWebhooksPage() {
               <code className="block break-all font-mono text-sm">{secret}</code>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={copySecret}>
+              <Button type="button" variant="outline" onClick={() => void copySecret(secret)}>
                 {copied ? 'Copied' : 'Copy'}
               </Button>
               <Button type="button" onClick={closeDialog}>

@@ -35,6 +35,7 @@ Router.group('/v1/webhooks', () => {
   Router.patch('/', [WebhookEndpointController, 'updateBySecret'], [apiLimiter, apiKeyAuth])
   Router.get('/:id', [WebhookEndpointController, 'show'], [apiLimiter, apiKeyAuth])
   Router.patch('/:id', [WebhookEndpointController, 'update'], [apiLimiter, apiKeyAuth])
+  Router.patch('/:id/secret', [WebhookEndpointController, 'rotateSecret'], [apiLimiter, apiKeyAuth])
   Router.get('/:id/deliveries', [WebhookEndpointController, 'deliveries'], [apiLimiter, apiKeyAuth])
   Router.get('/:id/deliveries/:deliveryId', [WebhookEndpointController, 'delivery'], [apiLimiter, apiKeyAuth])
   Router.patch('/:id/deliveries/resend', [WebhookEndpointController, 'resendFailed'], [apiLimiter, apiKeyAuth])

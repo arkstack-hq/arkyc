@@ -123,10 +123,11 @@ keys are ignored.
 
 | Method   | Path                                                 | Permission        | Description                                      |
 | -------- | ---------------------------------------------------- | ----------------- | ------------------------------------------------ |
-| `GET`    | `/webhooks`                                          | `webhooks.view`   | List endpoints (secret never returned).          |
+| `GET`    | `/webhooks`                                          | `webhooks.view`   | List endpoints with a masked `secret_hint`.      |
 | `POST`   | `/webhooks`                                          | `webhooks.create` | Register an endpoint; secret returned once.      |
 | `PATCH`  | `/webhooks/:webhookId`                               | `webhooks.update` | Update url / events / status.                    |
 | `DELETE` | `/webhooks/:webhookId`                               | `webhooks.delete` | Delete an endpoint.                              |
+| `PATCH`  | `/webhooks/:webhookId/secret`                        | `webhooks.update` | Rotate the signing secret; returned once.        |
 | `POST`   | `/webhooks/:webhookId/test`                          | `webhooks.test`   | Queue a sample delivery.                         |
 | `GET`    | `/webhooks/:webhookId/deliveries`                    | `webhooks.view`   | List deliveries, newest first (`status` filter). |
 | `GET`    | `/webhooks/:webhookId/deliveries/:deliveryId`        | `webhooks.view`   | One delivery with its payload and response body. |

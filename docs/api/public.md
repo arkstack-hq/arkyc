@@ -20,6 +20,7 @@ The key resolves the organization + project; a key can only touch its own projec
 | `GET`   | `/v1/webhooks/:id`                               | Retrieve an endpoint.                              |
 | `PATCH` | `/v1/webhooks/:id`                               | Update an endpoint by id.                          |
 | `PATCH` | `/v1/webhooks`                                   | Update the endpoint whose signing secret matches.  |
+| `PATCH` | `/v1/webhooks/:id/secret`                        | Rotate the signing secret; returns it once.        |
 | `GET`   | `/v1/webhooks/:id/deliveries`                    | List an endpoint's deliveries.                     |
 | `GET`   | `/v1/webhooks/:id/deliveries/:deliveryId`        | Retrieve a delivery with its payload.              |
 | `PATCH` | `/v1/webhooks/:id/deliveries/resend`             | Resend every failed delivery.                      |
@@ -99,9 +100,11 @@ Content-Type: application/json
 { "url": "https://example.com/webhooks/arkyc", "events": ["verification.approved"] }
 ```
 
-`201` with the endpoint (`id`, `project_id`, `url`, `events`, `status`,
-`created_at`) and a top-level `secret` (`whsec_…`). The secret is returned
-**only here**; store it to verify deliveries. `url` must be a valid URL and
+`201` with the endpoint (`id`, `project_id`, `url`, `secret_hint`, `events`,
+`status`, `created_at`) and a top-level `secret` (`whsec_…`). The secret is
+returned **only here** (and on rotation); store it to verify deliveries.
+Every endpoint response carries `secret_hint`, the secret with its middle masked
+(`whsec_1a2b…9f0e`), so you can tell which secret an endpoint uses. `url` must be a valid URL and
 `events` valid [event names](/integrations/webhooks#events) (else `422`).
 
 ```http
@@ -128,6 +131,17 @@ updates it the same way. An integrator that already stores the secret to verify
 deliveries then needs no endpoint id. The secret goes in the body, never the URL
 (which is logged), and is never echoed back. `404` when no endpoint in the
 project has that secret; it never matches another project's endpoint.
+
+### Rotate the signing secret
+
+```http
+PATCH /api/v1/webhooks/:id/secret
+Authorization: Bearer sk_live_…
+```
+
+Replaces the endpoint's signing secret and returns `201` with the endpoint and
+a top-level `secret`, shown only this once. Deliveries are signed with the new
+secret straight away, so update your server before the next one.
 
 ### Deliveries and resending
 

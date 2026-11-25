@@ -466,6 +466,7 @@ liveness, offered per the admin's global capture-model setting.
   - [x] Rate limiting on sensitive surfaces (auth, API-key session routes, webhook test) via the express driver's IP-keyed limiter (no-op under test); `apps/api/src/app/http/middlewares/limiters.ts`.
   - [x] Session-expiry sweep (`sessionService.sweepExpired`), driven by the scheduler or a self-rescheduling `SessionSweepJob` (no-cron option) via `SESSION_SWEEP_DRIVER`.
   - [x] Webhook signing secrets encrypted-at-rest (framework `Encryption`, `APP_KEY`), decrypted only at sign time, + re-encrypt migration.
+  - [x] Webhook signing secrets shown masked (`secret_hint`) and rotatable from the dashboard, Public API and SDK.
   - [x] Per-project allowed-origins enforcement on client-token requests (opt-in; `origin_not_allowed`).
   - [x] Retry-limit + signed-URL TTL audit — all confirmed bounded (webhook 5 / OCR 3 / biometric 5 / liveness 3; asset TTL clamped).
   - [x] Client tokens: the session's launch token is single-use and only claims a per-browser device token bound to the claiming origin; the cross-device QR carries its own single-use handoff token (`session_client_tokens`, `POST /v1/client/claim`, `POST /v1/client/handoff`).
