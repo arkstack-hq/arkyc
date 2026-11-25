@@ -136,6 +136,13 @@ export function NotificationBell() {
             </button>
           ) : null}
         </div>
+        <DropdownMenuSeparator className="m-0" />
+        <DropdownMenuItem
+          onSelect={() => navigate('/notifications')}
+          className="justify-center rounded-none py-2 text-xs text-muted-foreground"
+        >
+          View all notifications
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
