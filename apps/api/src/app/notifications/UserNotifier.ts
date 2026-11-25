@@ -67,7 +67,7 @@ export class UserNotifier {
   }
 
   /**
-   * Email the notification with a link back to the dashboard. Never throws.
+   * Email the notification, linking to its dashboard action when it has one.
    *
    * @param user
    * @param payload

@@ -99,6 +99,7 @@ describe('admin review notifications', () => {
     }
 
     for (const [key, value] of Object.entries(fields)) form.append(key, value)
+
     form.append('incorporation_document', new Blob(['%PDF-1.4 test'], { type: 'application/pdf' }), 'cac.pdf')
 
     const res = await call(fx.owner, 'post', `/dashboard/organizations/${fx.organizationId}/verification`).send(form)

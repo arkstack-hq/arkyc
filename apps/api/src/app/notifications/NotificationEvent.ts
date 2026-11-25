@@ -91,7 +91,7 @@ export class NotificationEvent {
   }
 
   /**
-   * Also email each recipient, for events that wait on them.
+   * Also email each recipient.
    *
    * @returns
    */

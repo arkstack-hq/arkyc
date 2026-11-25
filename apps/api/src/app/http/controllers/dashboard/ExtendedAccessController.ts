@@ -41,8 +41,8 @@ export default class ExtendedAccessController extends BaseController {
   /**
    * Request one or more capabilities for the project. Each requested capability
    * becomes a `pending` grant (a no-op once already `granted`). PII carries its
-   * required categories, timing, and justification. Platform admins are told
-   * about every capability now awaiting their review.
+   * required categories, timing, and justification. Platform admins are notified
+   * of the pending capabilities.
    */
   async request({ req }: HttpContext) {
     const project = await this.project(req)
