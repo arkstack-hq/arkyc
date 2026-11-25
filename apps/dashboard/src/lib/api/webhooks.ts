@@ -1,4 +1,4 @@
-import type { WebhookEndpoint } from '@arkyc/types'
+import type { WebhookDelivery, WebhookDeliveryStatus, WebhookEndpoint } from '@arkyc/types'
 import { CACHE, type Envelope, type Paginated, alova, p, params, unwrap } from './client'
 import type { CreateWebhookInput } from './types'
 
@@ -52,6 +52,36 @@ export class Webhooks {
   static test(organizationId: string, projectId: string, webhookId: string) {
     return alova.Post<unknown>(`${p(organizationId, projectId)}/webhooks/${webhookId}/test`, undefined, {
       name: 'webhook:test',
+    })
+  }
+
+  /** Paginated deliveries for an endpoint, newest first, optionally filtered by status. */
+  static deliveries(
+    organizationId: string,
+    projectId: string,
+    webhookId: string,
+    query?: { page?: number; limit?: number; status?: WebhookDeliveryStatus },
+  ) {
+    return alova.Get<Paginated<WebhookDelivery>>(`${p(organizationId, projectId)}/webhooks/${webhookId}/deliveries`, {
+      name: 'webhooks:deliveries',
+      params: params(query),
+    })
+  }
+
+  /** Resend one failed delivery. */
+  static resend(organizationId: string, projectId: string, webhookId: string, deliveryId: string) {
+    return alova.Patch(
+      `${p(organizationId, projectId)}/webhooks/${webhookId}/deliveries/${deliveryId}/resend`,
+      undefined,
+      { name: 'webhook:resend', transform: unwrap<WebhookDelivery> },
+    )
+  }
+
+  /** Resend every failed delivery of an endpoint in the background; resolves to how many were queued. */
+  static resendFailed(organizationId: string, projectId: string, webhookId: string) {
+    return alova.Patch(`${p(organizationId, projectId)}/webhooks/${webhookId}/deliveries/resend`, undefined, {
+      name: 'webhook:resend-failed',
+      transform: (raw: Envelope<WebhookEndpoint> & { queued?: number }) => Number(raw.queued ?? 0),
     })
   }
 }

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useForm, usePagination, useRequest } from 'alova/client'
 import type { WebhookEndpoint, WebhookEndpointStatus, WebhookEventName } from '@arkyc/types'
 import { Webhooks, errorMessage } from '@/lib/api'
@@ -19,6 +19,7 @@ import { Select } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table'
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { WebhookDeliveriesDialog } from './WebhookDeliveriesDialog'
 
 const EVENT_NAMES: WebhookEventName[] = [
   'verification.started',
@@ -59,6 +60,21 @@ export default function ProjectWebhooksPage() {
 
   const [open, setOpen] = useState(false)
   const [selectedWebhook, setSelectedWebhook] = useState<WebhookEndpoint | null>(null)
+  const [deliveriesFor, setDeliveriesFor] = useState<WebhookEndpoint | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const linkedEndpointId = searchParams.get('deliveries')
+
+  // Open the delivery log an inbox notification links to (`?deliveries=<endpointId>`).
+  useEffect(() => {
+    const linked = linkedEndpointId ? webhooks.find((webhook) => webhook.id === linkedEndpointId) : undefined
+
+    if (linked) setDeliveriesFor(linked)
+  }, [linkedEndpointId, webhooks])
+
+  const closeDeliveries = () => {
+    setDeliveriesFor(null)
+    if (linkedEndpointId) setSearchParams({}, { replace: true })
+  }
   const [secret, setSecret] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -206,6 +222,7 @@ export default function ProjectWebhooksPage() {
                     <TH>URL</TH>
                     <TH>Status</TH>
                     <TH>Created</TH>
+                    <TH />
                   </TR>
                 </THead>
                 <TBody>
@@ -227,6 +244,11 @@ export default function ProjectWebhooksPage() {
                         </Badge>
                       </TD>
                       <TD>{formatDateTime(webhook.created_at)}</TD>
+                      <TD className="text-right">
+                        <Button type="button" size="xs" variant="outline" onClick={() => setDeliveriesFor(webhook)}>
+                          Deliveries
+                        </Button>
+                      </TD>
                     </TR>
                   ))}
                 </TBody>
@@ -237,6 +259,10 @@ export default function ProjectWebhooksPage() {
           )}
         </CardContent>
       </Card>
+
+      {deliveriesFor ? (
+        <WebhookDeliveriesDialog projectId={projectId!} endpoint={deliveriesFor} onClose={closeDeliveries} />
+      ) : null}
 
       <Dialog open={!!selectedWebhook} onClose={closeManagementDialog}>
         {selectedWebhook ? (
