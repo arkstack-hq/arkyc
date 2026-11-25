@@ -9,17 +9,20 @@ The key resolves the organization + project; a key can only touch its own projec
 
 ## Endpoints
 
-| Method  | Path                      | Description                                        |
-| ------- | ------------------------- | -------------------------------------------------- |
-| `GET`   | `/v1/ping/project`        | Health check; confirms the key authenticates.      |
-| `POST`  | `/v1/sessions`            | Create a session; returns a one-time client token. |
-| `GET`   | `/v1/sessions/:id`        | Retrieve a session's current state.                |
-| `POST`  | `/v1/sessions/:id/cancel` | Cancel a non-terminal session.                     |
-| `GET`   | `/v1/webhooks`            | List the project's webhook endpoints.              |
-| `POST`  | `/v1/webhooks`            | Create an endpoint; returns its secret once.       |
-| `GET`   | `/v1/webhooks/:id`        | Retrieve an endpoint.                              |
-| `PATCH` | `/v1/webhooks/:id`        | Update an endpoint by id.                          |
-| `PATCH` | `/v1/webhooks`            | Update the endpoint whose signing secret matches.  |
+| Method  | Path                                             | Description                                        |
+| ------- | ------------------------------------------------ | -------------------------------------------------- |
+| `GET`   | `/v1/ping/project`                               | Health check; confirms the key authenticates.      |
+| `POST`  | `/v1/sessions`                                   | Create a session; returns a one-time client token. |
+| `GET`   | `/v1/sessions/:id`                               | Retrieve a session's current state.                |
+| `POST`  | `/v1/sessions/:id/cancel`                        | Cancel a non-terminal session.                     |
+| `GET`   | `/v1/webhooks`                                   | List the project's webhook endpoints.              |
+| `POST`  | `/v1/webhooks`                                   | Create an endpoint; returns its secret once.       |
+| `GET`   | `/v1/webhooks/:id`                               | Retrieve an endpoint.                              |
+| `PATCH` | `/v1/webhooks/:id`                               | Update an endpoint by id.                          |
+| `PATCH` | `/v1/webhooks`                                   | Update the endpoint whose signing secret matches.  |
+| `GET`   | `/v1/webhooks/:id/deliveries`                    | List an endpoint's deliveries.                     |
+| `PATCH` | `/v1/webhooks/:id/deliveries/resend`             | Resend every failed delivery.                      |
+| `PATCH` | `/v1/webhooks/:id/deliveries/:deliveryId/resend` | Resend one failed delivery.                        |
 
 ## Create a session
 
@@ -124,6 +127,29 @@ updates it the same way. An integrator that already stores the secret to verify
 deliveries then needs no endpoint id. The secret goes in the body, never the URL
 (which is logged), and is never echoed back. `404` when no endpoint in the
 project has that secret; it never matches another project's endpoint.
+
+### Deliveries and resending
+
+```http
+GET /api/v1/webhooks/:id/deliveries?status=failed
+Authorization: Bearer sk_live_…
+```
+
+Lists the endpoint's deliveries, newest first, paginated. Each has `id`,
+`event`, `session_id`, `status` (`pending` | `delivered` | `failed`),
+`response_status`, `response_body`, `attempts`, `created_at` and `updated_at`;
+the payload itself is not returned. `status` is optional.
+
+```http
+PATCH /api/v1/webhooks/:id/deliveries/:deliveryId/resend
+PATCH /api/v1/webhooks/:id/deliveries/resend
+```
+
+The first resends one failed delivery with a fresh set of retries and returns
+`201` with the delivery; `409` when it is not failed. The second resends every
+failed delivery of the endpoint in the background and returns `201` with the
+endpoint and `queued`, the number of failed deliveries. Both return `422` while
+the endpoint is disabled.
 
 ::: tip Use the SDK
 `@arkyc/sdk` wraps all of this with typed methods and errors; see the

@@ -284,6 +284,7 @@ _Operational notes (not blocking): run the two roles as separate long-lived proc
 - [x] Emit events `verification.{started,document_submitted,processing,requires_review,approved,rejected,completed,expired,cancelled}` from a single `transitionTo` choke point (covers the service, biometric worker, and review actions).
 - [x] Delivery worker (`webhook` queue): signs + POSTs, records `webhook_deliveries` (`attempts`, `response_status`/`body`), retries with backoff + dead-letters via the Phase 8 queue.
 - [x] Payload matches the spec shape (session/tenant/project/user_reference/status/checks/decision_reason).
+- [x] Delivery log per endpoint and manual resend of one or all failed deliveries, from the dashboard (`webhooks.update`), the Public API and the SDK.
 
 **Deliverables:** Endpoint CRUD + test delivery, the delivery worker, and signing utilities with verification tests.
 

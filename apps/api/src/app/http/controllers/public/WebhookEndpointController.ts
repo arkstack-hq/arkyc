@@ -2,12 +2,20 @@ import { HttpContext } from 'clear-router/types/express'
 import { perPage } from '@arkstack/common'
 import type { WebhookEventName } from '@arkyc/types'
 import { BaseController } from '@controllers/BaseController'
+import { WebhookDelivery } from '@app/models/WebhookDelivery'
 import { WebhookEndpoint } from '@app/models/WebhookEndpoint'
+import WebhookDeliveryResource from '@app/http/resources/WebhookDeliveryResource'
+import WebhookDeliveryCollection from '@app/http/resources/WebhookDeliveryCollection'
 import WebhookEndpointResource from '@app/http/resources/WebhookEndpointResource'
 import WebhookEndpointCollection from '@app/http/resources/WebhookEndpointCollection'
 import { audit } from '@app/services/AuditLogger'
 import { webhookService } from '@app/services/WebhookService'
-import { createEndpointRules, updateEndpointBySecretRules, updateEndpointRules } from 'src/support/webhook-endpoints'
+import {
+  createEndpointRules,
+  deliveryStatusFilter,
+  updateEndpointBySecretRules,
+  updateEndpointRules,
+} from 'src/support/webhook-endpoints'
 import { RequestException } from '@arkstack/common'
 
 /**
@@ -107,6 +115,54 @@ export default class WebhookEndpointController extends BaseController {
     })
   }
 
+  /** List an endpoint's deliveries, newest first. Filter with the `status` query param. */
+  async deliveries({ req }: HttpContext) {
+    const status = deliveryStatusFilter(req.query.status)
+    const endpoint = await this.scopedEndpoint(req)
+    const deliveries = await webhookService.deliveries(endpoint, status).paginate(perPage(req.query))
+
+    return new WebhookDeliveryCollection(deliveries).additional({
+      status: 'success',
+      message: 'OK',
+      code: 200,
+    })
+  }
+
+  /** Re-queue one failed delivery. */
+  async resend({ req }: HttpContext) {
+    const deliveryId = String(req.params.deliveryId)
+    const endpoint = await this.scopedEndpoint(req)
+    const delivery = await WebhookDelivery.where({ id: deliveryId, webhookEndpointId: endpoint.id }).firstOrFail()
+
+    const resent = await webhookService.resend(endpoint, delivery)
+
+    await this.audit(req, 'webhook.delivery_resent', { type: 'webhook_delivery', id: delivery.id })
+
+    return new WebhookDeliveryResource(resent)
+      .additional({ status: 'success', message: 'Delivery resent', code: 201 })
+      .response()
+      .setStatusCode(201)
+  }
+
+  /** Re-queue every failed delivery of an endpoint in the background. */
+  async resendFailed({ req }: HttpContext) {
+    const endpoint = await this.scopedEndpoint(req)
+
+    const queued = await webhookService.resendFailed(endpoint)
+
+    await this.audit(req, 'webhook.failed_deliveries_resent', endpoint)
+
+    return new WebhookEndpointResource(endpoint)
+      .additional({
+        status: 'success',
+        message: queued ? `Resending ${queued} failed deliveries` : 'No failed deliveries to resend',
+        code: 201,
+        queued,
+      })
+      .response()
+      .setStatusCode(201)
+  }
+
   /** The route's endpoint, scoped to the key's project (404 otherwise). */
   private scopedEndpoint(req: HttpContext['req']) {
     return WebhookEndpoint.where({
@@ -116,15 +172,17 @@ export default class WebhookEndpointController extends BaseController {
   }
 
   /** Record the change against the API key that made it. */
-  private audit(req: HttpContext['req'], action: string, endpoint: WebhookEndpoint) {
+  private audit(req: HttpContext['req'], action: string, entity: WebhookEndpoint | { type: string; id: string }) {
+    const target = entity instanceof WebhookEndpoint ? { type: 'webhook_endpoint', id: entity.id } : entity
+
     return audit.record({
       organizationId: req.projectContext!.organization_id,
       projectId: req.projectContext!.project_id,
       actorId: req.projectContext!.api_key_id,
       actorType: 'api_key',
       action,
-      entityType: 'webhook_endpoint',
-      entityId: endpoint.id,
+      entityType: target.type,
+      entityId: target.id,
       ipAddress: req.ip ?? null,
       userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
     })

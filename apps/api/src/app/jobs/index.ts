@@ -2,6 +2,7 @@ import { JobRegistry } from '@arkstack/jobs'
 import { OcrJob } from './OcrJob'
 import { BiometricJob } from './BiometricJob'
 import { WebhookJob } from './WebhookJob'
+import { WebhookResendJob } from './WebhookResendJob'
 import { SessionSweepJob } from './SessionSweepJob'
 import { UserNotificationJob } from './UserNotificationJob'
 import { DeletionJob } from './DeletionJob'
@@ -13,10 +14,11 @@ import { DeletionJob } from './DeletionJob'
 JobRegistry.register(OcrJob)
 JobRegistry.register(BiometricJob)
 JobRegistry.register(WebhookJob)
+JobRegistry.register(WebhookResendJob)
 JobRegistry.register(SessionSweepJob)
 JobRegistry.register(UserNotificationJob)
 JobRegistry.register(DeletionJob)
 
-export { OcrJob, BiometricJob, WebhookJob, SessionSweepJob, UserNotificationJob, DeletionJob }
+export { OcrJob, BiometricJob, WebhookJob, WebhookResendJob, SessionSweepJob, UserNotificationJob, DeletionJob }
 export type { OcrJobHints } from './OcrJob'
 export type { BiometricJobHints } from './BiometricJob'

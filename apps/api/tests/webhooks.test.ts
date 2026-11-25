@@ -333,3 +333,111 @@ describe('webhook endpoints via the Public Project API (secret key)', () => {
     })
   })
 })
+
+describe('resending failed webhook deliveries', () => {
+  const api = (method: 'get' | 'patch', path: string, key = fx.apiKeySecret) =>
+    request(app)[method](`/api/v1/webhooks${path}`).set('Authorization', `Bearer ${key}`)
+
+  /** An endpoint pointed at the receiver with `count` failed deliveries recorded against it. */
+  async function endpointWithFailures(count: number) {
+    const create = await authed('post', webhooks()).send({ url: receiverUrl, events: ['verification.started'] })
+    const endpointId = create.body.data.id as string
+    const ids: string[] = []
+
+    for (let i = 0; i < count; i++) {
+      const delivery = await WebhookDelivery.create({
+        organizationId: fx.organizationId,
+        projectId: fx.projectId,
+        webhookEndpointId: endpointId,
+        event: 'verification.started',
+        payload: { event: 'verification.started', session_id: `resend-${i}` } as never,
+        status: 'failed',
+        responseStatus: 400,
+        responseBody: 'bad request',
+        attempts: 5,
+        nextRetryAt: null,
+      })
+
+      ids.push(delivery.id)
+    }
+
+    return { endpointId, ids }
+  }
+
+  it('lists an endpoint’s deliveries filtered by status', async () => {
+    const { endpointId, ids } = await endpointWithFailures(2)
+
+    const res = await authed('get', webhooks(`/${endpointId}/deliveries?status=failed`))
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.map((d: { id: string }) => d.id).sort()).toEqual([...ids].sort())
+    expect(res.body.data[0]).toMatchObject({ status: 'failed', response_status: 400, attempts: 5 })
+    expect(res.body.data[0].payload).toBeUndefined()
+  })
+
+  it('resends one failed delivery from the dashboard, then refuses a second resend', async () => {
+    const { endpointId, ids } = await endpointWithFailures(1)
+    const before = received.length
+
+    const res = await authed('patch', webhooks(`/${endpointId}/deliveries/${ids[0]}/resend`))
+
+    expect(res.status).toBe(201)
+    expect(res.body.data).toMatchObject({ id: ids[0], status: 'delivered', attempts: 1, response_status: 200 })
+    expect(received.length).toBe(before + 1)
+
+    expect((await authed('patch', webhooks(`/${endpointId}/deliveries/${ids[0]}/resend`))).status).toBe(409)
+  })
+
+  it('resends every failed delivery of an endpoint', async () => {
+    const { endpointId, ids } = await endpointWithFailures(3)
+
+    const res = await authed('patch', webhooks(`/${endpointId}/deliveries/resend`))
+
+    expect(res.status).toBe(201)
+    expect(res.body.queued).toBe(3)
+
+    const deliveries = Array.from(await WebhookDelivery.query().whereIn('id', ids).get())
+
+    expect(deliveries.every((d) => d.status === 'delivered')).toBe(true)
+  })
+
+  it('refuses to resend to a disabled endpoint (422)', async () => {
+    const { endpointId, ids } = await endpointWithFailures(1)
+
+    await authed('patch', webhooks(`/${endpointId}`)).send({ status: 'disabled' })
+
+    expect((await authed('patch', webhooks(`/${endpointId}/deliveries/${ids[0]}/resend`))).status).toBe(422)
+    expect((await authed('patch', webhooks(`/${endpointId}/deliveries/resend`))).status).toBe(422)
+  })
+
+  it('lets an app resend one or all failed deliveries with its secret key', async () => {
+    const { endpointId, ids } = await endpointWithFailures(3)
+
+    const list = await api('get', `/${endpointId}/deliveries?status=failed`)
+
+    expect(list.status).toBe(200)
+    expect(list.body.data).toHaveLength(3)
+
+    const one = await api('patch', `/${endpointId}/deliveries/${ids[0]}/resend`)
+
+    expect(one.status).toBe(201)
+    expect(one.body.data.status).toBe('delivered')
+
+    const all = await api('patch', `/${endpointId}/deliveries/resend`)
+
+    expect(all.status).toBe(201)
+    expect(all.body.queued).toBe(2)
+  })
+
+  it("can't resend another project's deliveries (404)", async () => {
+    const { endpointId, ids } = await endpointWithFailures(1)
+    const other = await authed('post', `/organizations/${fx.organizationId}/projects`).send({ name: 'Wh Resend Other' })
+    const otherKey = await authed(
+      'post',
+      `/organizations/${fx.organizationId}/projects/${other.body.data.id}/api-keys`,
+    ).send({ name: 'Resend other key' })
+
+    expect((await api('patch', `/${endpointId}/deliveries/${ids[0]}/resend`, otherKey.body.secret)).status).toBe(404)
+    expect((await api('patch', `/${endpointId}/deliveries/resend`, otherKey.body.secret)).status).toBe(404)
+  })
+})
